@@ -71,6 +71,7 @@
 * YAML
 * TOML
 * Character Encoding (ASCII, Unicode, UTF-8)
+* Binary Serialization (Protobuf, MessagePack, Avro)
 
 ---
 
