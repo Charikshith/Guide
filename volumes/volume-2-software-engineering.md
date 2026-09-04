@@ -4,6 +4,25 @@
 >
 > **Chapters 1–16.**
 
+# Contents
+
+1. Professional Git Workflow
+2. Monorepos
+3. Dependency Injection & Inversion of Control
+4. The Testing Pyramid & Test Strategy
+5. CI/CD
+6. Packaging & Release Engineering
+7. Code Reviews
+8. Static Analysis & Type Safety at Scale
+9. Performance Engineering
+10. Security & Threat Modeling
+11. Licensing & OSS Compliance
+12. API Design & Versioning
+13. Documentation as a System
+14. Observability: Logs, Metrics & Traces
+15. Incident Response & Postmortems
+16. Production Debugging
+
 ---
 
 ## Chapter 1 — Professional Git Workflow

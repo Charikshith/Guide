@@ -4,6 +4,23 @@
 >
 > **Chapters 1–14.** Each chapter is one pattern or principle plus a production-quality implementation. By the end you will have built **30+ components** (each chapter's mini project + exercises).
 
+# Contents
+
+1. OOP Fundamentals
+2. SOLID Principles
+3. Design Principles (Cohesion, Coupling, YAGNI, DRY, KISS)
+4. UML & Diagramming
+5. GoF Creational Patterns
+6. GoF Structural Patterns
+7. GoF Behavioral Patterns
+8. Clean Architecture
+9. Hexagonal Architecture (Ports & Adapters)
+10. Domain-Driven Design (Tactical)
+11. Repository Pattern & Data Mapping
+12. Event Bus, CQRS & Event Sourcing
+13. Concurrency Patterns & Thread Safety
+14. Resilience Patterns (Idempotency, Retries, Backoff, Circuit Breakers)
+
 ---
 
 ## Chapter 1 — OOP Fundamentals

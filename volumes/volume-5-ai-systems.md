@@ -4,6 +4,29 @@
 >
 > **Chapters 1–20.** The Progressive Builds thread through the chapters (build #1 in Ch 4, #2 in Ch 9, #3 in Ch 11, #4 in Ch 14, #5 in Ch 15, #6 in Ch 17, #7 in Ch 20).
 
+# Contents
+
+1. LLM Internals
+2. Tokenization
+3. Transformers
+4. Inference & Serving
+5. Quantization & Efficiency
+6. Prompt Engineering & Structured Output
+7. Fine-Tuning, LoRA & PEFT
+8. Alignment, RLHF & Guardrails
+9. Embeddings & RAG
+10. Vector Databases
+11. Agent Frameworks & Tool Use
+12. Agent Memory
+13. MCP & A2A
+14. Multi-Agent Systems
+15. Voice Agents
+16. AI Observability
+17. Evaluation
+18. Cost & Latency Optimization
+19. AI Security
+20. GPU Infrastructure & the AI OS
+
 ---
 
 ## Chapter 1 — LLM Internals

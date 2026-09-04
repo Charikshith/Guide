@@ -2,7 +2,90 @@
 
 > Goal: Understand how computers work from the hardware up to applications.
 >
-> **Chapters 1–49.**
+> **Chapters 1–59.**
+
+# Contents
+
+**Part 1 — Programming Fundamentals**
+1. Variables, Data Types & Operators
+2. Control Flow
+3. Functions, Parameters, Return Values, Scope & Namespaces
+4. Built-in Data Structures
+5. Modules, Packages, Imports & Dependency Management
+6. Error Handling
+7. File I/O
+8. Data Formats (Text): JSON, CSV, XML, YAML, TOML
+9. Character Encoding & Binary Serialization
+10. Generics, Traits, Interfaces & Abstract Classes
+11. Advanced Language Features
+12. Memory: Stack, Heap, Ownership & Garbage Collection
+13. Concurrency: Threads, Processes, Async, Futures & Coroutines
+14. Programming Paradigms
+15. Correctness Traps
+
+**Part 2 — Developer Environment**
+16. Linux: Filesystem, Shell, Bash, Permissions, Users & Groups
+17. Linux: Processes, Signals, Services, systemd, SSH, Cron & Networking
+18. Terminal Tools: grep, sed, awk, jq, curl, wget, find, xargs, tmux, rsync
+19. Git: Branching, Merge, Rebase & Cherry-Pick
+20. Git: Tags, Stash, Hooks & Internals
+21. Build Systems & Package Management
+
+**Part 3 — Software Engineering Fundamentals**
+22. Clean Code & Refactoring
+23. Documentation, ADRs & READMEs
+24. Logging
+25. Configuration & Secrets Management
+26. Testing: Unit, Integration, Mocking & Coverage
+27. Debugging & Profiling
+28. Static Analysis: Linters, Formatters & Type Checkers
+
+**Part 4 — Data Structures & Algorithms**
+29. Basic Data Structures: Arrays, Linked Lists, Stack & Queue
+30. Trees, BST, Heap & Trie
+31. Hash Tables & Graphs
+32. Advanced Structures: Segment Tree, Fenwick Tree & Union-Find
+33. Sorting, Searching & Binary Search
+34. Graph Algorithms: DFS, BFS, Topological Sort & Backtracking
+35. Dynamic Programming, Greedy, Divide & Conquer, Sliding Window & Two Pointers
+
+**Part 5 — Computer Architecture**
+36. Binary, CPU, Registers, Cache & Memory Hierarchy
+37. Instruction Cycle, Pipelining, SIMD & Virtual Memory
+
+**Part 6 — Operating Systems**
+38. OS: Processes, Threads, Scheduling, Synchronization & Deadlocks
+39. OS: Memory Management, File Systems, System Calls & IPC
+
+**Part 7 — Networking**
+40. Networking Fundamentals: OSI, TCP/IP, IP, Ports, DNS & NAT
+41. Transport & Security: TCP, UDP, QUIC, TLS & HTTPS
+42. HTTP, REST, GraphQL & JSON-RPC
+43. WebSockets, gRPC, MQTT & SSE
+44. Delivery: Load Balancing, Reverse Proxies & CDN
+
+**Part 8 — Databases**
+45. SQL & the Relational Model
+46. Schema Design, Normalization & Indexing
+47. ACID, Transactions & Isolation
+48. NoSQL: MongoDB, Cassandra & DynamoDB
+49. Redis, Elasticsearch, Neo4j & Vector Databases
+
+**Part 9 — Distributed Systems**
+50. CAP, Consistency & Consensus
+51. Replication, Sharding, Raft & Paxos
+52. Event Sourcing & CQRS (Distributed View)
+
+**Part 10 — Data Engineering**
+53. ETL/ELT, Batch & Stream Processing
+54. Data Lakes, Warehouses & Orchestration
+
+**Part 11 — Cloud & Ops**
+55. Containers: Docker, Kubernetes & Helm
+56. IaC: Terraform, State & Config Drift
+57. CI/CD & GitHub Actions
+58. Observability: Logs, Metrics, Traces & OpenTelemetry
+59. Cost Awareness in the Cloud
 
 ---
 
@@ -1099,6 +1182,232 @@
 **Interview:** "Redis persistence vs pure cache?" / "When graph DB over SQL?"
 
 **Checklist:** ☐ set sensible TTLs ☐ know inverted-index basics ☐ run a vector search
+
+---
+
+## Part 9 — Distributed Systems
+
+### Chapter 50 — CAP, Consistency & Consensus
+
+**Concept:** CAP theorem, consistency models, the need for consensus, and how systems trade availability vs consistency.
+
+**Prereqs:** Ch 47, Ch 49.
+
+**Diagram:** The CAP triangle with a partition; a consistency spectrum (linearizable → eventual).
+
+**Example:** a CP system (etcd) vs an AP system (Cassandra) under a partition.
+
+**Exercises:** (1) Classify Postgres, Redis, Cassandra by CAP. (2) Explain why a network partition forces a CP/AP choice.
+
+**Mini project:** A tiny KV store simulator that flips between CP and AP behavior during a partition.
+
+**Open source:** [`etcd-io/etcd`](https://github.com/etcd-io/etcd) (Raft/CP); [`apache/cassandra`](https://github.com/apache/cassandra) (AP).
+
+**Interview:** "What does CAP actually guarantee?" / "Linearizable vs eventually consistent?"
+
+**Checklist:** ☐ state CAP precisely ☐ pick consistency per workload ☐ know what a partition does
+
+---
+
+### Chapter 51 — Replication, Sharding, Raft & Paxos
+
+**Concept:** Replication strategies, sharding/partitioning, distributed locks, gossip, leader election, and the Raft/Paxos consensus families.
+
+**Prereqs:** Ch 50.
+
+**Diagram:** A Raft leader election + log replication diagram; a gossip membership spread.
+
+**Example:** Raft term/vote walkthrough; a distributed lock with a lease; a gossip membership list.
+
+**Exercises:** (1) Explain a Raft leader election step by step. (2) Design a sharded store with a consistent-hash ring.
+
+**Mini project:** A Raft leader-election + log-replication simulator (3 nodes).
+
+**Open source:** [`etcd-io/etcd`](https://github.com/etcd-io/etcd) (Raft); [`hashicorp/raft`](https://github.com/hashicorp/raft).
+
+**Interview:** "Raft vs Paxos?" / "How do distributed locks avoid split-brain?"
+
+**Checklist:** ☐ trace Raft election ☐ choose a shard key ☐ use leases, not bare locks
+
+---
+
+### Chapter 52 — Event Sourcing & CQRS (Distributed View)
+
+**Concept:** Event sourcing and CQRS at the system level — event logs, projections, and replay.
+
+**Prereqs:** Ch 51.
+
+**Diagram:** A distributed event log → multiple projections → read models.
+
+**Example:** an order event stream projected into query and analytics read models.
+
+**Exercises:** (1) Design an event schema for a distributed order flow. (2) Rebuild a projection by replaying an event log.
+
+**Mini project:** A two-service event-sourced flow with a shared log and projections.
+
+**Open source:** [`apache/kafka`](https://github.com/apache/kafka); [`EventStore/EventStore`](https://github.com/EventStore/EventStore).
+
+**Interview:** "Event sourcing vs state persistence?" / "How do projections stay consistent?"
+
+**Checklist:** ☐ design versioned events ☐ rebuild state by replay ☐ keep projections idempotent
+
+---
+
+## Part 10 — Data Engineering
+
+### Chapter 53 — ETL/ELT, Batch & Stream Processing
+
+**Concept:** Extract/Transform/Load vs ELT, batch vs stream processing, and when to use each.
+
+**Prereqs:** Ch 52.
+
+**Diagram:** An ETL vs ELT flow; a batch window vs a continuous stream.
+
+**Example:** a nightly batch aggregate vs a streaming count with a window.
+
+**Exercises:** (1) Design an ELT pipeline into a warehouse. (2) Choose batch vs stream for a metric and justify it.
+
+**Mini project:** A streaming word-count pipeline with windowing.
+
+**Open source:** [`apache/spark`](https://github.com/apache/spark); [`apache/flink`](https://github.com/apache/flink).
+
+**Interview:** "ETL vs ELT?" / "Batch vs stream — decision factors?"
+
+**Checklist:** ☐ pick ELT for warehouse-first ☐ window streams correctly ☐ handle late/duplicate data
+
+---
+
+### Chapter 54 — Data Lakes, Warehouses & Orchestration
+
+**Concept:** Lakes vs warehouses vs lakehouses, schema evolution, and pipeline orchestration (Airflow-style).
+
+**Prereqs:** Ch 53.
+
+**Diagram:** A lake (raw) → warehouse (structured) → serving layer; a DAG of tasks.
+
+**Example:** a raw Parquet lake + a warehouse table; an Airflow DAG with dependencies.
+
+**Exercises:** (1) Model a lake → warehouse flow with schema evolution. (2) Write a DAG that retries and alerts on failure.
+
+**Mini project:** An orchestrated pipeline: ingest → transform → load, with retries and a run log.
+
+**Open source:** [`apache/airflow`](https://github.com/apache/airflow); [`delta-io/delta`](https://github.com/delta-io/delta).
+
+**Interview:** "Lake vs warehouse?" / "How do you handle schema evolution?"
+
+**Checklist:** ☐ separate raw from structured ☐ orchestrate with retries ☐ version schemas
+
+---
+
+## Part 11 — Cloud & Ops
+
+### Chapter 55 — Containers: Docker, Kubernetes & Helm
+
+**Concept:** Images and containers, Kubernetes orchestration (pods, deployments, services), and Helm charts.
+
+**Prereqs:** Ch 17.
+
+**Diagram:** A Docker image → container; a K8s cluster with pods behind a service.
+
+**Example:** a `Dockerfile`; a `kubectl apply` deployment; a Helm chart with values.
+
+**Exercises:** (1) Containerize a service and run it. (2) Deploy it to K8s with a service + health probes.
+
+**Mini project:** A Helm chart deploying a stateless service with probes and autoscaling.
+
+**Open source:** [`kubernetes/kubernetes`](https://github.com/kubernetes/kubernetes); [`helm/helm`](https://github.com/helm/helm).
+
+**Interview:** "Container vs VM?" / "How does K8s do rolling updates?"
+
+**Checklist:** ☐ write a clean Dockerfile ☐ deploy to K8s ☐ template with Helm
+
+---
+
+### Chapter 56 — IaC: Terraform, State & Config Drift
+
+**Concept:** Infrastructure as code, Terraform state, and detecting/configuring drift.
+
+**Prereqs:** Ch 55.
+
+**Diagram:** A Terraform plan/apply cycle; a state file vs live infra diff.
+
+**Example:** a Terraform module for a VM + security group; `terraform plan` showing drift.
+
+**Exercises:** (1) Write Terraform for a small stack. (2) Detect and reconcile drift.
+
+**Mini project:** A Terraform module + a drift-check script that alerts on differences.
+
+**Open source:** [`hashicorp/terraform`](https://github.com/hashicorp/terraform); [`opentofu/opentofu`](https://github.com/opentofu/opentofu).
+
+**Interview:** "Why is state remote?" / "How do you handle config drift?"
+
+**Checklist:** ☐ version infra as code ☐ store state remotely ☐ detect drift automatically
+
+---
+
+### Chapter 57 — CI/CD & GitHub Actions
+
+**Concept:** Automating build/test/deploy pipelines with GitHub Actions and deployment gates.
+
+**Prereqs:** Vol 1 Ch 21, Vol 2 Ch 5.
+
+**Diagram:** A workflow: push → build → test → deploy with a manual approval gate.
+
+**Example:** a GitHub Actions workflow with jobs, caching, and a deploy environment.
+
+**Exercises:** (1) Write a CI workflow with build + test + lint. (2) Add a manual approval + deploy job.
+
+**Mini project:** A full CI/CD pipeline for a service, deployed on every merge.
+
+**Open source:** [`actions/runner`](https://github.com/actions/runner).
+
+**Interview:** "CI vs CD?" / "How do you keep pipelines fast?"
+
+**Checklist:** ☐ validate every commit ☐ gate deploys ☐ cache dependencies
+
+---
+
+### Chapter 58 — Observability: Logs, Metrics, Traces & OpenTelemetry
+
+**Concept:** The three pillars, instrumentation, and OpenTelemetry as the standard for collecting them.
+
+**Prereqs:** Ch 24.
+
+**Diagram:** An app emitting logs/metrics/traces → collector → backends.
+
+**Example:** OTel spans with trace IDs; a Prometheus counter; structured logs.
+
+**Exercises:** (1) Instrument a service with metrics + traces. (2) Correlate a slow request across services via trace ID.
+
+**Mini project:** Add OpenTelemetry to a service and view a trace across two services.
+
+**Open source:** [`open-telemetry/opentelemetry-python`](https://github.com/open-telemetry/opentelemetry-python); [`prometheus/prometheus`](https://github.com/prometheus/prometheus).
+
+**Interview:** "Logs vs metrics vs traces?" / "What does OTel standardize?"
+
+**Checklist:** ☐ emit all three signals ☐ correlate via trace IDs ☐ alert on real symptoms
+
+---
+
+### Chapter 59 — Cost Awareness in the Cloud
+
+**Concept:** Cloud cost drivers, right-sizing, and designing with cost as a first-class constraint.
+
+**Prereqs:** Ch 56.
+
+**Diagram:** A cost breakdown by service with the top spenders highlighted.
+
+**Example:** right-sizing an over-provisioned cluster; spot vs reserved vs on-demand.
+
+**Exercises:** (1) Find the top cost driver in a sample bill. (2) Compute unit cost per request.
+
+**Mini project:** A cost dashboard tracking spend per endpoint/service.
+
+**Open source:** [`opencost/opencost`](https://github.com/opencost/opencost).
+
+**Interview:** "How do you reduce cloud spend safely?" / "What's unit economics for infra?"
+
+**Checklist:** ☐ track cost per unit of value ☐ right-size continuously ☐ treat cost as a requirement
 
 ---
 

@@ -4,6 +4,26 @@
 >
 > **Chapters 1–17.** Each chapter ends by designing one or more real-world systems; by the end you will have designed **30+ systems**.
 
+# Contents
+
+1. Capacity Planning
+2. Scalability & Reliability Fundamentals
+3. Distributed Systems Patterns
+4. Load Balancing
+5. Caching Strategies
+6. Rate Limiting, Throttling & Backpressure
+7. Message Queues & Streaming (Kafka, SQS, Pub/Sub)
+8. Service Mesh & Service Discovery
+9. Database Scaling
+10. Event-Driven Systems
+11. CDN, Edge & Geo-Distribution
+12. Multi-Tenancy
+13. Disaster Recovery (Backups, RTO/RPO)
+14. Security at the System Level
+15. Cloud Architecture
+16. Cost & Capacity Economics
+17. The 30-System Design Portfolio
+
 ---
 
 ## Chapter 1 — Capacity Planning

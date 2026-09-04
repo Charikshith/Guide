@@ -1,6 +1,6 @@
 # Guide
 
-A mastery roadmap — from computer science foundations to AI systems engineering — organized as six volumes and delivered as 125 single-concept chapters.
+A mastery roadmap — from computer science foundations to AI systems engineering — organized as six volumes and delivered as 135 single-concept chapters.
 
 Start at **[roadmap.md](roadmap.md)** for the index, prerequisite ordering, and per-volume exit criteria.
 

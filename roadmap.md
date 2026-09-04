@@ -1,19 +1,19 @@
 # Mastery Roadmap
 
-> Structure: six **volumes**, each complete enough that finishing it means you genuinely master the area. Delivered as **125 chapters**, one concept each, with prerequisites, diagrams, examples, exercises, a mini project, real open-source references, interview questions, and a checklist.
+> Structure: six **volumes**, each complete enough that finishing it means you genuinely master the area. Delivered as **135 chapters**, one concept each, with prerequisites, diagrams, examples, exercises, a mini project, real open-source references, interview questions, and a checklist.
 
 ## Volumes
 
 | # | Volume | File | Chapters |
 |---|--------|------|----------|
 | 0 | Math & Mental Models | [volumes/volume-0-math.md](volumes/volume-0-math.md) | 1–9 (9) |
-| 1 | Computer Science Foundations | [volumes/volume-1-cs-foundations.md](volumes/volume-1-cs-foundations.md) | 1–49 (49) |
+| 1 | Computer Science Foundations | [volumes/volume-1-cs-foundations.md](volumes/volume-1-cs-foundations.md) | 1–59 (59) |
 | 2 | Software Engineering | [volumes/volume-2-software-engineering.md](volumes/volume-2-software-engineering.md) | 1–16 (16) |
 | 3 | Low-Level Design | [volumes/volume-3-low-level-design.md](volumes/volume-3-low-level-design.md) | 1–14 (14) |
 | 4 | High-Level Design | [volumes/volume-4-high-level-design.md](volumes/volume-4-high-level-design.md) | 1–17 (17) |
 | 5 | AI Systems Engineering | [volumes/volume-5-ai-systems.md](volumes/volume-5-ai-systems.md) | 1–20 (20) |
 
-**Total: 125 chapters** across the six volumes.
+**Total: 135 chapters** across the six volumes.
 
 ---
 
