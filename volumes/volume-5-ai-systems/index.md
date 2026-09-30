@@ -6,26 +6,26 @@
 
 # Contents
 
-1. LLM Internals
-2. Tokenization
-3. Transformers
-4. Inference & Serving
-5. Quantization & Efficiency
-6. Prompt Engineering & Structured Output
-7. Fine-Tuning, LoRA & PEFT
-8. Alignment, RLHF & Guardrails
-9. Embeddings & RAG
-10. Vector Databases
-11. Agent Frameworks & Tool Use
-12. Agent Memory
-13. MCP & A2A
-14. Multi-Agent Systems
-15. Voice Agents
-16. AI Observability
-17. Evaluation
-18. Cost & Latency Optimization
-19. AI Security
-20. GPU Infrastructure & the AI OS
+1. [LLM Internals](ch01-llm-internals.md)
+2. [Tokenization](ch02-tokenization.md)
+3. [Transformers](ch03-transformers.md)
+4. [Inference & Serving](ch04-inference-and-serving.md)
+5. [Quantization & Efficiency](ch05-quantization-and-efficiency.md)
+6. [Prompt Engineering & Structured Output](ch06-prompt-engineering-and-structured-output.md)
+7. [Fine-Tuning, LoRA & PEFT](ch07-fine-tuning-lora-and-peft.md)
+8. [Alignment, RLHF & Guardrails](ch08-alignment-rlhf-and-guardrails.md)
+9. [Embeddings & RAG](ch09-embeddings-and-rag.md)
+10. [Vector Databases](ch10-vector-databases.md)
+11. [Agent Frameworks & Tool Use](ch11-agent-frameworks-and-tool-use.md)
+12. [Agent Memory](ch12-agent-memory.md)
+13. [MCP & A2A](ch13-mcp-and-a2a.md)
+14. [Multi-Agent Systems](ch14-multi-agent-systems.md)
+15. [Voice Agents](ch15-voice-agents.md)
+16. [AI Observability](ch16-ai-observability.md)
+17. [Evaluation](ch17-evaluation.md)
+18. [Cost & Latency Optimization](ch18-cost-and-latency-optimization.md)
+19. [AI Security](ch19-ai-security.md)
+20. [GPU Infrastructure & the AI OS](ch20-gpu-infrastructure-and-the-ai-os.md)
 
 ---
 

@@ -6,20 +6,20 @@
 
 # Contents
 
-1. OOP Fundamentals
-2. SOLID Principles
-3. Design Principles (Cohesion, Coupling, YAGNI, DRY, KISS)
-4. UML & Diagramming
-5. GoF Creational Patterns
-6. GoF Structural Patterns
-7. GoF Behavioral Patterns
-8. Clean Architecture
-9. Hexagonal Architecture (Ports & Adapters)
-10. Domain-Driven Design (Tactical)
-11. Repository Pattern & Data Mapping
-12. Event Bus, CQRS & Event Sourcing
-13. Concurrency Patterns & Thread Safety
-14. Resilience Patterns (Idempotency, Retries, Backoff, Circuit Breakers)
+1. [OOP Fundamentals](ch01-oop-fundamentals.md)
+2. [SOLID Principles](ch02-solid-principles.md)
+3. [Design Principles (Cohesion, Coupling, YAGNI, DRY, KISS)](ch03-design-principles-cohesion-coupling-yagni-dry-kiss.md)
+4. [UML & Diagramming](ch04-uml-and-diagramming.md)
+5. [GoF Creational Patterns](ch05-gof-creational-patterns.md)
+6. [GoF Structural Patterns](ch06-gof-structural-patterns.md)
+7. [GoF Behavioral Patterns](ch07-gof-behavioral-patterns.md)
+8. [Clean Architecture](ch08-clean-architecture.md)
+9. [Hexagonal Architecture (Ports & Adapters)](ch09-hexagonal-architecture-ports-and-adapters.md)
+10. [Domain-Driven Design (Tactical)](ch10-domain-driven-design-tactical.md)
+11. [Repository Pattern & Data Mapping](ch11-repository-pattern-and-data-mapping.md)
+12. [Event Bus, CQRS & Event Sourcing](ch12-event-bus-cqrs-and-event-sourcing.md)
+13. [Concurrency Patterns & Thread Safety](ch13-concurrency-patterns-and-thread-safety.md)
+14. [Resilience Patterns (Idempotency, Retries, Backoff, Circuit Breakers)](ch14-resilience-patterns-idempotency-retries-backoff-circuit-breakers.md)
 
 ---
 

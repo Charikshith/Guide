@@ -8,15 +8,15 @@
 
 # Contents
 
-1. Logic & Boolean Algebra
-2. Sets, Relations & Functions
-3. Combinatorics & Counting
-4. Graph Theory Foundations
-5. Proof by Induction
-6. Asymptotic Notation (Big-O, Θ, Ω)
-7. Time/Space Complexity & Amortized Analysis
-8. Probability, Distributions & Bayes
-9. Linear Algebra for AI
+1. [Logic & Boolean Algebra](ch01-logic-and-boolean-algebra.md)
+2. [Sets, Relations & Functions](ch02-sets-relations-and-functions.md)
+3. [Combinatorics & Counting](ch03-combinatorics-and-counting.md)
+4. [Graph Theory Foundations](ch04-graph-theory-foundations.md)
+5. [Proof by Induction](ch05-proof-by-induction.md)
+6. [Asymptotic Notation (Big-O, Θ, Ω)](ch06-asymptotic-notation-big-o.md)
+7. [Time/Space Complexity & Amortized Analysis](ch07-time-space-complexity-and-amortized-analysis.md)
+8. [Probability, Distributions & Bayes](ch08-probability-distributions-and-bayes.md)
+9. [Linear Algebra for AI](ch09-linear-algebra-for-ai.md)
 
 ---
 

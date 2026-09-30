@@ -7,85 +7,85 @@
 # Contents
 
 **Part 1 — Programming Fundamentals**
-1. Variables, Data Types & Operators
-2. Control Flow
-3. Functions, Parameters, Return Values, Scope & Namespaces
-4. Built-in Data Structures
-5. Modules, Packages, Imports & Dependency Management
-6. Error Handling
-7. File I/O
-8. Data Formats (Text): JSON, CSV, XML, YAML, TOML
-9. Character Encoding & Binary Serialization
-10. Generics, Traits, Interfaces & Abstract Classes
-11. Advanced Language Features
-12. Memory: Stack, Heap, Ownership & Garbage Collection
-13. Concurrency: Threads, Processes, Async, Futures & Coroutines
-14. Programming Paradigms
-15. Correctness Traps
+1. [Variables, Data Types & Operators](ch01-variables-data-types-and-operators.md)
+2. [Control Flow](ch02-control-flow.md)
+3. [Functions, Parameters, Return Values, Scope & Namespaces](ch03-functions-parameters-return-values-scope-and-namespaces.md)
+4. [Built-in Data Structures](ch04-built-in-data-structures.md)
+5. [Modules, Packages, Imports & Dependency Management](ch05-modules-packages-imports-and-dependency-management.md)
+6. [Error Handling](ch06-error-handling.md)
+7. [File I/O](ch07-file-i-o.md)
+8. [Data Formats (Text): JSON, CSV, XML, YAML, TOML](ch08-data-formats-text-json-csv-xml-yaml.md)
+9. [Character Encoding & Binary Serialization](ch09-character-encoding-and-binary-serialization.md)
+10. [Generics, Traits, Interfaces & Abstract Classes](ch10-generics-traits-interfaces-and-abstract-classes.md)
+11. [Advanced Language Features](ch11-advanced-language-features.md)
+12. [Memory: Stack, Heap, Ownership & Garbage Collection](ch12-memory-stack-heap-ownership-and-garbage-collection.md)
+13. [Concurrency: Threads, Processes, Async, Futures & Coroutines](ch13-concurrency-threads-processes-async-futures-and-coroutines.md)
+14. [Programming Paradigms](ch14-programming-paradigms.md)
+15. [Correctness Traps](ch15-correctness-traps.md)
 
 **Part 2 — Developer Environment**
-16. Linux: Filesystem, Shell, Bash, Permissions, Users & Groups
-17. Linux: Processes, Signals, Services, systemd, SSH, Cron & Networking
-18. Terminal Tools: grep, sed, awk, jq, curl, wget, find, xargs, tmux, rsync
-19. Git: Branching, Merge, Rebase & Cherry-Pick
-20. Git: Tags, Stash, Hooks & Internals
-21. Build Systems & Package Management
+16. [Linux: Filesystem, Shell, Bash, Permissions, Users & Groups](ch16-linux-filesystem-shell-bash-permissions-users-and.md)
+17. [Linux: Processes, Signals, Services, systemd, SSH, Cron & Networking](ch17-linux-processes-signals-services-systemd-ssh-cron.md)
+18. [Terminal Tools: grep, sed, awk, jq, curl, wget, find, xargs, tmux, rsync](ch18-terminal-tools-grep-sed-awk-jq-curl.md)
+19. [Git: Branching, Merge, Rebase & Cherry-Pick](ch19-git-branching-merge-rebase-and-cherry-pick.md)
+20. [Git: Tags, Stash, Hooks & Internals](ch20-git-tags-stash-hooks-and-internals.md)
+21. [Build Systems & Package Management](ch21-build-systems-and-package-management.md)
 
 **Part 3 — Software Engineering Fundamentals**
-22. Clean Code & Refactoring
-23. Documentation, ADRs & READMEs
-24. Logging
-25. Configuration & Secrets Management
-26. Testing: Unit, Integration, Mocking & Coverage
-27. Debugging & Profiling
-28. Static Analysis: Linters, Formatters & Type Checkers
+22. [Clean Code & Refactoring](ch22-clean-code-and-refactoring.md)
+23. [Documentation, ADRs & READMEs](ch23-documentation-adrs-and-readmes.md)
+24. [Logging](ch24-logging.md)
+25. [Configuration & Secrets Management](ch25-configuration-and-secrets-management.md)
+26. [Testing: Unit, Integration, Mocking & Coverage](ch26-testing-unit-integration-mocking-and-coverage.md)
+27. [Debugging & Profiling](ch27-debugging-and-profiling.md)
+28. [Static Analysis: Linters, Formatters & Type Checkers](ch28-static-analysis-linters-formatters-and-type-checkers.md)
 
 **Part 4 — Data Structures & Algorithms**
-29. Basic Data Structures: Arrays, Linked Lists, Stack & Queue
-30. Trees, BST, Heap & Trie
-31. Hash Tables & Graphs
-32. Advanced Structures: Segment Tree, Fenwick Tree & Union-Find
-33. Sorting, Searching & Binary Search
-34. Graph Algorithms: DFS, BFS, Topological Sort & Backtracking
-35. Dynamic Programming, Greedy, Divide & Conquer, Sliding Window & Two Pointers
+29. [Basic Data Structures: Arrays, Linked Lists, Stack & Queue](ch29-basic-data-structures-arrays-linked-lists-stack.md)
+30. [Trees, BST, Heap & Trie](ch30-trees-bst-heap-and-trie.md)
+31. [Hash Tables & Graphs](ch31-hash-tables-and-graphs.md)
+32. [Advanced Structures: Segment Tree, Fenwick Tree & Union-Find](ch32-advanced-structures-segment-tree-fenwick-tree-and.md)
+33. [Sorting, Searching & Binary Search](ch33-sorting-searching-and-binary-search.md)
+34. [Graph Algorithms: DFS, BFS, Topological Sort & Backtracking](ch34-graph-algorithms-dfs-bfs-topological-sort-and.md)
+35. [Dynamic Programming, Greedy, Divide & Conquer, Sliding Window & Two Pointers](ch35-dynamic-programming-greedy-divide-and-conquer-sliding.md)
 
 **Part 5 — Computer Architecture**
-36. Binary, CPU, Registers, Cache & Memory Hierarchy
-37. Instruction Cycle, Pipelining, SIMD & Virtual Memory
+36. [Binary, CPU, Registers, Cache & Memory Hierarchy](ch36-binary-cpu-registers-cache-and-memory-hierarchy.md)
+37. [Instruction Cycle, Pipelining, SIMD & Virtual Memory](ch37-instruction-cycle-pipelining-simd-and-virtual-memory.md)
 
 **Part 6 — Operating Systems**
-38. OS: Processes, Threads, Scheduling, Synchronization & Deadlocks
-39. OS: Memory Management, File Systems, System Calls & IPC
+38. [OS: Processes, Threads, Scheduling, Synchronization & Deadlocks](ch38-os-processes-threads-scheduling-synchronization-and-deadlocks.md)
+39. [OS: Memory Management, File Systems, System Calls & IPC](ch39-os-memory-management-file-systems-system-calls.md)
 
 **Part 7 — Networking**
-40. Networking Fundamentals: OSI, TCP/IP, IP, Ports, DNS & NAT
-41. Transport & Security: TCP, UDP, QUIC, TLS & HTTPS
-42. HTTP, REST, GraphQL & JSON-RPC
-43. WebSockets, gRPC, MQTT & SSE
-44. Delivery: Load Balancing, Reverse Proxies & CDN
+40. [Networking Fundamentals: OSI, TCP/IP, IP, Ports, DNS & NAT](ch40-networking-fundamentals-osi-tcp-ip-ip-ports.md)
+41. [Transport & Security: TCP, UDP, QUIC, TLS & HTTPS](ch41-transport-and-security-tcp-udp-quic-tls.md)
+42. [HTTP, REST, GraphQL & JSON-RPC](ch42-http-rest-graphql-and-json-rpc.md)
+43. [WebSockets, gRPC, MQTT & SSE](ch43-websockets-grpc-mqtt-and-sse.md)
+44. [Delivery: Load Balancing, Reverse Proxies & CDN](ch44-delivery-load-balancing-reverse-proxies-and-cdn.md)
 
 **Part 8 — Databases**
-45. SQL & the Relational Model
-46. Schema Design, Normalization & Indexing
-47. ACID, Transactions & Isolation
-48. NoSQL: MongoDB, Cassandra & DynamoDB
-49. Redis, Elasticsearch, Neo4j & Vector Databases
+45. [SQL & the Relational Model](ch45-sql-and-the-relational-model.md)
+46. [Schema Design, Normalization & Indexing](ch46-schema-design-normalization-and-indexing.md)
+47. [ACID, Transactions & Isolation](ch47-acid-transactions-and-isolation.md)
+48. [NoSQL: MongoDB, Cassandra & DynamoDB](ch48-nosql-mongodb-cassandra-and-dynamodb.md)
+49. [Redis, Elasticsearch, Neo4j & Vector Databases](ch49-redis-elasticsearch-neo4j-and-vector-databases.md)
 
 **Part 9 — Distributed Systems**
-50. CAP, Consistency & Consensus
-51. Replication, Sharding, Raft & Paxos
-52. Event Sourcing & CQRS (Distributed View)
+50. [CAP, Consistency & Consensus](ch50-cap-consistency-and-consensus.md)
+51. [Replication, Sharding, Raft & Paxos](ch51-replication-sharding-raft-and-paxos.md)
+52. [Event Sourcing & CQRS (Distributed View)](ch52-event-sourcing-and-cqrs-distributed-view.md)
 
 **Part 10 — Data Engineering**
-53. ETL/ELT, Batch & Stream Processing
-54. Data Lakes, Warehouses & Orchestration
+53. [ETL/ELT, Batch & Stream Processing](ch53-etl-elt-batch-and-stream-processing.md)
+54. [Data Lakes, Warehouses & Orchestration](ch54-data-lakes-warehouses-and-orchestration.md)
 
 **Part 11 — Cloud & Ops**
-55. Containers: Docker, Kubernetes & Helm
-56. IaC: Terraform, State & Config Drift
-57. CI/CD & GitHub Actions
-58. Observability: Logs, Metrics, Traces & OpenTelemetry
-59. Cost Awareness in the Cloud
+55. [Containers: Docker, Kubernetes & Helm](ch55-containers-docker-kubernetes-and-helm.md)
+56. [IaC: Terraform, State & Config Drift](ch56-iac-terraform-state-and-config-drift.md)
+57. [CI/CD & GitHub Actions](ch57-ci-cd-and-github-actions.md)
+58. [Observability: Logs, Metrics, Traces & OpenTelemetry](ch58-observability-logs-metrics-traces-and-opentelemetry.md)
+59. [Cost Awareness in the Cloud](ch59-cost-awareness-in-the-cloud.md)
 
 ---
 

@@ -6,22 +6,22 @@
 
 # Contents
 
-1. Professional Git Workflow
-2. Monorepos
-3. Dependency Injection & Inversion of Control
-4. The Testing Pyramid & Test Strategy
-5. CI/CD
-6. Packaging & Release Engineering
-7. Code Reviews
-8. Static Analysis & Type Safety at Scale
-9. Performance Engineering
-10. Security & Threat Modeling
-11. Licensing & OSS Compliance
-12. API Design & Versioning
-13. Documentation as a System
-14. Observability: Logs, Metrics & Traces
-15. Incident Response & Postmortems
-16. Production Debugging
+1. [Professional Git Workflow](ch01-professional-git-workflow.md)
+2. [Monorepos](ch02-monorepos.md)
+3. [Dependency Injection & Inversion of Control](ch03-dependency-injection-and-inversion-of-control.md)
+4. [The Testing Pyramid & Test Strategy](ch04-the-testing-pyramid-and-test-strategy.md)
+5. [CI/CD](ch05-ci-cd.md)
+6. [Packaging & Release Engineering](ch06-packaging-and-release-engineering.md)
+7. [Code Reviews](ch07-code-reviews.md)
+8. [Static Analysis & Type Safety at Scale](ch08-static-analysis-and-type-safety-at-scale.md)
+9. [Performance Engineering](ch09-performance-engineering.md)
+10. [Security & Threat Modeling](ch10-security-and-threat-modeling.md)
+11. [Licensing & OSS Compliance](ch11-licensing-and-oss-compliance.md)
+12. [API Design & Versioning](ch12-api-design-and-versioning.md)
+13. [Documentation as a System](ch13-documentation-as-a-system.md)
+14. [Observability: Logs, Metrics & Traces](ch14-observability-logs-metrics-and-traces.md)
+15. [Incident Response & Postmortems](ch15-incident-response-and-postmortems.md)
+16. [Production Debugging](ch16-production-debugging.md)
 
 ---
 
