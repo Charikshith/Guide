@@ -196,8 +196,8 @@ a{color:var(--ink);text-decoration:underline dotted}
   <h2>Diagram</h2>
   <h3>A correlation ID threaded through services into one log stream</h3>
   <figure>
-    <svg viewBox="0 0 660 520" role="img" aria-label="Sequence diagram: Client posts /orders to API gateway; gateway sets request_id r-8f2a; passes X-Request-ID to Order service; order service logs order_received to the Log store, passes X-Request-ID to Payment service; payment service logs charge_ok with 212 ms; order service logs order_placed">
-      <path class="sk" d="M50 54 L50 495 M160 54 L160 495 M300 54 L300 495 M440 54 L440 495 M590 54 L590 495" style="stroke-dasharray:6 7;stroke-width:1.6"/>
+    <svg viewBox="0 0 660 545" role="img" aria-label="Sequence diagram: Client posts /orders to API gateway; gateway sets request_id r-8f2a; passes X-Request-ID to Order service; order service logs order_received to the Log store, passes X-Request-ID to Payment service; payment service logs charge_ok with 212 ms; order service logs order_placed">
+      <path class="sk" d="M50 54 L50 540 M160 54 L160 540 M300 54 L300 540 M440 54 L440 540 M590 54 L590 540" style="stroke-dasharray:6 7;stroke-width:1.6"/>
       <rect class="sk" x="2" y="10" width="96" height="44" rx="8"/>
       <text class="lbl b" x="50" y="38" text-anchor="middle" style="font-size:15px">Client</text>
       <rect class="sk" x="112" y="10" width="96" height="44" rx="8"/>
@@ -214,28 +214,29 @@ a{color:var(--ink);text-decoration:underline dotted}
       <text class="lbl b" x="590" y="46" text-anchor="middle" style="font-size:14px">store</text>
 
       <path class="sk blue" d="M52 100 L156 100" style="color:var(--ink)" marker-end="url(#arr)"/>
-      <text class="lbl" x="105" y="92" text-anchor="middle" style="font-size:13px">POST /orders</text>
+      <text class="lbl" x="105" y="90" text-anchor="middle" style="paint-order:stroke;stroke:var(--paper);stroke-width:6px;stroke-linejoin:round;font-size:13px">POST /orders</text>
 
       <path class="sk red" d="M162 135 L215 135 L215 158 L166 158" style="color:var(--red)" marker-end="url(#arr)"/>
-      <text class="lbl r" x="225" y="152" style="font-size:13px">request_id = r-8f2a</text>
+      <text class="lbl r" x="225" y="152" style="paint-order:stroke;stroke:var(--paper);stroke-width:6px;stroke-linejoin:round;font-size:13px">request_id = r-8f2a</text>
 
       <path class="sk blue" d="M162 205 L296 205" style="color:var(--ink)" marker-end="url(#arr)"/>
-      <text class="lbl" x="230" y="197" text-anchor="middle" style="font-size:13px">X-Request-ID: r-8f2a</text>
+      <text class="lbl" x="230" y="195" text-anchor="middle" style="paint-order:stroke;stroke:var(--paper);stroke-width:6px;stroke-linejoin:round;font-size:13px">X-Request-ID: r-8f2a</text>
 
-      <path class="sk green" d="M302 275 L586 275" style="color:var(--green)" marker-end="url(#arr)"/>
-      <text class="lbl g" x="445" y="251" text-anchor="middle" style="font-size:12px">{"request_id":"r-8f2a",</text>
-      <text class="lbl g" x="445" y="267" text-anchor="middle" style="font-size:12px">"event":"order_received"}</text>
+      <path class="sk green" d="M302 290 L586 290" style="color:var(--green)" marker-end="url(#arr)"/>
+      <text class="lbl g" x="515" y="256" text-anchor="middle" style="paint-order:stroke;stroke:var(--paper);stroke-width:6px;stroke-linejoin:round;font-size:13px">{"request_id":"r-8f2a",</text>
+      <text class="lbl g" x="515" y="274" text-anchor="middle" style="paint-order:stroke;stroke:var(--paper);stroke-width:6px;stroke-linejoin:round;font-size:13px">"event":"order_received"}</text>
 
-      <path class="sk blue" d="M302 335 L436 335" style="color:var(--ink)" marker-end="url(#arr)"/>
-      <text class="lbl" x="369" y="327" text-anchor="middle" style="font-size:13px">X-Request-ID: r-8f2a</text>
+      <path class="sk blue" d="M302 350 L436 350" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <text class="lbl" x="369" y="340" text-anchor="middle" style="paint-order:stroke;stroke:var(--paper);stroke-width:6px;stroke-linejoin:round;font-size:13px">X-Request-ID: r-8f2a</text>
 
-      <path class="sk green" d="M442 405 L586 405" style="color:var(--green)" marker-end="url(#arr)"/>
-      <text class="lbl g" x="520" y="381" text-anchor="middle" style="font-size:12px">{"request_id":"r-8f2a",</text>
-      <text class="lbl g" x="520" y="397" text-anchor="middle" style="font-size:12px">"event":"charge_ok","ms":212}</text>
+      <path class="sk green" d="M442 450 L586 450" style="color:var(--green)" marker-end="url(#arr)"/>
+      <text class="lbl g" x="516" y="398" text-anchor="middle" style="paint-order:stroke;stroke:var(--paper);stroke-width:6px;stroke-linejoin:round;font-size:13px">{"request_id":"r-8f2a",</text>
+      <text class="lbl g" x="516" y="416" text-anchor="middle" style="paint-order:stroke;stroke:var(--paper);stroke-width:6px;stroke-linejoin:round;font-size:13px">"event":"charge_ok",</text>
+      <text class="lbl g" x="516" y="434" text-anchor="middle" style="paint-order:stroke;stroke:var(--paper);stroke-width:6px;stroke-linejoin:round;font-size:13px">"ms":212}</text>
 
-      <path class="sk green" d="M302 470 L586 470" style="color:var(--green)" marker-end="url(#arr)"/>
-      <text class="lbl g" x="445" y="446" text-anchor="middle" style="font-size:12px">{"request_id":"r-8f2a",</text>
-      <text class="lbl g" x="445" y="462" text-anchor="middle" style="font-size:12px">"event":"order_placed"}</text>
+      <path class="sk green" d="M302 520 L586 520" style="color:var(--green)" marker-end="url(#arr)"/>
+      <text class="lbl g" x="515" y="486" text-anchor="middle" style="paint-order:stroke;stroke:var(--paper);stroke-width:6px;stroke-linejoin:round;font-size:13px">{"request_id":"r-8f2a",</text>
+      <text class="lbl g" x="515" y="504" text-anchor="middle" style="paint-order:stroke;stroke:var(--paper);stroke-width:6px;stroke-linejoin:round;font-size:13px">"event":"order_placed"}</text>
     </svg>
     <figcaption>Fig 1: one request_id travels through every hop, so one search reconstructs the request</figcaption>
   </figure>

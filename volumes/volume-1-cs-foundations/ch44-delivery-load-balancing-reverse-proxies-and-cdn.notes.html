@@ -184,49 +184,45 @@ a{color:var(--ink);text-decoration:underline dotted}
   <h2>Diagram</h2>
   <h3>Client → CDN → LB → backend pool, with the L4/L7 split</h3>
   <figure>
-<svg viewBox="0 0 660 635" role="img" aria-label="users reach a CDN edge; on a cache miss or dynamic request an L4 load balancer sends TCP :443 to L7 proxies that terminate TLS and route /api/* to the API pool (api-1 ok, api-2 ok, api-3 down) and /admin/* to the admin pool; health checks GET /readyz every 5 s watch the API pool">
+<svg viewBox="0 0 660 580" role="img" aria-label="users reach a CDN edge; on a cache miss or dynamic request an L4 load balancer sends TCP :443 to L7 proxies that terminate TLS and route /api/* to the API pool (api-1 ok, api-2 ok, api-3 down) and /admin/* to the admin pool; health checks GET /readyz every 5 s watch the API pool">
 
-<path class="sk blue" d="M290 58 L290 103" style="color:var(--ink);" marker-end="url(#arr)"/>
-<path class="sk blue" d="M290 157 L290 208" style="color:var(--ink);" marker-end="url(#arr)"/>
-<path class="sk blue" d="M251 262 L179 313" style="color:var(--ink);" marker-end="url(#arr)"/>
-<path class="sk blue" d="M329 262 L415 322" style="color:var(--ink);" marker-end="url(#arr)"/>
-<path class="sk blue" d="M160 367 L220 453" style="color:var(--ink);" marker-end="url(#arr)"/>
-<path class="sk blue" d="M415 358 L279 453" style="color:var(--ink);" marker-end="url(#arr)"/>
-<path class="sk blue" d="M222 367 L507 462" style="color:var(--ink);" marker-end="url(#arr)"/>
-<path class="sk blue" d="M455 358 L545 462" style="color:var(--ink);" marker-end="url(#arr)"/>
-<path class="sk red" d="M240 563 L240 507" style="color:var(--red);stroke-dasharray:7 5;" marker-end="url(#arr)"/>
-<rect class="sk" x="217" y="22" width="146" height="35" rx="10"/>
-<text class="lbl b" x="290" y="47" text-anchor="middle" style="font-size:14px">users worldwide</text>
-<rect class="sk green" x="153" y="103" width="273" height="55" rx="10"/>
-<text class="lbl g" x="290" y="127" text-anchor="middle" style="font-size:14px">CDN edge PoP</text>
-<text class="lbl g" x="290" y="146" text-anchor="middle" style="font-size:14px">(static assets, cacheable GETs)</text>
-<rect class="sk" x="221" y="208" width="138" height="55" rx="10"/>
-<text class="lbl b" x="290" y="232" text-anchor="middle" style="font-size:14px">L4 LB (NLB)</text>
-<text class="lbl b" x="290" y="251" text-anchor="middle" style="font-size:14px">TCP :443, hash</text>
-<rect class="sk" x="31" y="313" width="218" height="55" rx="10"/>
-<text class="lbl b" x="140" y="337" text-anchor="middle" style="font-size:14px">L7 proxy (Envoy/nginx)</text>
-<text class="lbl b" x="140" y="356" text-anchor="middle" style="font-size:14px">TLS termination, routing</text>
-<rect class="sk" x="395" y="322" width="90" height="35" rx="10"/>
-<text class="lbl b" x="440" y="347" text-anchor="middle" style="font-size:14px">L7 proxy</text>
-<rect class="sk" x="127" y="453" width="226" height="55" rx="10"/>
-<text class="lbl b" x="240" y="477" text-anchor="middle" style="font-size:14px">API pool</text>
-<text class="lbl b" x="240" y="496" text-anchor="middle" style="font-size:14px">api-1 ✓  api-2 ✓  api-3 ✗</text>
-<rect class="sk" x="507" y="462" width="106" height="35" rx="10"/>
-<text class="lbl b" x="560" y="487" text-anchor="middle" style="font-size:14px">admin pool</text>
-<rect class="sk red" x="143" y="563" width="194" height="55" rx="10"/>
-<text class="lbl r" x="240" y="587" text-anchor="middle" style="font-size:14px">health checks</text>
-<text class="lbl r" x="240" y="606" text-anchor="middle" style="font-size:14px">GET /readyz every 5 s</text>
-<rect x="330" y="164" width="111" height="42" rx="4" style="fill:#fdfbf4;opacity:.92;stroke:none"/>
-<text class="lbl r" x="385" y="180" text-anchor="middle" style="font-size:15px">cache miss /</text>
-<text class="lbl r" x="385" y="199" text-anchor="middle" style="font-size:15px">dynamic</text>
-<rect x="146" y="407" width="59" height="22" rx="4" style="fill:#fdfbf4;opacity:.92;stroke:none"/>
-<text class="lbl r" x="176" y="422" text-anchor="middle" style="font-size:15px">/api/*</text>
-<rect x="342" y="381" width="59" height="22" rx="4" style="fill:#fdfbf4;opacity:.92;stroke:none"/>
-<text class="lbl r" x="372" y="396" text-anchor="middle" style="font-size:15px">/api/*</text>
-<rect x="440" y="441" width="76" height="22" rx="4" style="fill:#fdfbf4;opacity:.92;stroke:none"/>
-<text class="lbl r" x="478" y="456" text-anchor="middle" style="font-size:15px">/admin/*</text>
-<rect x="479" y="391" width="76" height="22" rx="4" style="fill:#fdfbf4;opacity:.92;stroke:none"/>
-<text class="lbl r" x="517" y="406" text-anchor="middle" style="font-size:15px">/admin/*</text>
+<path class="sk blue" d="M310 51 L310 85" style="color:var(--ink);" marker-end="url(#arr)"/>
+<path class="sk blue" d="M310 141 L310 175" style="color:var(--ink);" marker-end="url(#arr)"/>
+<path class="sk blue" d="M250 231 L190 275" style="color:var(--ink);" marker-end="url(#arr)"/>
+<path class="sk blue" d="M370 231 L480 283" style="color:var(--ink);" marker-end="url(#arr)"/>
+<path class="sk blue" d="M95 331 L95 400" style="color:var(--ink);" marker-end="url(#arr)"/>
+<path class="sk blue" d="M460 323 L210 400" style="color:var(--ink);" marker-end="url(#arr)"/>
+<path class="sk blue" d="M200 331 L480 408" style="color:var(--ink);" marker-end="url(#arr)"/>
+<path class="sk blue" d="M575 323 L575 408" style="color:var(--ink);" marker-end="url(#arr)"/>
+<path class="sk red" d="M145 500 L145 460" style="color:var(--red);stroke-dasharray:7 5;" marker-end="url(#arr)"/>
+<rect class="sk" x="220" y="15" width="180" height="36" rx="10"/>
+<text class="lbl b" x="310" y="39" text-anchor="middle" style="font-size:15px">users worldwide</text>
+<rect class="sk green" x="165" y="85" width="290" height="56" rx="10"/>
+<text class="lbl g" x="310" y="109" text-anchor="middle" style="font-size:15px">CDN edge PoP</text>
+<text class="lbl g" x="310" y="129" text-anchor="middle" style="font-size:15px">(static assets, cacheable GETs)</text>
+<rect class="sk" x="215" y="175" width="190" height="56" rx="10"/>
+<text class="lbl b" x="310" y="199" text-anchor="middle" style="font-size:15px">L4 LB (NLB)</text>
+<text class="lbl b" x="310" y="219" text-anchor="middle" style="font-size:15px">TCP :443, hash</text>
+<rect class="sk" x="20" y="275" width="250" height="56" rx="10"/>
+<text class="lbl b" x="145" y="299" text-anchor="middle" style="font-size:15px">L7 proxy (Envoy/nginx)</text>
+<text class="lbl b" x="145" y="319" text-anchor="middle" style="font-size:15px">TLS termination, routing</text>
+<rect class="sk" x="420" y="283" width="210" height="40" rx="10"/>
+<text class="lbl b" x="525" y="309" text-anchor="middle" style="font-size:15px">L7 proxy</text>
+<rect class="sk" x="20" y="400" width="250" height="56" rx="10"/>
+<text class="lbl b" x="145" y="424" text-anchor="middle" style="font-size:15px">API pool</text>
+<text class="lbl b" x="145" y="444" text-anchor="middle" style="font-size:15px">api-1 ✓  api-2 ✓  api-3 ✗</text>
+<rect class="sk" x="420" y="408" width="210" height="40" rx="10"/>
+<text class="lbl b" x="525" y="434" text-anchor="middle" style="font-size:15px">admin pool</text>
+<rect class="sk red" x="20" y="500" width="250" height="56" rx="10"/>
+<text class="lbl r" x="145" y="524" text-anchor="middle" style="font-size:15px">health checks</text>
+<text class="lbl r" x="145" y="544" text-anchor="middle" style="font-size:15px">GET /readyz every 5 s</text>
+<text class="lbl r" x="325" y="164" style="font-size:15px">cache miss / dynamic</text>
+<text class="lbl r" x="105" y="372" style="font-size:15px">/api/*</text>
+<text class="lbl r" x="565" y="372" text-anchor="end" style="font-size:15px">/admin/*</text>
+<rect x="228" y="334" width="66" height="22" rx="4" style="fill:#fdfbf4;opacity:.92;stroke:none"/>
+<text class="lbl r" x="261" y="351" text-anchor="middle" style="font-size:15px">/admin/*</text>
+<rect x="378" y="326" width="58" height="22" rx="4" style="fill:#fdfbf4;opacity:.92;stroke:none"/>
+<text class="lbl r" x="407" y="343" text-anchor="middle" style="font-size:15px">/api/*</text>
 
 </svg>
 <figcaption>Fig 1: the delivery path: CDN, L4 LB, L7 proxies, pools, health checks</figcaption>

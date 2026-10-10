@@ -298,12 +298,12 @@ a{color:var(--ink);text-decoration:underline dotted}
       <text class="lbl sq" x="118" y="176">retries(3)</text>
       <path class="sk blue" d="M110 218 L327 218" style="color:var(--ink)" marker-end="url(#arr)"/>
       <text class="lbl sq" x="118" y="210">build()</text>
-      <path class="sk blue" d="M330 252 C 380 252, 380 276, 333 276" style="color:var(--ink)" marker-end="url(#arr)"/>
-      <text class="lbl sq" x="386" y="268">validate (url set, timeout &gt; 0)</text>
-      <path class="sk blue" d="M330 296 L547 296" style="color:var(--ink)" marker-end="url(#arr)"/>
-      <text class="lbl sq" x="338" y="288">create with all fields</text>
-      <path class="sk blue" d="M330 330 L113 330" style="color:var(--ink);stroke-dasharray:6 5" marker-end="url(#arr)"/>
-      <text class="lbl sq" x="118" y="322">HttpRequest</text>
+      <path class="sk blue" d="M330 244 C 372 244, 372 266, 333 266" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <text class="lbl sq" x="378" y="260">validate (url set, timeout &gt; 0)</text>
+      <path class="sk blue" d="M330 312 L547 312" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <text class="lbl sq" x="338" y="304">create with all fields</text>
+      <path class="sk blue" d="M330 344 L113 344" style="color:var(--ink);stroke-dasharray:6 5" marker-end="url(#arr)"/>
+      <text class="lbl sq" x="118" y="336">HttpRequest</text>
       </svg>
     <figcaption>Fig 3: Builder — Client, RequestBuilder, HttpRequest (immutable)</figcaption>
   </figure>
@@ -435,16 +435,16 @@ def main():
       <path class="sk blue" d="M360 59 C 410 80, 500 90, 542 108" style="color:var(--ink)" marker-end="url(#arr)"/>
       <!-- bus -->
       <path class="sk blue" d="M150 194 L150 242 M280 194 L280 242 M500 194 L500 242" style="color:var(--ink)"/>
-      <path class="sk blue" d="M110 242 L540 242" style="color:var(--ink)"/>
-      <path class="sk blue" d="M110 242 L110 288" style="color:var(--ink)" marker-end="url(#arr)"/>
-      <path class="sk blue" d="M370 242 L370 288" style="color:var(--ink)" marker-end="url(#arr)"/>
-      <path class="sk blue" d="M540 242 L540 288" style="color:var(--ink)" marker-end="url(#arr)"/>
-      <rect class="sk green" x="10" y="290" width="205" height="44" rx="10"/>
-      <text class="lbl g" x="112" y="318" text-anchor="middle">handler: orders</text>
-      <rect class="sk green" x="268" y="290" width="205" height="44" rx="10"/>
-      <text class="lbl g" x="370" y="318" text-anchor="middle">handler: payments</text>
-      <rect class="sk green" x="440" y="290" width="205" height="44" rx="10"/>
-      <text class="lbl g" x="542" y="318" text-anchor="middle">handler: shipping</text>
+      <path class="sk blue" d="M105 242 L555 242" style="color:var(--ink)"/>
+      <path class="sk blue" d="M105 242 L105 288" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M330 242 L330 288" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M555 242 L555 288" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <rect class="sk green" x="10" y="290" width="190" height="44" rx="10"/>
+      <text class="lbl g" x="105" y="318" text-anchor="middle">handler: orders</text>
+      <rect class="sk green" x="235" y="290" width="190" height="44" rx="10"/>
+      <text class="lbl g" x="330" y="318" text-anchor="middle">handler: payments</text>
+      <rect class="sk green" x="460" y="290" width="190" height="44" rx="10"/>
+      <text class="lbl g" x="555" y="318" text-anchor="middle">handler: shipping</text>
     </svg>
     <figcaption>Fig 4: RequestBuilder, ClientFactory and prototype presets all feed each of the three handlers (joined bus); tests exercise the library</figcaption>
   </figure>

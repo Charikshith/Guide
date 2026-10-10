@@ -254,8 +254,8 @@ a{color:var(--ink);text-decoration:underline dotted}
       <text class="lbl" x="150" y="94" text-anchor="middle">SET x = 5</text>
 
       <path class="sk blue" d="M232 135 C 290 135, 290 175, 234 175" style="color:var(--ink)" marker-end="url(#arr)"/>
-      <text class="lbl" x="268" y="150">append entry #7</text>
-      <text class="lbl" x="268" y="170">(term 3)</text>
+      <text class="lbl" x="286" y="150">append entry #7</text>
+      <text class="lbl" x="286" y="170">(term 3)</text>
 
       <path class="sk blue" d="M232 215 L396 215" style="color:var(--ink)" marker-end="url(#arr)"/>
       <text class="lbl" x="314" y="204" text-anchor="middle">AppendEntries(#7)</text>
@@ -270,7 +270,7 @@ a{color:var(--ink);text-decoration:underline dotted}
       <text class="lbl r" x="230" y="356" text-anchor="middle">2 of 3 have #7 → COMMITTED</text>
 
       <path class="sk blue" d="M232 395 C 290 395, 290 430, 234 430" style="color:var(--ink)" marker-end="url(#arr)"/>
-      <text class="lbl" x="268" y="418">apply x = 5</text>
+      <text class="lbl" x="286" y="418">apply x = 5</text>
 
       <path class="sk green" d="M228 465 L72 465" style="color:var(--green);stroke-dasharray:7 6" marker-end="url(#arr)"/>
       <text class="lbl g" x="150" y="454" text-anchor="middle">OK</text>
@@ -365,45 +365,43 @@ e.Campaign(ctx, "node-2")            // blocks until this node is the leader
   <h2>Mini project</h2>
   <p><b>A Raft leader-election + log-replication simulator (3 nodes).</b></p>
   <figure>
-    <svg viewBox="0 0 660 380" role="img" aria-label="Flowchart: simulated clock feeds nodes 1, 2, 3 in a cluster; message bus connects to all nodes; client commands go to node 1; the cluster feeds a timeline printout and invariant checks">
-      <rect class="sk" x="15" y="20" width="180" height="50" rx="10"/>
-      <text class="lbl b" x="105" y="51" text-anchor="middle" style="font-size:15px">simulated clock (ticks)</text>
-      <rect class="sk" x="15" y="95" width="180" height="50" rx="10"/>
-      <text class="lbl b" x="105" y="126" text-anchor="middle">client commands</text>
-      <rect class="sk" x="15" y="190" width="180" height="90" rx="10"/>
-      <text class="lbl b" x="105" y="218" text-anchor="middle">message bus</text>
-      <text class="lbl" x="105" y="240" text-anchor="middle">(delay, drop,</text>
-      <text class="lbl" x="105" y="260" text-anchor="middle">partition)</text>
-      <rect class="sk" x="265" y="10" width="170" height="330" rx="14" style="stroke-dasharray:8 6"/>
-      <text class="lbl r" x="350" y="32" text-anchor="middle">Cluster</text>
-      <rect class="sk" x="280" y="50" width="140" height="90" rx="10"/>
-      <text class="lbl b" x="350" y="76" text-anchor="middle">node 1</text>
-      <text class="lbl" x="350" y="98" text-anchor="middle">state, term,</text>
-      <text class="lbl" x="350" y="118" text-anchor="middle">votedFor, log</text>
-      <rect class="sk" x="280" y="170" width="140" height="45" rx="10"/>
-      <text class="lbl b" x="350" y="199" text-anchor="middle">node 2</text>
-      <rect class="sk" x="280" y="250" width="140" height="45" rx="10"/>
-      <text class="lbl b" x="350" y="279" text-anchor="middle">node 3</text>
-      <path class="sk blue" d="M195 40 C 230 40, 250 55, 278 65" style="color:var(--ink)" marker-end="url(#arr)"/>
-      <path class="sk blue" d="M195 50 C 240 70, 240 150, 278 180" style="color:var(--ink)" marker-end="url(#arr)"/>
-      <path class="sk blue" d="M195 60 C 250 100, 220 230, 278 262" style="color:var(--ink)" marker-end="url(#arr)"/>
-      <path class="sk blue" d="M195 120 C 230 120, 250 112, 278 108" style="color:var(--ink)" marker-end="url(#arr)"/>
-      <path class="sk" d="M195 205 C 230 190, 250 150, 280 132" style="stroke-dasharray:6 5"/>
-      <path class="sk" d="M195 230 C 230 220, 250 205, 280 200" style="stroke-dasharray:6 5"/>
-      <path class="sk" d="M195 255 C 230 260, 250 268, 280 272" style="stroke-dasharray:6 5"/>
-      <rect class="sk green" x="480" y="60" width="165" height="90" rx="10"/>
-      <text class="lbl g" x="562" y="86" text-anchor="middle">timeline printout:</text>
-      <text class="lbl g" x="562" y="108" text-anchor="middle">terms, leaders,</text>
-      <text class="lbl g" x="562" y="130" text-anchor="middle">commit indexes</text>
-      <rect class="sk red" x="480" y="185" width="165" height="170" rx="10"/>
-      <text class="lbl r" x="562" y="212" text-anchor="middle">invariant checks</text>
-      <text class="lbl r" x="562" y="234" text-anchor="middle">each tick:</text>
-      <text class="lbl r" x="562" y="256" text-anchor="middle">≤ 1 leader per</text>
-      <text class="lbl r" x="562" y="278" text-anchor="middle">term; committed</text>
-      <text class="lbl r" x="562" y="300" text-anchor="middle">entries identical</text>
-      <text class="lbl r" x="562" y="322" text-anchor="middle">everywhere</text>
-      <path class="sk blue" d="M437 105 L476 105" style="color:var(--ink)" marker-end="url(#arr)"/>
-      <path class="sk blue" d="M437 270 C 455 270, 460 270, 476 270" style="color:var(--ink)" marker-end="url(#arr)"/>
+    <svg viewBox="0 0 660 480" role="img" aria-label="Flowchart: simulated clock feeds nodes 1, 2, 3 in a cluster; message bus connects to all nodes; client commands go to node 1; the cluster feeds a timeline printout and invariant checks">
+      <rect class="sk" x="10" y="30" width="180" height="50" rx="10"/>
+      <text class="lbl b" x="100" y="61" text-anchor="middle">client commands</text>
+      <rect class="sk" x="10" y="150" width="180" height="50" rx="10"/>
+      <text class="lbl b" x="100" y="181" text-anchor="middle" style="font-size:15px">simulated clock (ticks)</text>
+      <rect class="sk" x="230" y="10" width="170" height="290" rx="14" style="stroke-dasharray:8 6"/>
+      <text class="lbl r" x="315" y="32" text-anchor="middle">Cluster</text>
+      <rect class="sk" x="245" y="50" width="140" height="90" rx="10"/>
+      <text class="lbl b" x="315" y="76" text-anchor="middle">node 1</text>
+      <text class="lbl" x="315" y="98" text-anchor="middle">state, term,</text>
+      <text class="lbl" x="315" y="118" text-anchor="middle">votedFor, log</text>
+      <rect class="sk" x="245" y="160" width="140" height="45" rx="10"/>
+      <text class="lbl b" x="315" y="189" text-anchor="middle">node 2</text>
+      <rect class="sk" x="245" y="235" width="140" height="45" rx="10"/>
+      <text class="lbl b" x="315" y="264" text-anchor="middle">node 3</text>
+      <rect class="sk" x="470" y="60" width="180" height="200" rx="10"/>
+      <text class="lbl b" x="560" y="150" text-anchor="middle">message bus</text>
+      <text class="lbl" x="560" y="172" text-anchor="middle">(delay, drop,</text>
+      <text class="lbl" x="560" y="192" text-anchor="middle">partition)</text>
+      <path class="sk blue" d="M190 60 C 215 60, 225 68, 243 72" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M190 158 C 215 140, 225 120, 243 108" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M190 175 L243 182" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M190 192 C 215 215, 225 240, 243 252" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk" d="M470 95 L387 95" style="stroke-dasharray:6 5"/>
+      <path class="sk" d="M470 182 L387 182" style="stroke-dasharray:6 5"/>
+      <path class="sk" d="M470 257 L387 257" style="stroke-dasharray:6 5"/>
+      <rect class="sk green" x="20" y="350" width="270" height="90" rx="10"/>
+      <text class="lbl g" x="155" y="378" text-anchor="middle">timeline printout:</text>
+      <text class="lbl g" x="155" y="400" text-anchor="middle">terms, leaders,</text>
+      <text class="lbl g" x="155" y="422" text-anchor="middle">commit indexes</text>
+      <rect class="sk red" x="340" y="350" width="310" height="115" rx="10"/>
+      <text class="lbl r" x="495" y="376" text-anchor="middle">invariant checks each tick:</text>
+      <text class="lbl r" x="495" y="398" text-anchor="middle">≤ 1 leader per term;</text>
+      <text class="lbl r" x="495" y="420" text-anchor="middle">committed entries</text>
+      <text class="lbl r" x="495" y="442" text-anchor="middle">identical everywhere</text>
+      <path class="sk blue" d="M280 300 C 270 325, 200 330, 170 348" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M350 300 C 370 325, 440 330, 470 348" style="color:var(--ink)" marker-end="url(#arr)"/>
     </svg>
     <figcaption>Fig 3: simulator design. Solid arrows = data flow; dashed lines = the message bus linking all three nodes</figcaption>
   </figure>

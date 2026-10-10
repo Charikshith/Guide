@@ -278,13 +278,14 @@ a{color:var(--ink);text-decoration:underline dotted}
 <path class="sk" d="M330 72 L463 120 L330 168 L197 120 Z"/>
 <text class="lbl b" x="330" y="115.5" text-anchor="middle">fits in GPU memory</text>
 <text class="lbl b" x="330" y="135.5" text-anchor="middle">at BF16?</text>
-<path class="sk" d="M135 205 L260 255 L135 305 L10 255 Z"/>
-<text class="lbl b" x="135" y="250.5" text-anchor="middle">need more throughput /</text>
-<text class="lbl b" x="135" y="270.5" text-anchor="middle">cheaper GPUs?</text>
-<rect class="sk" x="434" y="215" width="191" height="80" rx="10"/>
-<text class="lbl b" x="530" y="240.5" text-anchor="middle">INT4 AWQ/GPTQ (GPU)</text>
-<text class="lbl b" x="530" y="260.5" text-anchor="middle">or GGUF Q4_K_M</text>
-<text class="lbl b" x="530" y="280.5" text-anchor="middle">(CPU/Mac)</text>
+<path class="sk" d="M135 195 L260 255 L135 315 L10 255 Z"/>
+<text class="lbl b" x="135" y="244" text-anchor="middle">need more</text>
+<text class="lbl b" x="135" y="262" text-anchor="middle">throughput /</text>
+<text class="lbl b" x="135" y="280" text-anchor="middle">cheaper GPUs?</text>
+<rect class="sk" x="420" y="215" width="232" height="80" rx="10"/>
+<text class="lbl b" x="536" y="240.5" text-anchor="middle">INT4 AWQ/GPTQ (GPU)</text>
+<text class="lbl b" x="536" y="260.5" text-anchor="middle">or GGUF Q4_K_M</text>
+<text class="lbl b" x="536" y="280.5" text-anchor="middle">(CPU/Mac)</text>
 <rect class="sk green" x="8" y="360" width="114" height="40" rx="10"/>
 <text class="lbl g" x="65" y="385.5" text-anchor="middle">serve BF16</text>
 <rect class="sk" x="155" y="350" width="200" height="60" rx="10"/>
@@ -294,13 +295,13 @@ a{color:var(--ink);text-decoration:underline dotted}
 <text class="lbl g" x="400" y="460.5" text-anchor="middle">evaluate on your task set</text>
 <text class="lbl g" x="400" y="480.5" text-anchor="middle">(accuracy, long context, tool calls)</text>
 <path class="sk blue" d="M330 52 Q 328 62 330 72" style="color:var(--ink)" marker-end="url(#arr)"/>
-<path class="sk blue" d="M284 152 Q 227 179 181 223" style="color:var(--ink)" marker-end="url(#arr)"/>
+<path class="sk blue" d="M284 152 Q 227 175 189 220" style="color:var(--ink)" marker-end="url(#arr)"/>
 <text class="lbl r" x="215" y="200" text-anchor="end" style="font-size:15px">yes</text>
-<path class="sk blue" d="M112 296 Q 89 325 76 360" style="color:var(--ink)" marker-end="url(#arr)"/>
+<path class="sk blue" d="M100 292 Q 85 325 76 360" style="color:var(--ink)" marker-end="url(#arr)"/>
 <text class="lbl r" x="75" y="330" text-anchor="end" style="font-size:15px">no</text>
-<path class="sk blue" d="M170 291 Q 193 325 226 350" style="color:var(--ink)" marker-end="url(#arr)"/>
+<path class="sk blue" d="M170 292 Q 193 325 226 350" style="color:var(--ink)" marker-end="url(#arr)"/>
 <text class="lbl r" x="225" y="330" text-anchor="start" style="font-size:15px">yes</text>
-<path class="sk blue" d="M376 151 Q 418 191 471 215" style="color:var(--ink)" marker-end="url(#arr)"/>
+<path class="sk blue" d="M376 151 Q 418 185 466 213" style="color:var(--ink)" marker-end="url(#arr)"/>
 <text class="lbl r" x="480" y="200" text-anchor="start" style="font-size:15px">no</text>
 <path class="sk blue" d="M505 295 Q 453 360 419 435" style="color:var(--ink)" marker-end="url(#arr)"/>
 <path class="sk blue" d="M306 410 Q 326 426 349 435" style="color:var(--ink)" marker-end="url(#arr)"/>
@@ -374,9 +375,9 @@ python convert_hf_to_gguf.py ./Qwen2.5-7B-Instruct --outfile qwen7b-f16.gguf
 <rect class="sk" x="46" y="100" width="148" height="60" rx="10"/>
 <text class="lbl b" x="120" y="125.5" text-anchor="middle">INT8</text>
 <text class="lbl b" x="120" y="145.5" text-anchor="middle">(bitsandbytes)</text>
-<rect class="sk" x="252" y="110" width="157" height="40" rx="10"/>
+<rect class="sk" x="226" y="110" width="208" height="40" rx="10"/>
 <text class="lbl b" x="330" y="135.5" text-anchor="middle">INT4 AWQ / GPTQ</text>
-<rect class="sk" x="479" y="100" width="123" height="60" rx="10"/>
+<rect class="sk" x="455" y="100" width="170" height="60" rx="10"/>
 <text class="lbl b" x="540" y="125.5" text-anchor="middle">GGUF Q4_K_M</text>
 <text class="lbl b" x="540" y="145.5" text-anchor="middle">(llama.cpp)</text>
 <rect class="sk" x="127" y="223" width="406" height="84" rx="10"/>
@@ -387,8 +388,8 @@ python convert_hf_to_gguf.py ./Qwen2.5-7B-Instruct --outfile qwen7b-f16.gguf
 <text class="lbl g" x="330" y="370.5" text-anchor="middle">results table + recommendation</text>
 <path class="sk blue" d="M286 55 Q 232 70 186 100" style="color:var(--ink)" marker-end="url(#arr)"/>
 <path class="sk blue" d="M330 55 Q 326 82 330 110" style="color:var(--ink)" marker-end="url(#arr)"/>
-<path class="sk blue" d="M374 55 Q 423 87 479 102" style="color:var(--ink)" marker-end="url(#arr)"/>
-<path class="sk blue" d="M292 55 Q 14 200 127 223" style="color:var(--ink)" marker-end="url(#arr)"/>
+<path class="sk blue" d="M374 55 Q 423 80 470 100" style="color:var(--ink)" marker-end="url(#arr)"/>
+<path class="sk blue" d="M200 35 Q 18 40 22 190 Q 26 255 125 263" style="color:var(--ink)" marker-end="url(#arr)"/>
 <path class="sk blue" d="M167 160 Q 211 199 265 223" style="color:var(--ink)" marker-end="url(#arr)"/>
 <path class="sk blue" d="M330 150 Q 324 186 330 223" style="color:var(--ink)" marker-end="url(#arr)"/>
 <path class="sk blue" d="M493 160 Q 439 184 395 223" style="color:var(--ink)" marker-end="url(#arr)"/>

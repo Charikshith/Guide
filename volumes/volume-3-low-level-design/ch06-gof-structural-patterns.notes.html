@@ -199,20 +199,20 @@ a{color:var(--ink);text-decoration:underline dotted}
       <text class="lbl b" x="135" y="57" text-anchor="middle">PaymentGateway</text>
       <path class="sk" d="M10 67 L260 67"/>
       <text class="lbl" x="18" y="91" style="font-size:13px">+charge(cents, token) ChargeId</text>
-      <rect class="sk" x="10" y="160" width="250" height="106" rx="6"/>
-      <text class="lbl b" x="135" y="184" text-anchor="middle">StripeAdapter</text>
-      <path class="sk" d="M10 194 L260 194"/>
+      <rect class="sk" x="10" y="160" width="220" height="106" rx="6"/>
+      <text class="lbl b" x="120" y="184" text-anchor="middle">StripeAdapter</text>
+      <path class="sk" d="M10 194 L230 194"/>
       <text class="lbl" x="18" y="216" style="font-size:13px">-stripe_sdk</text>
-      <path class="sk" d="M10 226 L260 226"/>
+      <path class="sk" d="M10 226 L230 226"/>
       <text class="lbl" x="18" y="250" style="font-size:13px">+charge(cents, token) ChargeId</text>
-      <rect class="sk" x="360" y="160" width="290" height="106" rx="6"/>
-      <text class="lbl b" x="505" y="184" text-anchor="middle">StripeSDK</text>
-      <path class="sk" d="M360 194 L650 194"/>
-      <text class="lbl" x="368" y="218" style="font-size:13px">+PaymentIntent.create(amount,</text>
-      <text class="lbl" x="368" y="240" style="font-size:13px">currency, payment_method, confirm)</text>
-      <path class="sk blue" d="M135 160 L135 107" style="color:var(--ink);stroke-dasharray:6 5" marker-end="url(#arr)"/>
-      <path class="sk blue" d="M262 213 L356 213" style="color:var(--ink)" marker-end="url(#arr)"/>
-      <text class="lbl r" x="309" y="203" text-anchor="middle" style="font-size:14px">translates calls</text>
+      <rect class="sk" x="380" y="160" width="270" height="106" rx="6"/>
+      <text class="lbl b" x="515" y="184" text-anchor="middle">StripeSDK</text>
+      <path class="sk" d="M380 194 L650 194"/>
+      <text class="lbl" x="388" y="218" style="font-size:13px">+PaymentIntent.create(amount,</text>
+      <text class="lbl" x="388" y="240" style="font-size:13px">currency, payment_method, confirm)</text>
+      <path class="sk blue" d="M120 160 L120 107" style="color:var(--ink);stroke-dasharray:6 5" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M234 222 L376 222" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <text class="lbl r" x="305" y="209" text-anchor="middle" style="font-size:14px">translates calls</text>
       <!-- Decorator group -->
       <rect class="sk" x="235" y="310" width="190" height="88" rx="6"/>
       <text class="lbl" x="330" y="331" text-anchor="middle" style="font-size:13px">&lt;&lt;interface&gt;&gt;</text>
@@ -230,9 +230,9 @@ a{color:var(--ink);text-decoration:underline dotted}
       <text class="lbl" x="448" y="552" style="font-size:13px">+price(sku) int</text>
       <path class="sk blue" d="M110 450 C 130 420, 220 405, 270 402" style="color:var(--ink);stroke-dasharray:6 5" marker-end="url(#arr)"/>
       <path class="sk blue" d="M500 440 C 480 420, 450 408, 408 402" style="color:var(--ink);stroke-dasharray:6 5" marker-end="url(#arr)"/>
-      <path class="sk" d="M440 570 L428 562 L416 570 L428 578 Z" style="fill:var(--hl-blue)"/>
-      <path class="sk blue" d="M416 570 C 320 575, 300 400, 427 380" style="color:var(--ink)"/>
-      <text class="lbl r" x="330" y="500" style="font-size:15px">wraps</text>
+      <path class="sk" d="M440 540 L428 532 L416 540 L428 548 Z" style="fill:var(--hl-blue)"/>
+      <path class="sk blue" d="M416 540 L330 540 L330 402" style="color:var(--ink)"/>
+      <text class="lbl r" x="342" y="480" style="font-size:15px">wraps</text>
     </svg>
     <figcaption>Fig 1: top = Adapter (StripeAdapter implements the port and translates calls to the SDK); bottom = Decorator (CachingPriceService implements PriceService <i>and</i> wraps one — hollow diamond = <code>o--</code> "wraps")</figcaption>
   </figure>

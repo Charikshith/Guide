@@ -187,68 +187,60 @@ a{color:var(--ink);text-decoration:underline dotted}
   <h2>Diagram</h2>
   <h3>A request path with cache hits, batching, and a small/large model router</h3>
   <figure>
-    <svg viewBox="-42.2 16 784.7 1234.6" role="img" aria-label="A request path with cache hits, batching, and a small/large model router">
-      <path class="sk blue" d="M291.5 87 C291.5 120.5, 280.4 120.5, 280.4 154" style="color:var(--ink)" marker-end="url(#arr)"/>
-      <path class="sk blue" d="M295.4 286.8 C295.4 361.7, 336.3 361.7, 336.3 436.6 C336.3 534.1, 355.1 534.1, 355.1 631.7 C355.1 707.1, 362.7 707.1, 362.7 782.6 C362.7 843.6, 359.1 843.6, 359.1 904.6 C359.1 962.1, 344.3 962.1, 344.3 1019.6 C344.3 1073.1, 318.3 1073.1, 318.3 1126.6 C318.3 1161.6, 285.7 1161.6, 285.7 1196.6" style="color:var(--ink)" marker-end="url(#arr)"/>
-      <path class="sk blue" d="M265.4 286.8 C265.4 325.6, 191.2 325.6, 191.2 364.4" style="color:var(--ink)" marker-end="url(#arr)"/>
-      <path class="sk blue" d="M206.2 500.1 C206.2 565.9, 257 565.9, 257 631.7 C257 707.1, 286 707.1, 286 782.6 C286 843.6, 303.8 843.6, 303.8 904.6 C303.8 962.1, 303.7 962.1, 303.7 1019.6 C303.7 1073.1, 292.3 1073.1, 292.3 1126.6 C292.3 1161.6, 255.7 1161.6, 255.7 1196.6" style="color:var(--ink)" marker-end="url(#arr)"/>
-      <path class="sk blue" d="M176.2 500.1 C176.2 537.5, 130.8 537.5, 130.8 574.8" style="color:var(--ink)" marker-end="url(#arr)"/>
-      <path class="sk blue" d="M115.8 680.6 C115.8 717.6, 98.2 717.6, 98.2 754.6" style="color:var(--ink)" marker-end="url(#arr)"/>
-      <path class="sk blue" d="M145.8 680.6 C145.8 731.6, 196.4 731.6, 196.4 782.6 C196.4 829.6, 224.8 829.6, 224.8 876.6" style="color:var(--ink)" marker-end="url(#arr)"/>
-      <path class="sk blue" d="M113.2 810.6 C113.2 843.6, 194.8 843.6, 194.8 876.6" style="color:var(--ink)" marker-end="url(#arr)"/>
-      <path class="sk blue" d="M83.2 810.6 C83.2 857.6, 115.8 857.6, 115.8 904.6 C115.8 943.6, 149.4 943.6, 149.4 982.6" style="color:var(--ink)" marker-end="url(#arr)"/>
-      <path class="sk blue" d="M209.8 932.6 C209.8 957.6, 179.4 957.6, 179.4 982.6" style="color:var(--ink)" marker-end="url(#arr)"/>
-      <path class="sk blue" d="M164.4 1056.6 C164.4 1081.6, 156.3 1081.6, 156.3 1106.6" style="color:var(--ink)" marker-end="url(#arr)"/>
-      <path class="sk blue" d="M156.3 1146.6 C156.3 1171.6, 225.7 1171.6, 225.7 1196.6" style="color:var(--ink)" marker-end="url(#arr)"/>
-      <path class="sk blue" d="M667.1 104 C667.1 146.6, 667.1 146.6, 667.1 189.2" style="color:var(--ink)" marker-end="url(#arr)"/>
-      <rect class="sk" x="251.1" y="47" width="80.8" height="40" rx="8" style="fill:#fdfbf4"/>
-      <text class="lbl b" x="291.5" y="72" text-anchor="middle" style="font-size:15px">request</text>
-      <path class="sk red" d="M280.4 154 L374 226.2 L280.4 298.4 L186.8 226.2 Z" style="fill:#fff3c4"/>
-      <text class="lbl b" x="280.4" y="204.2" text-anchor="middle" style="font-size:15px">exact</text>
-      <text class="lbl b" x="280.4" y="222.2" text-anchor="middle" style="font-size:15px">cache</text>
-      <text class="lbl b" x="280.4" y="240.2" text-anchor="middle" style="font-size:15px">hash(prompt,</text>
-      <text class="lbl b" x="280.4" y="258.2" text-anchor="middle" style="font-size:15px">model)</text>
-      <rect class="sk green" x="160.7" y="1196.6" width="190" height="40" rx="8" style="fill:#fdfbf4"/>
-      <text class="lbl b" x="255.7" y="1221.6" text-anchor="middle" style="font-size:15px">response (≈0 ms, $0)</text>
-      <path class="sk red" d="M191.2 364.4 L316.3 436.6 L191.2 508.8 L66.1 436.6 Z" style="fill:#fff3c4"/>
-      <text class="lbl b" x="191.2" y="414.6" text-anchor="middle" style="font-size:15px">semantic cache</text>
-      <text class="lbl b" x="191.2" y="432.6" text-anchor="middle" style="font-size:15px">similarity ≥ 0.95</text>
-      <text class="lbl b" x="191.2" y="450.6" text-anchor="middle" style="font-size:15px">same tenant +</text>
-      <text class="lbl b" x="191.2" y="468.6" text-anchor="middle" style="font-size:15px">intent</text>
-      <path class="sk red" d="M130.8 574.8 L237 631.7 L130.8 688.6 L24.6 631.7 Z" style="fill:#fff3c4"/>
-      <text class="lbl b" x="130.8" y="618.7" text-anchor="middle" style="font-size:15px">router</text>
-      <text class="lbl b" x="130.8" y="636.7" text-anchor="middle" style="font-size:15px">(rules + small</text>
-      <text class="lbl b" x="130.8" y="654.7" text-anchor="middle" style="font-size:15px">classifier)</text>
-      <rect class="sk" x="20" y="754.6" width="156.4" height="56" rx="8" style="fill:#fdfbf4"/>
-      <text class="lbl b" x="98.2" y="778.6" text-anchor="middle" style="font-size:15px">small model</text>
-      <text class="lbl b" x="98.2" y="796.6" text-anchor="middle" style="font-size:15px">claude-haiku-4-5</text>
-      <rect class="sk" x="135.8" y="876.6" width="148" height="56" rx="8" style="fill:#fdfbf4"/>
-      <text class="lbl b" x="209.8" y="900.6" text-anchor="middle" style="font-size:15px">large model</text>
-      <text class="lbl b" x="209.8" y="918.6" text-anchor="middle" style="font-size:15px">claude-opus-5-5</text>
-      <rect class="sk" x="61" y="982.6" width="206.8" height="74" rx="8" style="fill:#fdfbf4"/>
-      <text class="lbl b" x="164.4" y="1006.6" text-anchor="middle" style="font-size:15px">provider prompt cache:</text>
-      <text class="lbl b" x="164.4" y="1024.6" text-anchor="middle" style="font-size:15px">system + tools + docs</text>
-      <text class="lbl b" x="164.4" y="1042.6" text-anchor="middle" style="font-size:15px">prefix</text>
-      <rect class="sk" x="40.3" y="1106.6" width="232" height="40" rx="8" style="fill:#fdfbf4"/>
-      <text class="lbl b" x="156.3" y="1131.6" text-anchor="middle" style="font-size:15px">stream tokens to the user</text>
-      <rect class="sk" x="605.7" y="30" width="122.8" height="74" rx="8" style="fill:#fdfbf4"/>
-      <text class="lbl b" x="667.1" y="54" text-anchor="middle" style="font-size:15px">offline jobs</text>
-      <text class="lbl b" x="667.1" y="72" text-anchor="middle" style="font-size:15px">(nightly</text>
-      <text class="lbl b" x="667.1" y="90" text-anchor="middle" style="font-size:15px">tagging)</text>
-      <rect class="sk green" x="605.7" y="189.2" width="122.8" height="74" rx="8" style="fill:#fdfbf4"/>
-      <text class="lbl b" x="667.1" y="213.2" text-anchor="middle" style="font-size:15px">Batch API</text>
-      <text class="lbl b" x="667.1" y="231.2" text-anchor="middle" style="font-size:15px">(discounted,</text>
-      <text class="lbl b" x="667.1" y="249.2" text-anchor="middle" style="font-size:15px">async)</text>
-      <text class="lbl r" x="321.8" y="365.7" text-anchor="start" style="font-size:14px;paint-order:stroke;stroke:#fdfbf4;stroke-width:5px;stroke-linejoin:round">hit</text>
-      <text class="lbl r" x="222.3" y="329.6" text-anchor="end" style="font-size:14px;paint-order:stroke;stroke:#fdfbf4;stroke-width:5px;stroke-linejoin:round">miss</text>
-      <text class="lbl r" x="237.6" y="569.9" text-anchor="start" style="font-size:14px;paint-order:stroke;stroke:#fdfbf4;stroke-width:5px;stroke-linejoin:round">hit</text>
-      <text class="lbl r" x="147.5" y="541.5" text-anchor="end" style="font-size:14px;paint-order:stroke;stroke:#fdfbf4;stroke-width:5px;stroke-linejoin:round">miss</text>
-      <text class="lbl r" x="101" y="713.6" text-anchor="end" style="font-size:14px;paint-order:stroke;stroke:#fdfbf4;stroke-width:5px;stroke-linejoin:round">easy: FAQ,</text>
-      <text class="lbl r" x="101" y="729.6" text-anchor="end" style="font-size:14px;paint-order:stroke;stroke:#fdfbf4;stroke-width:5px;stroke-linejoin:round">classify, extract</text>
-      <text class="lbl r" x="177.1" y="727.6" text-anchor="start" style="font-size:14px;paint-order:stroke;stroke:#fdfbf4;stroke-width:5px;stroke-linejoin:round">hard: reasoning,</text>
-      <text class="lbl r" x="177.1" y="743.6" text-anchor="start" style="font-size:14px;paint-order:stroke;stroke:#fdfbf4;stroke-width:5px;stroke-linejoin:round">code, multi-step</text>
-      <text class="lbl r" x="160" y="839.6" text-anchor="start" style="font-size:14px;paint-order:stroke;stroke:#fdfbf4;stroke-width:5px;stroke-linejoin:round">low confidence /</text>
-      <text class="lbl r" x="160" y="855.6" text-anchor="start" style="font-size:14px;paint-order:stroke;stroke:#fdfbf4;stroke-width:5px;stroke-linejoin:round">invalid JSON</text>
+    <svg viewBox="0 0 660 950" role="img" aria-label="A request path with cache hits, batching, and a small/large model router">
+      <rect class="sk" x="120" y="10" width="160" height="36" rx="8" style="fill:#fdfbf4"/>
+      <text class="lbl b" x="200.0" y="33.0" text-anchor="middle" style="font-size:15px">request</text>
+      <path class="sk red" d="M200 70.0 L325.0 120 L200 170.0 L75.0 120 Z" style="fill:#fff3c4"/>
+      <text class="lbl b" x="200" y="117" text-anchor="middle" style="font-size:14px">exact cache</text>
+      <text class="lbl b" x="200" y="133" text-anchor="middle" style="font-size:14px">hash(prompt, model)</text>
+      <path class="sk red" d="M200 215.0 L340.0 275 L200 335.0 L60.0 275 Z" style="fill:#fff3c4"/>
+      <text class="lbl b" x="200" y="264" text-anchor="middle" style="font-size:14px">semantic cache</text>
+      <text class="lbl b" x="200" y="280" text-anchor="middle" style="font-size:14px">similarity ≥ 0.95</text>
+      <text class="lbl b" x="200" y="296" text-anchor="middle" style="font-size:14px">same tenant + intent</text>
+      <path class="sk red" d="M200 375.0 L340.0 420 L200 465.0 L60.0 420 Z" style="fill:#fff3c4"/>
+      <text class="lbl b" x="200" y="417" text-anchor="middle" style="font-size:14px">router</text>
+      <text class="lbl b" x="200" y="433" text-anchor="middle" style="font-size:14px">(rules + small classifier)</text>
+      <rect class="sk" x="10" y="520" width="180" height="60" rx="8" style="fill:#fdfbf4"/>
+      <text class="lbl b" x="100.0" y="546.0" text-anchor="middle" style="font-size:15px">small model</text>
+      <text class="lbl b" x="100.0" y="564.0" text-anchor="middle" style="font-size:15px">claude-haiku-4-5</text>
+      <rect class="sk" x="330" y="520" width="180" height="60" rx="8" style="fill:#fdfbf4"/>
+      <text class="lbl b" x="420.0" y="546.0" text-anchor="middle" style="font-size:15px">large model</text>
+      <text class="lbl b" x="420.0" y="564.0" text-anchor="middle" style="font-size:15px">claude-opus-5-5</text>
+      <rect class="sk" x="110" y="625" width="280" height="56" rx="8" style="fill:#fdfbf4"/>
+      <text class="lbl b" x="250.0" y="649.0" text-anchor="middle" style="font-size:15px">provider prompt cache:</text>
+      <text class="lbl b" x="250.0" y="667.0" text-anchor="middle" style="font-size:15px">system + tools + docs prefix</text>
+      <rect class="sk" x="110" y="725" width="280" height="40" rx="8" style="fill:#fdfbf4"/>
+      <text class="lbl b" x="250.0" y="750.0" text-anchor="middle" style="font-size:15px">stream tokens to the user</text>
+      <rect class="sk green" x="340" y="805" width="300" height="40" rx="8" style="fill:#fdfbf4"/>
+      <text class="lbl b" x="490.0" y="830.0" text-anchor="middle" style="font-size:15px">response (≈0 ms, $0)</text>
+      <rect class="sk" x="10" y="885" width="240" height="40" rx="8" style="fill:#fdfbf4"/>
+      <text class="lbl b" x="130.0" y="910.0" text-anchor="middle" style="font-size:15px">offline jobs (nightly tagging)</text>
+      <rect class="sk green" x="330" y="885" width="240" height="56" rx="8" style="fill:#fdfbf4"/>
+      <text class="lbl b" x="450.0" y="909.0" text-anchor="middle" style="font-size:15px">Batch API</text>
+      <text class="lbl b" x="450.0" y="927.0" text-anchor="middle" style="font-size:15px">(discounted, async)</text>
+      <path class="sk blue" d="M200 46 L200 70" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M200 170 L200 215" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M200 335 L200 375" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M325 120 L600 120 L600 805" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M340 275 L560 275 L560 805" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M60 420 L100 420 L100 520" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M340 420 L420 420 L420 520" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M190 565 L330 565" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M100 580 C100 605, 150 600, 150 625" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M420 580 C420 605, 350 600, 350 625" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M250 681 L250 725" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M250 765 C250 790, 420 780, 420 805" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M250 910 L330 910" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <text class="lbl r" x="210" y="200" text-anchor="start" style="font-size:14px;paint-order:stroke;stroke:#fdfbf4;stroke-width:5px;stroke-linejoin:round">miss</text>
+      <text class="lbl r" x="210" y="360" text-anchor="start" style="font-size:14px;paint-order:stroke;stroke:#fdfbf4;stroke-width:5px;stroke-linejoin:round">miss</text>
+      <text class="lbl r" x="430" y="112" text-anchor="start" style="font-size:14px;paint-order:stroke;stroke:#fdfbf4;stroke-width:5px;stroke-linejoin:round">hit</text>
+      <text class="lbl r" x="400" y="267" text-anchor="start" style="font-size:14px;paint-order:stroke;stroke:#fdfbf4;stroke-width:5px;stroke-linejoin:round">hit</text>
+      <text class="lbl r" x="110" y="472" text-anchor="start" style="font-size:14px;paint-order:stroke;stroke:#fdfbf4;stroke-width:5px;stroke-linejoin:round">easy: FAQ,</text>
+      <text class="lbl r" x="110" y="488" text-anchor="start" style="font-size:14px;paint-order:stroke;stroke:#fdfbf4;stroke-width:5px;stroke-linejoin:round">classify, extract</text>
+      <text class="lbl r" x="430" y="472" text-anchor="start" style="font-size:14px;paint-order:stroke;stroke:#fdfbf4;stroke-width:5px;stroke-linejoin:round">hard: reasoning,</text>
+      <text class="lbl r" x="430" y="488" text-anchor="start" style="font-size:14px;paint-order:stroke;stroke:#fdfbf4;stroke-width:5px;stroke-linejoin:round">code, multi-step</text>
+      <text class="lbl r" x="260" y="545" text-anchor="middle" style="font-size:14px;paint-order:stroke;stroke:#fdfbf4;stroke-width:5px;stroke-linejoin:round">low confidence /</text>
+      <text class="lbl r" x="260" y="561" text-anchor="middle" style="font-size:14px;paint-order:stroke;stroke:#fdfbf4;stroke-width:5px;stroke-linejoin:round">invalid JSON</text>
     </svg>
     <figcaption>Fig 1: A request path with cache hits, batching, and a small/large model router</figcaption>
   </figure>
@@ -337,49 +329,45 @@ batch = client.messages.batches.create(requests=[
   <h2>Mini project</h2>
   <p><b>An optimized pipeline with cache + routing, showing cost/latency before/after.</b></p>
   <figure>
-    <svg viewBox="6 16 635.3 458" role="img" aria-label="An optimized pipeline with cache + routing, showing cost/latency before/after">
-      <path class="sk blue" d="M280.9 86 C280.9 115.5, 85.9 115.5, 85.9 145" style="color:var(--ink)" marker-end="url(#arr)"/>
-      <path class="sk blue" d="M310.9 86 C310.9 124.5, 243.1 124.5, 243.1 163" style="color:var(--ink)" marker-end="url(#arr)"/>
-      <path class="sk blue" d="M340.9 86 C340.9 124.5, 408.7 124.5, 408.7 163" style="color:var(--ink)" marker-end="url(#arr)"/>
-      <path class="sk blue" d="M370.9 86 C370.9 111, 565.9 111, 565.9 136" style="color:var(--ink)" marker-end="url(#arr)"/>
-      <path class="sk blue" d="M70.9 237 C70.9 266.5, 124.6 266.5, 124.6 296" style="color:var(--ink)" marker-end="url(#arr)"/>
-      <path class="sk blue" d="M228.1 219 C228.1 257.5, 154.6 257.5, 154.6 296" style="color:var(--ink)" marker-end="url(#arr)"/>
-      <path class="sk blue" d="M393.7 219 C393.7 257.5, 184.6 257.5, 184.6 296" style="color:var(--ink)" marker-end="url(#arr)"/>
-      <path class="sk blue" d="M550.9 246 C550.9 271, 214.6 271, 214.6 296" style="color:var(--ink)" marker-end="url(#arr)"/>
-      <path class="sk blue" d="M100.9 237 C100.9 275, 437.2 275, 437.2 313" style="color:var(--ink)" marker-end="url(#arr)"/>
-      <path class="sk blue" d="M258.1 219 C258.1 266, 467.2 266, 467.2 313" style="color:var(--ink)" marker-end="url(#arr)"/>
-      <path class="sk blue" d="M423.7 219 C423.7 266, 497.2 266, 497.2 313" style="color:var(--ink)" marker-end="url(#arr)"/>
-      <path class="sk blue" d="M580.9 246 C580.9 279.5, 527.2 279.5, 527.2 313" style="color:var(--ink)" marker-end="url(#arr)"/>
-      <path class="sk blue" d="M169.6 370 C169.6 395, 310.9 395, 310.9 420" style="color:var(--ink)" marker-end="url(#arr)"/>
-      <path class="sk blue" d="M482.2 353 C482.2 386.5, 340.9 386.5, 340.9 420" style="color:var(--ink)" marker-end="url(#arr)"/>
-      <rect class="sk" x="184.7" y="30" width="282.4" height="56" rx="8" style="fill:#fdfbf4"/>
-      <text class="lbl b" x="325.9" y="54" text-anchor="middle" style="font-size:15px">replay 2,000 realistic requests</text>
-      <text class="lbl b" x="325.9" y="72" text-anchor="middle" style="font-size:15px">(with ~30% paraphrased repeats)</text>
-      <rect class="sk" x="24.5" y="145" width="122.8" height="92" rx="8" style="fill:#fdfbf4"/>
-      <text class="lbl b" x="85.9" y="169" text-anchor="middle" style="font-size:15px">v0: large</text>
-      <text class="lbl b" x="85.9" y="187" text-anchor="middle" style="font-size:15px">model,</text>
-      <text class="lbl b" x="85.9" y="205" text-anchor="middle" style="font-size:15px">no cache, no</text>
-      <text class="lbl b" x="85.9" y="223" text-anchor="middle" style="font-size:15px">streaming</text>
-      <rect class="sk" x="173.3" y="163" width="139.6" height="56" rx="8" style="fill:#fdfbf4"/>
-      <text class="lbl b" x="243.1" y="187" text-anchor="middle" style="font-size:15px">v1: + exact +</text>
-      <text class="lbl b" x="243.1" y="205" text-anchor="middle" style="font-size:15px">semantic cache</text>
-      <rect class="sk" x="338.9" y="163" width="139.6" height="56" rx="8" style="fill:#fdfbf4"/>
-      <text class="lbl b" x="408.7" y="187" text-anchor="middle" style="font-size:15px">v2: + router +</text>
-      <text class="lbl b" x="408.7" y="205" text-anchor="middle" style="font-size:15px">cascade</text>
-      <rect class="sk" x="504.5" y="136" width="122.8" height="110" rx="8" style="fill:#fdfbf4"/>
-      <text class="lbl b" x="565.9" y="160" text-anchor="middle" style="font-size:15px">v3: + prompt</text>
-      <text class="lbl b" x="565.9" y="178" text-anchor="middle" style="font-size:15px">caching +</text>
-      <text class="lbl b" x="565.9" y="196" text-anchor="middle" style="font-size:15px">trimmed</text>
-      <text class="lbl b" x="565.9" y="214" text-anchor="middle" style="font-size:15px">prompts +</text>
-      <text class="lbl b" x="565.9" y="232" text-anchor="middle" style="font-size:15px">streaming</text>
-      <rect class="sk" x="20" y="296" width="299.2" height="74" rx="8" style="fill:#fdfbf4"/>
-      <text class="lbl b" x="169.6" y="320" text-anchor="middle" style="font-size:15px">metrics: $/request, TTFT p50/p95,</text>
-      <text class="lbl b" x="169.6" y="338" text-anchor="middle" style="font-size:15px">total latency, cache hits, wrong</text>
-      <text class="lbl b" x="169.6" y="356" text-anchor="middle" style="font-size:15px">hits</text>
-      <rect class="sk" x="345.2" y="313" width="274" height="40" rx="8" style="fill:#fdfbf4"/>
-      <text class="lbl b" x="482.2" y="338" text-anchor="middle" style="font-size:15px">eval score (Ch 17) per version</text>
-      <rect class="sk green" x="226.7" y="420" width="198.4" height="40" rx="8" style="fill:#fdfbf4"/>
-      <text class="lbl b" x="325.9" y="445" text-anchor="middle" style="font-size:15px">results table + chart</text>
+    <svg viewBox="0 0 680 480" role="img" aria-label="An optimized pipeline with cache + routing, showing cost/latency before/after">
+      <rect class="sk" x="120" y="10" width="440" height="56" rx="8" style="fill:#fdfbf4"/>
+      <text class="lbl b" x="340.0" y="34.0" text-anchor="middle" style="font-size:15px">replay 2,000 realistic requests</text>
+      <text class="lbl b" x="340.0" y="52.0" text-anchor="middle" style="font-size:15px">(with ~30% paraphrased repeats)</text>
+      <rect class="sk" x="6" y="120" width="158" height="70" rx="8" style="fill:#fdfbf4"/>
+      <text class="lbl b" x="85.0" y="142.0" text-anchor="middle" style="font-size:14px">v0: large model,</text>
+      <text class="lbl b" x="85.0" y="160.0" text-anchor="middle" style="font-size:14px">no cache, no</text>
+      <text class="lbl b" x="85.0" y="178.0" text-anchor="middle" style="font-size:14px">streaming</text>
+      <path class="sk blue" d="M340 66 C340 95, 85 90, 85 120" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M85 190 L85 245" style="color:var(--ink)"/>
+      <rect class="sk" x="176" y="120" width="158" height="70" rx="8" style="fill:#fdfbf4"/>
+      <text class="lbl b" x="255.0" y="151.0" text-anchor="middle" style="font-size:14px">v1: + exact +</text>
+      <text class="lbl b" x="255.0" y="169.0" text-anchor="middle" style="font-size:14px">semantic cache</text>
+      <path class="sk blue" d="M340 66 C340 95, 255 90, 255 120" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M255 190 L255 245" style="color:var(--ink)"/>
+      <rect class="sk" x="346" y="120" width="158" height="70" rx="8" style="fill:#fdfbf4"/>
+      <text class="lbl b" x="425.0" y="151.0" text-anchor="middle" style="font-size:14px">v2: + router +</text>
+      <text class="lbl b" x="425.0" y="169.0" text-anchor="middle" style="font-size:14px">cascade</text>
+      <path class="sk blue" d="M340 66 C340 95, 425 90, 425 120" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M425 190 L425 245" style="color:var(--ink)"/>
+      <rect class="sk" x="516" y="120" width="158" height="70" rx="8" style="fill:#fdfbf4"/>
+      <text class="lbl b" x="595.0" y="142.0" text-anchor="middle" style="font-size:14px">v3: + prompt</text>
+      <text class="lbl b" x="595.0" y="160.0" text-anchor="middle" style="font-size:14px">caching + trimmed</text>
+      <text class="lbl b" x="595.0" y="178.0" text-anchor="middle" style="font-size:14px">prompts + streaming</text>
+      <path class="sk blue" d="M340 66 C340 95, 595 90, 595 120" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M595 190 L595 245" style="color:var(--ink)"/>
+      <path class="sk blue" d="M85 245 L595 245" style="color:var(--ink)"/>
+      <path class="sk blue" d="M175 245 L175 290" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M505 245 L505 290" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <rect class="sk" x="10" y="290" width="330" height="70" rx="8" style="fill:#fdfbf4"/>
+      <text class="lbl b" x="175.0" y="312.0" text-anchor="middle" style="font-size:15px">metrics: $/request, TTFT p50/p95,</text>
+      <text class="lbl b" x="175.0" y="330.0" text-anchor="middle" style="font-size:15px">total latency, cache hits,</text>
+      <text class="lbl b" x="175.0" y="348.0" text-anchor="middle" style="font-size:15px">wrong hits</text>
+      <rect class="sk" x="350" y="290" width="320" height="56" rx="8" style="fill:#fdfbf4"/>
+      <text class="lbl b" x="510.0" y="323.0" text-anchor="middle" style="font-size:15px">eval score (Ch 17) per version</text>
+      <rect class="sk green" x="220" y="420" width="240" height="40" rx="8" style="fill:#fdfbf4"/>
+      <text class="lbl b" x="340.0" y="445.0" text-anchor="middle" style="font-size:15px">results table + chart</text>
+      <path class="sk blue" d="M175 360 C175 395, 300 385, 300 420" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M510 346 C510 390, 380 380, 380 420" style="color:var(--ink)" marker-end="url(#arr)"/>
     </svg>
     <figcaption>Fig 2: An optimized pipeline with cache + routing, showing cost/latency before/after</figcaption>
   </figure>

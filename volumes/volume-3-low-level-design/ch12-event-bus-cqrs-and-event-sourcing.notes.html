@@ -199,7 +199,7 @@ a{color:var(--ink);text-decoration:underline dotted}
 <rect class="sk" x="324.0" y="23.5" width="132.0" height="73.0" rx="10"/>
 <text class="lbl" x="390.0" y="46.0" text-anchor="middle" style="font-size:14px">write model<tspan x="390.0" dy="19">Cart aggregate</tspan><tspan x="390.0" dy="19">(invariants)</tspan></text>
 <rect class="sk" x="501.0" y="14.0" width="124.0" height="92.0" rx="14"/>
-<path class="sk" d="M507.0 24.0 Q 563.0 34.0 619.0 24.0"/>
+<path class="sk" d="M507 20 Q 563 26 619 20"/>
 <text class="lbl" x="563.0" y="36.5" text-anchor="middle" style="font-size:14px">event store<tspan x="563.0" dy="19">CartCreated ·</tspan><tspan x="563.0" dy="19">ItemAdded ·</tspan><tspan x="563.0" dy="19">ItemRemoved</tspan></text>
 <rect class="sk" x="517.0" y="172.5" width="92.0" height="35.0" rx="10"/>
 <text class="lbl" x="563.0" y="195.0" text-anchor="middle" style="font-size:14px">event bus</text>
@@ -208,10 +208,10 @@ a{color:var(--ink);text-decoration:underline dotted}
 <rect class="sk" x="328.0" y="248.0" width="124.0" height="54.0" rx="10"/>
 <text class="lbl" x="390.0" y="270.5" text-anchor="middle" style="font-size:14px">projection:<tspan x="390.0" dy="19">popular items</tspan></text>
 <rect class="sk" x="157.0" y="153.5" width="116.0" height="73.0" rx="14"/>
-<path class="sk" d="M163.0 163.5 Q 215.0 173.5 267.0 163.5"/>
+<path class="sk" d="M163 159.5 Q 215 165.5 267 159.5"/>
 <text class="lbl" x="215.0" y="176.0" text-anchor="middle" style="font-size:14px">read model:<tspan x="215.0" dy="19">cart_view</tspan><tspan x="215.0" dy="19">items, total</tspan></text>
 <rect class="sk" x="157.0" y="248.0" width="116.0" height="54.0" rx="14"/>
-<path class="sk" d="M163.0 258.0 Q 215.0 268.0 267.0 258.0"/>
+<path class="sk" d="M163 254 Q 215 260 267 254"/>
 <text class="lbl" x="215.0" y="270.5" text-anchor="middle" style="font-size:14px">read model:<tspan x="215.0" dy="19">item_counts</tspan></text>
 <rect class="sk" x="12.0" y="163.0" width="108.0" height="54.0" rx="10"/>
 <text class="lbl" x="66.0" y="185.5" text-anchor="middle" style="font-size:14px">query<tspan x="66.0" dy="19">GetCart(id)</tspan></text>
@@ -374,7 +374,7 @@ print(cart_view["cart-7"]["total"], rehydrate(store.load("cart-7")).version)   #
 <rect class="sk" x="250.0" y="93.0" width="240.0" height="54.0" rx="10"/>
 <text class="lbl" x="370.0" y="115.5" text-anchor="middle" style="font-size:14px">command handlers<tspan x="370.0" dy="19">(rehydrate → check → append)</tspan></text>
 <rect class="sk" x="263.0" y="183.0" width="214.0" height="54.0" rx="14"/>
-<path class="sk" d="M269.0 193.0 Q 370.0 203.0 471.0 193.0"/>
+<path class="sk" d="M269 189 Q 370 195 471 189"/>
 <text class="lbl" x="370.0" y="205.5" text-anchor="middle" style="font-size:14px">SQLite event store<tspan x="370.0" dy="19">(stream, version) UNIQUE</tspan></text>
 <rect class="sk" x="505.0" y="183.0" width="140.0" height="54.0" rx="10"/>
 <text class="lbl" x="575.0" y="205.5" text-anchor="middle" style="font-size:14px">snapshot every<tspan x="575.0" dy="19">100 events</tspan></text>

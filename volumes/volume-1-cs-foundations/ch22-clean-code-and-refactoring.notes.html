@@ -216,28 +216,28 @@ a{color:var(--ink);text-decoration:underline dotted}
 
   <h3>The refactoring loop</h3>
   <figure>
-    <svg viewBox="0 0 640 350" role="img" aria-label="Red: write a failing test, then Green: simplest code to pass, then Refactor: rename, extract, simplify, then a check: tests still green? yes goes back to Red, no goes to undo the last step and back to Refactor">
-      <rect class="sk red" x="20" y="30" width="170" height="64" rx="12" style="fill:var(--hl-pink)"/>
+    <svg viewBox="0 0 660 350" role="img" aria-label="Red: write a failing test, then Green: simplest code to pass, then Refactor: rename, extract, simplify, then a check: tests still green? yes goes back to Red, no goes to undo the last step and back to Refactor">
+      <rect class="sk red" x="10" y="30" width="190" height="64" rx="12" style="fill:var(--hl-pink)"/>
       <text class="lbl b" x="105" y="57" text-anchor="middle">Red</text>
       <text class="lbl" x="105" y="80" text-anchor="middle" style="font-size:14px">write a failing test</text>
-      <rect class="sk green" x="235" y="30" width="170" height="64" rx="12" style="fill:var(--hl-green)"/>
+      <rect class="sk green" x="225" y="30" width="190" height="64" rx="12" style="fill:var(--hl-green)"/>
       <text class="lbl b" x="320" y="57" text-anchor="middle">Green</text>
       <text class="lbl" x="320" y="80" text-anchor="middle" style="font-size:14px">simplest code to pass</text>
-      <rect class="sk" x="440" y="30" width="170" height="64" rx="12"/>
-      <text class="lbl b" x="525" y="57" text-anchor="middle">Refactor</text>
-      <text class="lbl" x="525" y="80" text-anchor="middle" style="font-size:14px">rename, extract, simplify</text>
-      <path class="sk blue" d="M190 62 L233 62" style="color:var(--ink)" marker-end="url(#arr)"/>
-      <path class="sk blue" d="M405 62 L438 62" style="color:var(--ink)" marker-end="url(#arr)"/>
-      <path class="sk blue" d="M525 94 L525 163" style="color:var(--ink)" marker-end="url(#arr)"/>
-      <text class="lbl r" x="515" y="134" text-anchor="end">tests still green?</text>
-      <path class="sk" d="M525 165 L585 200 L525 235 L465 200 Z"/>
-      <path class="sk green" d="M465 200 C 300 262, 105 235, 105 98" style="color:var(--green)" marker-end="url(#arr)"/>
-      <text class="lbl g" x="290" y="256" text-anchor="middle">yes</text>
-      <path class="sk red" d="M525 235 L525 283" style="color:var(--red)" marker-end="url(#arr)"/>
-      <text class="lbl r" x="540" y="264">no</text>
-      <rect class="sk" x="420" y="285" width="190" height="44" rx="10"/>
-      <text class="lbl b" x="515" y="313" text-anchor="middle">undo the last step</text>
-      <path class="sk blue" d="M610 307 C 645 280, 645 130, 612 72" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <rect class="sk" x="440" y="30" width="190" height="64" rx="12"/>
+      <text class="lbl b" x="535" y="57" text-anchor="middle">Refactor</text>
+      <text class="lbl" x="535" y="80" text-anchor="middle" style="font-size:14px">rename, extract, simplify</text>
+      <path class="sk blue" d="M200 62 L223 62" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M415 62 L438 62" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M535 94 L535 143" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk" d="M535 145 L635 185 L535 225 L435 185 Z"/>
+      <text class="lbl r" x="535" y="191" text-anchor="middle" style="font-size:15px">tests still green?</text>
+      <path class="sk green" d="M435 185 C 260 185, 105 200, 105 98" style="color:var(--green)" marker-end="url(#arr)"/>
+      <text class="lbl g" x="270" y="222" text-anchor="middle">yes</text>
+      <path class="sk red" d="M535 225 L535 283" style="color:var(--red)" marker-end="url(#arr)"/>
+      <text class="lbl r" x="550" y="260">no</text>
+      <rect class="sk" x="440" y="285" width="190" height="44" rx="10"/>
+      <text class="lbl b" x="535" y="313" text-anchor="middle">undo the last step</text>
+      <path class="sk blue" d="M630 307 C 664 290, 664 100, 632 72" style="color:var(--ink)" marker-end="url(#arr)"/>
     </svg>
     <figcaption>Fig 1: the refactoring loop — if the tests go red, undo the last step and try again</figcaption>
   </figure>

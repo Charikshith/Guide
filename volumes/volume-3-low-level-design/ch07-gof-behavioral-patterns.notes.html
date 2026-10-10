@@ -245,14 +245,14 @@ a{color:var(--ink);text-decoration:underline dotted}
       <path class="sk" d="M570 46 L570 262" style="stroke-dasharray:3 7;stroke-width:1.6"/>
       <rect class="sk" x="10" y="70" width="251" height="28" rx="3" style="fill:var(--sticky)"/>
       <text class="lbl" x="20" y="89" style="font-size:14px">subscribers registered at startup</text>
-      <path class="sk blue" d="M90 126 C 140 126, 140 150, 93 150" style="color:var(--ink)" marker-end="url(#arr)"/>
-      <text class="lbl sq" x="146" y="142">mark_paid()</text>
-      <path class="sk blue" d="M90 170 L247 170" style="color:var(--ink)" marker-end="url(#arr)"/>
-      <text class="lbl sq" x="98" y="162">notify("paid", order)</text>
-      <path class="sk blue" d="M90 204 L407 204" style="color:var(--ink)" marker-end="url(#arr)"/>
-      <text class="lbl sq" x="98" y="196">notify("paid", order)</text>
-      <path class="sk blue" d="M90 238 L567 238" style="color:var(--ink)" marker-end="url(#arr)"/>
-      <text class="lbl sq" x="98" y="230">notify("paid", order)</text>
+      <path class="sk blue" d="M90 114 C 140 114, 140 140, 93 140" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <text class="lbl sq" x="146" y="132">mark_paid()</text>
+      <path class="sk blue" d="M90 176 L247 176" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <text class="lbl sq" x="98" y="168">notify("paid", order)</text>
+      <path class="sk blue" d="M90 208 L407 208" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <text class="lbl sq" x="98" y="200">notify("paid", order)</text>
+      <path class="sk blue" d="M90 240 L567 240" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <text class="lbl sq" x="98" y="232">notify("paid", order)</text>
       </svg>
     <figcaption>Fig 2: Observer — note over Order: "subscribers registered at startup"; then <code>mark_paid()</code> on itself, and a <code>notify</code> to each observer</figcaption>
   </figure>

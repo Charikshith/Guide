@@ -211,39 +211,31 @@ a{color:var(--ink);text-decoration:underline dotted}
   <h2>Diagram</h2>
   <h3>A service mesh with sidecars intercepting traffic</h3>
   <figure>
-    <svg viewBox="0 0 660 440" role="img" aria-label="Pod orders: orders app sends plaintext localhost to its sidecar proxy. Pod payments: sidecar proxy sends plaintext localhost to payments app. The two sidecars talk over mTLS with identity sa/orders, retries and timeout 2 s. The control plane (config, certificates, endpoints) pushes xDS to both sidecars. Both sidecars send metrics and traces to a telemetry backend">
-      <rect class="sk" x="185" y="8" width="290" height="62" rx="12"/>
-      <text class="lbl b" x="330" y="34" text-anchor="middle">control plane</text>
-      <text class="lbl" x="330" y="58" text-anchor="middle" style="font-size:16px">(config, certificates, endpoints)</text>
-      <rect class="sk" x="10" y="130" width="240" height="175" rx="12" style="stroke-dasharray:8 6"/>
-      <text class="lbl r" x="130" y="154" text-anchor="middle">pod: orders</text>
-      <rect class="sk" x="30" y="170" width="200" height="40" rx="8"/>
-      <text class="lbl b" x="130" y="196" text-anchor="middle">orders app</text>
-      <rect class="sk" x="30" y="245" width="200" height="40" rx="8"/>
-      <text class="lbl b" x="130" y="271" text-anchor="middle">sidecar proxy</text>
-      <path class="sk blue" d="M70 210 L70 243" style="color:var(--ink)" marker-end="url(#arr)"/>
-      <text class="lbl" x="82" y="232" style="font-size:14px">plaintext localhost</text>
-      <rect class="sk" x="410" y="130" width="240" height="175" rx="12" style="stroke-dasharray:8 6"/>
-      <text class="lbl r" x="530" y="154" text-anchor="middle">pod: payments</text>
-      <rect class="sk" x="430" y="170" width="200" height="40" rx="8"/>
-      <text class="lbl b" x="530" y="196" text-anchor="middle">payments app</text>
-      <rect class="sk" x="430" y="245" width="200" height="40" rx="8"/>
-      <text class="lbl b" x="530" y="271" text-anchor="middle">sidecar proxy</text>
-      <path class="sk blue" d="M470 243 L470 212" style="color:var(--ink)" marker-end="url(#arr)"/>
-      <text class="lbl" x="482" y="232" style="font-size:14px">plaintext localhost</text>
-      <path class="sk green" d="M230 265 L428 265" style="color:var(--green);stroke-width:5" marker-end="url(#arr)"/>
-      <text class="lbl g" x="330" y="196" text-anchor="middle" style="font-size:15px">mTLS</text>
-      <text class="lbl g" x="330" y="216" text-anchor="middle" style="font-size:15px">identity: sa/orders</text>
-      <text class="lbl g" x="330" y="236" text-anchor="middle" style="font-size:15px">retries, timeout 2 s</text>
-      <path class="sk blue" d="M250 70 C 200 100, 150 135, 125 243" style="stroke-dasharray:6 6;color:var(--ink)" marker-end="url(#arr)"/>
-      <path class="sk blue" d="M410 70 C 460 100, 510 135, 535 243" style="stroke-dasharray:6 6;color:var(--ink)" marker-end="url(#arr)"/>
-      <text class="lbl b" x="300" y="106" text-anchor="middle">xDS</text>
-      <rect class="sk" x="215" y="375" width="230" height="46" rx="12"/>
-      <text class="lbl b" x="330" y="404" text-anchor="middle">telemetry backend</text>
-      <path class="sk green" d="M130 287 C 150 340, 210 365, 260 373" style="stroke-dasharray:6 6;color:var(--green)" marker-end="url(#arr)"/>
-      <path class="sk green" d="M530 287 C 510 340, 450 365, 400 373" style="stroke-dasharray:6 6;color:var(--green)" marker-end="url(#arr)"/>
-      <text class="lbl g" x="330" y="345" text-anchor="middle" style="font-size:15px">metrics, traces</text>
-    </svg>
+<svg viewBox="0 0 660 440" role="img" aria-label="Pod orders: orders app sends plaintext localhost to its sidecar proxy. Pod payments: sidecar proxy sends plaintext localhost to payments app. The two sidecars talk over mTLS with identity sa/orders, retries and timeout 2 s. The control plane (config, certificates, endpoints) pushes xDS to both sidecars. Both sidecars send metrics and traces to a telemetry backend">
+<rect class="sk" x="185" y="8" width="290" height="62" rx="12"/><text class="lbl b" x="330" y="34" text-anchor="middle">control plane</text><text class="lbl " x="330" y="56" text-anchor="middle">(config, certificates, endpoints)</text>
+<rect class="sk" x="10" y="125" width="220" height="215" rx="12" style="stroke-dasharray:8 6"/>
+<text class="lbl r" x="120" y="148" text-anchor="middle">pod: orders</text>
+<rect class="sk" x="30" y="165" width="180" height="40" rx="8"/><text class="lbl b" x="120" y="191" text-anchor="middle">orders app</text>
+<rect class="sk" x="30" y="265" width="180" height="40" rx="8"/><text class="lbl b" x="120" y="291" text-anchor="middle">sidecar proxy</text>
+<rect class="sk" x="430" y="125" width="220" height="215" rx="12" style="stroke-dasharray:8 6"/>
+<text class="lbl r" x="540" y="148" text-anchor="middle">pod: payments</text>
+<rect class="sk" x="450" y="165" width="180" height="40" rx="8"/><text class="lbl b" x="540" y="191" text-anchor="middle">payments app</text>
+<rect class="sk" x="450" y="265" width="180" height="40" rx="8"/><text class="lbl b" x="540" y="291" text-anchor="middle">sidecar proxy</text>
+<path class="sk blue" style="color:var(--ink)" d="M60 207 L60 263" marker-end="url(#arr)"/>
+<text class="lbl " x="70" y="240" text-anchor="start">plaintext localhost</text>
+<path class="sk blue" style="color:var(--ink)" d="M480 263 L480 207" marker-end="url(#arr)"/>
+<text class="lbl " x="490" y="240" text-anchor="start">plaintext localhost</text>
+<path class="sk green" style="color:var(--green);stroke-width:5" d="M210 292 L448 292" marker-end="url(#arr)"/>
+<text class="lbl g" x="330" y="226" text-anchor="middle">mTLS</text><text class="lbl g" x="330" y="244" text-anchor="middle">identity: sa/orders</text><text class="lbl g" x="330" y="262" text-anchor="middle">retries, timeout 2 s</text>
+<path class="sk blue" style="color:var(--ink);stroke-dasharray:6 6" d="M236 70 L236 272 L212 272" marker-end="url(#arr)"/>
+<path class="sk blue" style="color:var(--ink);stroke-dasharray:6 6" d="M424 70 L424 272 L448 272" marker-end="url(#arr)"/>
+<text class="lbl " x="244" y="100" text-anchor="start">xDS</text>
+<text class="lbl " x="416" y="100" text-anchor="end">xDS</text>
+<rect class="sk" x="215" y="385" width="230" height="46" rx="12"/><text class="lbl b" x="330" y="414" text-anchor="middle">telemetry backend</text>
+<path class="sk green" style="color:var(--green);stroke-dasharray:6 6" d="M120 307 C 125 360, 170 405, 213 408" marker-end="url(#arr)"/>
+<path class="sk green" style="color:var(--green);stroke-dasharray:6 6" d="M540 307 C 535 360, 490 405, 447 408" marker-end="url(#arr)"/>
+<text class="lbl g" x="330" y="372" text-anchor="middle">metrics, traces</text>
+</svg>
     <figcaption>Fig 1: sidecar mesh — app ↔ sidecar in plaintext on localhost, sidecar ↔ sidecar over mTLS (thick arrow), control plane pushes xDS config (dotted), sidecars emit telemetry</figcaption>
   </figure>
 
@@ -383,47 +375,33 @@ linkerd viz stat deploy -n shop                         # success rate, RPS, p50
   <p><b>Design service discovery + resilience for a microservice fleet.</b></p>
   <p>Scope: 60 services, 3 languages, 2,000 pods across 3 zones, 50k internal RPS; compliance requires encryption and identity on every internal call.</p>
   <figure>
-    <svg viewBox="0 0 660 550" role="img" aria-label="Ingress gateway (mTLS inside) routes to orders and search. Inside a Kubernetes cluster across 3 zones: namespace checkout has orders+proxy calling payments+proxy; namespace catalog has search+proxy calling inventory+proxy; orders also calls inventory. The mesh control plane (HA, 3 replicas; CA, config, endpoint discovery) is linked by dotted lines to all four. A telemetry box (metrics, traces, access logs) is also linked by dotted lines to all four">
-      <rect class="sk" x="190" y="8" width="280" height="54" rx="12"/>
-      <text class="lbl b" x="330" y="32" text-anchor="middle">ingress gateway</text>
-      <text class="lbl" x="330" y="52" text-anchor="middle" style="font-size:15px">(mTLS inside)</text>
-      <rect class="sk" x="10" y="90" width="640" height="350" rx="14" style="stroke-dasharray:8 6"/>
-      <text class="lbl r" x="330" y="114" text-anchor="middle">Kubernetes cluster (3 zones)</text>
-      <rect class="sk" x="25" y="130" width="300" height="140" rx="12" style="stroke-dasharray:8 6"/>
-      <text class="lbl r" x="175" y="154" text-anchor="middle" style="font-size:16px">namespace: checkout</text>
-      <rect class="sk" x="40" y="185" width="120" height="52" rx="8"/>
-      <text class="lbl b" x="100" y="207" text-anchor="middle" style="font-size:16px">orders</text>
-      <text class="lbl" x="100" y="227" text-anchor="middle" style="font-size:15px">+ proxy</text>
-      <rect class="sk" x="190" y="185" width="120" height="52" rx="8"/>
-      <text class="lbl b" x="250" y="207" text-anchor="middle" style="font-size:16px">payments</text>
-      <text class="lbl" x="250" y="227" text-anchor="middle" style="font-size:15px">+ proxy</text>
-      <path class="sk blue" d="M160 211 L188 211" style="color:var(--ink)" marker-end="url(#arr)"/>
-      <rect class="sk" x="335" y="130" width="300" height="140" rx="12" style="stroke-dasharray:8 6"/>
-      <text class="lbl r" x="485" y="154" text-anchor="middle" style="font-size:16px">namespace: catalog</text>
-      <rect class="sk" x="350" y="185" width="120" height="52" rx="8"/>
-      <text class="lbl b" x="410" y="207" text-anchor="middle" style="font-size:16px">search</text>
-      <text class="lbl" x="410" y="227" text-anchor="middle" style="font-size:15px">+ proxy</text>
-      <rect class="sk" x="500" y="185" width="120" height="52" rx="8"/>
-      <text class="lbl b" x="560" y="207" text-anchor="middle" style="font-size:16px">inventory</text>
-      <text class="lbl" x="560" y="227" text-anchor="middle" style="font-size:15px">+ proxy</text>
-      <path class="sk blue" d="M470 211 L498 211" style="color:var(--ink)" marker-end="url(#arr)"/>
-      <path class="sk blue" d="M100 237 C 100 305, 560 305, 560 239" style="color:var(--ink)" marker-end="url(#arr)"/>
-      <path class="sk blue" d="M240 62 C 130 85, 70 130, 85 183" style="color:var(--ink)" marker-end="url(#arr)"/>
-      <path class="sk blue" d="M420 62 C 440 100, 425 140, 412 183" style="color:var(--ink)" marker-end="url(#arr)"/>
-      <path class="sk green" d="M270 505 C 270 440, 250 300, 252 239" style="stroke-dasharray:6 6;color:var(--green)" marker-end="url(#arr)"/>
-      <path class="sk green" d="M390 505 C 390 440, 410 300, 410 239" style="stroke-dasharray:6 6;color:var(--green)" marker-end="url(#arr)"/>
-      <path class="sk green" d="M200 515 C 40 500, 20 330, 90 239" style="stroke-dasharray:6 6;color:var(--green)" marker-end="url(#arr)"/>
-      <path class="sk green" d="M460 515 C 620 500, 640 330, 570 239" style="stroke-dasharray:6 6;color:var(--green)" marker-end="url(#arr)"/>
-      <rect class="sk" x="120" y="335" width="420" height="66" rx="12" style="fill:var(--paper)"/>
-      <text class="lbl b" x="330" y="361" text-anchor="middle" style="font-size:16px">mesh control plane (HA, 3 replicas)</text>
-      <text class="lbl" x="330" y="385" text-anchor="middle" style="font-size:16px">CA · config · endpoint discovery</text>
-      <path class="sk blue" d="M170 335 C 150 300, 120 270, 105 239" style="stroke-dasharray:6 6;color:var(--ink)" marker-end="url(#arr)"/>
-      <path class="sk blue" d="M250 335 C 265 300, 260 270, 256 239" style="stroke-dasharray:6 6;color:var(--ink)" marker-end="url(#arr)"/>
-      <path class="sk blue" d="M410 335 C 405 300, 408 270, 411 239" style="stroke-dasharray:6 6;color:var(--ink)" marker-end="url(#arr)"/>
-      <path class="sk blue" d="M490 335 C 520 300, 545 270, 552 239" style="stroke-dasharray:6 6;color:var(--ink)" marker-end="url(#arr)"/>
-      <rect class="sk green" x="190" y="490" width="280" height="50" rx="12"/>
-      <text class="lbl g" x="330" y="521" text-anchor="middle" style="font-size:16px">metrics · traces · access logs</text>
-    </svg>
+<svg viewBox="0 0 660 460" role="img" aria-label="Ingress gateway (mTLS inside) routes to orders and search. Inside a Kubernetes cluster across 3 zones: namespace checkout has orders+proxy calling payments+proxy; namespace catalog has search+proxy calling inventory+proxy; orders also calls inventory. The mesh control plane (HA, 3 replicas; CA, config, endpoint discovery) is linked by dotted lines to all four. A telemetry box (metrics, traces, access logs) is also linked by dotted lines to all four">
+<rect class="sk" x="190" y="8" width="280" height="50" rx="12"/><text class="lbl b" x="330" y="30" text-anchor="middle">ingress gateway</text><text class="lbl " x="330" y="49" text-anchor="middle">(mTLS inside)</text>
+<rect class="sk" x="30" y="88" width="600" height="292" rx="14" style="stroke-dasharray:8 6"/><text class="lbl r" x="45" y="109" style="font-size:14px">Kubernetes cluster (3 zones)</text>
+<rect class="sk" x="42" y="118" width="280" height="120" rx="12" style="stroke-dasharray:8 6"/><text class="lbl r" x="52" y="142" text-anchor="start">namespace: checkout</text>
+<rect class="sk" x="338" y="118" width="280" height="120" rx="12" style="stroke-dasharray:8 6"/><text class="lbl r" x="348" y="142" text-anchor="start">namespace: catalog</text>
+<rect class="sk" x="52" y="158" width="110" height="52" rx="8"/><text class="lbl b" x="107" y="182" text-anchor="middle">payments</text><text class="lbl " x="107" y="201" text-anchor="middle">+ proxy</text>
+<rect class="sk" x="192" y="158" width="110" height="52" rx="8"/><text class="lbl b" x="247" y="182" text-anchor="middle">orders</text><text class="lbl " x="247" y="201" text-anchor="middle">+ proxy</text>
+<rect class="sk" x="348" y="158" width="110" height="52" rx="8"/><text class="lbl b" x="403" y="182" text-anchor="middle">inventory</text><text class="lbl " x="403" y="201" text-anchor="middle">+ proxy</text>
+<rect class="sk" x="498" y="158" width="110" height="52" rx="8"/><text class="lbl b" x="553" y="182" text-anchor="middle">search</text><text class="lbl " x="553" y="201" text-anchor="middle">+ proxy</text>
+<path class="sk blue" style="color:var(--ink)" d="M190 184 L164 184" marker-end="url(#arr)"/>
+<path class="sk blue" style="color:var(--ink)" d="M304 184 L346 184" marker-end="url(#arr)"/>
+<path class="sk blue" style="color:var(--ink)" d="M496 184 L460 184" marker-end="url(#arr)"/>
+<path class="sk blue" style="color:var(--ink)" d="M260 58 L260 156" marker-end="url(#arr)"/>
+<path class="sk blue" style="color:var(--ink)" d="M420 58 C 470 80, 553 90, 553 156" marker-end="url(#arr)"/>
+<rect class="sk" x="40" y="312" width="300" height="54" rx="12" style="fill:var(--paper)"/><text class="lbl b" x="190" y="336" text-anchor="middle">mesh control plane (HA, 3 replicas)</text><text class="lbl " x="190" y="356" text-anchor="middle">CA · config · endpoint discovery</text>
+<path class="sk blue" style="color:var(--ink);stroke-dasharray:6 6" d="M93 312 L93 212" marker-end="url(#arr)"/>
+<path class="sk blue" style="color:var(--ink);stroke-dasharray:6 6" d="M93 296 L233 296 L233 212" marker-end="url(#arr)"/>
+<path class="sk blue" style="color:var(--ink);stroke-dasharray:6 6" d="M389 296 L389 212" marker-end="url(#arr)"/>
+<path class="sk blue" style="color:var(--ink);stroke-dasharray:6 6" d="M539 296 L539 212" marker-end="url(#arr)"/>
+<path class="sk blue" style="color:var(--ink);stroke-dasharray:6 6" d="M233 296 L539 296"/>
+<rect class="sk green" x="380" y="400" width="250" height="46" rx="12"/><text class="lbl g" x="505" y="429" text-anchor="middle">metrics · traces · access logs</text>
+<path class="sk green" style="color:var(--green);stroke-dasharray:6 6" d="M615 398 L615 262 L121 262"/>
+<path class="sk green" style="color:var(--green);stroke-dasharray:6 6" d="M121 262 L121 212" marker-end="url(#arr)"/>
+<path class="sk green" style="color:var(--green);stroke-dasharray:6 6" d="M261 262 L261 212" marker-end="url(#arr)"/>
+<path class="sk green" style="color:var(--green);stroke-dasharray:6 6" d="M417 262 L417 212" marker-end="url(#arr)"/>
+<path class="sk green" style="color:var(--green);stroke-dasharray:6 6" d="M567 262 L567 212" marker-end="url(#arr)"/>
+</svg>
     <figcaption>Fig 4: fleet design — ingress gateway → orders and search; control plane (dotted blue) configures all proxies; telemetry (dotted green) collects from all four</figcaption>
   </figure>
 

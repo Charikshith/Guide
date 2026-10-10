@@ -203,50 +203,50 @@ a{color:var(--ink);text-decoration:underline dotted}
   <h2>Diagram</h2>
   <p><b>A high-level transformer (decoder-only) diagram</b></p>
 <figure>
-<svg viewBox="0 0 640 600" role="img" aria-label="Decoder-only transformer: text, tokenizer, embedding lookup, N transformer blocks each with RMSNorm, masked self-attention, residual, RMSNorm, feed-forward MLP, residual, then final norm, LM head, softmax, next token">
-<rect class="sk" x="20" y="215" width="600" height="235" rx="12" style="stroke-dasharray:8 6"/>
-<text class="lbl r" x="608" y="238" text-anchor="end">Transformer block × N (e.g. 32)</text>
-<rect class="sk" x="24" y="10" width="252" height="40" rx="10"/>
-<text class="lbl b" x="150" y="35.5" text-anchor="middle">text: 'The cat sat on the'</text>
+<svg viewBox="0 0 640 650" role="img" aria-label="Decoder-only transformer: text, tokenizer, embedding lookup, N transformer blocks each with RMSNorm, masked self-attention, residual, RMSNorm, feed-forward MLP, residual, then final norm, LM head, softmax, next token">
+<rect class="sk" x="10" y="238" width="620" height="252" rx="12" style="stroke-dasharray:8 6"/>
+<text class="lbl r" x="618" y="262" text-anchor="end">Transformer block × N (e.g. 32)</text>
+<rect class="sk " x="24" y="10" width="252" height="40" rx="10"/>
+<text class="lbl b" x="150.0" y="35.5" text-anchor="middle">text: 'The cat sat on the'</text>
 <rect class="sk" x="20" y="70" width="260" height="60" rx="10"/>
 <text class="lbl b" x="150" y="95.5" text-anchor="middle">tokenizer</text>
 <text class="lbl b" x="150" y="115.5" text-anchor="middle">[464, 3797, 3332, 319, 262]</text>
-<rect class="sk" x="50" y="140" width="200" height="60" rx="10"/>
-<text class="lbl b" x="150" y="165.5" text-anchor="middle">embedding lookup</text>
-<text class="lbl b" x="150" y="185.5" text-anchor="middle">5 tokens × 4096 dims</text>
-<rect class="sk" x="106" y="255" width="88" height="40" rx="10"/>
-<text class="lbl b" x="150" y="280.5" text-anchor="middle">RMSNorm</text>
-<rect class="sk" x="250" y="245" width="381" height="60" rx="10"/>
-<text class="lbl b" x="440" y="270.5" text-anchor="middle">masked self-attention</text>
-<text class="lbl b" x="440" y="290.5" text-anchor="middle">(each token looks back at earlier tokens)</text>
-<ellipse class="sk" cx="440" cy="345" rx="55" ry="22"/>
-<text class="lbl b" x="440" y="350.5" text-anchor="middle">+ residual</text>
-<rect class="sk" x="106" y="325" width="88" height="40" rx="10"/>
-<text class="lbl b" x="150" y="350.5" text-anchor="middle">RMSNorm</text>
-<rect class="sk green" x="67" y="395" width="166" height="40" rx="10"/>
-<text class="lbl g" x="150" y="420.5" text-anchor="middle">feed-forward MLP</text>
-<ellipse class="sk" cx="440" cy="415" rx="55" ry="22"/>
-<text class="lbl b" x="440" y="420.5" text-anchor="middle">+ residual</text>
-<rect class="sk" x="93" y="475" width="114" height="40" rx="10"/>
-<text class="lbl b" x="150" y="500.5" text-anchor="middle">final norm</text>
-<rect class="sk" x="310" y="475" width="260" height="40" rx="10"/>
-<text class="lbl b" x="440" y="500.5" text-anchor="middle">LM head: 4096 → 100k logits</text>
-<rect class="sk" x="37" y="540" width="226" height="40" rx="10"/>
-<text class="lbl b" x="150" y="565.5" text-anchor="middle">softmax → probabilities</text>
-<rect class="sk green" x="301" y="540" width="277" height="40" rx="10"/>
-<text class="lbl g" x="440" y="565.5" text-anchor="middle">next token: ' mat' (p = 0.31)</text>
+<rect class="sk" x="50" y="150" width="200" height="60" rx="10"/>
+<text class="lbl b" x="150" y="175.5" text-anchor="middle">embedding lookup</text>
+<text class="lbl b" x="150" y="195.5" text-anchor="middle">5 tokens × 4096 dims</text>
+<rect class="sk " x="90" y="285" width="120" height="40" rx="10"/>
+<text class="lbl b" x="150.0" y="310.5" text-anchor="middle">RMSNorm</text>
+<rect class="sk" x="245" y="275" width="360" height="60" rx="10"/>
+<text class="lbl b" x="425" y="300.5" text-anchor="middle">masked self-attention</text>
+<text class="lbl b" x="425" y="320.5" text-anchor="middle">(each token looks back at earlier tokens)</text>
+<ellipse class="sk" cx="425" cy="385" rx="55" ry="22"/>
+<text class="lbl b" x="425" y="390.5" text-anchor="middle">+ residual</text>
+<rect class="sk " x="90" y="365" width="120" height="40" rx="10"/>
+<text class="lbl b" x="150.0" y="390.5" text-anchor="middle">RMSNorm</text>
+<rect class="sk green" x="67" y="430" width="166" height="40" rx="10"/>
+<text class="lbl g" x="150.0" y="455.5" text-anchor="middle">feed-forward MLP</text>
+<ellipse class="sk" cx="425" cy="450" rx="55" ry="22"/>
+<text class="lbl b" x="425" y="455.5" text-anchor="middle">+ residual</text>
+<rect class="sk " x="93" y="520" width="114" height="40" rx="10"/>
+<text class="lbl b" x="150.0" y="545.5" text-anchor="middle">final norm</text>
+<rect class="sk " x="310" y="520" width="260" height="40" rx="10"/>
+<text class="lbl b" x="440.0" y="545.5" text-anchor="middle">LM head: 4096 → 100k logits</text>
+<rect class="sk " x="37" y="595" width="226" height="40" rx="10"/>
+<text class="lbl b" x="150.0" y="620.5" text-anchor="middle">softmax → probabilities</text>
+<rect class="sk green" x="301" y="595" width="277" height="40" rx="10"/>
+<text class="lbl g" x="439.5" y="620.5" text-anchor="middle">next token: ' mat' (p = 0.31)</text>
 <path class="sk blue" d="M150 50 Q 148 60 150 70" style="color:var(--ink)" marker-end="url(#arr)"/>
-<path class="sk blue" d="M150 130 Q 149 135 150 140" style="color:var(--ink)" marker-end="url(#arr)"/>
-<path class="sk blue" d="M150 200 Q 146 228 150 255" style="color:var(--ink)" marker-end="url(#arr)"/>
-<path class="sk blue" d="M194 275 Q 222 279 250 275" style="color:var(--ink)" marker-end="url(#arr)"/>
-<path class="sk blue" d="M440 305 Q 439 314 440 323" style="color:var(--ink)" marker-end="url(#arr)"/>
-<path class="sk blue" d="M385 345 Q 290 335 194 345" style="color:var(--ink)" marker-end="url(#arr)"/>
-<path class="sk blue" d="M150 365 Q 148 380 150 395" style="color:var(--ink)" marker-end="url(#arr)"/>
-<path class="sk blue" d="M233 415 Q 309 425 385 415" style="color:var(--ink)" marker-end="url(#arr)"/>
-<path class="sk blue" d="M395 427 Q 298 444 207 479" style="color:var(--ink)" marker-end="url(#arr)"/>
-<path class="sk blue" d="M207 495 Q 258 503 310 495" style="color:var(--ink)" marker-end="url(#arr)"/>
-<path class="sk blue" d="M351 515 Q 293 519 239 540" style="color:var(--ink)" marker-end="url(#arr)"/>
-<path class="sk blue" d="M263 560 Q 282 563 301 560" style="color:var(--ink)" marker-end="url(#arr)"/>
+<path class="sk blue" d="M150 130 Q 149 140 150 150" style="color:var(--ink)" marker-end="url(#arr)"/>
+<path class="sk blue" d="M150 210 Q 146 250 150 285" style="color:var(--ink)" marker-end="url(#arr)"/>
+<path class="sk blue" d="M210 305 Q 228 309 245 305" style="color:var(--ink)" marker-end="url(#arr)"/>
+<path class="sk blue" d="M425 335 Q 424 348 425 361" style="color:var(--ink)" marker-end="url(#arr)"/>
+<path class="sk blue" d="M370 385 Q 290 377 210 385" style="color:var(--ink)" marker-end="url(#arr)"/>
+<path class="sk blue" d="M150 405 Q 148 418 150 430" style="color:var(--ink)" marker-end="url(#arr)"/>
+<path class="sk blue" d="M233 450 Q 310 456 370 450" style="color:var(--ink)" marker-end="url(#arr)"/>
+<path class="sk blue" d="M400 472 Q 330 490 175 519" style="color:var(--ink)" marker-end="url(#arr)"/>
+<path class="sk blue" d="M207 540 Q 258 545 310 540" style="color:var(--ink)" marker-end="url(#arr)"/>
+<path class="sk blue" d="M380 560 Q 320 585 255 597" style="color:var(--ink)" marker-end="url(#arr)"/>
+<path class="sk blue" d="M263 615 Q 282 618 301 615" style="color:var(--ink)" marker-end="url(#arr)"/>
 </svg>
 <figcaption>Fig 1: a decoder-only transformer, top to bottom</figcaption>
 </figure>
@@ -358,8 +358,8 @@ print(sum(p.numel() for p in model.parameters()) / 1e6, "M parameters")   # ~124
 <text class="lbl b" x="300" y="115.5" text-anchor="middle">character vocab (~65)</text>
 <rect class="sk" x="63" y="160" width="174" height="80" rx="10"/>
 <text class="lbl b" x="150" y="185.5" text-anchor="middle">v1: count bigrams</text>
-<text class="lbl b" x="150" y="205.5" text-anchor="middle">P(next char </text>
-<text class="lbl b" x="150" y="225.5" text-anchor="middle"> char)</text>
+<text class="lbl b" x="150" y="205.5" text-anchor="middle">P(next char &#124; char)</text>
+<text class="lbl b" x="150" y="225.5" text-anchor="middle"></text>
 <rect class="sk" x="330" y="160" width="260" height="80" rx="10"/>
 <text class="lbl b" x="460" y="185.5" text-anchor="middle">v2: PyTorch embedding table</text>
 <text class="lbl b" x="460" y="205.5" text-anchor="middle">65 × 65 logits,</text>

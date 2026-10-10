@@ -238,8 +238,8 @@ a{color:var(--ink);text-decoration:underline dotted}
       <rect class="sk" x="520" y="10" width="120" height="38" rx="8"/>
       <text class="lbl b" x="580" y="35" text-anchor="middle">Redis</text>
       <path class="sk" d="M80 50 L80 290 M330 50 L330 290 M580 50 L580 290" style="stroke-dasharray:6 6;stroke-width:1.6;opacity:.6"/>
-      <text class="lbl" x="205" y="72" text-anchor="middle" style="font-size:15px">UPDATE products SET price = 9.99</text>
-      <text class="lbl" x="205" y="90" text-anchor="middle" style="font-size:15px">WHERE id = 42</text>
+      <text class="lbl" x="200" y="74" text-anchor="middle" style="font-size:13.5px;paint-order:stroke;stroke:#fdfbf4;stroke-width:6px">UPDATE products SET price = 9.99</text>
+      <text class="lbl" x="200" y="91" text-anchor="middle" style="font-size:13.5px;paint-order:stroke;stroke:#fdfbf4;stroke-width:6px">WHERE id = 42</text>
       <path class="sk blue" d="M80 100 L326 100" style="color:var(--ink)" marker-end="url(#arr)"/>
       <text class="lbl" x="205" y="134" text-anchor="middle">ok</text>
       <path class="sk blue" d="M330 144 L84 144" style="stroke-dasharray:7 5;color:var(--ink)" marker-end="url(#arr)"/>
@@ -277,9 +277,9 @@ a{color:var(--ink);text-decoration:underline dotted}
       <text class="lbl b" x="330" y="146" text-anchor="middle">Got lock?</text>
       <text class="lbl" x="330" y="168" text-anchor="middle" style="font-size:15px">SET lock NX EX 5</text>
       <path class="sk blue" d="M160 150 C 120 150, 90 180, 90 228" style="color:var(--ink)" marker-end="url(#arr)"/>
-      <text class="lbl g" x="20" y="200">yes, 1 request</text>
+      <text class="lbl g" x="15" y="128">yes, 1 request</text>
       <path class="sk blue" d="M500 150 C 540 150, 560 180, 560 228" style="color:var(--ink)" marker-end="url(#arr)"/>
-      <text class="lbl r" x="470" y="200">no, 4,999 requests</text>
+      <text class="lbl r" x="480" y="128">no, 4,999 requests</text>
       <rect class="sk" x="15" y="230" width="150" height="50" rx="10"/>
       <text class="lbl" x="90" y="260" text-anchor="middle">Rebuild from DB</text>
       <path class="sk blue" d="M90 280 L90 312" style="color:var(--ink)" marker-end="url(#arr)"/>
@@ -399,7 +399,7 @@ def get_product_safe(product_id: int) -&gt; dict:
       <path class="sk red" d="M400 218 C 350 216, 310 216, 262 218" style="color:var(--red)" marker-end="url(#arr)"/>
       <text class="lbl r" x="330" y="208" text-anchor="middle">change event</text>
       <path class="sk red" d="M175 190 C 190 140, 320 125, 430 98" style="color:var(--red)" marker-end="url(#arr)"/>
-      <text class="lbl r" x="240" y="150">DEL key</text>
+      <text class="lbl r" x="95" y="150">DEL key</text>
       <rect class="sk green" x="400" y="320" width="240" height="76" rx="12"/>
       <text class="lbl g" x="520" y="346" text-anchor="middle">Metrics:</text>
       <text class="lbl g" x="520" y="372" text-anchor="middle">hit rate, p99, DB QPS</text>

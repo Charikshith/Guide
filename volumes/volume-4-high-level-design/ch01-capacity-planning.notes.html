@@ -218,15 +218,15 @@ a{color:var(--ink);text-decoration:underline dotted}
       <text class="lbl" x="525" y="238" text-anchor="middle">and N+2</text>
       <text class="lbl b" x="525" y="260" text-anchor="middle">≈ 44</text>
       <path class="sk blue" d="M520 106 C 526 130, 516 150, 522 168" style="color:var(--ink)" marker-end="url(#arr)"/>
-      <rect class="sk" x="150" y="300" width="250" height="62" rx="12"/>
-      <text class="lbl" x="275" y="325" text-anchor="middle">bandwidth = 29,000 × 1 KB</text>
-      <text class="lbl" x="275" y="349" text-anchor="middle">≈ 29 MB/s ≈ 230 Mbit/s</text>
-      <path class="sk blue" d="M385 106 C 372 190, 330 250, 300 298" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <rect class="sk" x="205" y="290" width="240" height="62" rx="12"/>
+      <text class="lbl" x="325" y="315" text-anchor="middle">bandwidth = 29,000 × 1 KB</text>
+      <text class="lbl" x="325" y="339" text-anchor="middle">≈ 29 MB/s ≈ 230 Mbit/s</text>
+      <path class="sk blue" d="M395 106 C 392 170, 360 240, 345 288" style="color:var(--ink)" marker-end="url(#arr)"/>
       <rect class="sk green" x="230" y="414" width="190" height="46" rx="12"/>
       <text class="lbl g" x="325" y="443" text-anchor="middle">cost / month</text>
-      <path class="sk blue" d="M150 252 C 160 320, 220 380, 262 412" style="color:var(--ink)" marker-end="url(#arr)"/>
-      <path class="sk blue" d="M275 362 C 278 380, 276 396, 277 412" style="color:var(--ink)" marker-end="url(#arr)"/>
-      <path class="sk blue" d="M525 274 C 520 340, 470 390, 418 425" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M95 252 C 90 340, 130 425, 228 437" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M325 352 C 328 372, 324 394, 325 412" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M525 274 C 530 350, 490 430, 422 437" style="color:var(--ink)" marker-end="url(#arr)"/>
     </svg>
     <figcaption>Fig 1: the capacity worksheet — assumptions → QPS → servers / bandwidth, assumptions → storage, all → cost / month</figcaption>
   </figure>
@@ -289,12 +289,10 @@ print(plan(10_000_000, 50))        # (5787, 28935, 44)</code></pre>
     <svg viewBox="0 0 660 400" role="img" aria-label="assumptions.yaml feeds a calculator which outputs QPS, nodes, storage, bandwidth and cost, and a sensitivity analysis">
       <rect class="sk" x="15" y="100" width="225" height="170" rx="12"/>
       <text class="lbl b" x="127" y="126" text-anchor="middle">assumptions.yaml</text>
-      <text class="lbl" x="127" y="150" text-anchor="middle">DAU, actions/user,</text>
-      <text class="lbl" x="127" y="172" text-anchor="middle">read:write,</text>
-      <text class="lbl" x="127" y="194" text-anchor="middle">object sizes,</text>
-      <text class="lbl" x="127" y="216" text-anchor="middle">retention,</text>
-      <text class="lbl" x="127" y="238" text-anchor="middle">peak factor, per-node</text>
-      <text class="lbl" x="127" y="260" text-anchor="middle">limits, prices</text>
+      <text class="lbl" x="127" y="154" text-anchor="middle">DAU, actions/user,</text>
+      <text class="lbl" x="127" y="181" text-anchor="middle">read:write, object sizes,</text>
+      <text class="lbl" x="127" y="208" text-anchor="middle">retention, peak factor,</text>
+      <text class="lbl" x="127" y="235" text-anchor="middle">per-node limits, prices</text>
       <path class="sk blue" d="M240 185 C 255 183, 268 183, 280 185" style="color:var(--ink)" marker-end="url(#arr)"/>
       <rect class="sk red" x="282" y="150" width="104" height="70" rx="12"/>
       <text class="lbl r" x="334" y="191" text-anchor="middle">calculator</text>

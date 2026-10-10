@@ -202,43 +202,39 @@ total(["a"])                    # type checker: list[str] is not list[int]</code
   <h2>Diagram</h2>
   <h3>A CI pipeline: cheapest and fastest checks first</h3>
   <figure>
-    <svg viewBox="0 0 640 330" role="img" aria-label="push or PR, then format check (ruff format --check, about 1 s), then lint (ruff check, about 1 s), then type check (mypy --strict, about 10 s), then tests (pytest, about 1 min), then mergeable; each of the four checks fails fast to a clear message">
-      <rect class="sk" x="10" y="20" width="100" height="84" rx="10"/>
-      <text class="lbl b" x="60" y="68" text-anchor="middle" style="font-size:14px">push / PR</text>
-      <path class="sk blue" d="M110 62 L133 62" style="color:var(--ink)" marker-end="url(#arr)"/>
-      <rect class="sk" x="135" y="20" width="110" height="84" rx="10"/>
-      <text class="lbl b" x="190" y="40" text-anchor="middle" style="font-size:13px">format check</text>
-      <text class="lbl" x="190" y="58" text-anchor="middle" style="font-size:12px">ruff format</text>
-      <text class="lbl" x="190" y="74" text-anchor="middle" style="font-size:12px">--check</text>
-      <text class="lbl r" x="190" y="94" text-anchor="middle" style="font-size:12px">~1 s</text>
-      <path class="sk blue" d="M245 62 L258 62" style="color:var(--ink)" marker-end="url(#arr)"/>
-      <rect class="sk" x="260" y="20" width="110" height="84" rx="10"/>
-      <text class="lbl b" x="315" y="46" text-anchor="middle" style="font-size:13px">lint</text>
-      <text class="lbl" x="315" y="66" text-anchor="middle" style="font-size:12px">ruff check</text>
-      <text class="lbl r" x="315" y="94" text-anchor="middle" style="font-size:12px">~1 s</text>
-      <path class="sk blue" d="M370 62 L383 62" style="color:var(--ink)" marker-end="url(#arr)"/>
-      <rect class="sk" x="385" y="20" width="110" height="84" rx="10"/>
-      <text class="lbl b" x="440" y="46" text-anchor="middle" style="font-size:13px">type check</text>
-      <text class="lbl" x="440" y="66" text-anchor="middle" style="font-size:12px">mypy --strict</text>
-      <text class="lbl r" x="440" y="94" text-anchor="middle" style="font-size:12px">~10 s</text>
-      <path class="sk blue" d="M495 62 L508 62" style="color:var(--ink)" marker-end="url(#arr)"/>
-      <rect class="sk" x="510" y="20" width="120" height="84" rx="10"/>
-      <text class="lbl b" x="570" y="46" text-anchor="middle" style="font-size:13px">tests</text>
-      <text class="lbl" x="570" y="66" text-anchor="middle" style="font-size:12px">pytest</text>
-      <text class="lbl r" x="570" y="94" text-anchor="middle" style="font-size:12px">~1 min</text>
-      <path class="sk green" d="M575 104 L575 168" style="color:var(--green)" marker-end="url(#arr)"/>
-      <rect class="sk green" x="520" y="170" width="110" height="44" rx="10" style="fill:var(--hl-green)"/>
-      <text class="lbl g" x="575" y="198" text-anchor="middle" style="font-size:13px">mergeable</text>
-      <path class="sk red" d="M185 104 C 180 170, 160 220, 150 258" style="color:var(--red)" marker-end="url(#arr)"/>
-      <text class="lbl r" x="158" y="190" text-anchor="end" style="font-size:12px">fail</text>
-      <path class="sk red" d="M310 104 C 305 170, 270 220, 250 258" style="color:var(--red)" marker-end="url(#arr)"/>
-      <text class="lbl r" x="288" y="190" text-anchor="end" style="font-size:12px">fail</text>
-      <path class="sk red" d="M435 104 C 430 170, 390 220, 350 258" style="color:var(--red)" marker-end="url(#arr)"/>
-      <text class="lbl r" x="408" y="190" text-anchor="end" style="font-size:12px">fail</text>
-      <path class="sk red" d="M530 104 C 525 190, 470 235, 405 258" style="color:var(--red)" marker-end="url(#arr)"/>
-      <text class="lbl r" x="495" y="155" text-anchor="end" style="font-size:12px">fail</text>
-      <rect class="sk red" x="40" y="260" width="390" height="44" rx="10" style="fill:var(--hl-pink)"/>
-      <text class="lbl r" x="235" y="288" text-anchor="middle" style="font-size:14px">fail fast with a clear message</text>
+    <svg viewBox="0 0 640 460" role="img" aria-label="push or PR, then format check (ruff format --check, about 1 s), then lint (ruff check, about 1 s), then type check (mypy --strict, about 10 s), then tests (pytest, about 1 min), then mergeable; each of the four checks fails fast to a clear message">
+      <rect class="sk" x="30" y="10" width="220" height="40" rx="10"/>
+      <text class="lbl b" x="140" y="36" text-anchor="middle" style="font-size:15px">push / PR</text>
+      <path class="sk blue" d="M140 50 L140 78" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <rect class="sk" x="30" y="80" width="220" height="50" rx="10"/>
+      <text class="lbl b" x="140" y="101" text-anchor="middle" style="font-size:15px">format check</text>
+      <text class="lbl" x="140" y="121" text-anchor="middle" style="font-size:14px">ruff format --check  <tspan class="lbl r" style="fill:var(--red)">~1 s</tspan></text>
+      <path class="sk blue" d="M140 130 L140 158" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk red" d="M250 105 L418 105" style="color:var(--red)" marker-end="url(#arr)"/>
+      <text class="lbl r" x="334" y="97" text-anchor="middle" style="font-size:14px">fail</text>
+      <rect class="sk" x="30" y="160" width="220" height="50" rx="10"/>
+      <text class="lbl b" x="140" y="181" text-anchor="middle" style="font-size:15px">lint</text>
+      <text class="lbl" x="140" y="201" text-anchor="middle" style="font-size:14px">ruff check  <tspan class="lbl r" style="fill:var(--red)">~1 s</tspan></text>
+      <path class="sk blue" d="M140 210 L140 238" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk red" d="M250 185 L418 185" style="color:var(--red)" marker-end="url(#arr)"/>
+      <text class="lbl r" x="334" y="177" text-anchor="middle" style="font-size:14px">fail</text>
+      <rect class="sk" x="30" y="240" width="220" height="50" rx="10"/>
+      <text class="lbl b" x="140" y="261" text-anchor="middle" style="font-size:15px">type check</text>
+      <text class="lbl" x="140" y="281" text-anchor="middle" style="font-size:14px">mypy --strict  <tspan class="lbl r" style="fill:var(--red)">~10 s</tspan></text>
+      <path class="sk blue" d="M140 290 L140 318" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk red" d="M250 265 L418 265" style="color:var(--red)" marker-end="url(#arr)"/>
+      <text class="lbl r" x="334" y="257" text-anchor="middle" style="font-size:14px">fail</text>
+      <rect class="sk" x="30" y="320" width="220" height="50" rx="10"/>
+      <text class="lbl b" x="140" y="341" text-anchor="middle" style="font-size:15px">tests</text>
+      <text class="lbl" x="140" y="361" text-anchor="middle" style="font-size:14px">pytest  <tspan class="lbl r" style="fill:var(--red)">~1 min</tspan></text>
+      <path class="sk red" d="M250 345 L418 345" style="color:var(--red)" marker-end="url(#arr)"/>
+      <text class="lbl r" x="334" y="337" text-anchor="middle" style="font-size:14px">fail</text>
+      <path class="sk green" d="M140 370 L140 398" style="color:var(--green)" marker-end="url(#arr)"/>
+      <rect class="sk green" x="30" y="400" width="220" height="44" rx="10" style="fill:var(--hl-green)"/>
+      <text class="lbl g" x="140" y="428" text-anchor="middle" style="font-size:15px">mergeable</text>
+      <rect class="sk red" x="420" y="95" width="210" height="260" rx="12" style="fill:var(--hl-pink)"/>
+      <text class="lbl r" x="525" y="218" text-anchor="middle" style="font-size:15px">fail fast with</text>
+      <text class="lbl r" x="525" y="240" text-anchor="middle" style="font-size:15px">a clear message</text>
     </svg>
     <figcaption>Fig 1: cheapest checks run first, and any failure stops the pipeline with a clear message</figcaption>
   </figure>

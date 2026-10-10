@@ -193,45 +193,44 @@ a{color:var(--ink);text-decoration:underline dotted}
   <h2>Diagram</h2>
   <h3>The memory hierarchy</h3>
   <figure>
-    <svg viewBox="6 16 630 520" role="img" aria-label="The memory hierarchy">
-      <rect class="sk" x="20" y="130" width="602" height="130" rx="14" style="stroke-dasharray:8 6"/>
-      <text class="lbl r" x="32" y="150" style="font-size:15px">Context window (what the model sees this call)</text>
-      <path class="sk blue" d="M382.6 432 C382.6 389, 325.2 389, 325.2 346 C325.2 296, 252.8 296, 252.8 246" style="color:var(--ink)" marker-end="url(#arr)"/>
-      <path class="sk blue" d="M397.6 70 C397.6 125.5, 397.6 125.5, 397.6 181" style="color:var(--ink)" marker-end="url(#arr)"/>
-      <path class="sk blue" d="M542.4 237 C542.4 281.5, 470 281.5, 470 326" style="color:var(--ink)" marker-end="url(#arr)"/>
-      <path class="sk blue" d="M470 366 C470 399, 412.6 399, 412.6 432" style="color:var(--ink)" marker-end="url(#arr)"/>
-      <rect class="sk green" x="34" y="181" width="131.2" height="56" rx="8" style="fill:#fdfbf4"/>
-      <text class="lbl b" x="99.6" y="205" text-anchor="middle" style="font-size:15px">system prompt</text>
-      <text class="lbl b" x="99.6" y="223" text-anchor="middle" style="font-size:15px">+ tools</text>
-      <rect class="sk green" x="187.2" y="172" width="131.2" height="74" rx="8" style="fill:#fdfbf4"/>
-      <text class="lbl b" x="252.8" y="196" text-anchor="middle" style="font-size:15px">retrieved</text>
-      <text class="lbl b" x="252.8" y="214" text-anchor="middle" style="font-size:15px">memories (top</text>
-      <text class="lbl b" x="252.8" y="232" text-anchor="middle" style="font-size:15px">5)</text>
-      <rect class="sk green" x="340.4" y="181" width="114.4" height="56" rx="8" style="fill:#fdfbf4"/>
-      <text class="lbl b" x="397.6" y="205" text-anchor="middle" style="font-size:15px">summary of</text>
-      <text class="lbl b" x="397.6" y="223" text-anchor="middle" style="font-size:15px">older turns</text>
-      <rect class="sk" x="476.8" y="181" width="131.2" height="56" rx="8" style="fill:#fdfbf4"/>
-      <text class="lbl b" x="542.4" y="205" text-anchor="middle" style="font-size:15px">recent turns,</text>
-      <text class="lbl b" x="542.4" y="223" text-anchor="middle" style="font-size:15px">verbatim</text>
-      <path class="sk" d="M269.2 440 v74 a128.4 8 0 0 0 256.8 0 v-74" style="fill:#fdfbf4"/>
-      <ellipse class="sk" cx="397.6" cy="440" rx="128.4" ry="8" style="fill:#fdfbf4"/>
-      <text class="lbl b" x="397.6" y="468" text-anchor="middle" style="font-size:15px">long-term store</text>
-      <text class="lbl b" x="397.6" y="486" text-anchor="middle" style="font-size:15px">vector DB + metadata</text>
-      <text class="lbl b" x="397.6" y="504" text-anchor="middle" style="font-size:15px">(user_id, type, created_at)</text>
-      <rect class="sk" x="256.4" y="30" width="282.4" height="40" rx="8" style="fill:#fdfbf4"/>
-      <text class="lbl b" x="397.6" y="55" text-anchor="middle" style="font-size:15px">turns that fell out of 'recent'</text>
-      <rect class="sk" x="379.2" y="326" width="181.6" height="40" rx="8" style="fill:#fdfbf4"/>
-      <text class="lbl b" x="470" y="351" text-anchor="middle" style="font-size:15px">memory writer (LLM)</text>
-      <text class="lbl r" x="347.9" y="385" text-anchor="end" style="font-size:14px;paint-order:stroke;stroke:#fdfbf4;stroke-width:5px;stroke-linejoin:round">search by the</text>
-      <text class="lbl r" x="347.9" y="401" text-anchor="end" style="font-size:14px;paint-order:stroke;stroke:#fdfbf4;stroke-width:5px;stroke-linejoin:round">current message</text>
-      <text class="lbl r" x="405.6" y="129.5" text-anchor="start" style="font-size:14px;paint-order:stroke;stroke:#fdfbf4;stroke-width:5px;stroke-linejoin:round">summarize</text>
-      <text class="lbl r" x="500.2" y="277.5" text-anchor="end" style="font-size:14px;paint-order:stroke;stroke:#fdfbf4;stroke-width:5px;stroke-linejoin:round">after each turn:</text>
-      <text class="lbl r" x="500.2" y="293.5" text-anchor="end" style="font-size:14px;paint-order:stroke;stroke:#fdfbf4;stroke-width:5px;stroke-linejoin:round">extract facts</text>
-      <text class="lbl r" x="435.3" y="395" text-anchor="end" style="font-size:14px;paint-order:stroke;stroke:#fdfbf4;stroke-width:5px;stroke-linejoin:round">add / update /</text>
-      <text class="lbl r" x="435.3" y="411" text-anchor="end" style="font-size:14px;paint-order:stroke;stroke:#fdfbf4;stroke-width:5px;stroke-linejoin:round">delete</text>
-    </svg>
-    <figcaption>Fig 1: The memory hierarchy</figcaption>
-  </figure>
+<svg viewBox="0 0 640 500" role="img" aria-label="The memory hierarchy">
+<rect class="sk" x="5" y="90" width="630" height="140" rx="14" style="stroke-dasharray:8 6"/>
+<text class="lbl r" x="18" y="114" style="font-size:15px">Context window (what the model sees this call)</text>
+<path class="sk blue" d="M400 50 L400 130" style="color:var(--ink)" marker-end="url(#arr)"/>
+<path class="sk blue" d="M555 200 C555 245, 535 245, 535 290" style="color:var(--ink)" marker-end="url(#arr)"/>
+<path class="sk blue" d="M535 330 C535 365, 480 365, 480 402" style="color:var(--ink)" marker-end="url(#arr)"/>
+<path class="sk blue" d="M300 408 C300 330, 245 300, 245 200" style="color:var(--ink)" marker-end="url(#arr)"/>
+<rect class="sk" x="270" y="10" width="260" height="40" rx="8" style="fill:#fdfbf4"/>
+<text class="lbl b" x="400.0" y="35.0" text-anchor="middle" style="font-size:15px">turns that fell out of 'recent'</text>
+<rect class="sk green" x="20" y="130" width="140" height="70" rx="8" style="fill:#fdfbf4"/>
+<text class="lbl b" x="90.0" y="161.0" text-anchor="middle" style="font-size:15px">system prompt</text>
+<text class="lbl b" x="90.0" y="179.0" text-anchor="middle" style="font-size:15px">+ tools</text>
+<rect class="sk green" x="175" y="130" width="140" height="70" rx="8" style="fill:#fdfbf4"/>
+<text class="lbl b" x="245.0" y="161.0" text-anchor="middle" style="font-size:15px">retrieved</text>
+<text class="lbl b" x="245.0" y="179.0" text-anchor="middle" style="font-size:15px">memories (top 5)</text>
+<rect class="sk green" x="330" y="130" width="140" height="70" rx="8" style="fill:#fdfbf4"/>
+<text class="lbl b" x="400.0" y="161.0" text-anchor="middle" style="font-size:15px">summary of</text>
+<text class="lbl b" x="400.0" y="179.0" text-anchor="middle" style="font-size:15px">older turns</text>
+<rect class="sk" x="485" y="130" width="140" height="70" rx="8" style="fill:#fdfbf4"/>
+<text class="lbl b" x="555.0" y="161.0" text-anchor="middle" style="font-size:15px">recent turns,</text>
+<text class="lbl b" x="555.0" y="179.0" text-anchor="middle" style="font-size:15px">verbatim</text>
+<rect class="sk" x="440" y="290" width="190" height="40" rx="8" style="fill:#fdfbf4"/>
+<text class="lbl b" x="535.0" y="315.0" text-anchor="middle" style="font-size:15px">memory writer (LLM)</text>
+<path class="sk" d="M240 408 v74 a140 8 0 0 0 280 0 v-74" style="fill:#fdfbf4"/>
+<ellipse class="sk" cx="380" cy="408" rx="140" ry="8" style="fill:#fdfbf4"/>
+<text class="lbl b" x="380" y="438" text-anchor="middle" style="font-size:15px">long-term store</text>
+<text class="lbl b" x="380" y="456" text-anchor="middle" style="font-size:15px">vector DB + metadata</text>
+<text class="lbl b" x="380" y="474" text-anchor="middle" style="font-size:15px">(user_id, type, created_at)</text>
+<text class="lbl r" x="412" y="78" text-anchor="start" style="font-size:14px;paint-order:stroke;stroke:#fdfbf4;stroke-width:5px;stroke-linejoin:round">summarize</text>
+<text class="lbl r" x="515" y="258" text-anchor="end" style="font-size:14px;paint-order:stroke;stroke:#fdfbf4;stroke-width:5px;stroke-linejoin:round">after each turn:</text>
+<text class="lbl r" x="515" y="274" text-anchor="end" style="font-size:14px;paint-order:stroke;stroke:#fdfbf4;stroke-width:5px;stroke-linejoin:round">extract facts</text>
+<text class="lbl r" x="545" y="358" text-anchor="start" style="font-size:14px;paint-order:stroke;stroke:#fdfbf4;stroke-width:5px;stroke-linejoin:round">add / update /</text>
+<text class="lbl r" x="545" y="374" text-anchor="start" style="font-size:14px;paint-order:stroke;stroke:#fdfbf4;stroke-width:5px;stroke-linejoin:round">delete</text>
+<text class="lbl r" x="235" y="345" text-anchor="end" style="font-size:14px;paint-order:stroke;stroke:#fdfbf4;stroke-width:5px;stroke-linejoin:round">search by the</text>
+<text class="lbl r" x="235" y="361" text-anchor="end" style="font-size:14px;paint-order:stroke;stroke:#fdfbf4;stroke-width:5px;stroke-linejoin:round">current message</text>
+</svg>
+<figcaption>Fig 1: The memory hierarchy</figcaption>
+</figure>
   <h3>Sliding window + rolling summary</h3>
   <pre class="code ascii"><code> turn:     1  2  3  4  5  6  7  8  9  10 11 12
  verbatim:                   [7  8  9  10 11 12]   ← last 6 turns kept exactly
@@ -334,55 +333,48 @@ print(recall("u1", "book me a flight to Lisbon"))</code></pre>
   <h2>Mini project</h2>
   <p><b>An agent with persistent memory across sessions.</b></p>
   <figure>
-    <svg viewBox="6 16 627.2 366" role="img" aria-label="An agent with persistent memory across sessions">
-      <path class="sk blue" d="M308.6 140 C308.6 165, 279.6 165, 279.6 190" style="color:var(--ink)" marker-end="url(#arr)"/>
-      <path class="sk blue" d="M279.6 246 C279.6 271, 336.8 271, 336.8 296" style="color:var(--ink)" marker-end="url(#arr)"/>
-      <path class="sk blue" d="M155.6 140 C155.6 165, 126.6 165, 126.6 190" style="color:var(--ink)" marker-end="url(#arr)"/>
-      <path class="sk blue" d="M141.6 246 C141.6 271, 306.8 271, 306.8 296" style="color:var(--ink)" marker-end="url(#arr)"/>
-      <path class="sk blue" d="M111.6 246 C111.6 275, 115 275, 115 304" style="color:var(--ink)" marker-end="url(#arr)"/>
-      <path class="sk blue" d="M446.8 122 C446.8 156, 432.6 156, 432.6 190" style="color:var(--ink)" marker-end="url(#arr)"/>
-      <path class="sk blue" d="M432.6 246 C432.6 271, 366.8 271, 366.8 296" style="color:var(--ink)" marker-end="url(#arr)"/>
-      <path class="sk blue" d="M566.2 131 C566.2 174.5, 522.4 174.5, 522.4 218 C522.4 257, 396.8 257, 396.8 296" style="color:var(--ink)" marker-end="url(#arr)"/>
-      <rect class="sk" x="251.4" y="30" width="114.4" height="110" rx="8" style="fill:#fdfbf4"/>
-      <text class="lbl b" x="308.6" y="54" text-anchor="middle" style="font-size:15px">session 1</text>
-      <text class="lbl b" x="308.6" y="72" text-anchor="middle" style="font-size:15px">'I'm</text>
-      <text class="lbl b" x="308.6" y="90" text-anchor="middle" style="font-size:15px">vegetarian,</text>
-      <text class="lbl b" x="308.6" y="108" text-anchor="middle" style="font-size:15px">I live in</text>
-      <text class="lbl b" x="308.6" y="126" text-anchor="middle" style="font-size:15px">Munich'</text>
-      <rect class="sk" x="222.4" y="190" width="114.4" height="56" rx="8" style="fill:#fdfbf4"/>
-      <text class="lbl b" x="279.6" y="214" text-anchor="middle" style="font-size:15px">extractor →</text>
-      <text class="lbl b" x="279.6" y="232" text-anchor="middle" style="font-size:15px">facts</text>
-      <path class="sk green" d="M236 304 v56 a115.8 8 0 0 0 231.6 0 v-56" style="fill:#fdfbf4"/>
-      <ellipse class="sk green" cx="351.8" cy="304" rx="115.8" ry="8" style="fill:#fdfbf4"/>
-      <text class="lbl b" x="351.8" y="332" text-anchor="middle" style="font-size:15px">SQLite (facts, per user)</text>
-      <text class="lbl b" x="351.8" y="350" text-anchor="middle" style="font-size:15px">+ vector index</text>
-      <rect class="sk" x="102.6" y="30" width="106" height="110" rx="8" style="fill:#fdfbf4"/>
-      <text class="lbl b" x="155.6" y="54" text-anchor="middle" style="font-size:15px">session 2</text>
-      <text class="lbl b" x="155.6" y="72" text-anchor="middle" style="font-size:15px">(next day)</text>
-      <text class="lbl b" x="155.6" y="90" text-anchor="middle" style="font-size:15px">'find me a</text>
-      <text class="lbl b" x="155.6" y="108" text-anchor="middle" style="font-size:15px">dinner</text>
-      <text class="lbl b" x="155.6" y="126" text-anchor="middle" style="font-size:15px">place'</text>
-      <rect class="sk" x="56.8" y="190" width="139.6" height="56" rx="8" style="fill:#fdfbf4"/>
-      <text class="lbl b" x="126.6" y="214" text-anchor="middle" style="font-size:15px">retrieve</text>
-      <text class="lbl b" x="126.6" y="232" text-anchor="middle" style="font-size:15px">relevant facts</text>
-      <rect class="sk green" x="20" y="304" width="190" height="56" rx="8" style="fill:#fdfbf4"/>
-      <text class="lbl b" x="115" y="328" text-anchor="middle" style="font-size:15px">agent answers using:</text>
-      <text class="lbl b" x="115" y="346" text-anchor="middle" style="font-size:15px">vegetarian + Munich</text>
-      <rect class="sk" x="406.4" y="48" width="80.8" height="74" rx="8" style="fill:#fdfbf4"/>
-      <text class="lbl b" x="446.8" y="72" text-anchor="middle" style="font-size:15px">'forget</text>
-      <text class="lbl b" x="446.8" y="90" text-anchor="middle" style="font-size:15px">where I</text>
-      <text class="lbl b" x="446.8" y="108" text-anchor="middle" style="font-size:15px">live'</text>
-      <rect class="sk" x="362.8" y="190" width="139.6" height="56" rx="8" style="fill:#fdfbf4"/>
-      <text class="lbl b" x="432.6" y="214" text-anchor="middle" style="font-size:15px">delete</text>
-      <text class="lbl b" x="432.6" y="232" text-anchor="middle" style="font-size:15px">matching facts</text>
-      <rect class="sk" x="513.2" y="39" width="106" height="92" rx="8" style="fill:#fdfbf4"/>
-      <text class="lbl b" x="566.2" y="63" text-anchor="middle" style="font-size:15px">/memories:</text>
-      <text class="lbl b" x="566.2" y="81" text-anchor="middle" style="font-size:15px">list,</text>
-      <text class="lbl b" x="566.2" y="99" text-anchor="middle" style="font-size:15px">edit,</text>
-      <text class="lbl b" x="566.2" y="117" text-anchor="middle" style="font-size:15px">delete</text>
-    </svg>
-    <figcaption>Fig 3: An agent with persistent memory across sessions</figcaption>
-  </figure>
+<svg viewBox="0 0 660 370" role="img" aria-label="An agent with persistent memory across sessions">
+<path class="sk blue" d="M85 80 L85 130" style="color:var(--ink)" marker-end="url(#arr)"/>
+<path class="sk blue" d="M250 80 L250 130" style="color:var(--ink)" marker-end="url(#arr)"/>
+<path class="sk blue" d="M415 80 L415 130" style="color:var(--ink)" marker-end="url(#arr)"/>
+<path class="sk blue" d="M85 186 L85 290" style="color:var(--ink)" marker-end="url(#arr)"/>
+<path class="sk blue" d="M140 186 C140 230, 215 225, 215 268" style="color:var(--ink)" marker-end="url(#arr)"/>
+<path class="sk blue" d="M250 186 L250 268" style="color:var(--ink)" marker-end="url(#arr)"/>
+<path class="sk blue" d="M415 186 L415 268" style="color:var(--ink)" marker-end="url(#arr)"/>
+<path class="sk blue" d="M580 80 L580 268" style="color:var(--ink)" marker-end="url(#arr)"/>
+<rect class="sk" x="10" y="10" width="150" height="70" rx="8" style="fill:#fdfbf4"/>
+<text class="lbl b" x="85.0" y="32" text-anchor="middle" style="font-size:13.5px">session 2 (next day)</text>
+<text class="lbl b" x="85.0" y="50" text-anchor="middle" style="font-size:15px">'find me a</text>
+<text class="lbl b" x="85.0" y="68" text-anchor="middle" style="font-size:15px">dinner place'</text>
+<rect class="sk" x="175" y="10" width="150" height="70" rx="8" style="fill:#fdfbf4"/>
+<text class="lbl b" x="250.0" y="32" text-anchor="middle" style="font-size:15px">session 1</text>
+<text class="lbl b" x="250.0" y="50" text-anchor="middle" style="font-size:15px">'I'm vegetarian,</text>
+<text class="lbl b" x="250.0" y="68" text-anchor="middle" style="font-size:15px">I live in Munich'</text>
+<rect class="sk" x="340" y="10" width="150" height="70" rx="8" style="fill:#fdfbf4"/>
+<text class="lbl b" x="415.0" y="41" text-anchor="middle" style="font-size:15px">'forget where</text>
+<text class="lbl b" x="415.0" y="59" text-anchor="middle" style="font-size:15px">I live'</text>
+<rect class="sk" x="505" y="10" width="150" height="70" rx="8" style="fill:#fdfbf4"/>
+<text class="lbl b" x="580.0" y="41" text-anchor="middle" style="font-size:15px">/memories:</text>
+<text class="lbl b" x="580.0" y="59" text-anchor="middle" style="font-size:15px">list, edit, delete</text>
+<rect class="sk" x="10" y="130" width="150" height="56" rx="8" style="fill:#fdfbf4"/>
+<text class="lbl b" x="85.0" y="154" text-anchor="middle" style="font-size:15px">retrieve</text>
+<text class="lbl b" x="85.0" y="172" text-anchor="middle" style="font-size:15px">relevant facts</text>
+<rect class="sk" x="175" y="130" width="150" height="56" rx="8" style="fill:#fdfbf4"/>
+<text class="lbl b" x="250.0" y="154" text-anchor="middle" style="font-size:15px">extractor →</text>
+<text class="lbl b" x="250.0" y="172" text-anchor="middle" style="font-size:15px">facts</text>
+<rect class="sk" x="340" y="130" width="150" height="56" rx="8" style="fill:#fdfbf4"/>
+<text class="lbl b" x="415.0" y="154" text-anchor="middle" style="font-size:15px">delete</text>
+<text class="lbl b" x="415.0" y="172" text-anchor="middle" style="font-size:15px">matching facts</text>
+<rect class="sk green" x="10" y="290" width="170" height="56" rx="8" style="fill:#fdfbf4"/>
+<text class="lbl b" x="95.0" y="314" text-anchor="middle" style="font-size:15px">agent answers using:</text>
+<text class="lbl b" x="95.0" y="332" text-anchor="middle" style="font-size:15px">vegetarian + Munich</text>
+<path class="sk green" d="M195 278 v62 a225 8 0 0 0 450 0 v-62" style="fill:#fdfbf4"/>
+<ellipse class="sk green" cx="420" cy="278" rx="225" ry="8" style="fill:#fdfbf4"/>
+<text class="lbl b" x="420" y="310" text-anchor="middle" style="font-size:15px;paint-order:stroke;stroke:#fdfbf4;stroke-width:5px;stroke-linejoin:round">SQLite (facts, per user)</text>
+<text class="lbl b" x="420" y="328" text-anchor="middle" style="font-size:15px;paint-order:stroke;stroke:#fdfbf4;stroke-width:5px;stroke-linejoin:round">+ vector index</text>
+</svg>
+<figcaption>Fig 3: An agent with persistent memory across sessions</figcaption>
+</figure>
   <h3>Steps</h3>
   <ol style="list-style:none;padding-left:0">
     <li>1. A chat agent with a rolling summary for the current session.</li>

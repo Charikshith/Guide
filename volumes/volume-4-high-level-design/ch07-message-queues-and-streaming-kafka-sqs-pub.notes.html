@@ -199,22 +199,22 @@ a{color:var(--ink);text-decoration:underline dotted}
   <h3>Producer → broker → consumer group with partitions and offsets</h3>
   <figure>
     <svg viewBox="0 0 660 400" role="img" aria-label="Producer A (key = order_id) and producer B write to topic orders with 3 partitions and RF 3. Consumer group billing: consumer 1 reads p0 and p1, consumer 2 reads p2. Consumer group analytics: consumer 1 reads p0, p1, p2">
-      <rect class="sk" x="8" y="75" width="150" height="62" rx="10"/>
-      <text class="lbl b" x="83" y="101" text-anchor="middle">producer A</text>
-      <text class="lbl" x="83" y="124" text-anchor="middle">key = order_id</text>
-      <rect class="sk" x="8" y="185" width="150" height="46" rx="10"/>
-      <text class="lbl b" x="83" y="214" text-anchor="middle">producer B</text>
-      <rect class="sk" x="195" y="15" width="255" height="260" rx="12" style="stroke-dasharray:8 6"/>
-      <text class="lbl r" x="322" y="40" text-anchor="middle">topic 'orders'</text>
-      <text class="lbl r" x="322" y="62" text-anchor="middle">(3 partitions, RF = 3)</text>
-      <rect class="sk" x="208" y="90" width="230" height="44" rx="8" style="fill:var(--hl-blue)"/>
-      <text class="lbl b" x="323" y="118" text-anchor="middle">partition 0: 0 1 2 3 4 5 ▸</text>
-      <rect class="sk" x="208" y="150" width="230" height="44" rx="8" style="fill:var(--hl-blue)"/>
-      <text class="lbl b" x="323" y="178" text-anchor="middle">partition 1: 0 1 2 3 ▸</text>
-      <rect class="sk" x="208" y="210" width="230" height="44" rx="8" style="fill:var(--hl-blue)"/>
-      <text class="lbl b" x="323" y="238" text-anchor="middle">partition 2: 0 1 2 3 4 ▸</text>
-      <path class="sk blue" d="M158 100 C 170 100, 180 100, 193 105" style="color:var(--ink)" marker-end="url(#arr)"/>
-      <path class="sk blue" d="M158 208 C 170 200, 180 190, 193 180" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <rect class="sk" x="5" y="75" width="120" height="62" rx="10"/>
+      <text class="lbl b" x="65" y="101" text-anchor="middle">producer A</text>
+      <text class="lbl" x="65" y="124" text-anchor="middle">key = order_id</text>
+      <rect class="sk" x="5" y="185" width="120" height="46" rx="10"/>
+      <text class="lbl b" x="65" y="214" text-anchor="middle">producer B</text>
+      <rect class="sk" x="160" y="15" width="260" height="260" rx="12" style="stroke-dasharray:8 6"/>
+      <text class="lbl r" x="290" y="40" text-anchor="middle">topic 'orders'</text>
+      <text class="lbl r" x="290" y="62" text-anchor="middle">(3 partitions, RF = 3)</text>
+      <rect class="sk" x="173" y="90" width="234" height="44" rx="8" style="fill:var(--hl-blue)"/>
+      <text class="lbl b" x="290" y="118" text-anchor="middle">partition 0: 0 1 2 3 4 5 ▸</text>
+      <rect class="sk" x="173" y="150" width="234" height="44" rx="8" style="fill:var(--hl-blue)"/>
+      <text class="lbl b" x="290" y="178" text-anchor="middle">partition 1: 0 1 2 3 ▸</text>
+      <rect class="sk" x="173" y="210" width="234" height="44" rx="8" style="fill:var(--hl-blue)"/>
+      <text class="lbl b" x="290" y="238" text-anchor="middle">partition 2: 0 1 2 3 4 ▸</text>
+      <path class="sk blue" d="M125 100 C 140 100, 152 104, 171 106" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M125 208 C 140 200, 152 188, 171 178" style="color:var(--ink)" marker-end="url(#arr)"/>
       <rect class="sk green" x="480" y="15" width="170" height="205" rx="12" style="stroke-dasharray:8 6"/>
       <text class="lbl g" x="565" y="38" text-anchor="middle">consumer group</text>
       <text class="lbl g" x="565" y="58" text-anchor="middle">'billing'</text>
@@ -230,12 +230,12 @@ a{color:var(--ink);text-decoration:underline dotted}
       <rect class="sk" x="495" y="305" width="140" height="56" rx="8"/>
       <text class="lbl b" x="565" y="331" text-anchor="middle">consumer 1</text>
       <text class="lbl" x="565" y="351" text-anchor="middle">(p0, p1, p2)</text>
-      <path class="sk blue" d="M438 108 C 460 105, 475 102, 493 100" style="color:var(--ink)" marker-end="url(#arr)"/>
-      <path class="sk blue" d="M438 168 C 460 150, 475 120, 493 112" style="color:var(--ink)" marker-end="url(#arr)"/>
-      <path class="sk blue" d="M438 228 C 460 215, 475 185, 493 170" style="color:var(--ink)" marker-end="url(#arr)"/>
-      <path class="sk blue" d="M438 124 C 462 200, 468 300, 493 322" style="color:var(--ink)" marker-end="url(#arr)"/>
-      <path class="sk blue" d="M438 184 C 458 240, 470 320, 493 332" style="color:var(--ink)" marker-end="url(#arr)"/>
-      <path class="sk blue" d="M438 244 C 458 280, 474 335, 493 342" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M407 104 C 440 104, 460 98, 493 96" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M407 164 C 440 160, 462 120, 493 110" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M407 224 C 440 220, 462 190, 493 170" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M407 124 L 454 124 L 454 322 L 493 322" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M407 184 L 442 184 L 442 333 L 493 333" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M407 244 L 430 244 L 430 344 L 493 344" style="color:var(--ink)" marker-end="url(#arr)"/>
     </svg>
     <figcaption>Fig 1: two producers → topic 'orders' (3 partitions) → consumer groups 'billing' (c1: p0,p1; c2: p2) and 'analytics' (c1: p0,p1,p2)</figcaption>
   </figure>

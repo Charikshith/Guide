@@ -200,36 +200,28 @@ a{color:var(--ink);text-decoration:underline dotted}
   <h2>Diagram</h2>
   <h3>A primary + replicas diagram</h3>
   <figure>
-    <svg viewBox="0 0 660 420" role="img" aria-label="App writes to the primary and reads (may lag) through a read pool / proxy to replica 1 and replica 2. The primary streams WAL asynchronously to both replicas, has a sync standby in another zone for failover, and logical replication to an analytics replica">
-      <rect class="sk" x="10" y="190" width="90" height="60" rx="10"/>
-      <text class="lbl b" x="55" y="226" text-anchor="middle">app</text>
-      <path class="sk" d="M255 190 L255 250 M255 190 C 255 172, 365 172, 365 190 M255 250 C 255 268, 365 268, 365 250 M255 190 C 255 208, 365 208, 365 190 L365 250" style="fill:var(--hl-yellow)"/>
-      <text class="lbl b" x="310" y="236" text-anchor="middle">primary</text>
-      <path class="sk blue" d="M100 220 C 150 220, 200 220, 252 222" style="color:var(--ink)" marker-end="url(#arr)"/>
-      <text class="lbl" x="176" y="212" text-anchor="middle" style="font-size:15px">writes</text>
-      <rect class="sk" x="130" y="20" width="170" height="54" rx="10"/>
-      <text class="lbl b" x="215" y="52" text-anchor="middle">read pool / proxy</text>
-      <path class="sk blue" d="M55 190 C 55 120, 90 80, 128 62" style="color:var(--ink)" marker-end="url(#arr)"/>
-      <text class="lbl" x="68" y="130" style="font-size:15px;paint-order:stroke;stroke:#fdfbf4;stroke-width:6px">reads (may lag)</text>
-      <rect class="sk" x="400" y="10" width="120" height="48" rx="12"/>
-      <text class="lbl b" x="460" y="40" text-anchor="middle">replica 1</text>
-      <rect class="sk" x="400" y="85" width="120" height="48" rx="12"/>
-      <text class="lbl b" x="460" y="115" text-anchor="middle">replica 2</text>
-      <path class="sk blue" d="M300 40 C 330 36, 365 34, 398 34" style="color:var(--ink)" marker-end="url(#arr)"/>
-      <path class="sk blue" d="M300 58 C 330 80, 365 100, 398 108" style="color:var(--ink)" marker-end="url(#arr)"/>
-      <path class="sk green" d="M345 188 C 360 150, 380 125, 398 118" style="color:var(--green)" marker-end="url(#arr)"/>
-      <path class="sk green" d="M366 205 C 560 190, 590 70, 522 36" style="color:var(--green)" marker-end="url(#arr)"/>
-      <text class="lbl g" x="440" y="168" style="font-size:15px">WAL streaming (async)</text>
-      <rect class="sk" x="215" y="340" width="190" height="52" rx="12"/>
-      <text class="lbl b" x="310" y="362" text-anchor="middle" style="font-size:15px">standby,</text>
-      <text class="lbl b" x="310" y="381" text-anchor="middle" style="font-size:15px">other zone</text>
-      <path class="sk red" d="M310 252 C 314 285, 306 310, 310 338" style="color:var(--red)" marker-end="url(#arr)"/>
-      <text class="lbl r" x="322" y="300" style="font-size:15px">sync standby (failover)</text>
-      <rect class="sk" x="470" y="335" width="180" height="52" rx="12"/>
-      <text class="lbl b" x="560" y="367" text-anchor="middle">analytics replica</text>
-      <path class="sk blue" d="M368 238 C 420 260, 450 300, 500 333" style="color:var(--ink)" marker-end="url(#arr)"/>
-      <text class="lbl" x="440" y="285" style="font-size:15px">logical replication</text>
-    </svg>
+<svg viewBox="0 0 660 420" role="img" aria-label="App writes to the primary and reads (may lag) through a read pool / proxy to replica 1 and replica 2. The primary streams WAL asynchronously to both replicas, has a sync standby in another zone for failover, and logical replication to an analytics replica">
+<rect class="sk " x="10" y="190" width="90" height="60" rx="10"/><text class="lbl b" x="55.0" y="225.0" text-anchor="middle">app</text>
+<path class="sk" d="M235 190 L235 250 M235 190 C 235 172, 345 172, 345 190 M235 250 C 235 268, 345 268, 345 250 M235 190 C 235 208, 345 208, 345 190 L345 250" style="fill:var(--hl-yellow)"/><text class="lbl b" x="290" y="237" text-anchor="middle">primary</text>
+<path class="sk blue" style="color:var(--ink)" d="M100 220 C 150 220, 190 220, 233 222" marker-end="url(#arr)"/>
+<text class="lbl " x="168" y="208" text-anchor="middle">writes</text>
+<rect class="sk " x="150" y="20" width="170" height="54" rx="10"/><text class="lbl b" x="235.0" y="52.0" text-anchor="middle">read pool / proxy</text>
+<path class="sk blue" style="color:var(--ink)" d="M55 188 C 55 120, 90 75, 148 55" marker-end="url(#arr)"/>
+<text class="lbl " x="80" y="150" text-anchor="start">reads (may lag)</text>
+<rect class="sk " x="420" y="10" width="120" height="48" rx="10"/><text class="lbl b" x="480.0" y="39.0" text-anchor="middle">replica 1</text>
+<rect class="sk " x="420" y="90" width="120" height="48" rx="10"/><text class="lbl b" x="480.0" y="119.0" text-anchor="middle">replica 2</text>
+<path class="sk blue" style="color:var(--ink)" d="M320 40 C 350 36, 385 34, 418 34" marker-end="url(#arr)"/>
+<path class="sk blue" style="color:var(--ink)" d="M320 58 C 350 80, 385 100, 418 108" marker-end="url(#arr)"/>
+<path class="sk green" style="color:var(--green)" d="M300 183 C 330 160, 390 150, 428 140" marker-end="url(#arr)"/>
+<path class="sk green" style="color:var(--green)" d="M345 210 L585 210 L585 34 L542 34" marker-end="url(#arr)"/>
+<text class="lbl g" x="465" y="192" text-anchor="middle">WAL streaming (async)</text>
+<rect class="sk " x="215" y="330" width="190" height="52" rx="10"/><text class="lbl b" x="310.0" y="352.0" text-anchor="middle">standby,</text><text class="lbl b" x="310.0" y="370.0" text-anchor="middle">other zone</text>
+<path class="sk red" style="color:var(--red)" d="M290 258 L290 328" marker-end="url(#arr)"/>
+<text class="lbl r" x="280" y="300" text-anchor="end">sync standby (failover)</text>
+<rect class="sk " x="470" y="330" width="180" height="52" rx="10"/><text class="lbl b" x="560.0" y="361.0" text-anchor="middle">analytics replica</text>
+<path class="sk blue" style="color:var(--ink)" d="M345 235 C 420 240, 470 285, 520 328" marker-end="url(#arr)"/>
+<text class="lbl " x="490" y="285" text-anchor="start">logical replication</text>
+</svg>
     <figcaption>Fig 1: app writes → primary; reads → read pool → replicas; primary → replicas by WAL streaming (async), → sync standby in another zone, → analytics replica by logical replication</figcaption>
   </figure>
 

@@ -327,28 +327,34 @@ pub fn largest&lt;T: Ord&gt;(xs: &amp;[T]) -&gt; Option&lt;&amp;T&gt; { xs.iter(
   <h2>Mini project</h2>
   <p><b>Generate API docs from docstrings and write a project README + first ADR.</b></p>
   <figure>
-    <svg viewBox="0 0 640 380" role="img" aria-label="src with Google-style docstrings goes through mkdocs plus mkdocstrings; README, ADR files, and CI (mkdocs build --strict plus doctests) all feed the docs site with API reference">
-      <rect class="sk" x="10" y="20" width="230" height="54" rx="10"/>
-      <text class="lbl b" x="125" y="44" text-anchor="middle" style="font-size:15px">src/ with Google-style</text>
-      <text class="lbl b" x="125" y="65" text-anchor="middle" style="font-size:15px">docstrings</text>
-      <path class="sk blue" d="M125 74 L125 103" style="color:var(--ink)" marker-end="url(#arr)"/>
-      <rect class="sk" x="10" y="105" width="230" height="44" rx="10"/>
-      <text class="lbl b" x="125" y="133" text-anchor="middle" style="font-size:15px">mkdocs + mkdocstrings</text>
-      <rect class="sk" x="290" y="20" width="330" height="54" rx="10"/>
-      <text class="lbl b" x="455" y="44" text-anchor="middle" style="font-size:15px">README.md: pitch, quickstart,</text>
-      <text class="lbl b" x="455" y="65" text-anchor="middle" style="font-size:15px">usage, dev setup</text>
-      <rect class="sk" x="290" y="105" width="330" height="54" rx="10"/>
-      <text class="lbl b" x="455" y="129" text-anchor="middle" style="font-size:14px">docs/adr/0001-record-architecture-decisions.md</text>
-      <text class="lbl b" x="455" y="150" text-anchor="middle" style="font-size:14px">docs/adr/0002-*.md</text>
-      <rect class="sk" x="290" y="190" width="330" height="54" rx="10"/>
-      <text class="lbl b" x="455" y="214" text-anchor="middle" style="font-size:15px">CI: mkdocs build --strict</text>
-      <text class="lbl b" x="455" y="235" text-anchor="middle" style="font-size:15px">+ doctests</text>
-      <path class="sk blue" d="M290 47 L262 47 M290 132 L262 132 M290 217 L262 217 M240 127 L262 127" style="color:var(--ink)"/>
-      <path class="sk blue" d="M262 47 L262 305" style="color:var(--ink)"/>
-      <path class="sk blue" d="M262 305 L328 305" style="color:var(--ink)" marker-end="url(#arr)"/>
-      <rect class="sk green" x="330" y="280" width="290" height="54" rx="10" style="fill:var(--hl-green)"/>
-      <text class="lbl b" x="475" y="304" text-anchor="middle" style="font-size:15px">docs site:</text>
-      <text class="lbl b" x="475" y="325" text-anchor="middle" style="font-size:15px">API reference</text>
+    <svg viewBox="0 0 640 430" role="img" aria-label="src with Google-style docstrings goes through mkdocs plus mkdocstrings; README, ADR files, and CI (mkdocs build --strict plus doctests) all feed the docs site with API reference">
+      <rect class="sk" x="190" y="15" width="260" height="54" rx="10"/>
+      <text class="lbl b" x="320" y="39" text-anchor="middle" style="font-size:15px">src/ with Google-style</text>
+      <text class="lbl b" x="320" y="59" text-anchor="middle" style="font-size:15px">docstrings</text>
+      <path class="sk blue" d="M320 69 L320 98" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <rect class="sk" x="190" y="100" width="260" height="44" rx="10"/>
+      <text class="lbl b" x="320" y="128" text-anchor="middle" style="font-size:15px">mkdocs + mkdocstrings</text>
+      <rect class="sk" x="10" y="200" width="190" height="64" rx="10"/>
+      <text class="lbl b" x="105" y="224" text-anchor="middle" style="font-size:14px">README.md: pitch,</text>
+      <text class="lbl b" x="105" y="244" text-anchor="middle" style="font-size:14px">quickstart, usage,</text>
+      <text class="lbl b" x="105" y="262" text-anchor="middle" style="font-size:14px">dev setup</text>
+      <rect class="sk" x="225" y="200" width="190" height="64" rx="10"/>
+      <text class="lbl b" x="320" y="224" text-anchor="middle" style="font-size:14px">ADR files:</text>
+      <text class="lbl b" x="320" y="244" text-anchor="middle" style="font-size:14px">docs/adr/0001-*.md</text>
+      <text class="lbl b" x="320" y="262" text-anchor="middle" style="font-size:14px">docs/adr/0002-*.md</text>
+      <rect class="sk" x="440" y="200" width="190" height="64" rx="10"/>
+      <text class="lbl b" x="535" y="224" text-anchor="middle" style="font-size:14px">CI: mkdocs build</text>
+      <text class="lbl b" x="535" y="244" text-anchor="middle" style="font-size:14px">--strict</text>
+      <text class="lbl b" x="535" y="262" text-anchor="middle" style="font-size:14px">+ doctests</text>
+      <path class="sk blue" d="M260 144 C 260 175, 140 170, 120 198" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M320 144 L320 198" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M380 144 C 380 175, 500 170, 520 198" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M105 264 C 105 320, 230 310, 270 338" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M320 264 L320 336" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M535 264 C 535 320, 410 310, 370 338" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <rect class="sk green" x="215" y="340" width="210" height="54" rx="10" style="fill:var(--hl-green)"/>
+      <text class="lbl b" x="320" y="364" text-anchor="middle" style="font-size:15px">docs site:</text>
+      <text class="lbl b" x="320" y="384" text-anchor="middle" style="font-size:15px">API reference</text>
     </svg>
     <figcaption>Fig 3: code docstrings, README, ADRs and CI checks all feed one docs site</figcaption>
   </figure>
