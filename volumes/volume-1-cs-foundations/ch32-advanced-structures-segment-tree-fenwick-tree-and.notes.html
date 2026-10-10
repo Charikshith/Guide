@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ch 32 — Advanced Structures: Segment Tree, Fenwick Tree &amp; Union-Find — Notes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;700&family=Kalam:wght@400;700&family=Patrick+Hand&display=swap" rel="stylesheet">
+<style>
+/* ===== Page tokens ===== */
+:root{
+  --line:32px;                 /* ruled-line spacing; every vertical size is a multiple */
+  --paper:#fdfbf4; --rule:#c9dcef; --margin:#e8a0a0;
+  --ink:#1f3a93;               /* blue pen (body) */
+  --ink2:#222;                 /* black pen (headings) */
+  --red:#c0392b; --green:#1e8449;
+  --hl-yellow:rgba(255,235,59,.55); --hl-pink:rgba(255,128,171,.45);
+  --hl-green:rgba(118,255,3,.35); --hl-blue:rgba(64,196,255,.35);
+  --sticky:#fff59d; --desk:#e9e4d8;
+  --hand:'Kalam','Patrick Hand','Comic Sans MS','Segoe Print','Bradley Hand',cursive;
+  --title:'Caveat','Kalam','Segoe Print','Bradley Hand',cursive;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){ --desk:#2b2b2b; }
+}
+:root[data-theme="dark"]{ --desk:#2b2b2b; }
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--desk);font-family:var(--hand);color:var(--ink);}
+
+/* ===== Notebook sheet ===== */
+.page{
+  position:relative; max-width:860px; margin:24px auto; padding:var(--line) 28px calc(var(--line)*2) 84px;
+  background:
+    linear-gradient(90deg,transparent 64px,var(--margin) 64px,var(--margin) 66px,transparent 66px),
+    repeating-linear-gradient(var(--paper) 0,var(--paper) calc(var(--line) - 1px),var(--rule) calc(var(--line) - 1px),var(--rule) var(--line));
+  background-color:var(--paper);
+  box-shadow:0 2px 6px rgba(0,0,0,.15),0 12px 28px rgba(0,0,0,.12);
+  font-size:20px; line-height:var(--line);
+}
+.page::before{ /* punched holes */
+  content:""; position:absolute; left:22px; top:0; bottom:0; width:18px;
+  background:radial-gradient(circle,var(--desk) 7px,transparent 8px) 0 40px/18px 220px repeat-y;
+}
+@media (max-width:600px){
+  .page{margin:0;padding-left:52px;padding-right:16px;font-size:18px;
+    background:
+      linear-gradient(90deg,transparent 40px,var(--margin) 40px,var(--margin) 42px,transparent 42px),
+      repeating-linear-gradient(var(--paper) 0,var(--paper) calc(var(--line) - 1px),var(--rule) calc(var(--line) - 1px),var(--rule) var(--line));
+    background-color:var(--paper);}
+  .page::before{left:10px;width:16px}
+}
+
+/* ===== Text (all margins are multiples of --line so text sits on the rules) ===== */
+.date{position:absolute;top:0;right:24px;font-family:var(--title);font-size:22px;color:var(--ink2);line-height:var(--line)}
+h1{font-family:var(--title);font-weight:700;color:var(--ink2);font-size:46px;line-height:calc(var(--line)*2);margin:0;transform:rotate(-1deg)}
+h1 .u{background:linear-gradient(transparent 62%,var(--hl-yellow) 62%,var(--hl-yellow) 92%,transparent 92%)}
+h2{font-family:var(--title);font-weight:700;color:var(--red);font-size:32px;line-height:calc(var(--line)*1.5);margin:calc(var(--line)*.5) 0 0}
+h2::before{content:"➤ ";font-size:22px}
+p,li{margin:0}
+ul,ol{margin:0;padding-left:28px}
+ul{list-style:none}
+ul>li::before{content:"–";position:absolute;margin-left:-20px}
+ul>li.star::before{content:"★";color:var(--red)}
+ul>li.arrow::before{content:"→"}
+ul>li.check::before{content:"✓";color:var(--green)}
+.gap{height:var(--line)}
+
+/* ===== Pen effects ===== */
+.hl{background:var(--hl-yellow);padding:0 3px;border-radius:3px 6px 4px 7px}
+.hl.pink{background:var(--hl-pink)} .hl.green{background:var(--hl-green)} .hl.blue{background:var(--hl-blue)}
+.red{color:var(--red)} .green{color:var(--green)} .black{color:var(--ink2)}
+.ul{text-decoration:underline wavy var(--red);text-underline-offset:5px}
+.circ{border:2px solid var(--red);border-radius:50% 45% 55% 48%;padding:0 6px}
+.strike{text-decoration:line-through 2px var(--red)}
+.term{font-weight:700;color:var(--ink2)}
+.box{display:flow-root;border:2.5px solid var(--ink2);border-radius:4px 10px 6px 12px;padding:calc(var(--line)*.5 - 2.5px) 14px;margin:calc(var(--line)*.5) 0;transform:rotate(-.4deg);background:rgba(255,255,255,.35)}
+.box.red{border-color:var(--red)}
+.formula{font-family:var(--title);font-size:28px;text-align:center;color:var(--ink2)}
+
+/* sticky note */
+.sticky{float:right;width:min(250px,42%);margin:0 0 var(--line) 20px;padding:var(--line) 16px;background:var(--sticky);
+  color:#333;transform:rotate(2.2deg);box-shadow:2px 4px 8px rgba(0,0,0,.18);font-size:18px}
+.sticky b{font-family:var(--title);font-size:24px;color:var(--red)}
+@media (max-width:600px){.sticky{float:none;width:auto;margin:var(--line) 0}}
+
+/* margin annotation (lives in the red margin) */
+.side{position:absolute;left:4px;width:58px;text-align:center;font-family:var(--title);font-size:17px;line-height:18px;color:var(--red);transform:rotate(-8deg)}
+@media (max-width:600px){.side{display:none}}
+
+/* two-column notes */
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:0 28px}
+@media (max-width:600px){.cols{grid-template-columns:1fr}}
+
+/* diagrams */
+figure{margin:var(--line) 0;text-align:center}
+figure svg{width:100%;max-width:640px;height:auto;overflow:visible}
+figcaption{font-family:var(--title);font-size:20px;color:var(--ink2)}
+/* phones: keep labels readable — diagram scrolls inside its own box instead of shrinking */
+@media (max-width:600px){figure{overflow-x:auto}figure svg{min-width:520px}}
+.sk{fill:none;stroke:var(--ink2);stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round;filter:url(#rough)}
+.sk.blue{stroke:var(--ink)} .sk.red{stroke:var(--red)} .sk.green{stroke:var(--green)}
+.lbl{font-family:var(--hand);font-size:17px;fill:var(--ink)}
+.lbl.b{font-weight:700;fill:var(--ink2)} .lbl.r{fill:var(--red)} .lbl.g{fill:var(--green)}
+
+/* table */
+.wrap{overflow-x:auto}
+table{border-collapse:collapse;margin:calc(var(--line)*.5) 0;min-width:100%}
+th,td{border:2px solid var(--ink2);padding:0 10px;text-align:left;vertical-align:top}
+th{font-family:var(--title);font-size:24px;color:var(--ink2)}
+
+@media print{body{background:#fff}.page{box-shadow:none;margin:0}.page::before{display:none}}
+
+/* ===== Added for long chapter notes ===== */
+pre.code{font-family:Consolas,'Courier New',monospace;font-size:14px;line-height:var(--line);color:var(--ink);background:rgba(255,255,255,.45);
+  border-left:4px solid var(--red);margin:calc(var(--line)*.5) 0;padding:0 12px;overflow-x:auto;white-space:pre}
+pre.code.ascii{border-left-color:var(--green)}
+code{font-family:Consolas,'Courier New',monospace;font-size:.82em;background:rgba(0,0,0,.06);padding:0 3px;border-radius:3px}
+pre.code code{background:none;padding:0;font-size:inherit}
+.lang{font-family:var(--title);font-size:18px;color:var(--red)}
+h3{font-family:var(--title);font-weight:700;color:var(--ink2);font-size:26px;line-height:var(--line);margin:calc(var(--line)*.5) 0 0}
+h3::before{content:"✎ ";font-size:18px;color:var(--red)}
+.nav{display:flex;justify-content:space-between;gap:12px;font-family:var(--title);font-size:22px;line-height:var(--line)}
+.nav a{color:var(--red);text-decoration:none}
+.nav a:hover{text-decoration:underline wavy}
+.pagebreak{border-top:3px dashed var(--margin);margin:var(--line) 0;text-align:center;font-family:var(--title);color:var(--red);line-height:var(--line)}
+li.todo::before{content:"☐";color:var(--ink2)}
+a{color:var(--ink);text-decoration:underline dotted}
+</style>
+</head>
+<body>
+<!-- One shared hand-drawn wobble filter; give every diagram stroke class="sk" -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <!-- userSpaceOnUse region: a % region collapses to nothing on perfectly straight lines (zero-height bbox) -->
+  <filter id="rough" filterUnits="userSpaceOnUse" x="-500" y="-500" width="3000" height="3000">
+    <feTurbulence type="fractalNoise" baseFrequency="0.03" numOctaves="2" seed="3" result="n"/>
+    <feDisplacementMap in="SourceGraphic" in2="n" scale="3"/>
+  </filter>
+  <marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+    <path d="M1 1 L9 5 L1 9" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+  </marker>
+</defs></svg>
+
+<main class="page">
+  <nav class="nav"><a href="ch31-hash-tables-and-graphs.notes.html">← Ch 31 — Hash Tables &amp; Graphs</a><a href="index.notes.html">☰ Contents</a><a href="ch33-sorting-searching-and-binary-search.notes.html">Ch 33 — Sorting, Searching &amp; Binary Search →</a></nav>
+  <div class="date">2026-10-10</div>
+  <h1><span class="u">Ch 32 — Advanced Structures: Segment Tree, Fenwick Tree &amp; Union-Find</span></h1>
+  <p class="black">Chapter 32 — Advanced Structures: Segment Tree, Fenwick Tree &amp; Union-Find</p>
+  <p class="black"><b>Volume 1 — Computer Science Foundations</b> · <a href="index.md">Contents</a> · ← <a href="ch31-hash-tables-and-graphs.notes.html">Chapter 31 — Hash Tables &amp; Graphs</a> · Next → <a href="ch33-sorting-searching-and-binary-search.notes.html">Chapter 33 — Sorting, Searching &amp; Binary Search</a></p>
+  <h2>Concept</h2>
+  <p>Range queries (segment/Fenwick) and dynamic connectivity (union-find with path compression + union by rank).</p>
+  <div class="box"><b>In one sentence:</b> segment and Fenwick trees precompute partial answers over ranges so that "sum/min of <code>a[l..r]</code>" and "change <code>a[i]</code>" both take O(log n), and union-find keeps track of which items are in the same group while groups keep merging.</div>
+  <h3>Mental model.</h3>
+  <ul>
+<li><b>Segment tree</b> — a tournament bracket. Each match stores the winner (min) or total (sum) of its half. To answer "who's best among players 3–9?" you combine a few bracket nodes instead of rescanning everyone.</li>
+<li><b>Fenwick tree</b> — a clever bookkeeper who keeps running totals of cleverly sized blocks (1, 2, 4, 8 … items), chosen by the lowest set bit of the index.</li>
+<li><b>Union-find</b> — clubs where each member points to a "representative". Merging two clubs just makes one representative report to the other. "Are we in the same club?" = "do we have the same representative?"</li>
+</ul>
+  <h3>When to use what</h3>
+  <div class="wrap"><table>
+<tr><th>Need</th><th>Naive</th><th>Prefix sums array</th><th>Fenwick (BIT)</th><th>Segment tree</th></tr>
+<tr><td>------</td><td>:-:</td><td>:-:</td><td>:-:</td><td>:-:</td></tr>
+<tr><td>Range sum, no updates</td><td>O(n)</td><td><b>O(1)</b> query, O(n) build</td><td>O(log n)</td><td>O(log n)</td></tr>
+<tr><td>Range sum + point updates</td><td>O(n) query</td><td>O(n) update</td><td><b>O(log n) both, tiny code</b></td><td>O(log n) both</td></tr>
+<tr><td>Range min/max + updates</td><td>O(n)</td><td>✗</td><td>✗ (not invertible)</td><td><b>O(log n)</b></td></tr>
+<tr><td>Range update + range query</td><td>O(n)</td><td>✗</td><td>2 BITs</td><td>lazy propagation</td></tr>
+<tr><td>Memory</td><td>—</td><td>n</td><td>n</td><td>~4n</td></tr>
+</table></div>
+  <h3>Union-find (disjoint set union, DSU)</h3>
+  <div class="wrap"><table>
+<tr><th>Operation</th><th>Meaning</th></tr>
+<tr><td><code>find(x)</code></td><td>return the representative (root) of x's set</td></tr>
+<tr><td><code>union(a, b)</code></td><td>merge the sets containing a and b</td></tr>
+<tr><td><code>connected(a, b)</code></td><td><code>find(a) == find(b)</code></td></tr>
+</table></div>
+  <h3>Two optimizations — use both</h3>
+  <ol style="list-style:none;padding-left:0">
+<li>1. <b>Union by rank/size</b> — attach the shorter tree under the taller one, so trees stay shallow (height ≤ log n).</li>
+<li>2. <b>Path compression</b> — during <code>find</code>, point every visited node directly at the root, so future finds are instant.</li>
+</ol>
+  <p>Together: amortized <b>O(α(n))</b> per operation, where α is the inverse Ackermann function — ≤ 4 for any n that fits in the universe. "Near O(1)".</p>
+  <p>Uses: Kruskal's minimum spanning tree, cycle detection in undirected graphs, grouping accounts/images/pixels, network connectivity, percolation.</p>
+  <h2>Prereqs</h2>
+  <ul>
+<li><a href="ch30-trees-bst-heap-and-trie.notes.html">Chapter 30 — Trees, BST, Heap &amp; Trie</a></li>
+<li><a href="ch31-hash-tables-and-graphs.notes.html">Chapter 31 — Hash Tables &amp; Graphs</a></li>
+</ul>
+  <h2>Diagram</h2>
+  <h3>A sum segment tree over <code>a = [5, 2, 6, 1, 3, 4, 8, 7]</code></h3>
+  <figure>
+<svg viewBox="0 0 602 438" style="max-width:602px" role="img" aria-label="A sum segment tree over `a = [5, 2, 6, 1, 3, 4, 8, 7]`"><g transform="translate(301,0)"><path class="sk blue" d="M-13 68 C -13 101, -95 101, -95 134" style="color:var(--ink)" marker-end="url(#arr)"/><path class="sk blue" d="M13 68 C 13 101, 95 101, 95 134" style="color:var(--ink)" marker-end="url(#arr)"/><path class="sk blue" d="M-108 192 C -108 230, -214 230, -214 269" style="color:var(--ink)" marker-end="url(#arr)"/><path class="sk blue" d="M-82 192 C -82 230, -70 230, -70 269" style="color:var(--ink)" marker-end="url(#arr)"/><path class="sk blue" d="M82 192 C 82 230, 74 230, 74 269" style="color:var(--ink)" marker-end="url(#arr)"/><path class="sk blue" d="M108 192 C 108 225, 209 225, 209 258" style="color:var(--ink)" marker-end="url(#arr)"/><path class="sk blue" d="M-227 305 C -227 344, -259 344, -259 382" style="color:var(--ink)" marker-end="url(#arr)"/><path class="sk blue" d="M-201 305 C -201 344, -185 344, -185 382" style="color:var(--ink)" marker-end="url(#arr)"/><path class="sk blue" d="M-83 305 C -83 344, -111 344, -111 382" style="color:var(--ink)" marker-end="url(#arr)"/><path class="sk blue" d="M-57 305 C -57 344, -37 344, -37 382" style="color:var(--ink)" marker-end="url(#arr)"/><path class="sk blue" d="M61 305 C 61 344, 37 344, 37 382" style="color:var(--ink)" marker-end="url(#arr)"/><path class="sk blue" d="M87 305 C 87 344, 111 344, 111 382" style="color:var(--ink)" marker-end="url(#arr)"/><path class="sk blue" d="M196 316 C 196 349, 185 349, 185 382" style="color:var(--ink)" marker-end="url(#arr)"/><path class="sk blue" d="M222 316 C 222 349, 259 349, 259 382" style="color:var(--ink)" marker-end="url(#arr)"/><rect class="sk" x="-48" y="10" width="96" height="58" rx="10" style="fill:#fdfbf4"/><rect class="sk" x="-143" y="134" width="96" height="58" rx="10" style="fill:#fdfbf4"/><rect class="sk" x="46" y="134" width="96" height="58" rx="10" style="fill:#fdfbf4"/><rect class="sk" x="-271" y="269" width="114" height="36" rx="10" style="fill:#fdfbf4"/><rect class="sk" x="-127" y="269" width="114" height="36" rx="10" style="fill:#cde8ff"/><rect class="sk" x="17" y="269" width="114" height="36" rx="10" style="fill:#cde8ff"/><rect class="sk" x="161" y="258" width="96" height="58" rx="10" style="fill:#fdfbf4"/><rect class="sk" x="-281" y="382" width="44" height="36" rx="10" style="fill:#fdfbf4"/><rect class="sk" x="-207" y="382" width="44" height="36" rx="10" style="fill:#fdfbf4"/><rect class="sk" x="-133" y="382" width="44" height="36" rx="10" style="fill:#fdfbf4"/><rect class="sk" x="-59" y="382" width="44" height="36" rx="10" style="fill:#fdfbf4"/><rect class="sk" x="15" y="382" width="44" height="36" rx="10" style="fill:#fdfbf4"/><rect class="sk" x="89" y="382" width="44" height="36" rx="10" style="fill:#fdfbf4"/><rect class="sk" x="163" y="382" width="44" height="36" rx="10" style="fill:#fdfbf4"/><rect class="sk" x="237" y="382" width="44" height="36" rx="10" style="fill:#fdfbf4"/><text class="lbl b" x="0" y="34" text-anchor="middle">[0..7] =</text><text class="lbl b" x="0" y="56" text-anchor="middle">36</text><text class="lbl b" x="-95" y="158" text-anchor="middle">[0..3] =</text><text class="lbl b" x="-95" y="180" text-anchor="middle">14</text><text class="lbl b" x="95" y="158" text-anchor="middle">[4..7] =</text><text class="lbl b" x="95" y="180" text-anchor="middle">22</text><text class="lbl b" x="-214" y="293" text-anchor="middle">[0..1] = 7</text><text class="lbl b" x="-70" y="293" text-anchor="middle">[2..3] = 7</text><text class="lbl b" x="74" y="293" text-anchor="middle">[4..5] = 7</text><text class="lbl b" x="209" y="282" text-anchor="middle">[6..7] =</text><text class="lbl b" x="209" y="304" text-anchor="middle">15</text><text class="lbl b" x="-259" y="406" text-anchor="middle">5</text><text class="lbl b" x="-185" y="406" text-anchor="middle">2</text><text class="lbl b" x="-111" y="406" text-anchor="middle">6</text><text class="lbl b" x="-37" y="406" text-anchor="middle">1</text><text class="lbl b" x="37" y="406" text-anchor="middle">3</text><text class="lbl b" x="111" y="406" text-anchor="middle">4</text><text class="lbl b" x="185" y="406" text-anchor="middle">8</text><text class="lbl b" x="259" y="406" text-anchor="middle">7</text></g></svg>
+<figcaption>Fig 1: A sum segment tree over `a = [5, 2, 6, 1, 3, 4, 8, 7]` (redrawn from the chapter diagram)</figcaption>
+</figure>
+  <p><code>sum(2..5) = [2..3] + [4..5] = 7 + 7 = 14</code> — two nodes instead of four elements. Any range needs at most ~2 log n nodes.</p>
+  <h3>Fenwick tree: what each index covers (lowest set bit)</h3>
+  <pre class="code ascii"><code> i (binary)   covers           tree[i] =
+ 1  (0001)    a[1]             a1
+ 2  (0010)    a[1..2]          a1+a2
+ 3  (0011)    a[3]             a3
+ 4  (0100)    a[1..4]          a1..a4
+ 5  (0101)    a[5]
+ 6  (0110)    a[5..6]
+ 7  (0111)    a[7]
+ 8  (1000)    a[1..8]
+ prefix(7) = tree[7] + tree[6] + tree[4]    (i -= i &amp; -i:  7 → 6 → 4 → 0)
+ update(3) touches tree[3], tree[4], tree[8] (i += i &amp; -i:  3 → 4 → 8)
+</code></pre>
+  <p><b>Union-find forest with rank, before and after path compression</b></p>
+  <pre class="code ascii"><code> before find(6):             after find(6):
+        0 (rank 2)                 0
+       ╱ ╲                    ╱ ╱ ╲ ╲
+      1   2                  1 2   5  6      ← 5 and 6 now point straight at the root
+          │                      │
+          5                      (2 keeps its other children)
+          │
+          6
+</code></pre>
+  <div class="pagebreak">~ page 2 ~</div>
+  <h2>Example</h2>
+  <span class="lang">python</span>
+<pre class="code"><code>class Fenwick:
+    """1-indexed binary indexed tree for prefix sums."""
+    def __init__(self, n):
+        self.n, self.t = n, [0] * (n + 1)
+
+    def add(self, i, delta):            # a[i] += delta, O(log n)
+        while i &lt;= self.n:
+            self.t[i] += delta
+            i += i &amp; -i                 # jump to the next node covering i
+
+    def prefix(self, i):                # a[1] + … + a[i], O(log n)
+        s = 0
+        while i &gt; 0:
+            s += self.t[i]
+            i -= i &amp; -i                 # drop the lowest set bit
+        return s
+
+    def range_sum(self, l, r):
+        return self.prefix(r) - self.prefix(l - 1)
+
+a = [5, 2, 6, 1, 3, 4, 8, 7]
+fw = Fenwick(len(a))
+for i, x in enumerate(a, 1):
+    fw.add(i, x)
+print(fw.range_sum(3, 6))               # 6+1+3+4 = 14
+fw.add(4, 10)                           # a[4] becomes 11
+print(fw.range_sum(3, 6))               # 24
+</code></pre>
+  <span class="lang">python</span>
+<pre class="code"><code>class DSU:
+    def __init__(self, n):
+        self.parent = list(range(n))
+        self.size = [1] * n
+
+    def find(self, x):
+        root = x
+        while self.parent[root] != root:
+            root = self.parent[root]
+        while self.parent[x] != root:           # path compression
+            self.parent[x], x = root, self.parent[x]
+        return root
+
+    def union(self, a, b):
+        ra, rb = self.find(a), self.find(b)
+        if ra == rb:
+            return False                         # already connected → a cycle if a–b is an edge
+        if self.size[ra] &lt; self.size[rb]:
+            ra, rb = rb, ra
+        self.parent[rb] = ra                     # union by size
+        self.size[ra] += self.size[rb]
+        return True
+
+edges = [(0, 1), (1, 2), (3, 4), (2, 0)]
+d = DSU(5)
+for u, v in edges:
+    if not d.union(u, v):
+        print("cycle via", (u, v))              # cycle via (2, 0)
+print(len({d.find(i) for i in range(5)}))       # 2 components
+</code></pre>
+  <h2>Exercises</h2>
+  <ol style="list-style:none;padding-left:0">
+<li>1. Build a Fenwick tree for prefix sums.
+<div class="box"><b>Solution</b> See <code>Fenwick</code> above. Build in O(n) instead of n·log n: copy the array, then for each i add <code>t[i]</code> into <code>t[i + (i &amp; -i)]</code> if in range. Test against <code>sum(a[l-1:r])</code> after random updates.</div></li>
+<li>2. Implement union-find and detect a cycle in a graph.
+<div class="box"><b>Solution</b> For each undirected edge (u, v), if <code>find(u) == find(v)</code> they're already connected, so the edge closes a cycle; otherwise union them. O(E·α(V)) — the same loop is the core of Kruskal's MST.</div></li>
+<li>3. Why can't a Fenwick tree answer range <i>minimum</i> queries with updates?
+<div class="box"><b>Solution</b> It answers ranges as <code>prefix(r) − prefix(l−1)</code>, which needs an inverse operation. Subtraction undoes addition, but nothing "un-mins" a minimum. Use a segment tree.</div></li>
+</ol>
+  <h2>Mini project</h2>
+  <p><b>A range-minimum-query engine and a connected-components counter.</b></p>
+  <figure>
+<svg viewBox="0 0 620 732" style="max-width:620px" role="img" aria-label="A range-minimum-query engine and a connected-components counter."><g transform="translate(310,0)"><rect class="sk" x="-272" y="16" width="544" height="316" rx="12" style="stroke-dasharray:8 6"/><text class="lbl b" x="-258" y="40">RMQ</text><rect class="sk" x="-290" y="374" width="580" height="338" rx="12" style="stroke-dasharray:8 6"/><text class="lbl b" x="-276" y="398">CC</text><path class="sk blue" d="M-157 86 C -157 119, -5 119, -5 152" style="color:var(--ink)" marker-end="url(#arr)"/><path class="sk blue" d="M31 86 C 31 119, 21 119, 21 152" style="color:var(--ink)" marker-end="url(#arr)"/><path class="sk blue" d="M188 86 C 188 119, 47 119, 47 152" style="color:var(--ink)" marker-end="url(#arr)"/><path class="sk blue" d="M21 188 C 21 221, 21 221, 21 254" style="color:var(--ink)" marker-end="url(#arr)"/><path class="sk blue" d="M0 466 C 0 499, 0 499, 0 532" style="color:var(--ink)" marker-end="url(#arr)"/><path class="sk blue" d="M0 568 C 0 601, 0 601, 0 634" style="color:var(--ink)" marker-end="url(#arr)"/><rect class="sk" x="-254" y="50" width="193" height="36" rx="10" style="fill:#fdfbf4"/><rect class="sk" x="-72" y="152" width="184" height="36" rx="10" style="fill:#fdfbf4"/><rect class="sk" x="-31" y="50" width="123" height="36" rx="10" style="fill:#fdfbf4"/><rect class="sk" x="122" y="50" width="132" height="36" rx="10" style="fill:#fdfbf4"/><rect class="sk" x="-72" y="254" width="184" height="58" rx="10" style="fill:#fdfbf4"/><rect class="sk" x="-114" y="408" width="228" height="58" rx="10" style="fill:#fdfbf4"/><rect class="sk" x="-132" y="532" width="264" height="36" rx="10" style="fill:#fdfbf4"/><rect class="sk" x="-119" y="634" width="237" height="58" rx="10" style="fill:#fdfbf4"/><text class="lbl b" x="-157" y="74" text-anchor="middle">array of 10⁶ prices</text><text class="lbl b" x="21" y="176" text-anchor="middle">segment tree (min)</text><text class="lbl b" x="31" y="74" text-anchor="middle">query(l, r)</text><text class="lbl b" x="188" y="74" text-anchor="middle">update(i, v)</text><text class="lbl b" x="21" y="278" text-anchor="middle">benchmark vs naive</text><text class="lbl b" x="21" y="300" text-anchor="middle">min(a[l:r])</text><text class="lbl b" x="0" y="432" text-anchor="middle">stream of 'connect a b'</text><text class="lbl b" x="0" y="454" text-anchor="middle">events</text><text class="lbl b" x="0" y="556" text-anchor="middle">DSU with both optimizations</text><text class="lbl b" x="0" y="658" text-anchor="middle">live component count</text><text class="lbl b" x="0" y="680" text-anchor="middle">+ largest component size</text></g></svg>
+<figcaption>Fig 2: A range-minimum-query engine and a connected-components counter. (redrawn from the chapter diagram)</figcaption>
+</figure>
+  <h3>Steps</h3>
+  <ol style="list-style:none;padding-left:0">
+<li>1. An iterative segment tree (size 2n array, bottom-up) for min, with <code>update(i, v)</code> and <code>query(l, r)</code>.</li>
+<li>2. Property-test against naive <code>min</code> on random operations.</li>
+<li>3. Benchmark 10⁵ mixed queries on 10⁶ elements vs naive.</li>
+<li>4. DSU: process a stream of "connect a b" events, printing the component count and largest-component size after each.</li>
+<li>5. Compare DSU with and without path compression and union by size on 10⁶ unions; plot the average tree height.</li>
+</ol>
+  <div class="box"><b>Done when:</b> both match naive reference answers, and the benchmarks show O(log n) and near-O(1) behavior.</div>
+  <div class="pagebreak">~ page 3 ~</div>
+  <h2>Open source</h2>
+  <ul>
+<li>[<code>atcoder/ac-library</code>](https://github.com/atcoder/ac-library) (<code>dsu</code>, <code>segtree</code>) — <code>atcoder/dsu.hpp</code> and <code>atcoder/segtree.hpp</code> are short, well-tested, generic implementations used in competitive programming.</li>
+</ul>
+  <h2>Interview</h2>
+  <ol style="list-style:none;padding-left:0">
+<li>1. <b>"When do you need a Fenwick tree?"</b>
+<div class="box"><b>Answer</b> When you need prefix or range sums (or any invertible, associative operation like XOR) <i>and</i> point updates, both fast. A plain prefix-sum array is O(1) query but O(n) update. A Fenwick tree makes both O(log n) with ~10 lines of code and n memory. For min/max or complex range updates, use a segment tree.</div></li>
+<li>2. <b>"Why is union-find near-O(1) amortized?"</b>
+<div class="box"><b>Answer</b> Union by rank keeps trees O(log n) tall. Path compression flattens every path it walks, so repeated finds become one hop. Tarjan proved the combination costs O(α(n)) amortized per operation, where the inverse Ackermann function α(n) ≤ 4 for all practical n.</div></li>
+</ol>
+  <h2>Checklist</h2>
+  <ul>
+<li class="todo">implement range sum/update</li>
+<li class="todo">implement find/union with both optimizations</li>
+<li class="todo">know when each applies</li>
+</ul>
+  <p class="black"><a href="index.md">Contents</a> · ← <a href="ch31-hash-tables-and-graphs.notes.html">Chapter 31 — Hash Tables &amp; Graphs</a> · Next → <a href="ch33-sorting-searching-and-binary-search.notes.html">Chapter 33 — Sorting, Searching &amp; Binary Search</a></p>
+  <nav class="nav"><a href="ch31-hash-tables-and-graphs.notes.html">← Ch 31 — Hash Tables &amp; Graphs</a><a href="index.notes.html">☰ Contents</a><a href="ch33-sorting-searching-and-binary-search.notes.html">Ch 33 — Sorting, Searching &amp; Binary Search →</a></nav>
+</main>
+</body>
+</html>

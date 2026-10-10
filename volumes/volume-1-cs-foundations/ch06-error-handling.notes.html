@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ch 6 — Error Handling — Notes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;700&family=Kalam:wght@400;700&family=Patrick+Hand&display=swap" rel="stylesheet">
+<style>
+/* ===== Page tokens ===== */
+:root{
+  --line:32px;                 /* ruled-line spacing; every vertical size is a multiple */
+  --paper:#fdfbf4; --rule:#c9dcef; --margin:#e8a0a0;
+  --ink:#1f3a93;               /* blue pen (body) */
+  --ink2:#222;                 /* black pen (headings) */
+  --red:#c0392b; --green:#1e8449;
+  --hl-yellow:rgba(255,235,59,.55); --hl-pink:rgba(255,128,171,.45);
+  --hl-green:rgba(118,255,3,.35); --hl-blue:rgba(64,196,255,.35);
+  --sticky:#fff59d; --desk:#e9e4d8;
+  --hand:'Kalam','Patrick Hand','Comic Sans MS','Segoe Print','Bradley Hand',cursive;
+  --title:'Caveat','Kalam','Segoe Print','Bradley Hand',cursive;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){ --desk:#2b2b2b; }
+}
+:root[data-theme="dark"]{ --desk:#2b2b2b; }
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--desk);font-family:var(--hand);color:var(--ink);}
+
+/* ===== Notebook sheet ===== */
+.page{
+  position:relative; max-width:860px; margin:24px auto; padding:var(--line) 28px calc(var(--line)*2) 84px;
+  background:
+    linear-gradient(90deg,transparent 64px,var(--margin) 64px,var(--margin) 66px,transparent 66px),
+    repeating-linear-gradient(var(--paper) 0,var(--paper) calc(var(--line) - 1px),var(--rule) calc(var(--line) - 1px),var(--rule) var(--line));
+  background-color:var(--paper);
+  box-shadow:0 2px 6px rgba(0,0,0,.15),0 12px 28px rgba(0,0,0,.12);
+  font-size:20px; line-height:var(--line);
+}
+.page::before{ /* punched holes */
+  content:""; position:absolute; left:22px; top:0; bottom:0; width:18px;
+  background:radial-gradient(circle,var(--desk) 7px,transparent 8px) 0 40px/18px 220px repeat-y;
+}
+@media (max-width:600px){
+  .page{margin:0;padding-left:52px;padding-right:16px;font-size:18px;
+    background:
+      linear-gradient(90deg,transparent 40px,var(--margin) 40px,var(--margin) 42px,transparent 42px),
+      repeating-linear-gradient(var(--paper) 0,var(--paper) calc(var(--line) - 1px),var(--rule) calc(var(--line) - 1px),var(--rule) var(--line));
+    background-color:var(--paper);}
+  .page::before{left:10px;width:16px}
+}
+
+/* ===== Text (all margins are multiples of --line so text sits on the rules) ===== */
+.date{position:absolute;top:0;right:24px;font-family:var(--title);font-size:22px;color:var(--ink2);line-height:var(--line)}
+h1{font-family:var(--title);font-weight:700;color:var(--ink2);font-size:46px;line-height:calc(var(--line)*2);margin:0;transform:rotate(-1deg)}
+h1 .u{background:linear-gradient(transparent 62%,var(--hl-yellow) 62%,var(--hl-yellow) 92%,transparent 92%)}
+h2{font-family:var(--title);font-weight:700;color:var(--red);font-size:32px;line-height:calc(var(--line)*1.5);margin:calc(var(--line)*.5) 0 0}
+h2::before{content:"➤ ";font-size:22px}
+p,li{margin:0}
+ul,ol{margin:0;padding-left:28px}
+ul{list-style:none}
+ul>li::before{content:"–";position:absolute;margin-left:-20px}
+ul>li.star::before{content:"★";color:var(--red)}
+ul>li.arrow::before{content:"→"}
+ul>li.check::before{content:"✓";color:var(--green)}
+.gap{height:var(--line)}
+
+/* ===== Pen effects ===== */
+.hl{background:var(--hl-yellow);padding:0 3px;border-radius:3px 6px 4px 7px}
+.hl.pink{background:var(--hl-pink)} .hl.green{background:var(--hl-green)} .hl.blue{background:var(--hl-blue)}
+.red{color:var(--red)} .green{color:var(--green)} .black{color:var(--ink2)}
+.ul{text-decoration:underline wavy var(--red);text-underline-offset:5px}
+.circ{border:2px solid var(--red);border-radius:50% 45% 55% 48%;padding:0 6px}
+.strike{text-decoration:line-through 2px var(--red)}
+.term{font-weight:700;color:var(--ink2)}
+.box{display:flow-root;border:2.5px solid var(--ink2);border-radius:4px 10px 6px 12px;padding:calc(var(--line)*.5 - 2.5px) 14px;margin:calc(var(--line)*.5) 0;transform:rotate(-.4deg);background:rgba(255,255,255,.35)}
+.box.red{border-color:var(--red)}
+.formula{font-family:var(--title);font-size:28px;text-align:center;color:var(--ink2)}
+
+/* sticky note */
+.sticky{float:right;width:min(250px,42%);margin:0 0 var(--line) 20px;padding:var(--line) 16px;background:var(--sticky);
+  color:#333;transform:rotate(2.2deg);box-shadow:2px 4px 8px rgba(0,0,0,.18);font-size:18px}
+.sticky b{font-family:var(--title);font-size:24px;color:var(--red)}
+@media (max-width:600px){.sticky{float:none;width:auto;margin:var(--line) 0}}
+
+/* margin annotation (lives in the red margin) */
+.side{position:absolute;left:4px;width:58px;text-align:center;font-family:var(--title);font-size:17px;line-height:18px;color:var(--red);transform:rotate(-8deg)}
+@media (max-width:600px){.side{display:none}}
+
+/* two-column notes */
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:0 28px}
+@media (max-width:600px){.cols{grid-template-columns:1fr}}
+
+/* diagrams */
+figure{margin:var(--line) 0;text-align:center}
+figure svg{width:100%;max-width:640px;height:auto;overflow:visible}
+figcaption{font-family:var(--title);font-size:20px;color:var(--ink2)}
+/* phones: keep labels readable — diagram scrolls inside its own box instead of shrinking */
+@media (max-width:600px){figure{overflow-x:auto}figure svg{min-width:520px}}
+.sk{fill:none;stroke:var(--ink2);stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round;filter:url(#rough)}
+.sk.blue{stroke:var(--ink)} .sk.red{stroke:var(--red)} .sk.green{stroke:var(--green)}
+.lbl{font-family:var(--hand);font-size:17px;fill:var(--ink)}
+.lbl.b{font-weight:700;fill:var(--ink2)} .lbl.r{fill:var(--red)} .lbl.g{fill:var(--green)}
+
+/* table */
+.wrap{overflow-x:auto}
+table{border-collapse:collapse;margin:calc(var(--line)*.5) 0;min-width:100%}
+th,td{border:2px solid var(--ink2);padding:0 10px;text-align:left;vertical-align:top}
+th{font-family:var(--title);font-size:24px;color:var(--ink2)}
+
+@media print{body{background:#fff}.page{box-shadow:none;margin:0}.page::before{display:none}}
+
+/* ===== Added for long chapter notes ===== */
+pre.code{font-family:Consolas,'Courier New',monospace;font-size:14px;line-height:var(--line);color:var(--ink);background:rgba(255,255,255,.45);
+  border-left:4px solid var(--red);margin:calc(var(--line)*.5) 0;padding:0 12px;overflow-x:auto;white-space:pre}
+pre.code.ascii{border-left-color:var(--green)}
+code{font-family:Consolas,'Courier New',monospace;font-size:.82em;background:rgba(0,0,0,.06);padding:0 3px;border-radius:3px}
+pre.code code{background:none;padding:0;font-size:inherit}
+.lang{font-family:var(--title);font-size:18px;color:var(--red)}
+h3{font-family:var(--title);font-weight:700;color:var(--ink2);font-size:26px;line-height:var(--line);margin:calc(var(--line)*.5) 0 0}
+h3::before{content:"✎ ";font-size:18px;color:var(--red)}
+.nav{display:flex;justify-content:space-between;gap:12px;font-family:var(--title);font-size:22px;line-height:var(--line)}
+.nav a{color:var(--red);text-decoration:none}
+.nav a:hover{text-decoration:underline wavy}
+.pagebreak{border-top:3px dashed var(--margin);margin:var(--line) 0;text-align:center;font-family:var(--title);color:var(--red);line-height:var(--line)}
+li.todo::before{content:"☐";color:var(--ink2)}
+a{color:var(--ink);text-decoration:underline dotted}
+</style>
+</head>
+<body>
+<!-- One shared hand-drawn wobble filter; give every diagram stroke class="sk" -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <!-- userSpaceOnUse region: a % region collapses to nothing on perfectly straight lines (zero-height bbox) -->
+  <filter id="rough" filterUnits="userSpaceOnUse" x="-500" y="-500" width="3000" height="3000">
+    <feTurbulence type="fractalNoise" baseFrequency="0.03" numOctaves="2" seed="3" result="n"/>
+    <feDisplacementMap in="SourceGraphic" in2="n" scale="3"/>
+  </filter>
+  <marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+    <path d="M1 1 L9 5 L1 9" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+  </marker>
+</defs></svg>
+
+<main class="page">
+  <nav class="nav"><a href="ch05-modules-packages-imports-and-dependency-management.notes.html">← Ch 5 — Modules, Packages, Imports &amp; Dependency Management</a><a href="index.notes.html">☰ Contents</a><a href="ch07-file-i-o.notes.html">Ch 7 — File I/O →</a></nav>
+  <div class="date">2026-10-10</div>
+  <h1><span class="u">Ch 6 — Error Handling</span></h1>
+  <p class="black">Chapter 6 — Error Handling</p>
+<p class="black"><b>Volume 1 — Computer Science Foundations</b> · <a href="index.md">Contents</a> · ← <a href="ch05-modules-packages-imports-and-dependency-management.notes.html">Chapter 5 — Modules, Packages, Imports &amp; Dependency Management</a> · Next → <a href="ch07-file-i-o.notes.html">Chapter 7 — File I/O</a></p>
+<h2>Concept</h2>
+<p>Exceptions, panics, <code>Result</code>/<code>Option</code> types, error propagation (<code>?</code>), and custom error types. Fail loudly vs gracefully.</p>
+<div class="box"><b>In one sentence:</b> errors are part of your function's real return type, and good error handling means every failure is either handled on purpose or reported clearly — never silently swallowed.</div>
+<p><b>Mental model — a relay race.</b> When a runner trips, they must pass along a note: what went wrong and where. Each runner either fixes the problem (handles it) or adds a line to the note and passes it on (propagates with context). The worst runner hides the note in their pocket (<code>except: pass</code>).</p>
+<h3>Two styles</h3>
+<div class="wrap"><table>
+<tr><th></th><th>Exceptions</th><th>Error values (<code>Result</code>, <code>Option</code>, <code>err</code>)</th></tr>
+<tr><td>Languages</td><td>Python, Java, C#, JS, C++</td><td>Rust, Go, Haskell, Swift (partly)</td></tr>
+<tr><td>Visible in the signature?</td><td>no (except Java checked exceptions)</td><td>yes: <code>fn parse() -&gt; Result&lt;Config, Error&gt;</code></td></tr>
+<tr><td>Propagation</td><td>automatic, up the stack</td><td>explicit: <code>?</code> in Rust, <code>if err != nil</code> in Go</td></tr>
+<tr><td>Cost</td><td>cheap when not thrown; slow when thrown</td><td>ordinary return value</td></tr>
+<tr><td>Risk</td><td>forgetting a failure path exists</td><td>verbose; ignoring a returned error</td></tr>
+</table></div>
+<h3>Recoverable vs fatal</h3>
+<div class="wrap"><table>
+<tr><th>Kind</th><th>Examples</th><th>What to do</th></tr>
+<tr><td>Expected / recoverable</td><td>file not found, invalid input, timeout</td><td>return an error or raise a specific exception; the caller decides</td></tr>
+<tr><td>Bug / invariant broken</td><td>index out of range, <code>None</code> where impossible</td><td>fail fast: <code>panic!</code>, <code>assert</code>, crash with a stack trace</td></tr>
+<tr><td>Environmental / fatal</td><td>out of memory, disk full</td><td>log clearly, exit, let the supervisor restart</td></tr>
+</table></div>
+<h3>Rules of thumb</h3>
+<ol style="list-style:none;padding-left:0">
+<li>1. Catch the <i>narrowest</i> exception type you can actually handle.</li>
+<li>2. Add context when you re-raise: <i>what</i> you were doing and <i>with which input</i>.</li>
+<li>3. Handle errors at the level that can make a decision (retry, default, tell the user).</li>
+<li>4. Clean up with <code>finally</code>, <code>with</code>, or RAII (Rust <code>Drop</code>), not by hand on each path.</li>
+<li>5. Never <code>except Exception: pass</code>.</li>
+</ol>
+<h2>Prereqs</h2>
+<ul>
+<li><a href="ch03-functions-parameters-return-values-scope-and-namespaces.notes.html">Chapter 3 — Functions, Parameters, Return Values, Scope &amp; Namespaces</a></li>
+</ul>
+<div class="pagebreak">~ page 2 ~</div>
+<h2>Diagram</h2>
+<h3>Python try / except / else / finally</h3>
+<figure>
+<svg viewBox="0 0 536 335" role="img" aria-label="try/except/else/finally flow: ValueError handled, other errors propagate, success runs else; finally always runs"><g><rect class="sk" x="217" y="24" width="111" height="39" rx="10"/>
+<text class="lbl b" x="272" y="50" text-anchor="middle" style="font-size:16px">try: body</text>
+<rect class="sk" x="24" y="129" width="129" height="81" rx="10"/>
+<text class="lbl b" x="89" y="154" text-anchor="middle" style="font-size:16px">except</text>
+<text class="lbl b" x="89" y="176" text-anchor="middle" style="font-size:16px">ValueError:</text>
+<text class="lbl b" x="89" y="196" text-anchor="middle" style="font-size:16px">handle</text>
+<rect class="sk red" x="203" y="140" width="138" height="60" rx="10"/>
+<text class="lbl r" x="272" y="165" text-anchor="middle" style="font-size:16px">propagate to</text>
+<text class="lbl r" x="272" y="186" text-anchor="middle" style="font-size:16px">caller ↑</text>
+<rect class="sk" x="392" y="129" width="120" height="81" rx="10"/>
+<text class="lbl b" x="452" y="154" text-anchor="middle" style="font-size:16px">else:</text>
+<text class="lbl b" x="452" y="176" text-anchor="middle" style="font-size:16px">runs only</text>
+<text class="lbl b" x="452" y="196" text-anchor="middle" style="font-size:16px">on success</text>
+<rect class="sk green" x="208" y="212" width="129" height="60" rx="10"/>
+<text class="lbl g" x="272" y="237" text-anchor="middle" style="font-size:16px">finally:</text>
+<text class="lbl g" x="272" y="258" text-anchor="middle" style="font-size:16px">ALWAYS runs</text>
+<rect class="sk" x="222" y="282" width="102" height="39" rx="10"/>
+<text class="lbl b" x="272" y="308" text-anchor="middle" style="font-size:16px">continue</text>
+<path class="sk blue" d="M241 65 L150 127" style="color:var(--ink)" marker-end="url(#arr)"/>
+<text class="lbl r" x="166" y="62" text-anchor="middle" style="font-size:15px;paint-order:stroke;stroke:var(--paper);stroke-width:5px;stroke-linejoin:round">raises</text>
+<text class="lbl r" x="166" y="83" text-anchor="middle" style="font-size:15px;paint-order:stroke;stroke:var(--paper);stroke-width:5px;stroke-linejoin:round">ValueError</text>
+<path class="sk blue" d="M272 66 L272 136" style="color:var(--ink)" marker-end="url(#arr)"/>
+<text class="lbl r" x="257" y="103" text-anchor="end" style="font-size:15px;paint-order:stroke;stroke:var(--paper);stroke-width:5px;stroke-linejoin:round">raises other</text>
+<path class="sk blue" d="M303 65 L392 127" style="color:var(--ink)" marker-end="url(#arr)"/>
+<text class="lbl r" x="377" y="87" text-anchor="middle" style="font-size:15px;paint-order:stroke;stroke:var(--paper);stroke-width:5px;stroke-linejoin:round">no error</text>
+<path class="sk blue" d="M156 196 L205 215" style="color:var(--ink)" marker-end="url(#arr)"/>
+<path class="sk blue" d="M389 195 L340 214" style="color:var(--ink)" marker-end="url(#arr)"/>
+<path class="sk blue" d="M272 202 L272 208" style="color:var(--ink);stroke-dasharray:7 5" marker-end="url(#arr)"/>
+<path class="sk blue" d="M272 274 L272 279" style="color:var(--ink)" marker-end="url(#arr)"/></g></svg>
+<figcaption>Fig 1: <code>try / except / else / finally</code>: <code>finally</code> runs on every path, even while an error propagates (dashed)</figcaption>
+</figure>
+<h3>Rust <code>Result&lt;T, E&gt;</code> propagation with <code>?</code></h3>
+<pre class="code ascii"><code> main()
+  └─ load_config("app.toml")?          ← Err bubbles up to main
+       └─ read_file(path)?              ← Ok(text) continues
+       └─ parse_toml(&amp;text)?            ← Err(ParseError{line: 12})
+                                            │
+     each ? means: "if Err, return it now (converted with From); if Ok, unwrap"</code></pre>
+<figure>
+<svg viewBox="0 0 633 285" role="img" aria-label="Result chain: read_file, parse_toml, validate each pass Ok onward; any Err returns early"><g><rect class="sk" x="24" y="24" width="129" height="39" rx="10"/>
+<text class="lbl b" x="89" y="50" text-anchor="middle" style="font-size:16px">read_file()</text>
+<rect class="sk" x="252" y="24" width="138" height="39" rx="10"/>
+<text class="lbl b" x="321" y="50" text-anchor="middle" style="font-size:16px">parse_toml()</text>
+<rect class="sk" x="488" y="24" width="120" height="39" rx="10"/>
+<text class="lbl b" x="548" y="50" text-anchor="middle" style="font-size:16px">validate()</text>
+<rect class="sk red" x="233" y="123" width="175" height="39" rx="10"/>
+<text class="lbl r" x="321" y="148" text-anchor="middle" style="font-size:16px">return Err early</text>
+<rect class="sk green" x="493" y="222" width="111" height="39" rx="10"/>
+<text class="lbl g" x="548" y="248" text-anchor="middle" style="font-size:16px">Ok config</text>
+<path class="sk blue" d="M156 44 L249 44" style="color:var(--ink)" marker-end="url(#arr)"/>
+<text class="lbl r" x="202" y="38" text-anchor="middle" style="font-size:15px;paint-order:stroke;stroke:var(--paper);stroke-width:5px;stroke-linejoin:round">Ok(text)</text>
+<path class="sk blue" d="M393 44 L485 44" style="color:var(--ink)" marker-end="url(#arr)"/>
+<text class="lbl r" x="439" y="38" text-anchor="middle" style="font-size:15px;paint-order:stroke;stroke:var(--paper);stroke-width:5px;stroke-linejoin:round">Ok(cfg)</text>
+<path class="sk blue" d="M548 66 L548 219" style="color:var(--ink)" marker-end="url(#arr)"/>
+<text class="lbl r" x="557" y="146" text-anchor="start" style="font-size:15px;paint-order:stroke;stroke:var(--paper);stroke-width:5px;stroke-linejoin:round">Ok</text>
+<path class="sk blue" d="M137 64 L272 122" style="color:var(--ink)" marker-end="url(#arr)"/>
+<text class="lbl r" x="205" y="88" text-anchor="middle" style="font-size:15px;paint-order:stroke;stroke:var(--paper);stroke-width:5px;stroke-linejoin:round">Err</text>
+<path class="sk blue" d="M321 66 L321 120" style="color:var(--ink)" marker-end="url(#arr)"/>
+<text class="lbl r" x="330" y="97" text-anchor="start" style="font-size:15px;paint-order:stroke;stroke:var(--paper);stroke-width:5px;stroke-linejoin:round">Err</text>
+<path class="sk blue" d="M501 64 L368 122" style="color:var(--ink)" marker-end="url(#arr)"/>
+<text class="lbl r" x="435" y="88" text-anchor="middle" style="font-size:15px;paint-order:stroke;stroke:var(--paper);stroke-width:5px;stroke-linejoin:round">Err</text></g></svg>
+<figcaption>Fig 2: each step passes <code>Ok</code> forward; any <code>Err</code> returns early</figcaption>
+</figure>
+<h2>Example</h2>
+<span class="lang">python</span>
+<pre class="code"><code>class ConfigError(Exception):
+    """A config problem the user can fix."""
+    def __init__(self, path, line, message):
+        super().__init__(f"{path}:{line}: {message}")
+        self.path, self.line = path, line
+
+def load_port(path):
+    try:
+        f = open(path, encoding="utf-8")
+    except FileNotFoundError as e:
+        raise ConfigError(path, 0, "file not found") from e    # keep the cause
+    else:
+        with f:
+            for n, line in enumerate(f, 1):
+                if line.startswith("port="):
+                    value = line.split("=", 1)[1].strip()
+                    try:
+                        return int(value)
+                    except ValueError:
+                        raise ConfigError(path, n, f"port must be a number, got {value!r}") from None
+        raise ConfigError(path, 0, "missing 'port='")
+    finally:
+        print("load_port finished")                              # runs on every path</code></pre>
+<span class="lang">rust</span>
+<pre class="code"><code>use std::{fs, num::ParseIntError};
+
+#[derive(Debug)]
+enum ConfigError {
+    Io(std::io::Error),
+    BadPort { line: usize, source: ParseIntError },
+    Missing,
+}
+
+impl From&lt;std::io::Error&gt; for ConfigError {
+    fn from(e: std::io::Error) -&gt; Self { ConfigError::Io(e) }
+}
+
+fn load_port(path: &amp;str) -&gt; Result&lt;u16, ConfigError&gt; {
+    let text = fs::read_to_string(path)?;               // io::Error → ConfigError via From
+    for (i, line) in text.lines().enumerate() {
+        if let Some(v) = line.strip_prefix("port=") {
+            return v.trim().parse::&lt;u16&gt;()
+                .map_err(|e| ConfigError::BadPort { line: i + 1, source: e });
+        }
+    }
+    Err(ConfigError::Missing)
+}</code></pre>
+<p><code>Option&lt;T&gt;</code> is the same idea for "might be absent": <code>Some(value)</code> or <code>None</code>, instead of a null that crashes later.</p>
+<div class="pagebreak">~ page 3 ~</div>
+<h2>Exercises</h2>
+<ol style="list-style:none;padding-left:0">
+<li>1. Write a parser that returns <code>Result</code> instead of panicking.
+<div class="box"><b>Solution</b>
+<span class="lang">rust</span>
+<pre class="code"><code>fn parse_pair(s: &amp;str) -&gt; Result&lt;(i32, i32), String&gt; {
+    let (a, b) = s.split_once(',').ok_or(format!("expected 'a,b', got {s:?}"))?;
+    let a = a.trim().parse().map_err(|e| format!("bad left value: {e}"))?;
+    let b = b.trim().parse().map_err(|e| format!("bad right value: {e}"))?;
+    Ok((a, b))
+}</code></pre>
+<p>No <code>unwrap()</code>: every failure becomes an <code>Err</code> with a message.</p>
+</div></li>
+<li>2. Create a custom exception with context.
+<div class="box"><b>Solution</b> See <code>ConfigError</code> above: subclass <code>Exception</code>, store structured fields (path, line), build a readable message, and chain the original with <code>raise … from e</code>.</div></li>
+<li>3. What is wrong with this code?
+<span class="lang">python</span>
+<pre class="code"><code>try:
+    user = get_user(uid)
+    send_email(user)
+except Exception:
+    pass</code></pre>
+<div class="box"><b>Solution</b> It hides every failure, including bugs like <code>NameError</code>. A try block that is too wide also makes it unclear which call failed. Catch specific exceptions around the one call that can fail, and log or re-raise the rest.</div></li>
+</ol>
+<h2>Mini project</h2>
+<p><b>A config loader that surfaces precise, actionable errors with file/line context.</b></p>
+<figure>
+<svg viewBox="0 0 572 410" role="img" aria-label="Config loading: read, parse, validate; each stage has a precise error message with file and line"><g><rect class="sk" x="56" y="24" width="102" height="39" rx="10"/>
+<text class="lbl b" x="107" y="50" text-anchor="middle" style="font-size:16px">app.toml</text>
+<rect class="sk" x="75" y="100" width="65" height="39" rx="10"/>
+<text class="lbl b" x="107" y="125" text-anchor="middle" style="font-size:16px">read</text>
+<rect class="sk" x="70" y="186" width="74" height="39" rx="10"/>
+<text class="lbl b" x="107" y="211" text-anchor="middle" style="font-size:16px">parse</text>
+<rect class="sk" x="24" y="272" width="166" height="39" rx="10"/>
+<text class="lbl b" x="107" y="297" text-anchor="middle" style="font-size:16px">validate schema</text>
+<rect class="sk green" x="33" y="347" width="148" height="39" rx="10"/>
+<text class="lbl g" x="107" y="372" text-anchor="middle" style="font-size:16px">Config object</text>
+<rect class="sk red" x="285" y="89" width="258" height="60" rx="10"/>
+<text class="lbl r" x="414" y="114" text-anchor="middle" style="font-size:16px">app.toml: not found</text>
+<text class="lbl r" x="414" y="136" text-anchor="middle" style="font-size:16px">(looked in ./, ~/.config)</text>
+<rect class="sk red" x="298" y="175" width="230" height="60" rx="10"/>
+<text class="lbl r" x="414" y="200" text-anchor="middle" style="font-size:16px">app.toml:12:5:</text>
+<text class="lbl r" x="414" y="222" text-anchor="middle" style="font-size:16px">expected '=' after key</text>
+<rect class="sk red" x="280" y="261" width="267" height="60" rx="10"/>
+<text class="lbl r" x="414" y="286" text-anchor="middle" style="font-size:16px">app.toml:7: 'port' must be</text>
+<text class="lbl r" x="414" y="308" text-anchor="middle" style="font-size:16px">1–65535, got 70000</text>
+<path class="sk blue" d="M107 66 L107 96" style="color:var(--ink)" marker-end="url(#arr)"/>
+<path class="sk blue" d="M107 142 L107 182" style="color:var(--ink)" marker-end="url(#arr)"/>
+<path class="sk blue" d="M107 228 L107 268" style="color:var(--ink)" marker-end="url(#arr)"/>
+<path class="sk blue" d="M107 314 L107 344" style="color:var(--ink)" marker-end="url(#arr)"/>
+<path class="sk blue" d="M142 119 L282 119" style="color:var(--ink)" marker-end="url(#arr)"/>
+<text class="lbl r" x="212" y="114" text-anchor="middle" style="font-size:15px;paint-order:stroke;stroke:var(--paper);stroke-width:5px;stroke-linejoin:round">missing</text>
+<path class="sk blue" d="M147 205 L295 205" style="color:var(--ink)" marker-end="url(#arr)"/>
+<text class="lbl r" x="221" y="200" text-anchor="middle" style="font-size:15px;paint-order:stroke;stroke:var(--paper);stroke-width:5px;stroke-linejoin:round">syntax</text>
+<path class="sk blue" d="M193 291 L277 291" style="color:var(--ink)" marker-end="url(#arr)"/>
+<text class="lbl r" x="235" y="286" text-anchor="middle" style="font-size:15px;paint-order:stroke;stroke:var(--paper);stroke-width:5px;stroke-linejoin:round">type</text></g></svg>
+<figcaption>Fig 3: config loader: each stage fails with a precise file:line message</figcaption>
+</figure>
+<h3>Steps</h3>
+<ol style="list-style:none;padding-left:0">
+<li>1. Load TOML with <code>tomllib</code>; convert its errors into your own <code>ConfigError(path, line, col, message, hint)</code>.</li>
+<li>2. Validate required keys, types, and ranges; collect <i>all</i> errors, not just the first.</li>
+<li>3. Print errors like a compiler: <code>file:line:col: message</code> plus a hint line.</li>
+<li>4. Exit with code 2 on config errors; never show a raw stack trace to users (keep it with <code>--debug</code>).</li>
+</ol>
+<p><b>Done when:</b> every broken sample config produces a message that tells the user exactly what to change.</p>
+<div class="pagebreak">~ page 4 ~</div>
+<h2>Open source</h2>
+<ul>
+<li><a href="https://github.com/rust-lang/rust"><code>rust-lang/rust</code></a> <code>Result</code>/<code>Option</code> — <code>library/core/src/result.rs</code> has <code>map_err</code>, <code>and_then</code>, and <code>?</code> support through the <code>Try</code> trait.</li>
+<li><a href="https://github.com/serde-rs/serde"><code>serde-rs/serde</code></a> error types — see <code>serde::de::Error</code> and how <code>serde_json</code> reports line and column.</li>
+</ul>
+<h2>Interview</h2>
+<ol style="list-style:none;padding-left:0">
+<li>1. <h3>"Exceptions vs error values — trade-offs?"</h3>
+<div class="box"><b>Answer</b> Exceptions keep the happy path clean and propagate automatically, but failure paths are invisible in signatures and easy to forget. Error values make failure explicit and checked by the compiler (in Rust), at the cost of more code. Many systems combine them: error values for expected failures, panics/exceptions for bugs.</div></li>
+<li>2. <h3>"What does <code>finally</code> guarantee?"</h3>
+<div class="box"><b>Answer</b> Its block runs whether the try block returns normally, raises, or returns early — before control leaves. It does not run if the process is killed, loses power, or calls <code>os._exit</code>. Prefer context managers (<code>with</code>) for resource cleanup.</div></li>
+</ol>
+<div class="pagebreak">~ page 5 ~</div>
+<h2>Checklist</h2>
+<ul>
+<li class="todo">propagate errors without swallowing them</li>
+<li class="todo">distinguish recoverable vs fatal</li>
+<li class="todo">write a custom error type</li>
+</ul>
+<p class="black"><a href="index.md">Contents</a> · ← <a href="ch05-modules-packages-imports-and-dependency-management.notes.html">Chapter 5 — Modules, Packages, Imports &amp; Dependency Management</a> · Next → <a href="ch07-file-i-o.notes.html">Chapter 7 — File I/O</a></p>
+  <nav class="nav"><a href="ch05-modules-packages-imports-and-dependency-management.notes.html">← Ch 5 — Modules, Packages, Imports &amp; Dependency Management</a><a href="index.notes.html">☰ Contents</a><a href="ch07-file-i-o.notes.html">Ch 7 — File I/O →</a></nav>
+</main>
+</body>
+</html>

@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ch 5 — Quantization &amp; Efficiency — Notes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;700&family=Kalam:wght@400;700&family=Patrick+Hand&display=swap" rel="stylesheet">
+<style>
+/* ===== Page tokens ===== */
+:root{
+  --line:32px;                 /* ruled-line spacing; every vertical size is a multiple */
+  --paper:#fdfbf4; --rule:#c9dcef; --margin:#e8a0a0;
+  --ink:#1f3a93;               /* blue pen (body) */
+  --ink2:#222;                 /* black pen (headings) */
+  --red:#c0392b; --green:#1e8449;
+  --hl-yellow:rgba(255,235,59,.55); --hl-pink:rgba(255,128,171,.45);
+  --hl-green:rgba(118,255,3,.35); --hl-blue:rgba(64,196,255,.35);
+  --sticky:#fff59d; --desk:#e9e4d8;
+  --hand:'Kalam','Patrick Hand','Comic Sans MS','Segoe Print','Bradley Hand',cursive;
+  --title:'Caveat','Kalam','Segoe Print','Bradley Hand',cursive;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){ --desk:#2b2b2b; }
+}
+:root[data-theme="dark"]{ --desk:#2b2b2b; }
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--desk);font-family:var(--hand);color:var(--ink);}
+
+/* ===== Notebook sheet ===== */
+.page{
+  position:relative; max-width:860px; margin:24px auto; padding:var(--line) 28px calc(var(--line)*2) 84px;
+  background:
+    linear-gradient(90deg,transparent 64px,var(--margin) 64px,var(--margin) 66px,transparent 66px),
+    repeating-linear-gradient(var(--paper) 0,var(--paper) calc(var(--line) - 1px),var(--rule) calc(var(--line) - 1px),var(--rule) var(--line));
+  background-color:var(--paper);
+  box-shadow:0 2px 6px rgba(0,0,0,.15),0 12px 28px rgba(0,0,0,.12);
+  font-size:20px; line-height:var(--line);
+}
+.page::before{ /* punched holes */
+  content:""; position:absolute; left:22px; top:0; bottom:0; width:18px;
+  background:radial-gradient(circle,var(--desk) 7px,transparent 8px) 0 40px/18px 220px repeat-y;
+}
+@media (max-width:600px){
+  .page{margin:0;padding-left:52px;padding-right:16px;font-size:18px;
+    background:
+      linear-gradient(90deg,transparent 40px,var(--margin) 40px,var(--margin) 42px,transparent 42px),
+      repeating-linear-gradient(var(--paper) 0,var(--paper) calc(var(--line) - 1px),var(--rule) calc(var(--line) - 1px),var(--rule) var(--line));
+    background-color:var(--paper);}
+  .page::before{left:10px;width:16px}
+}
+
+/* ===== Text (all margins are multiples of --line so text sits on the rules) ===== */
+.date{position:absolute;top:0;right:24px;font-family:var(--title);font-size:22px;color:var(--ink2);line-height:var(--line)}
+h1{font-family:var(--title);font-weight:700;color:var(--ink2);font-size:46px;line-height:calc(var(--line)*2);margin:0;transform:rotate(-1deg)}
+h1 .u{background:linear-gradient(transparent 62%,var(--hl-yellow) 62%,var(--hl-yellow) 92%,transparent 92%)}
+h2{font-family:var(--title);font-weight:700;color:var(--red);font-size:32px;line-height:calc(var(--line)*1.5);margin:calc(var(--line)*.5) 0 0}
+h2::before{content:"➤ ";font-size:22px}
+p,li{margin:0}
+ul,ol{margin:0;padding-left:28px}
+ul{list-style:none}
+ul>li::before{content:"–";position:absolute;margin-left:-20px}
+ul>li.star::before{content:"★";color:var(--red)}
+ul>li.arrow::before{content:"→"}
+ul>li.check::before{content:"✓";color:var(--green)}
+.gap{height:var(--line)}
+
+/* ===== Pen effects ===== */
+.hl{background:var(--hl-yellow);padding:0 3px;border-radius:3px 6px 4px 7px}
+.hl.pink{background:var(--hl-pink)} .hl.green{background:var(--hl-green)} .hl.blue{background:var(--hl-blue)}
+.red{color:var(--red)} .green{color:var(--green)} .black{color:var(--ink2)}
+.ul{text-decoration:underline wavy var(--red);text-underline-offset:5px}
+.circ{border:2px solid var(--red);border-radius:50% 45% 55% 48%;padding:0 6px}
+.strike{text-decoration:line-through 2px var(--red)}
+.term{font-weight:700;color:var(--ink2)}
+.box{display:flow-root;border:2.5px solid var(--ink2);border-radius:4px 10px 6px 12px;padding:calc(var(--line)*.5 - 2.5px) 14px;margin:calc(var(--line)*.5) 0;transform:rotate(-.4deg);background:rgba(255,255,255,.35)}
+.box.red{border-color:var(--red)}
+.formula{font-family:var(--title);font-size:28px;text-align:center;color:var(--ink2)}
+
+/* sticky note */
+.sticky{float:right;width:min(250px,42%);margin:0 0 var(--line) 20px;padding:var(--line) 16px;background:var(--sticky);
+  color:#333;transform:rotate(2.2deg);box-shadow:2px 4px 8px rgba(0,0,0,.18);font-size:18px}
+.sticky b{font-family:var(--title);font-size:24px;color:var(--red)}
+@media (max-width:600px){.sticky{float:none;width:auto;margin:var(--line) 0}}
+
+/* margin annotation (lives in the red margin) */
+.side{position:absolute;left:4px;width:58px;text-align:center;font-family:var(--title);font-size:17px;line-height:18px;color:var(--red);transform:rotate(-8deg)}
+@media (max-width:600px){.side{display:none}}
+
+/* two-column notes */
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:0 28px}
+@media (max-width:600px){.cols{grid-template-columns:1fr}}
+
+/* diagrams */
+figure{margin:var(--line) 0;text-align:center}
+figure svg{width:100%;max-width:640px;height:auto;overflow:visible}
+figcaption{font-family:var(--title);font-size:20px;color:var(--ink2)}
+/* phones: keep labels readable — diagram scrolls inside its own box instead of shrinking */
+@media (max-width:600px){figure{overflow-x:auto}figure svg{min-width:520px}}
+.sk{fill:none;stroke:var(--ink2);stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round;filter:url(#rough)}
+.sk.blue{stroke:var(--ink)} .sk.red{stroke:var(--red)} .sk.green{stroke:var(--green)}
+.lbl{font-family:var(--hand);font-size:17px;fill:var(--ink)}
+.lbl.b{font-weight:700;fill:var(--ink2)} .lbl.r{fill:var(--red)} .lbl.g{fill:var(--green)}
+
+/* table */
+.wrap{overflow-x:auto}
+table{border-collapse:collapse;margin:calc(var(--line)*.5) 0;min-width:100%}
+th,td{border:2px solid var(--ink2);padding:0 10px;text-align:left;vertical-align:top}
+th{font-family:var(--title);font-size:24px;color:var(--ink2)}
+
+@media print{body{background:#fff}.page{box-shadow:none;margin:0}.page::before{display:none}}
+
+/* ===== Added for long chapter notes ===== */
+pre.code{font-family:Consolas,'Courier New',monospace;font-size:14px;line-height:var(--line);color:var(--ink);background:rgba(255,255,255,.45);
+  border-left:4px solid var(--red);margin:calc(var(--line)*.5) 0;padding:0 12px;overflow-x:auto;white-space:pre}
+pre.code.ascii{border-left-color:var(--green)}
+code{font-family:Consolas,'Courier New',monospace;font-size:.82em;background:rgba(0,0,0,.06);padding:0 3px;border-radius:3px}
+pre.code code{background:none;padding:0;font-size:inherit}
+.lang{font-family:var(--title);font-size:18px;color:var(--red)}
+h3{font-family:var(--title);font-weight:700;color:var(--ink2);font-size:26px;line-height:var(--line);margin:calc(var(--line)*.5) 0 0}
+h3::before{content:"✎ ";font-size:18px;color:var(--red)}
+.nav{display:flex;justify-content:space-between;gap:12px;font-family:var(--title);font-size:22px;line-height:var(--line)}
+.nav a{color:var(--red);text-decoration:none}
+.nav a:hover{text-decoration:underline wavy}
+.pagebreak{border-top:3px dashed var(--margin);margin:var(--line) 0;text-align:center;font-family:var(--title);color:var(--red);line-height:var(--line)}
+li.todo::before{content:"☐";color:var(--ink2)}
+a{color:var(--ink);text-decoration:underline dotted}
+</style>
+</head>
+<body>
+<!-- One shared hand-drawn wobble filter; give every diagram stroke class="sk" -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <!-- userSpaceOnUse region: a % region collapses to nothing on perfectly straight lines (zero-height bbox) -->
+  <filter id="rough" filterUnits="userSpaceOnUse" x="-500" y="-500" width="3000" height="3000">
+    <feTurbulence type="fractalNoise" baseFrequency="0.03" numOctaves="2" seed="3" result="n"/>
+    <feDisplacementMap in="SourceGraphic" in2="n" scale="3"/>
+  </filter>
+  <marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+    <path d="M1 1 L9 5 L1 9" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+  </marker>
+</defs></svg>
+
+<main class="page">
+  <nav class="nav"><a href="ch04-inference-and-serving.notes.html">← Ch 4 — Inference &amp; Serving</a><a href="index.notes.html">☰ Contents</a><a href="ch06-prompt-engineering-and-structured-output.notes.html">Ch 6 — Prompt Engineering &amp; Structured Output →</a></nav>
+  <div class="date">2026-10-10</div>
+  <h1><span class="u">Ch 5 — Quantization &amp; Efficiency</span></h1>
+    <p class="black">Volume 5 — AI Systems Engineering · <a href="index.md">Contents</a> · ← <a href="ch04-inference-and-serving.notes.html">Chapter 4 — Inference &amp; Serving</a> · Next → <a href="ch06-prompt-engineering-and-structured-output.notes.html">Chapter 6 — Prompt Engineering &amp; Structured Output</a></p>
+
+  <p class="black">Chapter 5 — Quantization &amp; Efficiency</p>
+
+  <h2>Concept</h2>
+  <p>FP16/INT8/INT4, GPTQ/AWQ, KV-cache quantization, and the accuracy/speed/memory trade-off.</p>
+  <div class="box"><b>In one sentence:</b> quantization stores a model's numbers with fewer bits — 16, 8, or 4 instead of 32 — so the model takes a fraction of the memory and runs faster (because decoding is limited by how fast weights can be read), usually with only a small loss in quality.</div>
+
+  <h3>Mental model — rounding prices</h3>
+  <p>A store that prices items at $3.14159 could print $3.14 and almost nobody would notice. Rounding every price to the nearest dollar ($3) saves even more ink, but now some totals are noticeably off. Quantization is choosing how coarse the rounding can be — and doing it cleverly (a separate scale per shelf, extra care for the few very expensive items) so the totals stay right.</p>
+
+  <h3>Number formats</h3>
+  <div class="wrap"><table>
+    <tr><th>Format</th><th>Bits</th><th>Bytes/param</th><th>7B weights</th><th>70B weights</th><th>Notes</th></tr>
+    <tr><td>FP32</td><td>32</td><td>4</td><td>28 GB</td><td>280 GB</td><td>training master weights</td></tr>
+    <tr><td>FP16 / BF16</td><td>16</td><td>2</td><td>14 GB</td><td>140 GB</td><td>the standard for inference; BF16 has FP32's range</td></tr>
+    <tr><td>FP8 (E4M3/E5M2)</td><td>8</td><td>1</td><td>7 GB</td><td>70 GB</td><td>native on H100/Blackwell-class GPUs</td></tr>
+    <tr><td>INT8</td><td>8</td><td>1</td><td>7 GB</td><td>70 GB</td><td>LLM.int8(), SmoothQuant</td></tr>
+    <tr><td>INT4 / NF4</td><td>4</td><td>0.5</td><td><b>3.5 GB</b></td><td>35 GB</td><td>GPTQ, AWQ, bitsandbytes NF4, GGUF Q4</td></tr>
+  </table></div>
+  <p>(Weights only. Add the KV cache (<a href="ch04-inference-and-serving.notes.html">Ch 4</a>), activations, and runtime overhead — typically +10–30%.)</p>
+
+  <h3>How integer quantization works</h3>
+<pre class="code ascii"><code> affine (asymmetric):   q = round(x / scale) + zero_point        x ≈ (q − zero_point) × scale
+                        scale = (max − min) / (2^bits − 1)
+ symmetric:             q = round(x / scale),  scale = max|x| / (2^(bits−1) − 1)</code></pre>
+
+  <div class="pagebreak">~ page 2 ~</div>
+
+  <h3>Granularity matters</h3>
+  <p>— one scale per whole tensor is crushed by outliers; <b>per-channel</b> (per row) or <b>per-group</b> (e.g. every 128 weights get their own scale) keeps errors small. Group size 128 at 4 bits costs ~0.125 extra bits per weight for the scales.</p>
+
+  <h3>Why quality usually survives</h3>
+  <p>— weights are roughly bell-shaped and redundant; networks are trained with noise and are robust to small perturbations; errors from independent roundings partly cancel; and modern methods protect the few weights and activations that matter most (outliers).</p>
+
+  <h3>Methods</h3>
+  <div class="wrap"><table>
+    <tr><th>Method</th><th>Type</th><th>Idea</th></tr>
+    <tr><td>RTN (round-to-nearest)</td><td>post-training, weights</td><td>the simple baseline; fine at 8-bit, lossy at 4-bit</td></tr>
+    <tr><td>LLM.int8()</td><td>weights + activations</td><td>handle outlier feature columns in FP16, the rest in INT8</td></tr>
+    <tr><td><b>GPTQ</b></td><td>post-training, weights (3–4 bit)</td><td>quantize column by column, updating the remaining weights to compensate for error (second-order info from calibration data)</td></tr>
+    <tr><td><b>AWQ</b></td><td>post-training, weights (4 bit)</td><td>find the ~1% of weight channels with the largest <i>activations</i> and scale them up before quantizing so they keep precision</td></tr>
+    <tr><td>SmoothQuant</td><td>weights + activations (W8A8)</td><td>move outliers from activations into weights mathematically</td></tr>
+    <tr><td>NF4 / QLoRA</td><td>weights (4 bit)</td><td>a normal-float 4-bit code matched to bell-shaped weights; train LoRA adapters on top (<a href="ch07-fine-tuning-lora-and-peft.notes.html">Ch 7</a>)</td></tr>
+    <tr><td>GGUF k-quants (llama.cpp)</td><td>weights (2–8 bit)</td><td>mixed block formats for CPU/Apple Silicon inference</td></tr>
+    <tr><td>QAT</td><td>during training</td><td>simulate quantization in training so the model adapts; best quality, costliest</td></tr>
+    <tr><td><b>KV-cache quantization</b></td><td>runtime</td><td>store K/V in FP8 or INT8 → ~2× more concurrent context</td></tr>
+  </table></div>
+
+  <h3>Trade-offs</h3>
+  <div class="box red">— memory shrinks nearly in proportion to bits. Speed improves for memory-bound decoding (fewer bytes to read), but only if kernels are efficient; prefill (compute-bound) may gain less or even slow down with dequantization overhead. Quality: 8-bit ≈ lossless; 4-bit with GPTQ/AWQ is typically a small drop; 3-bit and below degrades noticeably, especially for small models, reasoning, and long contexts. <b>Always measure on your own tasks.</b></div>
+
+  <h2>Prereqs</h2>
+  <ul>
+    <li><a href="ch04-inference-and-serving.notes.html">Chapter 4 — Inference &amp; Serving</a></li>
+  </ul>
+
+  <div class="pagebreak">~ page 3 ~</div>
+
+  <h2>Diagram</h2>
+  <p><b>A weight-matrix quantization diagram (float → int with scale/zero-point)</b></p>
+<pre class="code ascii"><code> FP32 weights (one group)        8-bit affine quantization          dequantized
+  0.12  −1.50  0.80  2.30 −0.40   min = −1.50, max = 2.30            0.119 −1.505 0.805 2.295 −0.402
+                                  scale = 3.80 / 255 = 0.0149
+                                  zero_point = round(1.50 / 0.0149) = 101
+                                  q = round(x / scale) + 101
+                                  → 109    0   155   255   74        max error ≈ 0.005
+
+ value line:  −1.50 ────────── 0 ─────────────────────── 2.30
+ int8 codes:     0 ───────── 101 ─────────────────────── 255</code></pre>
+
+  <p><b>Per-tensor vs per-group scales</b></p>
+<pre class="code ascii"><code> per-tensor: one scale for everything
+   [0.01 0.02 −0.03 … 0.02 | 9.7 (outlier!) | 0.01 …]  → scale set by 9.7; small weights all round to 0 ✗
+ per-group (128): each group gets its own scale
+   group 1: scale from max 0.03 → fine resolution ✓   group 7: scale from 9.7 → the outlier is contained</code></pre>
+
+  <p><b>Where the memory goes: a 7B model on a 24 GB GPU</b></p>
+  <figure>
+    <svg viewBox="0 0 640 330" role="img" aria-label="7B model memory in GB, weights plus KV cache for 8 sequences of 4k tokens with GQA: FP16 18.3, INT8 11.3, INT4 7.8, INT4 plus FP8 KV 5.6; y axis 0 to 24 GB">
+      <text class="lbl b" x="340" y="16" text-anchor="middle">7B model memory (GB): weights + KV cache</text>
+      <text class="lbl b" x="340" y="36" text-anchor="middle">for 8 × 4k-token sequences with GQA</text>
+      <text class="lbl" x="12" y="170" text-anchor="middle" transform="rotate(-90 12 170)">GB</text>
+      <path class="sk" d="M70 64 L70 270 L620 270"/>
+      <path class="sk" d="M70 201.3 L620 201.3" style="stroke-width:1;opacity:.35;stroke-dasharray:6 6"/>
+      <path class="sk" d="M70 132.7 L620 132.7" style="stroke-width:1;opacity:.35;stroke-dasharray:6 6"/>
+      <path class="sk red" d="M70 64 L620 64" style="stroke-width:1.6;stroke-dasharray:8 6;color:var(--red)"/>
+      <text class="lbl" x="62" y="275" text-anchor="end" style="font-size:15px">0</text>
+      <text class="lbl" x="62" y="206" text-anchor="end" style="font-size:15px">8</text>
+      <text class="lbl" x="62" y="138" text-anchor="end" style="font-size:15px">16</text>
+      <text class="lbl r" x="62" y="69" text-anchor="end" style="font-size:15px">24</text>
+      <text class="lbl r" x="615" y="58" text-anchor="end" style="font-size:15px">24 GB GPU</text>
+      <rect class="sk blue" x="120" y="149.9" width="60" height="120.1" style="fill:var(--hl-blue)"/>
+      <rect class="sk red" x="120" y="113" width="60" height="36.9" style="fill:var(--hl-pink)"/>
+      <rect class="sk blue" x="240" y="209.9" width="60" height="60.1" style="fill:var(--hl-blue)"/>
+      <rect class="sk red" x="240" y="173" width="60" height="36.9" style="fill:var(--hl-pink)"/>
+      <rect class="sk blue" x="360" y="240" width="60" height="30" style="fill:var(--hl-blue)"/>
+      <rect class="sk red" x="360" y="203.1" width="60" height="36.9" style="fill:var(--hl-pink)"/>
+      <rect class="sk blue" x="480" y="240" width="60" height="30" style="fill:var(--hl-blue)"/>
+      <rect class="sk red" x="480" y="222" width="60" height="18" style="fill:var(--hl-pink)"/>
+      <text class="lbl b" x="150" y="105" text-anchor="middle">18.3</text>
+      <text class="lbl b" x="270" y="165" text-anchor="middle">11.3</text>
+      <text class="lbl b" x="390" y="195" text-anchor="middle">7.8</text>
+      <text class="lbl b" x="510" y="214" text-anchor="middle">5.6</text>
+      <text class="lbl" x="150" y="215" text-anchor="middle" style="font-size:15px">14</text>
+      <text class="lbl" x="270" y="245" text-anchor="middle" style="font-size:15px">7</text>
+      <text class="lbl" x="390" y="260" text-anchor="middle" style="font-size:15px">3.5</text>
+      <text class="lbl" x="510" y="260" text-anchor="middle" style="font-size:15px">3.5</text>
+      <text class="lbl b" x="150" y="292" text-anchor="middle">FP16</text>
+      <text class="lbl b" x="270" y="292" text-anchor="middle">INT8</text>
+      <text class="lbl b" x="390" y="292" text-anchor="middle">INT4</text>
+      <text class="lbl b" x="520" y="292" text-anchor="middle">INT4 + FP8 KV</text>
+      <rect class="sk blue" x="400" y="76" width="20" height="12" style="fill:var(--hl-blue)"/>
+      <text class="lbl" x="428" y="88" style="font-size:15px">weights</text>
+      <rect class="sk red" x="500" y="76" width="20" height="12" style="fill:var(--hl-pink)"/>
+      <text class="lbl r" x="528" y="88" style="font-size:15px">KV cache</text>
+    </svg>
+    <figcaption>Fig 1: stacked bars - weights (blue) plus KV cache (pink) against the 24 GB GPU line</figcaption>
+  </figure>
+  <p>(Weights 14 / 7 / 3.5 / 3.5 GB + KV cache ~4.3 GB in FP16, ~2.1 GB in FP8, for 8 × 4k tokens with 8 KV heads.)</p>
+
+  <p><b>Choosing a format</b></p>
+<figure>
+<svg viewBox="0 0 660 510" role="img" aria-label="Choosing a format: goal; does it fit in GPU memory at BF16? If yes and you do not need more throughput or cheaper GPUs, serve BF16; if yes and you do need them, FP8 weights plus FP8 KV (H100-class) or INT8; if it does not fit, INT4 AWQ/GPTQ (GPU) or GGUF Q4_K_M (CPU/Mac); both paths then evaluate on your task set (accuracy, long context, tool calls)">
+<rect class="sk" x="299" y="12" width="62" height="40" rx="10"/>
+<text class="lbl b" x="330" y="37.5" text-anchor="middle">goal</text>
+<path class="sk" d="M330 72 L463 120 L330 168 L197 120 Z"/>
+<text class="lbl b" x="330" y="115.5" text-anchor="middle">fits in GPU memory</text>
+<text class="lbl b" x="330" y="135.5" text-anchor="middle">at BF16?</text>
+<path class="sk" d="M135 205 L260 255 L135 305 L10 255 Z"/>
+<text class="lbl b" x="135" y="250.5" text-anchor="middle">need more throughput /</text>
+<text class="lbl b" x="135" y="270.5" text-anchor="middle">cheaper GPUs?</text>
+<rect class="sk" x="434" y="215" width="191" height="80" rx="10"/>
+<text class="lbl b" x="530" y="240.5" text-anchor="middle">INT4 AWQ/GPTQ (GPU)</text>
+<text class="lbl b" x="530" y="260.5" text-anchor="middle">or GGUF Q4_K_M</text>
+<text class="lbl b" x="530" y="280.5" text-anchor="middle">(CPU/Mac)</text>
+<rect class="sk green" x="8" y="360" width="114" height="40" rx="10"/>
+<text class="lbl g" x="65" y="385.5" text-anchor="middle">serve BF16</text>
+<rect class="sk" x="155" y="350" width="200" height="60" rx="10"/>
+<text class="lbl b" x="255" y="375.5" text-anchor="middle">FP8 weights + FP8 KV</text>
+<text class="lbl b" x="255" y="395.5" text-anchor="middle">(H100-class) or INT8</text>
+<rect class="sk green" x="231" y="435" width="338" height="60" rx="10"/>
+<text class="lbl g" x="400" y="460.5" text-anchor="middle">evaluate on your task set</text>
+<text class="lbl g" x="400" y="480.5" text-anchor="middle">(accuracy, long context, tool calls)</text>
+<path class="sk blue" d="M330 52 Q 328 62 330 72" style="color:var(--ink)" marker-end="url(#arr)"/>
+<path class="sk blue" d="M284 152 Q 227 179 181 223" style="color:var(--ink)" marker-end="url(#arr)"/>
+<text class="lbl r" x="215" y="200" text-anchor="end" style="font-size:15px">yes</text>
+<path class="sk blue" d="M112 296 Q 89 325 76 360" style="color:var(--ink)" marker-end="url(#arr)"/>
+<text class="lbl r" x="75" y="330" text-anchor="end" style="font-size:15px">no</text>
+<path class="sk blue" d="M170 291 Q 193 325 226 350" style="color:var(--ink)" marker-end="url(#arr)"/>
+<text class="lbl r" x="225" y="330" text-anchor="start" style="font-size:15px">yes</text>
+<path class="sk blue" d="M376 151 Q 418 191 471 215" style="color:var(--ink)" marker-end="url(#arr)"/>
+<text class="lbl r" x="480" y="200" text-anchor="start" style="font-size:15px">no</text>
+<path class="sk blue" d="M505 295 Q 453 360 419 435" style="color:var(--ink)" marker-end="url(#arr)"/>
+<path class="sk blue" d="M306 410 Q 326 426 349 435" style="color:var(--ink)" marker-end="url(#arr)"/>
+</svg>
+<figcaption>Fig 2: pick the lightest format that fits, then always evaluate on your own tasks</figcaption>
+</figure>
+
+  <div class="pagebreak">~ page 4 ~</div>
+
+  <h2>Example</h2>
+  <span class="lang">python</span>
+<pre class="code"><code>import numpy as np
+
+def quantize_affine(x, bits=8):
+    qmin, qmax = 0, 2**bits - 1
+    scale = (x.max() - x.min()) / (qmax - qmin)
+    zero = int(round(-x.min() / scale))
+    q = np.clip(np.round(x / scale) + zero, qmin, qmax).astype(np.int32)
+    return q, scale, zero
+
+def dequantize(q, scale, zero):
+    return (q - zero) * scale
+
+x = np.array([0.12, -1.5, 0.8, 2.3, -0.4])
+q, s, z = quantize_affine(x, 8)
+print(q, round(s, 4), z)                          # [109   0 155 255  74] 0.0149 101
+print(np.abs(dequantize(q, s, z) - x).max())      # ≈ 0.005
+
+# Error grows as bits shrink (random "weights", per-group of 128)
+w = np.random.default_rng(0).normal(0, 0.02, size=4096 * 128)
+for bits in (8, 4, 3, 2):
+    groups = w.reshape(-1, 128)
+    err = np.mean([np.abs(dequantize(*quantize_affine(g, bits)) - g).mean() for g in groups[:256]])
+    print(bits, f"mean abs error {err:.6f}")</code></pre>
+
+  <span class="lang">python</span>
+<pre class="code"><code># Load a 4-bit model on a GPU with bitsandbytes (NF4)
+import torch
+from transformers import AutoModelForCausalLM, BitsAndBytesConfig
+cfg = BitsAndBytesConfig(load_in_4bit=True, bnb_4bit_quant_type="nf4",
+                         bnb_4bit_compute_dtype=torch.bfloat16, bnb_4bit_use_double_quant=True)
+model = AutoModelForCausalLM.from_pretrained("Qwen/Qwen2.5-7B-Instruct",
+                                             quantization_config=cfg, device_map="auto")
+print(model.get_memory_footprint() / 1e9, "GB")   # ~5 GB instead of ~15 GB</code></pre>
+
+  <span class="lang">bash</span>
+<pre class="code"><code># llama.cpp: convert, quantize to GGUF Q4_K_M, run on CPU / Apple Silicon
+python convert_hf_to_gguf.py ./Qwen2.5-7B-Instruct --outfile qwen7b-f16.gguf
+./llama-quantize qwen7b-f16.gguf qwen7b-Q4_K_M.gguf Q4_K_M
+./llama-cli -m qwen7b-Q4_K_M.gguf -p "Explain quantization in one line." -n 64
+./llama-perplexity -m qwen7b-Q4_K_M.gguf -f wiki.test.raw      # compare with the f16 model</code></pre>
+
+  <h2>Exercises</h2>
+  <ol style="list-style:none;padding-left:0">
+    <li>1. Quantize a tensor and compute the error.
+      <div class="box"><b>Solution</b> See <code>quantize_affine</code>. For a group with range 3.8, 8-bit gives a step of ~0.015 and a max error of half a step (~0.0075), here ~0.005. At 4 bits the step is 3.8 / 15 ≈ 0.25, so errors are ~17× larger — which is why 4-bit needs small groups and smart methods (GPTQ/AWQ).</div></li>
+    <li>2. Compare memory of FP16 vs INT4 for a model size.
+      <div class="box"><b>Solution</b> Weights = parameters × bits / 8. 7B: FP16 = 14 GB, INT4 = 3.5 GB (plus ~0.2–0.5 GB of group scales and zero points). 70B: 140 GB vs 35 GB, so INT4 fits on one 48 GB or 80 GB GPU instead of two to four. Add the KV cache and overhead for the real footprint.</div></li>
+    <li>3. Why can 4-bit weights make decoding faster even though the GPU still computes in BF16?
+      <div class="box"><b>Solution</b> Decoding is memory-bandwidth bound: each token requires reading every weight from GPU memory. 4-bit weights are 4× fewer bytes to move; fused kernels dequantize them in fast on-chip memory right before the multiply. Less data moved means more tokens per second — as long as the kernels are efficient.</div></li>
+  </ol>
+
+  <div class="pagebreak">~ page 5 ~</div>
+
+  <h2>Mini project</h2>
+  <p><b>Quantize a small model and measure speedup + quality change.</b></p>
+<figure>
+<svg viewBox="0 0 660 410" role="img" aria-label="Quantization mini project: base model (0.5-3B) in BF16 yields INT8 (bitsandbytes), INT4 AWQ / GPTQ and GGUF Q4_K_M (llama.cpp) variants; the base and all three variants are measured for memory, TTFT, tokens/s, perplexity and task accuracy (50-question set), producing a results table and recommendation">
+<rect class="sk" x="200" y="15" width="260" height="40" rx="10"/>
+<text class="lbl b" x="330" y="40.5" text-anchor="middle">base model (0.5–3B) in BF16</text>
+<rect class="sk" x="46" y="100" width="148" height="60" rx="10"/>
+<text class="lbl b" x="120" y="125.5" text-anchor="middle">INT8</text>
+<text class="lbl b" x="120" y="145.5" text-anchor="middle">(bitsandbytes)</text>
+<rect class="sk" x="252" y="110" width="157" height="40" rx="10"/>
+<text class="lbl b" x="330" y="135.5" text-anchor="middle">INT4 AWQ / GPTQ</text>
+<rect class="sk" x="479" y="100" width="123" height="60" rx="10"/>
+<text class="lbl b" x="540" y="125.5" text-anchor="middle">GGUF Q4_K_M</text>
+<text class="lbl b" x="540" y="145.5" text-anchor="middle">(llama.cpp)</text>
+<rect class="sk" x="127" y="223" width="406" height="84" rx="10"/>
+<text class="lbl b" x="330" y="250.5" text-anchor="middle">measure:</text>
+<text class="lbl b" x="330" y="270.5" text-anchor="middle">memory · TTFT · tokens/s ·</text>
+<text class="lbl b" x="330" y="290.5" text-anchor="middle">perplexity · task accuracy (50-question set)</text>
+<rect class="sk green" x="187" y="345" width="286" height="40" rx="10"/>
+<text class="lbl g" x="330" y="370.5" text-anchor="middle">results table + recommendation</text>
+<path class="sk blue" d="M286 55 Q 232 70 186 100" style="color:var(--ink)" marker-end="url(#arr)"/>
+<path class="sk blue" d="M330 55 Q 326 82 330 110" style="color:var(--ink)" marker-end="url(#arr)"/>
+<path class="sk blue" d="M374 55 Q 423 87 479 102" style="color:var(--ink)" marker-end="url(#arr)"/>
+<path class="sk blue" d="M292 55 Q 14 200 127 223" style="color:var(--ink)" marker-end="url(#arr)"/>
+<path class="sk blue" d="M167 160 Q 211 199 265 223" style="color:var(--ink)" marker-end="url(#arr)"/>
+<path class="sk blue" d="M330 150 Q 324 186 330 223" style="color:var(--ink)" marker-end="url(#arr)"/>
+<path class="sk blue" d="M493 160 Q 439 184 395 223" style="color:var(--ink)" marker-end="url(#arr)"/>
+<path class="sk blue" d="M330 307 Q 327 326 330 345" style="color:var(--ink)" marker-end="url(#arr)"/>
+</svg>
+<figcaption>Fig 3: three quantized variants, one benchmark, one recommendation</figcaption>
+</figure>
+
+  <h3>Steps</h3>
+  <ol style="list-style:none;padding-left:0">
+    <li>1. Pick a small instruct model and a task set you care about (e.g. 50 JSON-extraction prompts with exact-match scoring).</li>
+    <li>2. Produce three quantized variants.</li>
+    <li>3. For each: peak memory, TTFT, decode tokens/s (fixed prompt and output lengths), perplexity on a held-out text, and task accuracy.</li>
+    <li>4. Plot quality vs memory; find the knee.</li>
+    <li>5. Write a one-paragraph recommendation for your hardware.</li>
+  </ol>
+  <div class="box"><b>Done when:</b> you have a table like "INT4 AWQ: 3.1× less memory, 1.8× faster decode, −1.5 pts accuracy" and a justified choice.</div>
+
+  <h2>Open source</h2>
+  <ul>
+    <li><a href="https://github.com/ggerganov/llama.cpp"><code>ggerganov/llama.cpp</code></a> — GGUF formats and k-quants (<code>ggml-quants.c</code>), CPU/Metal/CUDA kernels, and <code>llama-perplexity</code> for quality checks.</li>
+    <li><a href="https://github.com/bitsandbytes-foundation/bitsandbytes"><code>bitsandbytes-foundation/bitsandbytes</code></a> — LLM.int8(), NF4, and 8-bit optimizers. See also AutoAWQ and GPTQModel, and the GPTQ, AWQ, and SmoothQuant papers.</li>
+  </ul>
+
+  <h2>Interview</h2>
+  <ol style="list-style:none;padding-left:0">
+    <li>1. <b>"Why does quantization usually preserve quality?"</b>
+      <div class="box"><b>Answer</b> Trained weights are mostly small, bell-shaped, and redundant, and the network tolerates small independent perturbations — rounding errors behave like noise that partly cancels across the many terms of each dot product. Fine-grained scales (per channel or per group) keep the error proportional to local magnitudes, and methods like GPTQ and AWQ explicitly compensate for the error or protect salient weights and outliers. Quality drops appear at very low bit widths, in small models, and on sensitive tasks — so always evaluate.</div></li>
+    <li>2. <b>"What's the memory of a 7B model in INT4?"</b>
+      <div class="box"><b>Answer</b> About 3.5 GB for the weights (7 × 10⁹ × 0.5 bytes), plus a few hundred MB for scales and zero points and any layers kept in higher precision (often embeddings and the LM head). At runtime add the KV cache (≈ 0.5 MB per token in FP16 for a 7B model without GQA; much less with GQA or a quantized KV cache) and framework overhead. A realistic total is 5–8 GB, depending on context length and batch size.</div></li>
+  </ol>
+
+  <h2>Checklist</h2>
+  <ul>
+    <li class="todo">explain scale/zero-point</li>
+    <li class="todo">run a quantized model</li>
+    <li class="todo">measure quality impact</li>
+  </ul>
+  <div class="gap"></div>
+  <p class="black"><a href="index.md">Contents</a> · ← <a href="ch04-inference-and-serving.notes.html">Chapter 4 — Inference &amp; Serving</a> · Next → <a href="ch06-prompt-engineering-and-structured-output.notes.html">Chapter 6 — Prompt Engineering &amp; Structured Output</a></p>
+
+  <nav class="nav"><a href="ch04-inference-and-serving.notes.html">← Ch 4 — Inference &amp; Serving</a><a href="index.notes.html">☰ Contents</a><a href="ch06-prompt-engineering-and-structured-output.notes.html">Ch 6 — Prompt Engineering &amp; Structured Output →</a></nav>
+</main>
+</body>
+</html>

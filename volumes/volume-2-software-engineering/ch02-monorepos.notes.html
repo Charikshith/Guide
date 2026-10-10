@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ch 2 — Monorepos — Notes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;700&family=Kalam:wght@400;700&family=Patrick+Hand&display=swap" rel="stylesheet">
+<style>
+/* ===== Page tokens ===== */
+:root{
+  --line:32px;                 /* ruled-line spacing; every vertical size is a multiple */
+  --paper:#fdfbf4; --rule:#c9dcef; --margin:#e8a0a0;
+  --ink:#1f3a93;               /* blue pen (body) */
+  --ink2:#222;                 /* black pen (headings) */
+  --red:#c0392b; --green:#1e8449;
+  --hl-yellow:rgba(255,235,59,.55); --hl-pink:rgba(255,128,171,.45);
+  --hl-green:rgba(118,255,3,.35); --hl-blue:rgba(64,196,255,.35);
+  --sticky:#fff59d; --desk:#e9e4d8;
+  --hand:'Kalam','Patrick Hand','Comic Sans MS','Segoe Print','Bradley Hand',cursive;
+  --title:'Caveat','Kalam','Segoe Print','Bradley Hand',cursive;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){ --desk:#2b2b2b; }
+}
+:root[data-theme="dark"]{ --desk:#2b2b2b; }
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--desk);font-family:var(--hand);color:var(--ink);}
+
+/* ===== Notebook sheet ===== */
+.page{
+  position:relative; max-width:860px; margin:24px auto; padding:var(--line) 28px calc(var(--line)*2) 84px;
+  background:
+    linear-gradient(90deg,transparent 64px,var(--margin) 64px,var(--margin) 66px,transparent 66px),
+    repeating-linear-gradient(var(--paper) 0,var(--paper) calc(var(--line) - 1px),var(--rule) calc(var(--line) - 1px),var(--rule) var(--line));
+  background-color:var(--paper);
+  box-shadow:0 2px 6px rgba(0,0,0,.15),0 12px 28px rgba(0,0,0,.12);
+  font-size:20px; line-height:var(--line);
+}
+.page::before{ /* punched holes */
+  content:""; position:absolute; left:22px; top:0; bottom:0; width:18px;
+  background:radial-gradient(circle,var(--desk) 7px,transparent 8px) 0 40px/18px 220px repeat-y;
+}
+@media (max-width:600px){
+  .page{margin:0;padding-left:52px;padding-right:16px;font-size:18px;
+    background:
+      linear-gradient(90deg,transparent 40px,var(--margin) 40px,var(--margin) 42px,transparent 42px),
+      repeating-linear-gradient(var(--paper) 0,var(--paper) calc(var(--line) - 1px),var(--rule) calc(var(--line) - 1px),var(--rule) var(--line));
+    background-color:var(--paper);}
+  .page::before{left:10px;width:16px}
+}
+
+/* ===== Text (all margins are multiples of --line so text sits on the rules) ===== */
+.date{position:absolute;top:0;right:24px;font-family:var(--title);font-size:22px;color:var(--ink2);line-height:var(--line)}
+h1{font-family:var(--title);font-weight:700;color:var(--ink2);font-size:46px;line-height:calc(var(--line)*2);margin:0;transform:rotate(-1deg)}
+h1 .u{background:linear-gradient(transparent 62%,var(--hl-yellow) 62%,var(--hl-yellow) 92%,transparent 92%)}
+h2{font-family:var(--title);font-weight:700;color:var(--red);font-size:32px;line-height:calc(var(--line)*1.5);margin:calc(var(--line)*.5) 0 0}
+h2::before{content:"➤ ";font-size:22px}
+p,li{margin:0}
+ul,ol{margin:0;padding-left:28px}
+ul{list-style:none}
+ul>li::before{content:"–";position:absolute;margin-left:-20px}
+ul>li.star::before{content:"★";color:var(--red)}
+ul>li.arrow::before{content:"→"}
+ul>li.check::before{content:"✓";color:var(--green)}
+.gap{height:var(--line)}
+
+/* ===== Pen effects ===== */
+.hl{background:var(--hl-yellow);padding:0 3px;border-radius:3px 6px 4px 7px}
+.hl.pink{background:var(--hl-pink)} .hl.green{background:var(--hl-green)} .hl.blue{background:var(--hl-blue)}
+.red{color:var(--red)} .green{color:var(--green)} .black{color:var(--ink2)}
+.ul{text-decoration:underline wavy var(--red);text-underline-offset:5px}
+.circ{border:2px solid var(--red);border-radius:50% 45% 55% 48%;padding:0 6px}
+.strike{text-decoration:line-through 2px var(--red)}
+.term{font-weight:700;color:var(--ink2)}
+.box{display:flow-root;border:2.5px solid var(--ink2);border-radius:4px 10px 6px 12px;padding:calc(var(--line)*.5 - 2.5px) 14px;margin:calc(var(--line)*.5) 0;transform:rotate(-.4deg);background:rgba(255,255,255,.35)}
+.box.red{border-color:var(--red)}
+.formula{font-family:var(--title);font-size:28px;text-align:center;color:var(--ink2)}
+
+/* sticky note */
+.sticky{float:right;width:min(250px,42%);margin:0 0 var(--line) 20px;padding:var(--line) 16px;background:var(--sticky);
+  color:#333;transform:rotate(2.2deg);box-shadow:2px 4px 8px rgba(0,0,0,.18);font-size:18px}
+.sticky b{font-family:var(--title);font-size:24px;color:var(--red)}
+@media (max-width:600px){.sticky{float:none;width:auto;margin:var(--line) 0}}
+
+/* margin annotation (lives in the red margin) */
+.side{position:absolute;left:4px;width:58px;text-align:center;font-family:var(--title);font-size:17px;line-height:18px;color:var(--red);transform:rotate(-8deg)}
+@media (max-width:600px){.side{display:none}}
+
+/* two-column notes */
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:0 28px}
+@media (max-width:600px){.cols{grid-template-columns:1fr}}
+
+/* diagrams */
+figure{margin:var(--line) 0;text-align:center}
+figure svg{width:100%;max-width:640px;height:auto;overflow:visible}
+figcaption{font-family:var(--title);font-size:20px;color:var(--ink2)}
+/* phones: keep labels readable — diagram scrolls inside its own box instead of shrinking */
+@media (max-width:600px){figure{overflow-x:auto}figure svg{min-width:520px}}
+.sk{fill:none;stroke:var(--ink2);stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round;filter:url(#rough)}
+.sk.blue{stroke:var(--ink)} .sk.red{stroke:var(--red)} .sk.green{stroke:var(--green)}
+.lbl{font-family:var(--hand);font-size:17px;fill:var(--ink)}
+.lbl.b{font-weight:700;fill:var(--ink2)} .lbl.r{fill:var(--red)} .lbl.g{fill:var(--green)}
+
+/* table */
+.wrap{overflow-x:auto}
+table{border-collapse:collapse;margin:calc(var(--line)*.5) 0;min-width:100%}
+th,td{border:2px solid var(--ink2);padding:0 10px;text-align:left;vertical-align:top}
+th{font-family:var(--title);font-size:24px;color:var(--ink2)}
+
+@media print{body{background:#fff}.page{box-shadow:none;margin:0}.page::before{display:none}}
+
+/* ===== Added for long chapter notes ===== */
+pre.code{font-family:Consolas,'Courier New',monospace;font-size:14px;line-height:var(--line);color:var(--ink);background:rgba(255,255,255,.45);
+  border-left:4px solid var(--red);margin:calc(var(--line)*.5) 0;padding:0 12px;overflow-x:auto;white-space:pre}
+pre.code.ascii{border-left-color:var(--green)}
+code{font-family:Consolas,'Courier New',monospace;font-size:.82em;background:rgba(0,0,0,.06);padding:0 3px;border-radius:3px}
+pre.code code{background:none;padding:0;font-size:inherit}
+.lang{font-family:var(--title);font-size:18px;color:var(--red)}
+h3{font-family:var(--title);font-weight:700;color:var(--ink2);font-size:26px;line-height:var(--line);margin:calc(var(--line)*.5) 0 0}
+h3::before{content:"✎ ";font-size:18px;color:var(--red)}
+.nav{display:flex;justify-content:space-between;gap:12px;font-family:var(--title);font-size:22px;line-height:var(--line)}
+.nav a{color:var(--red);text-decoration:none}
+.nav a:hover{text-decoration:underline wavy}
+.pagebreak{border-top:3px dashed var(--margin);margin:var(--line) 0;text-align:center;font-family:var(--title);color:var(--red);line-height:var(--line)}
+li.todo::before{content:"☐";color:var(--ink2)}
+a{color:var(--ink);text-decoration:underline dotted}
+</style>
+</head>
+<body>
+<!-- One shared hand-drawn wobble filter; give every diagram stroke class="sk" -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <!-- userSpaceOnUse region: a % region collapses to nothing on perfectly straight lines (zero-height bbox) -->
+  <filter id="rough" filterUnits="userSpaceOnUse" x="-500" y="-500" width="3000" height="3000">
+    <feTurbulence type="fractalNoise" baseFrequency="0.03" numOctaves="2" seed="3" result="n"/>
+    <feDisplacementMap in="SourceGraphic" in2="n" scale="3"/>
+  </filter>
+  <marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+    <path d="M1 1 L9 5 L1 9" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+  </marker>
+</defs></svg>
+
+<main class="page">
+  <nav class="nav"><a href="ch01-professional-git-workflow.notes.html">← Ch 1 — Professional Git Workflow</a><a href="index.notes.html">☰ Contents</a><a href="ch03-dependency-injection-and-inversion-of-control.notes.html">Ch 3 — Dependency Injection &amp; Inversion of Control →</a></nav>
+  <div class="date">2026-10-10</div>
+  <h1><span class="u">Ch 2 — Monorepos</span></h1>
+  <p class="black"><b>Volume 2 — Software Engineering</b> · <a href="index.md">Contents</a> · ← <a href="ch01-professional-git-workflow.notes.html">Chapter 1 — Professional Git Workflow</a> · Next → <a href="ch03-dependency-injection-and-inversion-of-control.notes.html">Chapter 3 — Dependency Injection &amp; Inversion of Control</a></p>
+  <p class="black">Chapter 2 — Monorepos</p>
+  <h2>Concept</h2>
+  <p>One repo, many projects — benefits (atomic changes, shared code) and costs (scaling, tooling); workspace tooling.</p>
+  <div class="box"><span class="hl">In one sentence:</span> a monorepo keeps many projects in one repository so a change to shared code and all its users can land in a single reviewed commit — at the cost of needing tooling that builds and tests only what actually changed.</div>
+  <aside class="sticky"><b>Remember!</b><br>One repo = one atomic PR for shared code and all its users &mdash; but only if CI builds just what is affected.</aside>
+  <div class="box"><span class="hl blue">Mental model — one big kitchen vs many food trucks.</span> Polyrepo is a fleet of food trucks: each is independent and fast to change, but sharing a new sauce recipe means visiting every truck, and they drift apart. A monorepo is one big restaurant kitchen: the sauce is changed once and every dish gets it immediately — but you need a good head chef (build tooling) so that changing the sauce doesn't mean re-cooking the entire menu.</div>
+  <h3>Monorepo vs polyrepo</h3>
+  <div class="wrap"><table>
+  <tr><th></th><th>Monorepo</th><th>Polyrepo</th></tr>
+  <tr><td>Change shared code + all users</td><td><b>one atomic PR</b></td><td>N PRs, release the library, bump everywhere</td></tr>
+  <tr><td>Dependency versions</td><td>one version of each (the "one-version rule")</td><td>each repo drifts</td></tr>
+  <tr><td>Refactoring across projects</td><td>easy: find and fix every call site</td><td>hard: you can't see all users</td></tr>
+  <tr><td>Code discovery and reuse</td><td>high</td><td>low; copy-paste is common</td></tr>
+  <tr><td>CI</td><td>needs affected-only builds, caching</td><td>simple per repo</td></tr>
+  <tr><td>Access control</td><td>coarser (use <code>CODEOWNERS</code>, path rules)</td><td>per repo</td></tr>
+  <tr><td>Scaling Git itself</td><td>large repos need sparse checkout, partial clone</td><td>not an issue</td></tr>
+  <tr><td>Tooling</td><td>Cargo/pnpm/uv workspaces; Nx, Turborepo; Bazel, Pants, Buck2</td><td>standard</td></tr>
+  </table></div>
+  <p><b>Workspace basics</b> — a <i>workspace</i> is a root manifest that lists member packages which share one lockfile, and internal dependencies refer to each other <b>by path</b> (or <code>workspace:*</code>), so a change is picked up immediately without publishing.</p>
+  <h3>Keeping CI fast in a monorepo</h3>
+  <div class="wrap"><table>
+  <tr><th>Technique</th><th>How</th></tr>
+  <tr><td><b>Affected-only</b> builds</td><td>compute changed files → the packages that contain them → everything that depends on them; test only that set</td></tr>
+  <tr><td>Build graph caching</td><td>content-hashed task outputs; skip a task if its inputs are unchanged (Turborepo, Nx, Bazel remote cache)</td></tr>
+  <tr><td>Parallelism</td><td>run independent package tasks at once</td></tr>
+  <tr><td>Path-filtered workflows</td><td><code>on: push: paths: ["services/api/**", "libs/core/**"]</code></td></tr>
+  <tr><td>Sparse / shallow checkouts</td><td>clone only what the job needs</td></tr>
+  <tr><td>Ownership</td><td><code>CODEOWNERS</code> routes reviews to the right team</td></tr>
+  </table></div>
+  <h2>Prereqs</h2>
+  <ul>
+    <li><a href="ch01-professional-git-workflow.notes.html">Chapter 1 — Professional Git Workflow</a></li>
+  </ul>
+  <div class="pagebreak">~ page 2 ~</div>
+  <h2>Diagram</h2>
+  <h3>A monorepo tree with shared packages</h3>
+  <pre class="code ascii"><code> acme/
+   ├── Cargo.toml / package.json / pyproject.toml   ← workspace root, ONE lockfile
+   ├── libs/
+   │   ├── core/          shared domain types, validation
+   │   ├── db/            database access (depends on core)
+   │   └── ui-kit/        shared React components
+   ├── services/
+   │   ├── api/           depends on core, db
+   │   └── worker/        depends on core, db
+   ├── apps/
+   │   └── web/           depends on ui-kit (+ core types)
+   ├── tools/             scripts, codegen
+   └── .github/CODEOWNERS</code></pre>
+  <h3>The dependency graph across packages, and "affected" by a change</h3>
+  <figure>
+  <svg viewBox="0 0 588 200" style="width:588px" role="img" aria-label="The dependency graph across packages, and "affected" by a change: libs/core; libs/db; services/api; services/worker; apps/web; libs/ui-kit">
+  <path class="sk blue" d="M145 80 C187 80 187 80 229 80" style="color:var(--ink)" marker-end="url(#arr)"/>
+  <path class="sk blue" d="M145 80 C185 80 225 32 285 32 S371 80 411 80" style="color:var(--ink)" marker-end="url(#arr)"/>
+  <path class="sk blue" d="M322 80 C366 80 366 80 411 80" style="color:var(--ink)" marker-end="url(#arr)"/>
+  <path class="sk blue" d="M322 80 C359 80 359 154 397 154" style="color:var(--ink)" marker-end="url(#arr)"/>
+  <path class="sk blue" d="M145 80 C185 80 185 154 224 154" style="color:var(--ink)" marker-end="url(#arr)"/>
+  <path class="sk blue" d="M154 154 C189 154 189 154 224 154" style="color:var(--ink)" marker-end="url(#arr)"/>
+  <rect class="sk" x="33" y="58" width="112" height="44" rx="10" style="fill:#fdfbf4"/>
+  <text class="lbl b" x="89" y="85.5" text-anchor="middle">libs/core</text>
+  <rect class="sk" x="229" y="58" width="93" height="44" rx="10" style="fill:#ffd6d6"/>
+  <text class="lbl b" x="276" y="85.5" text-anchor="middle">libs/db</text>
+  <rect class="sk" x="411" y="58" width="140" height="44" rx="10" style="fill:#ffe9a8"/>
+  <text class="lbl b" x="480" y="85.5" text-anchor="middle">services/api</text>
+  <rect class="sk" x="397" y="132" width="168" height="44" rx="10" style="fill:#ffe9a8"/>
+  <text class="lbl b" x="480" y="159.5" text-anchor="middle">services/worker</text>
+  <rect class="sk" x="224" y="132" width="102" height="44" rx="10" style="fill:#fdfbf4"/>
+  <text class="lbl b" x="276" y="159.5" text-anchor="middle">apps/web</text>
+  <rect class="sk" x="24" y="132" width="130" height="44" rx="10" style="fill:#fdfbf4"/>
+  <text class="lbl b" x="89" y="159.5" text-anchor="middle">libs/ui-kit</text>
+  </svg>
+  <figcaption>Fig 1: The dependency graph across packages, and "affected" by a change</figcaption>
+  </figure>
+  <p>Change <code>libs/db</code> → affected: <code>db</code>, <code>api</code>, <code>worker</code>. <code>core</code>, <code>ui-kit</code>, and <code>web</code> are skipped.</p>
+  <h3>Task caching</h3>
+  <pre class="code ascii"><code> task: test services/api
+   inputs hash = hash(source files, deps' outputs, lockfile, env, command)
+     = 9f3e…  → found in the remote cache → restore logs + outputs in 0.4 s (no run)
+     = a71c…  → miss → run the tests (2 min) → upload the result under a71c…</code></pre>
+  <div class="pagebreak">~ page 3 ~</div>
+  <h2>Example</h2>
+  <span class="lang">toml</span>
+  <pre class="code"><code># Cargo.toml at the repo root
+  [workspace]
+  members = ["libs/core", "libs/db", "services/api", "services/worker"]
+  resolver = "2"
+  
+  [workspace.dependencies]          # one version for everyone
+  serde = { version = "1", features = ["derive"] }
+  tokio = { version = "1", features = ["full"] }
+  
+  # services/api/Cargo.toml
+  [dependencies]
+  core  = { path = "../../libs/core" }
+  db    = { path = "../../libs/db" }
+  serde = { workspace = true }</code></pre>
+  <span class="lang">yaml</span>
+  <pre class="code"><code># pnpm-workspace.yaml
+  packages:
+    - "apps/*"
+    - "libs/*"</code></pre>
+  <span class="lang">json</span>
+  <pre class="code"><code>// apps/web/package.json
+  { "name": "@acme/web", "dependencies": { "@acme/ui-kit": "workspace:*" } }</code></pre>
+  <span class="lang">bash</span>
+  <pre class="code"><code>cargo build -p api                      # build one member + its dependencies
+  cargo test --workspace
+  pnpm --filter "...[origin/main]" test   # pnpm: test packages changed since main, and their dependents
+  npx turbo run test --filter="...[origin/main]"</code></pre>
+  <span class="lang">text</span>
+  <pre class="code"><code># .github/CODEOWNERS
+  /libs/core/      @acme/platform
+  /services/api/   @acme/checkout-team
+  /apps/web/       @acme/frontend</code></pre>
+  <h2>Exercises</h2>
+  <ol style="list-style:none;padding-left:0">
+    <li>1. Set up a two-crate Rust workspace.
+  <div class="box"><b>Solution</b> <code>cargo new --lib libs/core</code> and <code>cargo new services/app</code>; a root <code>Cargo.toml</code> with <code>[workspace] members = [...]</code>; in the app, <code>core = { path = "../../libs/core" }</code>. <code>cargo build</code> at the root builds both into one shared <code>target/</code> with one <code>Cargo.lock</code>.</div></li>
+    <li>2. Make one change that updates a shared package and all consumers.
+  <div class="box"><b>Solution</b> Rename a function in <code>libs/core</code> (e.g. <code>parse_money</code> → <code>Money::parse</code>), let the compiler or type checker list every broken call site across the workspace, fix them all, and land it as one PR. CI tests <code>core</code> and every dependent — impossible to do atomically across polyrepos.</div></li>
+    <li>3. Why does a monorepo push you toward a "one-version rule" for third-party dependencies?
+  <div class="box"><b>Solution</b> With a single lockfile and shared builds, two versions of one library conflict (duplicate symbols, incompatible types passed between packages) and double the upgrade and security work. One version means one upgrade PR that fixes everything, with CI proving it for every consumer.</div></li>
+  </ol>
+  <div class="pagebreak">~ page 4 ~</div>
+  <h2>Mini project</h2>
+  <p><b>A small monorepo with a shared library + two apps built by one command.</b></p>
+  <figure>
+  <svg viewBox="0 0 536 508" style="width:536px" role="img" aria-label="A small monorepo with a shared library + two apps built by one command.: repo root uv / pnpm / cargo workspace + Taskfile or turbo.json; libs/shared (validation + money type); apps/cli; apps/api; one command: task ci; affected detection (git diff origin/main); lint + test + build only affected, cached; GitHub Actions: same command">
+  <path class="sk blue" d="M183 168 C183 201 98 201 98 234" style="color:var(--ink)" marker-end="url(#arr)"/>
+  <path class="sk blue" d="M98 316 C98 363 108 363 108 411" style="color:var(--ink)" marker-end="url(#arr)"/>
+  <path class="sk blue" d="M98 316 C98 363 240 363 240 411" style="color:var(--ink)" marker-end="url(#arr)"/>
+  <path class="sk blue" d="M358 126 C358 175 273 175 273 224" style="color:var(--ink)" marker-end="url(#arr)"/>
+  <path class="sk blue" d="M273 326 C273 354 400 354 400 382" style="color:var(--ink)" marker-end="url(#arr)"/>
+  <path class="sk blue" d="M442 316 C442 349 400 349 400 382" style="color:var(--ink)" marker-end="url(#arr)"/>
+  <rect class="sk" x="109" y="24" width="149" height="144" rx="10" style="fill:#fdfbf4"/>
+  <text class="lbl b" x="183" y="49.0" text-anchor="middle">repo root</text>
+  <text class="lbl b" x="183" y="70.0" text-anchor="middle">uv / pnpm /</text>
+  <text class="lbl b" x="183" y="91.0" text-anchor="middle">cargo</text>
+  <text class="lbl b" x="183" y="112.0" text-anchor="middle">workspace</text>
+  <text class="lbl b" x="183" y="133.0" text-anchor="middle">+ Taskfile or</text>
+  <text class="lbl b" x="183" y="154.0" text-anchor="middle">turbo.json</text>
+  <rect class="sk" x="24" y="234" width="149" height="81" rx="10" style="fill:#fdfbf4"/>
+  <text class="lbl b" x="98" y="259.5" text-anchor="middle">libs/shared</text>
+  <text class="lbl b" x="98" y="280.5" text-anchor="middle">(validation +</text>
+  <text class="lbl b" x="98" y="301.5" text-anchor="middle">money type)</text>
+  <rect class="sk" x="57" y="411" width="102" height="44" rx="10" style="fill:#fdfbf4"/>
+  <text class="lbl b" x="108" y="438.5" text-anchor="middle">apps/cli</text>
+  <rect class="sk" x="189" y="411" width="102" height="44" rx="10" style="fill:#fdfbf4"/>
+  <text class="lbl b" x="240" y="438.5" text-anchor="middle">apps/api</text>
+  <rect class="sk" x="288" y="66" width="140" height="60" rx="10" style="fill:#fdfbf4"/>
+  <text class="lbl b" x="358" y="91.0" text-anchor="middle">one command:</text>
+  <text class="lbl b" x="358" y="112.0" text-anchor="middle">task ci</text>
+  <rect class="sk" x="203" y="224" width="140" height="102" rx="10" style="fill:#fdfbf4"/>
+  <text class="lbl b" x="273" y="249.0" text-anchor="middle">affected</text>
+  <text class="lbl b" x="273" y="270.0" text-anchor="middle">detection</text>
+  <text class="lbl b" x="273" y="291.0" text-anchor="middle">(git diff</text>
+  <text class="lbl b" x="273" y="312.0" text-anchor="middle">origin/main)</text>
+  <rect class="sk" x="321" y="382" width="158" height="102" rx="10" style="fill:#fdfbf4"/>
+  <text class="lbl b" x="400" y="407.0" text-anchor="middle">lint + test +</text>
+  <text class="lbl b" x="400" y="428.0" text-anchor="middle">build</text>
+  <text class="lbl b" x="400" y="449.0" text-anchor="middle">only affected,</text>
+  <text class="lbl b" x="400" y="470.0" text-anchor="middle">cached</text>
+  <rect class="sk" x="373" y="234" width="140" height="81" rx="10" style="fill:#fdfbf4"/>
+  <text class="lbl b" x="442" y="259.5" text-anchor="middle">GitHub</text>
+  <text class="lbl b" x="442" y="280.5" text-anchor="middle">Actions:</text>
+  <text class="lbl b" x="442" y="301.5" text-anchor="middle">same command</text>
+  </svg>
+  <figcaption>Fig 2: A small monorepo with a shared library + two apps built by one command.</figcaption>
+  </figure>
+  <h3>Steps</h3>
+  <ol style="list-style:none;padding-left:0">
+    <li>1. Pick one ecosystem (uv workspace, pnpm, or Cargo); create <code>libs/shared</code>, <code>apps/cli</code>, and <code>apps/api</code>, using path/workspace dependencies.
+  </li>
+    <li>2. <code>task ci</code> (or <code>turbo run</code>) runs lint, test, and build across all packages in dependency order.
+  </li>
+    <li>3. Add affected-only mode: diff against <code>origin/main</code>, map files to packages, and add their reverse dependencies.
+  </li>
+    <li>4. Add task caching keyed by input hashes; show that a second run with no changes takes seconds.
+  </li>
+    <li>5. CI uses the same command; add <code>CODEOWNERS</code>.
+  </li>
+  </ol>
+  <p><b>Done when:</b> changing <code>libs/shared</code> rebuilds and tests all three packages, changing <code>apps/cli</code> touches only the CLI, and a no-op run is nearly instant.</p>
+  <h2>Open source</h2>
+  <ul>
+    <li><a href="https://github.com/rust-lang/cargo"><code>rust-lang/cargo</code></a> workspaces — the Cargo Book's "Workspaces" chapter and <code>workspace.dependencies</code> inheritance.</li>
+    <li><a href="https://github.com/pnpm/pnpm"><code>pnpm/pnpm</code></a> — workspaces with the <code>--filter "...[ref]"</code> affected syntax; see also Turborepo, Nx, and Bazel for build-graph caching at scale.</li>
+  </ul>
+  <div class="pagebreak">~ page 5 ~</div>
+  <h2>Interview</h2>
+  <ol style="list-style:none;padding-left:0">
+    <li>1. <b>"Monorepo vs polyrepo — trade-offs?"</b>
+  <div class="box"><b>Answer</b> A monorepo gives atomic cross-project changes, easy refactoring and code reuse, one set of tooling and dependency versions, and full visibility — but it needs investment in affected-only CI, caching, ownership rules, and eventually Git scaling. Polyrepos give strong isolation, independent release cadences, and simple per-repo CI, but cross-cutting changes need coordinated releases, versions drift, and shared code gets copied. Choose by how much code is shared and how often changes cross boundaries.</div></li>
+    <li>2. <b>"How do you keep CI fast in a monorepo?"</b>
+  <div class="box"><b>Answer</b> Build and test only what's affected (changed packages plus their dependents, from the dependency graph); cache task outputs by content hash, locally and remotely; parallelize independent tasks; use path filters and sparse checkouts; keep tests hermetic so they're cacheable; and track CI duration as a metric.</div></li>
+  </ol>
+  <h2>Checklist</h2>
+  <ul>
+    <li class="todo">share code without copy-paste</li>
+    <li class="todo">build only what changed</li>
+    <li class="todo">pin internal deps by path/version</li>
+  </ul>
+  <p class="black"><a href="index.md">Contents</a> · ← <a href="ch01-professional-git-workflow.notes.html">Chapter 1 — Professional Git Workflow</a> · Next → <a href="ch03-dependency-injection-and-inversion-of-control.notes.html">Chapter 3 — Dependency Injection &amp; Inversion of Control</a></p>
+  <nav class="nav"><a href="ch01-professional-git-workflow.notes.html">← Ch 1 — Professional Git Workflow</a><a href="index.notes.html">☰ Contents</a><a href="ch03-dependency-injection-and-inversion-of-control.notes.html">Ch 3 — Dependency Injection &amp; Inversion of Control →</a></nav>
+</main>
+</body>
+</html>

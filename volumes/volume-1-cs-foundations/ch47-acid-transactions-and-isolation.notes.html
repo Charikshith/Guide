@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ch 47 — ACID, Transactions &amp; Isolation — Notes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;700&family=Kalam:wght@400;700&family=Patrick+Hand&display=swap" rel="stylesheet">
+<style>
+/* ===== Page tokens ===== */
+:root{
+  --line:32px;                 /* ruled-line spacing; every vertical size is a multiple */
+  --paper:#fdfbf4; --rule:#c9dcef; --margin:#e8a0a0;
+  --ink:#1f3a93;               /* blue pen (body) */
+  --ink2:#222;                 /* black pen (headings) */
+  --red:#c0392b; --green:#1e8449;
+  --hl-yellow:rgba(255,235,59,.55); --hl-pink:rgba(255,128,171,.45);
+  --hl-green:rgba(118,255,3,.35); --hl-blue:rgba(64,196,255,.35);
+  --sticky:#fff59d; --desk:#e9e4d8;
+  --hand:'Kalam','Patrick Hand','Comic Sans MS','Segoe Print','Bradley Hand',cursive;
+  --title:'Caveat','Kalam','Segoe Print','Bradley Hand',cursive;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){ --desk:#2b2b2b; }
+}
+:root[data-theme="dark"]{ --desk:#2b2b2b; }
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--desk);font-family:var(--hand);color:var(--ink);}
+
+/* ===== Notebook sheet ===== */
+.page{
+  position:relative; max-width:860px; margin:24px auto; padding:var(--line) 28px calc(var(--line)*2) 84px;
+  background:
+    linear-gradient(90deg,transparent 64px,var(--margin) 64px,var(--margin) 66px,transparent 66px),
+    repeating-linear-gradient(var(--paper) 0,var(--paper) calc(var(--line) - 1px),var(--rule) calc(var(--line) - 1px),var(--rule) var(--line));
+  background-color:var(--paper);
+  box-shadow:0 2px 6px rgba(0,0,0,.15),0 12px 28px rgba(0,0,0,.12);
+  font-size:20px; line-height:var(--line);
+}
+.page::before{ /* punched holes */
+  content:""; position:absolute; left:22px; top:0; bottom:0; width:18px;
+  background:radial-gradient(circle,var(--desk) 7px,transparent 8px) 0 40px/18px 220px repeat-y;
+}
+@media (max-width:600px){
+  .page{margin:0;padding-left:52px;padding-right:16px;font-size:18px;
+    background:
+      linear-gradient(90deg,transparent 40px,var(--margin) 40px,var(--margin) 42px,transparent 42px),
+      repeating-linear-gradient(var(--paper) 0,var(--paper) calc(var(--line) - 1px),var(--rule) calc(var(--line) - 1px),var(--rule) var(--line));
+    background-color:var(--paper);}
+  .page::before{left:10px;width:16px}
+}
+
+/* ===== Text (all margins are multiples of --line so text sits on the rules) ===== */
+.date{position:absolute;top:0;right:24px;font-family:var(--title);font-size:22px;color:var(--ink2);line-height:var(--line)}
+h1{font-family:var(--title);font-weight:700;color:var(--ink2);font-size:46px;line-height:calc(var(--line)*2);margin:0;transform:rotate(-1deg)}
+h1 .u{background:linear-gradient(transparent 62%,var(--hl-yellow) 62%,var(--hl-yellow) 92%,transparent 92%)}
+h2{font-family:var(--title);font-weight:700;color:var(--red);font-size:32px;line-height:calc(var(--line)*1.5);margin:calc(var(--line)*.5) 0 0}
+h2::before{content:"➤ ";font-size:22px}
+p,li{margin:0}
+ul,ol{margin:0;padding-left:28px}
+ul{list-style:none}
+ul>li::before{content:"–";position:absolute;margin-left:-20px}
+ul>li.star::before{content:"★";color:var(--red)}
+ul>li.arrow::before{content:"→"}
+ul>li.check::before{content:"✓";color:var(--green)}
+.gap{height:var(--line)}
+
+/* ===== Pen effects ===== */
+.hl{background:var(--hl-yellow);padding:0 3px;border-radius:3px 6px 4px 7px}
+.hl.pink{background:var(--hl-pink)} .hl.green{background:var(--hl-green)} .hl.blue{background:var(--hl-blue)}
+.red{color:var(--red)} .green{color:var(--green)} .black{color:var(--ink2)}
+.ul{text-decoration:underline wavy var(--red);text-underline-offset:5px}
+.circ{border:2px solid var(--red);border-radius:50% 45% 55% 48%;padding:0 6px}
+.strike{text-decoration:line-through 2px var(--red)}
+.term{font-weight:700;color:var(--ink2)}
+.box{display:flow-root;border:2.5px solid var(--ink2);border-radius:4px 10px 6px 12px;padding:calc(var(--line)*.5 - 2.5px) 14px;margin:calc(var(--line)*.5) 0;transform:rotate(-.4deg);background:rgba(255,255,255,.35)}
+.box.red{border-color:var(--red)}
+.formula{font-family:var(--title);font-size:28px;text-align:center;color:var(--ink2)}
+
+/* sticky note */
+.sticky{float:right;width:min(250px,42%);margin:0 0 var(--line) 20px;padding:var(--line) 16px;background:var(--sticky);
+  color:#333;transform:rotate(2.2deg);box-shadow:2px 4px 8px rgba(0,0,0,.18);font-size:18px}
+.sticky b{font-family:var(--title);font-size:24px;color:var(--red)}
+@media (max-width:600px){.sticky{float:none;width:auto;margin:var(--line) 0}}
+
+/* margin annotation (lives in the red margin) */
+.side{position:absolute;left:4px;width:58px;text-align:center;font-family:var(--title);font-size:17px;line-height:18px;color:var(--red);transform:rotate(-8deg)}
+@media (max-width:600px){.side{display:none}}
+
+/* two-column notes */
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:0 28px}
+@media (max-width:600px){.cols{grid-template-columns:1fr}}
+
+/* diagrams */
+figure{margin:var(--line) 0;text-align:center}
+figure svg{width:100%;max-width:640px;height:auto;overflow:visible}
+figcaption{font-family:var(--title);font-size:20px;color:var(--ink2)}
+/* phones: keep labels readable — diagram scrolls inside its own box instead of shrinking */
+@media (max-width:600px){figure{overflow-x:auto}figure svg{min-width:520px}}
+.sk{fill:none;stroke:var(--ink2);stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round;filter:url(#rough)}
+.sk.blue{stroke:var(--ink)} .sk.red{stroke:var(--red)} .sk.green{stroke:var(--green)}
+.lbl{font-family:var(--hand);font-size:17px;fill:var(--ink)}
+.lbl.b{font-weight:700;fill:var(--ink2)} .lbl.r{fill:var(--red)} .lbl.g{fill:var(--green)}
+
+/* table */
+.wrap{overflow-x:auto}
+table{border-collapse:collapse;margin:calc(var(--line)*.5) 0;min-width:100%}
+th,td{border:2px solid var(--ink2);padding:0 10px;text-align:left;vertical-align:top}
+th{font-family:var(--title);font-size:24px;color:var(--ink2)}
+
+@media print{body{background:#fff}.page{box-shadow:none;margin:0}.page::before{display:none}}
+
+/* ===== Added for long chapter notes ===== */
+pre.code{font-family:Consolas,'Courier New',monospace;font-size:14px;line-height:var(--line);color:var(--ink);background:rgba(255,255,255,.45);
+  border-left:4px solid var(--red);margin:calc(var(--line)*.5) 0;padding:0 12px;overflow-x:auto;white-space:pre}
+pre.code.ascii{border-left-color:var(--green)}
+code{font-family:Consolas,'Courier New',monospace;font-size:.82em;background:rgba(0,0,0,.06);padding:0 3px;border-radius:3px}
+pre.code code{background:none;padding:0;font-size:inherit}
+.lang{font-family:var(--title);font-size:18px;color:var(--red)}
+h3{font-family:var(--title);font-weight:700;color:var(--ink2);font-size:26px;line-height:var(--line);margin:calc(var(--line)*.5) 0 0}
+h3::before{content:"✎ ";font-size:18px;color:var(--red)}
+.nav{display:flex;justify-content:space-between;gap:12px;font-family:var(--title);font-size:22px;line-height:var(--line)}
+.nav a{color:var(--red);text-decoration:none}
+.nav a:hover{text-decoration:underline wavy}
+.pagebreak{border-top:3px dashed var(--margin);margin:var(--line) 0;text-align:center;font-family:var(--title);color:var(--red);line-height:var(--line)}
+li.todo::before{content:"☐";color:var(--ink2)}
+a{color:var(--ink);text-decoration:underline dotted}
+</style>
+</head>
+<body>
+<!-- One shared hand-drawn wobble filter; give every diagram stroke class="sk" -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <!-- userSpaceOnUse region: a % region collapses to nothing on perfectly straight lines (zero-height bbox) -->
+  <filter id="rough" filterUnits="userSpaceOnUse" x="-500" y="-500" width="3000" height="3000">
+    <feTurbulence type="fractalNoise" baseFrequency="0.03" numOctaves="2" seed="3" result="n"/>
+    <feDisplacementMap in="SourceGraphic" in2="n" scale="3"/>
+  </filter>
+  <marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+    <path d="M1 1 L9 5 L1 9" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+  </marker>
+</defs></svg>
+
+<main class="page">
+  <nav class="nav"><a href="ch46-schema-design-normalization-and-indexing.notes.html">← Ch 46 — Schema Design, Normalization &amp; Indexing</a><a href="index.notes.html">☰ Contents</a><a href="ch48-nosql-mongodb-cassandra-and-dynamodb.notes.html">Ch 48 — NoSQL: MongoDB, Cassandra &amp; DynamoDB →</a></nav>
+  <div class="date">2026-10-10</div>
+  <h1><span class="u">Ch 47 — ACID, Transactions &amp; Isolation</span></h1>
+  <p class="black">Volume 1 — Computer Science Foundations · <a href="index.md">Contents</a> · ← <a href="ch46-schema-design-normalization-and-indexing.notes.html">Chapter 46 — Schema Design, Normalization &amp; Indexing</a> · Next → <a href="ch48-nosql-mongodb-cassandra-and-dynamodb.notes.html">Chapter 48 — NoSQL: MongoDB, Cassandra &amp; DynamoDB</a></p>
+  <h2>Concept</h2>
+  <p>Atomicity/Consistency/Isolation/Durability; transactions; isolation levels (read committed, repeatable read, serializable) and anomalies.</p>
+  <div class="box"><b>In one sentence:</b> a transaction groups several changes into one all-or-nothing unit, and the isolation level decides how much concurrent transactions can see of each other's half-finished work — trading correctness against speed.</div>
+  <div class="box red"><b>Mental model — a bank teller's window.</b> Moving €100 from savings to checking is two steps. ACID promises that you never see the money vanish or appear twice, even if the power fails halfway (atomicity, durability), that the rules still hold afterward (consistency), and that another teller working on the same accounts at the same time doesn't mess up your math (isolation).</div>
+  <h3>ACID</h3>
+  <div class="wrap"><table>
+<tr><th>Property</th><th>Promise</th><th>How databases do it</th></tr>
+<tr><td><b>Atomicity</b></td><td>all changes commit, or none do</td><td>an undo log / old row versions; rollback on error</td></tr>
+<tr><td><b>Consistency</b></td><td>constraints hold before and after</td><td>PK, FK, UNIQUE, CHECK, triggers (plus <i>your</i> invariants)</td></tr>
+<tr><td><b>Isolation</b></td><td>concurrent transactions behave as if more or less serial</td><td>locks and/or MVCC snapshots</td></tr>
+<tr><td><b>Durability</b></td><td>once committed, it survives crashes</td><td>a write-ahead log (WAL) flushed with fsync before COMMIT returns; replication</td></tr>
+</table></div>
+  <h3>Anomalies</h3>
+  <div class="wrap"><table>
+<tr><th>Anomaly</th><th>What happens</th></tr>
+<tr><td>Dirty read</td><td>you read another transaction's <i>uncommitted</i> change, which then rolls back</td></tr>
+<tr><td>Non-repeatable read</td><td>you read a row twice and get different values (another transaction committed in between)</td></tr>
+<tr><td>Phantom read</td><td>you re-run a range query and new rows appear</td></tr>
+<tr><td><b>Lost update</b></td><td>two transactions read-modify-write the same value; one overwrites the other</td></tr>
+<tr><td><b>Write skew</b></td><td>two transactions read overlapping data, each writes a <i>different</i> row, and together they break a rule (e.g. both doctors go off call)</td></tr>
+</table></div>
+  <h3>Isolation levels (as implemented in PostgreSQL)</h3>
+  <div class="wrap"><table>
+<tr><th>Level</th><th>Dirty read</th><th>Non-repeatable</th><th>Phantom</th><th>Lost update</th><th>Write skew</th></tr>
+<tr><td>Read Uncommitted (behaves as Read Committed in PG)</td><td>✗</td><td>possible</td><td>possible</td><td>possible</td><td>possible</td></tr>
+<tr><td><b>Read Committed</b> (PG default)</td><td>✗</td><td>possible</td><td>possible</td><td>possible</td><td>possible</td></tr>
+<tr><td><b>Repeatable Read</b> (snapshot isolation in PG)</td><td>✗</td><td>✗</td><td>✗ (in PG)</td><td>✗ (one aborts)</td><td><b>possible</b></td></tr>
+<tr><td><b>Serializable</b> (SSI in PG)</td><td>✗</td><td>✗</td><td>✗</td><td>✗</td><td>✗ (one aborts)</td></tr>
+</table></div>
+  <p>✗ = prevented. At Repeatable Read and Serializable, the database may abort you with a <i>serialization failure</i> — your code must <b>retry</b> the transaction.</p>
+  <p><b>MVCC (multi-version concurrency control)</b> — writers create new row <i>versions</i> instead of overwriting. Each transaction reads from a <i>snapshot</i>: the versions committed before it started (Repeatable Read) or before each statement (Read Committed). Readers never block writers and writers never block readers. Old versions are later cleaned up (<code>VACUUM</code> in Postgres).</p>
+  <p><b>Fixing lost updates</b> — use an atomic update (<code>SET balance = balance - 100</code>), <code>SELECT … FOR UPDATE</code> (a pessimistic row lock), optimistic concurrency (a version column: <code>UPDATE … WHERE id = $1 AND version = $2</code>, and check the row count), or a higher isolation level plus retries.</p>
+  <p><b>Keep transactions short:</b> long transactions hold locks, block <code>VACUUM</code>, bloat tables, and raise conflict rates. Never wait for user input or call slow external APIs inside a transaction.</p>
+  <h2>Prereqs</h2>
+  <ul>
+<li><a href="ch45-sql-and-the-relational-model.notes.html">Chapter 45 — SQL &amp; the Relational Model</a></li>
+</ul>
+  <div class="pagebreak">~ page 2 ~</div>
+  <h2>Diagram</h2>
+  <h3>Transaction state diagram</h3>
+  <figure>
+<svg viewBox="0 0 660 400" role="img" aria-label="transaction states: start, BEGIN to Active; Active loops on reads/writes; COMMIT issued to PartiallyCommitted; WAL flushed to Committed then end; errors send Active to Failed; serialization failure sends PartiallyCommitted to Failed; ROLLBACK sends Failed to Aborted; Aborted ends, retry if it was a conflict">
+
+<path class="sk blue" d="M49 110 L151 110" style="color:var(--ink);" marker-end="url(#arr)"/>
+<path class="sk blue" d="M172 92 C 156 44, 224 44, 208 92" style="color:var(--ink);" marker-end="url(#arr)"/>
+<path class="sk blue" d="M229 110 L410 110" style="color:var(--ink);" marker-end="url(#arr)"/>
+<path class="sk blue" d="M500 128 L500 222" style="color:var(--ink);" marker-end="url(#arr)"/>
+<path class="sk blue" d="M190 128 L190 222" style="color:var(--ink);" marker-end="url(#arr)"/>
+<path class="sk blue" d="M456 128 L229 224" style="color:var(--ink);" marker-end="url(#arr)"/>
+<path class="sk blue" d="M190 258 L190 332" style="color:var(--ink);" marker-end="url(#arr)"/>
+<path class="sk blue" d="M500 258 L500 335" style="color:var(--ink);" marker-end="url(#arr)"/>
+<path class="sk blue" d="M233 350 L485 350" style="color:var(--ink);" marker-end="url(#arr)"/>
+<ellipse class="sk" cx="40" cy="110" rx="9" ry="9" style="fill:#222;"/>
+<text class="lbl b" x="40" y="117" text-anchor="middle" style="font-size:15px"></text>
+<rect class="sk" x="151" y="92" width="77" height="37" rx="10"/>
+<text class="lbl b" x="190" y="117" text-anchor="middle" style="font-size:15px">Active</text>
+<rect class="sk" x="410" y="92" width="180" height="37" rx="10"/>
+<text class="lbl b" x="500" y="117" text-anchor="middle" style="font-size:15px">PartiallyCommitted</text>
+<rect class="sk green" x="449" y="222" width="103" height="37" rx="10" style="fill:#d9f2c8;"/>
+<text class="lbl g" x="500" y="247" text-anchor="middle" style="font-size:15px">Committed</text>
+<rect class="sk red" x="151" y="222" width="77" height="37" rx="10" style="fill:#fcd9e4;"/>
+<text class="lbl r" x="190" y="247" text-anchor="middle" style="font-size:15px">Failed</text>
+<rect class="sk red" x="147" y="332" width="86" height="37" rx="10"/>
+<text class="lbl r" x="190" y="357" text-anchor="middle" style="font-size:15px">Aborted</text>
+<ellipse class="sk" cx="500" cy="350" rx="15" ry="15"/>
+<text class="lbl b" x="500" y="357" text-anchor="middle" style="font-size:15px"></text>
+<rect x="87" y="81" width="51" height="22" rx="4" style="fill:#fdfbf4;opacity:.92;stroke:none"/>
+<text class="lbl r" x="112" y="96" text-anchor="middle" style="font-size:15px">BEGIN</text>
+<rect x="126" y="29" width="128" height="22" rx="4" style="fill:#fdfbf4;opacity:.92;stroke:none"/>
+<text class="lbl r" x="190" y="44" text-anchor="middle" style="font-size:15px">reads / writes</text>
+<rect x="285" y="81" width="119" height="22" rx="4" style="fill:#fdfbf4;opacity:.92;stroke:none"/>
+<text class="lbl r" x="345" y="96" text-anchor="middle" style="font-size:15px">COMMIT issued</text>
+<rect x="521" y="154" width="102" height="42" rx="4" style="fill:#fdfbf4;opacity:.92;stroke:none"/>
+<text class="lbl r" x="572" y="170" text-anchor="middle" style="font-size:15px">WAL flushed</text>
+<text class="lbl r" x="572" y="189" text-anchor="middle" style="font-size:15px">(durable)</text>
+<rect x="-13" y="145" width="196" height="62" rx="4" style="fill:#fdfbf4;opacity:.92;stroke:none"/>
+<text class="lbl r" x="85" y="160" text-anchor="middle" style="font-size:15px">error /</text>
+<text class="lbl r" x="85" y="180" text-anchor="middle" style="font-size:15px">constraint violation /</text>
+<text class="lbl r" x="85" y="199" text-anchor="middle" style="font-size:15px">conflict</text>
+<rect x="286" y="189" width="188" height="22" rx="4" style="fill:#fdfbf4;opacity:.92;stroke:none"/>
+<text class="lbl r" x="380" y="204" text-anchor="middle" style="font-size:15px">serialization failure</text>
+<rect x="33" y="274" width="145" height="42" rx="4" style="fill:#fdfbf4;opacity:.92;stroke:none"/>
+<text class="lbl r" x="105" y="290" text-anchor="middle" style="font-size:15px">ROLLBACK</text>
+<text class="lbl r" x="105" y="309" text-anchor="middle" style="font-size:15px">(changes undone)</text>
+<rect x="283" y="320" width="153" height="42" rx="4" style="fill:#fdfbf4;opacity:.92;stroke:none"/>
+<text class="lbl r" x="360" y="335" text-anchor="middle" style="font-size:15px">retry if it was a</text>
+<text class="lbl r" x="360" y="354" text-anchor="middle" style="font-size:15px">conflict</text>
+<circle cx="500" cy="350" r="8" style="fill:#222;stroke:none"/>
+</svg>
+<figcaption>Fig 1: transaction state diagram</figcaption>
+</figure>
+  <h3>A lost update (Read Committed, read-then-write in the app)</h3>
+  <pre class="code ascii"><code> balance = 100
+ T1: SELECT balance → 100                 T2: SELECT balance → 100
+ T1: UPDATE SET balance = 100 + 50        
+ T1: COMMIT                               T2: UPDATE SET balance = 100 − 30
+                                          T2: COMMIT
+ result: 70   (expected 120 — T1's +50 was lost)
+ fix: UPDATE accounts SET balance = balance + 50  (atomic)  or  SELECT … FOR UPDATE</code></pre>
+  <h3>A phantom read under two isolation levels</h3>
+  <figure>
+<svg viewBox="0 0 640 372" role="img" aria-label="sequence diagram: T1 (report), DB, T2 (insert)">
+<path class="sk" d="M110 50 L110 364" style="stroke-dasharray:6 6;opacity:.7"/>
+<path class="sk" d="M330 50 L330 364" style="stroke-dasharray:6 6;opacity:.7"/>
+<path class="sk" d="M550 50 L550 364" style="stroke-dasharray:6 6;opacity:.7"/>
+<rect class="sk" x="50" y="6" width="120" height="40" rx="10" style="fill:#fdfbf4;"/>
+<text class="lbl b" x="110" y="33" text-anchor="middle" style="font-size:15px">T1 (report)</text>
+<rect class="sk" x="295" y="6" width="70" height="40" rx="10" style="fill:#fdfbf4;"/>
+<text class="lbl b" x="330" y="33" text-anchor="middle" style="font-size:15px">DB</text>
+<rect class="sk" x="490" y="6" width="120" height="40" rx="10" style="fill:#fdfbf4;"/>
+<text class="lbl b" x="550" y="33" text-anchor="middle" style="font-size:15px">T2 (insert)</text>
+<text class="lbl" x="220" y="95" text-anchor="middle" style="font-size:15px">SELECT count(*) FROM orders</text>
+<text class="lbl" x="220" y="115" text-anchor="middle" style="font-size:15px">WHERE day = today → 10</text>
+<path class="sk blue" d="M113 130 L327 130" style="color:var(--ink);" marker-end="url(#arr)"/>
+<text class="lbl" x="440" y="167" text-anchor="middle" style="font-size:15px">INSERT INTO orders (day =</text>
+<text class="lbl" x="440" y="187" text-anchor="middle" style="font-size:15px">today), then COMMIT</text>
+<path class="sk blue" d="M547 202 L333 202" style="color:var(--ink);" marker-end="url(#arr)"/>
+<text class="lbl" x="220" y="239" text-anchor="middle" style="font-size:15px">SELECT count(*) … same query</text>
+<text class="lbl" x="220" y="259" text-anchor="middle" style="font-size:15px">again</text>
+<path class="sk blue" d="M113 274 L327 274" style="color:var(--ink);" marker-end="url(#arr)"/>
+<rect class="sk" x="75" y="294" width="290" height="52" rx="6" style="fill:#fff3b0"/>
+<text class="lbl r" x="220" y="313" text-anchor="middle" style="font-size:15px">Read Committed → 11 (phantom)</text>
+<text class="lbl r" x="220" y="333" text-anchor="middle" style="font-size:15px">Repeatable Read → 10 (same snapshot)</text>
+</svg>
+<figcaption>Fig 2: a phantom read: Read Committed sees 11, Repeatable Read still sees 10</figcaption>
+</figure>
+  <h3>MVCC row versions</h3>
+  <pre class="code ascii"><code> row id=1:  [v1 balance=100, created by tx 90, deleted by tx 95] → [v2 balance=150, created by tx 95]
+ tx 93 (started before 95 committed) sees v1   ·   tx 97 sees v2   ·   VACUUM removes v1 once no one can see it</code></pre>
+  <div class="pagebreak">~ page 3 ~</div>
+  <h2>Example</h2>
+  <span class="lang">sql</span>
+<pre class="code"><code>BEGIN;
+UPDATE accounts SET balance = balance - 100 WHERE id = 1 AND balance &gt;= 100;
+-- check the row count in the app: 0 rows → insufficient funds → ROLLBACK
+UPDATE accounts SET balance = balance + 100 WHERE id = 2;
+INSERT INTO ledger (from_id, to_id, amount_cents) VALUES (1, 2, 100);
+COMMIT;
+
+-- Pessimistic locking: lock rows in a consistent order (avoids deadlocks)
+BEGIN;
+SELECT id, balance FROM accounts WHERE id IN (1, 2) ORDER BY id FOR UPDATE;
+-- … compute, then UPDATE both …
+COMMIT;
+
+-- Serializable with a retry loop in the app
+BEGIN ISOLATION LEVEL SERIALIZABLE;
+SELECT count(*) FROM doctors WHERE on_call AND shift = 'night';   -- 2
+UPDATE doctors SET on_call = false WHERE id = 7;                   -- ok if count &gt; 1
+COMMIT;   -- may fail: ERROR: could not serialize access (SQLSTATE 40001) → retry</code></pre>
+  <span class="lang">python</span>
+<pre class="code"><code>import psycopg, time, random
+from psycopg import errors
+
+def transfer(conn, src, dst, cents, attempts=5):
+    for i in range(attempts):
+        try:
+            with conn.transaction():
+                conn.execute("SET TRANSACTION ISOLATION LEVEL SERIALIZABLE")
+                cur = conn.execute("UPDATE accounts SET balance = balance - %s "
+                                   "WHERE id = %s AND balance &gt;= %s", (cents, src, cents))
+                if cur.rowcount == 0:
+                    raise ValueError("insufficient funds")
+                conn.execute("UPDATE accounts SET balance = balance + %s WHERE id = %s", (cents, dst))
+            return
+        except errors.SerializationFailure:
+            time.sleep((2 ** i) * 0.01 * random.random())   # jittered backoff, then retry
+    raise RuntimeError("transfer failed after retries")</code></pre>
+  <h2>Exercises</h2>
+  <ol style="list-style:none;padding-left:0">
+<li>1. Reproduce a lost update and fix it with a lock.
+<div class="box"><b>Solution</b>
+<p>Open two <code>psql</code> sessions. Both <code>BEGIN; SELECT balance FROM accounts WHERE id=1;</code>, then each <code>UPDATE … SET balance = &amp;lt;value computed from its read&amp;gt;</code> and commit: one change is lost. Fix: <code>SELECT … FOR UPDATE</code> in both (the second blocks until the first commits and then reads the new value), an atomic <code>SET balance = balance + x</code>, or a version column with <code>WHERE version = n</code>.</p></div></li>
+<li>2. Explain what each isolation level prevents.
+<div class="box"><b>Solution</b>
+<p>Read Committed: no dirty reads; each statement sees the latest committed data. Repeatable Read (a PG snapshot): the whole transaction sees one snapshot — no non-repeatable or phantom reads, and a conflicting concurrent update aborts one side — but write skew is possible. Serializable: the result is equivalent to some serial order; PG detects dangerous patterns (SSI) and aborts one transaction.</p></div></li>
+<li>3. Two doctors are on call. Each, in their own transaction, checks "at least 2 on call?" and then goes off call. Which level prevents both leaving?
+<div class="box"><b>Solution</b>
+<p>This is write skew. Repeatable Read (snapshot isolation) allows it: they update different rows, so there's no write conflict. Serializable prevents it (one transaction aborts), as does locking the relevant rows with <code>SELECT … FOR UPDATE</code>.</p></div></li>
+</ol>
+  <div class="pagebreak">~ page 4 ~</div>
+  <h2>Mini project</h2>
+  <h3>A money-transfer service with transactions that pass a concurrency test.</h3>
+  <figure>
+<svg viewBox="0 0 660 440" role="img" aria-label="POST /transfers calls transfer() using SERIALIZABLE or FOR UPDATE, writing accounts, ledger and idempotency keys; a concurrency test of 50 threads x 200 random transfers drives the API and then checks invariants">
+
+<path class="sk blue" d="M294 72 L201 143" style="color:var(--ink);" marker-end="url(#arr)"/>
+<path class="sk blue" d="M372 72 L449 123" style="color:var(--ink);" marker-end="url(#arr)"/>
+<path class="sk blue" d="M165 197 L165 258" style="color:var(--ink);" marker-end="url(#arr)"/>
+<path class="sk blue" d="M165 312 L165 354" style="color:var(--ink);" marker-end="url(#arr)"/>
+<rect class="sk" x="16" y="143" width="297" height="55" rx="10"/>
+<text class="lbl b" x="165" y="167" text-anchor="middle" style="font-size:14px">POST /transfers</text>
+<text class="lbl b" x="165" y="186" text-anchor="middle" style="font-size:14px">{from, to, cents, idempotency_key}</text>
+<rect class="sk" x="8" y="258" width="313" height="55" rx="10"/>
+<text class="lbl b" x="165" y="282" text-anchor="middle" style="font-size:14px">transfer():</text>
+<text class="lbl b" x="165" y="301" text-anchor="middle" style="font-size:14px">SERIALIZABLE or FOR UPDATE (ordered)</text>
+<path class="sk" d="M83 362 C 83 350, 247 350, 247 362 L247 418 C 247 430, 83 430, 83 418 Z"/>
+<path class="sk" d="M83 362 C 83 374, 247 374, 247 362"/>
+<text class="lbl b" x="165" y="395" text-anchor="middle" style="font-size:14px">accounts, ledger,</text>
+<text class="lbl b" x="165" y="414" text-anchor="middle" style="font-size:14px">idempotency_keys</text>
+<rect class="sk red" x="185" y="18" width="289" height="55" rx="10"/>
+<text class="lbl r" x="330" y="42" text-anchor="middle" style="font-size:14px">concurrency test:</text>
+<text class="lbl r" x="330" y="61" text-anchor="middle" style="font-size:14px">50 threads × 200 random transfers</text>
+<rect class="sk green" x="403" y="123" width="233" height="93" rx="10"/>
+<text class="lbl g" x="520" y="148" text-anchor="middle" style="font-size:14px">invariants after the run:</text>
+<text class="lbl g" x="520" y="167" text-anchor="middle" style="font-size:14px">Σ balances unchanged</text>
+<text class="lbl g" x="520" y="186" text-anchor="middle" style="font-size:14px">no balance &lt; 0</text>
+<text class="lbl g" x="520" y="206" text-anchor="middle" style="font-size:14px">ledger replays to balances</text>
+
+</svg>
+<figcaption>Fig 3: mini project: transfer API, concurrency test and invariants</figcaption>
+</figure>
+  <h3>Steps</h3>
+  <ol style="list-style:none;padding-left:0">
+<li>1. Tables: <code>accounts(id, balance CHECK (balance &gt;= 0))</code>, <code>ledger(id, from_id, to_id, cents, created_at)</code>, <code>idempotency_keys(key PK, response)</code>.</li>
+<li>2. Implement <code>transfer</code> twice: (a) <code>SELECT … FOR UPDATE</code> with ordered locking, (b) <code>SERIALIZABLE</code> with a retry loop.</li>
+<li>3. An idempotency key stored in the <i>same</i> transaction as the transfer.</li>
+<li>4. Concurrency test: many threads doing random transfers among 10 accounts; count retries and deadlocks.</li>
+<li>5. Check the invariants; then deliberately break the code (a read-modify-write without a lock) and watch the test fail.</li>
+</ol>
+  <div class="box"><b>Done when:</b> both versions keep all invariants under load, the broken version fails the test, and retried requests with the same key never double-charge.</div>
+  <h2>Open source</h2>
+  <ul>
+<li><a href="https://github.com/postgres/postgres"><code>postgres/postgres</code></a> (MVCC) — <code>src/backend/storage/lmgr/README-SSI</code> explains Serializable Snapshot Isolation; the docs' "Concurrency Control" chapter is essential reading.</li>
+</ul>
+  <h2>Interview</h2>
+  <ol style="list-style:none;padding-left:0">
+<li>1. <h3>"What anomalies does each isolation level allow?"</h3>
+<div class="box"><b>Answer</b>
+<p>Read Uncommitted: dirty reads and everything below. Read Committed: non-repeatable reads, phantoms, lost updates, write skew. Repeatable Read (ANSI): phantoms (and in snapshot implementations like PG, write skew but not phantoms). Serializable: none. Implementations vary, so know your database: MySQL's Repeatable Read uses gap locks; PG's is snapshot isolation.</p></div></li>
+<li>2. <h3>"How does MVCC work?"</h3>
+<div class="box"><b>Answer</b>
+<p>Each write creates a new row version tagged with the creating transaction's ID, and marks the old version as deleted by that ID. Each transaction reads with a snapshot that defines which transaction IDs count as committed and visible. So readers see a consistent past state without locking, and writers don't block readers. Write–write conflicts are still detected. Garbage collection (VACUUM, undo purge) reclaims versions no snapshot can see.</p></div></li>
+</ol>
+  <h2>Checklist</h2>
+  <ul>
+<li class="todo">name the ACID properties</li>
+<li class="todo">pick an isolation level deliberately</li>
+<li class="todo">keep transactions short</li>
+</ul>
+  <p class="black"><a href="index.md">Contents</a> · ← <a href="ch46-schema-design-normalization-and-indexing.notes.html">Chapter 46 — Schema Design, Normalization &amp; Indexing</a> · Next → <a href="ch48-nosql-mongodb-cassandra-and-dynamodb.notes.html">Chapter 48 — NoSQL: MongoDB, Cassandra &amp; DynamoDB</a></p>
+  <nav class="nav"><a href="ch46-schema-design-normalization-and-indexing.notes.html">← Ch 46 — Schema Design, Normalization &amp; Indexing</a><a href="index.notes.html">☰ Contents</a><a href="ch48-nosql-mongodb-cassandra-and-dynamodb.notes.html">Ch 48 — NoSQL: MongoDB, Cassandra &amp; DynamoDB →</a></nav>
+</main>
+</body>
+</html>

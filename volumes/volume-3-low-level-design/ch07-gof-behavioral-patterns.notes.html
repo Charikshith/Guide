@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ch 7 — GoF Behavioral Patterns — Notes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;700&family=Kalam:wght@400;700&family=Patrick+Hand&display=swap" rel="stylesheet">
+<style>
+/* ===== Page tokens ===== */
+:root{
+  --line:32px;                 /* ruled-line spacing; every vertical size is a multiple */
+  --paper:#fdfbf4; --rule:#c9dcef; --margin:#e8a0a0;
+  --ink:#1f3a93;               /* blue pen (body) */
+  --ink2:#222;                 /* black pen (headings) */
+  --red:#c0392b; --green:#1e8449;
+  --hl-yellow:rgba(255,235,59,.55); --hl-pink:rgba(255,128,171,.45);
+  --hl-green:rgba(118,255,3,.35); --hl-blue:rgba(64,196,255,.35);
+  --sticky:#fff59d; --desk:#e9e4d8;
+  --hand:'Kalam','Patrick Hand','Comic Sans MS','Segoe Print','Bradley Hand',cursive;
+  --title:'Caveat','Kalam','Segoe Print','Bradley Hand',cursive;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){ --desk:#2b2b2b; }
+}
+:root[data-theme="dark"]{ --desk:#2b2b2b; }
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--desk);font-family:var(--hand);color:var(--ink);}
+
+/* ===== Notebook sheet ===== */
+.page{
+  position:relative; max-width:860px; margin:24px auto; padding:var(--line) 28px calc(var(--line)*2) 84px;
+  background:
+    linear-gradient(90deg,transparent 64px,var(--margin) 64px,var(--margin) 66px,transparent 66px),
+    repeating-linear-gradient(var(--paper) 0,var(--paper) calc(var(--line) - 1px),var(--rule) calc(var(--line) - 1px),var(--rule) var(--line));
+  background-color:var(--paper);
+  box-shadow:0 2px 6px rgba(0,0,0,.15),0 12px 28px rgba(0,0,0,.12);
+  font-size:20px; line-height:var(--line);
+}
+.page::before{ /* punched holes */
+  content:""; position:absolute; left:22px; top:0; bottom:0; width:18px;
+  background:radial-gradient(circle,var(--desk) 7px,transparent 8px) 0 40px/18px 220px repeat-y;
+}
+@media (max-width:600px){
+  .page{margin:0;padding-left:52px;padding-right:16px;font-size:18px;
+    background:
+      linear-gradient(90deg,transparent 40px,var(--margin) 40px,var(--margin) 42px,transparent 42px),
+      repeating-linear-gradient(var(--paper) 0,var(--paper) calc(var(--line) - 1px),var(--rule) calc(var(--line) - 1px),var(--rule) var(--line));
+    background-color:var(--paper);}
+  .page::before{left:10px;width:16px}
+}
+
+/* ===== Text (all margins are multiples of --line so text sits on the rules) ===== */
+.date{position:absolute;top:0;right:24px;font-family:var(--title);font-size:22px;color:var(--ink2);line-height:var(--line)}
+h1{font-family:var(--title);font-weight:700;color:var(--ink2);font-size:46px;line-height:calc(var(--line)*2);margin:0;transform:rotate(-1deg)}
+h1 .u{background:linear-gradient(transparent 62%,var(--hl-yellow) 62%,var(--hl-yellow) 92%,transparent 92%)}
+h2{font-family:var(--title);font-weight:700;color:var(--red);font-size:32px;line-height:calc(var(--line)*1.5);margin:calc(var(--line)*.5) 0 0}
+h2::before{content:"➤ ";font-size:22px}
+p,li{margin:0}
+ul,ol{margin:0;padding-left:28px}
+ul{list-style:none}
+ul>li::before{content:"–";position:absolute;margin-left:-20px}
+ul>li.star::before{content:"★";color:var(--red)}
+ul>li.arrow::before{content:"→"}
+ul>li.check::before{content:"✓";color:var(--green)}
+.gap{height:var(--line)}
+
+/* ===== Pen effects ===== */
+.hl{background:var(--hl-yellow);padding:0 3px;border-radius:3px 6px 4px 7px}
+.hl.pink{background:var(--hl-pink)} .hl.green{background:var(--hl-green)} .hl.blue{background:var(--hl-blue)}
+.red{color:var(--red)} .green{color:var(--green)} .black{color:var(--ink2)}
+.ul{text-decoration:underline wavy var(--red);text-underline-offset:5px}
+.circ{border:2px solid var(--red);border-radius:50% 45% 55% 48%;padding:0 6px}
+.strike{text-decoration:line-through 2px var(--red)}
+.term{font-weight:700;color:var(--ink2)}
+.box{display:flow-root;border:2.5px solid var(--ink2);border-radius:4px 10px 6px 12px;padding:calc(var(--line)*.5 - 2.5px) 14px;margin:calc(var(--line)*.5) 0;transform:rotate(-.4deg);background:rgba(255,255,255,.35)}
+.box.red{border-color:var(--red)}
+.formula{font-family:var(--title);font-size:28px;text-align:center;color:var(--ink2)}
+
+/* sticky note */
+.sticky{float:right;width:min(250px,42%);margin:0 0 var(--line) 20px;padding:var(--line) 16px;background:var(--sticky);
+  color:#333;transform:rotate(2.2deg);box-shadow:2px 4px 8px rgba(0,0,0,.18);font-size:18px}
+.sticky b{font-family:var(--title);font-size:24px;color:var(--red)}
+@media (max-width:600px){.sticky{float:none;width:auto;margin:var(--line) 0}}
+
+/* margin annotation (lives in the red margin) */
+.side{position:absolute;left:4px;width:58px;text-align:center;font-family:var(--title);font-size:17px;line-height:18px;color:var(--red);transform:rotate(-8deg)}
+@media (max-width:600px){.side{display:none}}
+
+/* two-column notes */
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:0 28px}
+@media (max-width:600px){.cols{grid-template-columns:1fr}}
+
+/* diagrams */
+figure{margin:var(--line) 0;text-align:center}
+figure svg{width:100%;max-width:640px;height:auto;overflow:visible}
+figcaption{font-family:var(--title);font-size:20px;color:var(--ink2)}
+/* phones: keep labels readable — diagram scrolls inside its own box instead of shrinking */
+@media (max-width:600px){figure{overflow-x:auto}figure svg{min-width:520px}}
+.sk{fill:none;stroke:var(--ink2);stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round;filter:url(#rough)}
+.sk.blue{stroke:var(--ink)} .sk.red{stroke:var(--red)} .sk.green{stroke:var(--green)}
+.lbl{font-family:var(--hand);font-size:17px;fill:var(--ink)}
+.lbl.b{font-weight:700;fill:var(--ink2)} .lbl.r{fill:var(--red)} .lbl.g{fill:var(--green)}
+
+/* table */
+.wrap{overflow-x:auto}
+table{border-collapse:collapse;margin:calc(var(--line)*.5) 0;min-width:100%}
+th,td{border:2px solid var(--ink2);padding:0 10px;text-align:left;vertical-align:top}
+th{font-family:var(--title);font-size:24px;color:var(--ink2)}
+
+@media print{body{background:#fff}.page{box-shadow:none;margin:0}.page::before{display:none}}
+
+/* ===== Added for long chapter notes ===== */
+pre.code{font-family:Consolas,'Courier New',monospace;font-size:14px;line-height:var(--line);color:var(--ink);background:rgba(255,255,255,.45);
+  border-left:4px solid var(--red);margin:calc(var(--line)*.5) 0;padding:0 12px;overflow-x:auto;white-space:pre}
+pre.code.ascii{border-left-color:var(--green)}
+code{font-family:Consolas,'Courier New',monospace;font-size:.82em;background:rgba(0,0,0,.06);padding:0 3px;border-radius:3px}
+pre.code code{background:none;padding:0;font-size:inherit}
+.lang{font-family:var(--title);font-size:18px;color:var(--red)}
+h3{font-family:var(--title);font-weight:700;color:var(--ink2);font-size:26px;line-height:var(--line);margin:calc(var(--line)*.5) 0 0}
+h3::before{content:"✎ ";font-size:18px;color:var(--red)}
+.nav{display:flex;justify-content:space-between;gap:12px;font-family:var(--title);font-size:22px;line-height:var(--line)}
+.nav a{color:var(--red);text-decoration:none}
+.nav a:hover{text-decoration:underline wavy}
+.pagebreak{border-top:3px dashed var(--margin);margin:var(--line) 0;text-align:center;font-family:var(--title);color:var(--red);line-height:var(--line)}
+li.todo::before{content:"☐";color:var(--ink2)}
+a{color:var(--ink);text-decoration:underline dotted}
+</style>
+</head>
+<body>
+<!-- One shared hand-drawn wobble filter; give every diagram stroke class="sk" -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <!-- userSpaceOnUse region: a % region collapses to nothing on perfectly straight lines (zero-height bbox) -->
+  <filter id="rough" filterUnits="userSpaceOnUse" x="-500" y="-500" width="3000" height="3000">
+    <feTurbulence type="fractalNoise" baseFrequency="0.03" numOctaves="2" seed="3" result="n"/>
+    <feDisplacementMap in="SourceGraphic" in2="n" scale="3"/>
+  </filter>
+  <marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+    <path d="M1 1 L9 5 L1 9" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+  </marker>
+</defs></svg>
+
+<main class="page">
+  <nav class="nav"><a href="ch06-gof-structural-patterns.notes.html">← Ch 6 — GoF Structural Patterns</a><a href="index.notes.html">☰ Contents</a><a href="ch08-clean-architecture.notes.html">Ch 8 — Clean Architecture →</a></nav>
+  <div class="date">2026-10-10</div>
+  <h1><span class="u">Ch 7 — GoF Behavioral Patterns</span></h1>
+    <style>.lbl.sq{font-size:14px;paint-order:stroke;stroke:#fdfbf4;stroke-width:5px}</style>
+  <p class="black">Volume 3 — Low-Level Design · <a href="index.md">Contents</a> · ← <a href="ch06-gof-structural-patterns.notes.html">Chapter 6 — GoF Structural Patterns</a> · Next → <a href="ch08-clean-architecture.notes.html">Chapter 8 — Clean Architecture</a></p>
+
+  <p class="black">Chapter 7 — GoF Behavioral Patterns</p>
+
+  <h2>Concept</h2>
+  <p>Strategy, Observer, Command, State, Template Method, Chain of Responsibility, Mediator, Memento, Visitor.</p>
+  <div class="box"><b>In one sentence:</b> behavioral patterns are about <i>who does what and who tells whom</i> — swapping algorithms, notifying listeners, turning requests into objects, changing behavior with state, and passing work along a chain — so objects can collaborate without being tightly wired together.</div>
+
+  <h3>Mental model — running a restaurant</h3>
+  <ul>
+    <li class="star"><b>Strategy</b> — the chef picks a cooking method (grill, bake, fry) for the same dish.</li>
+    <li class="star"><b>Observer</b> — the kitchen bell: everyone who cares hears "order ready".</li>
+    <li class="star"><b>Command</b> — the order ticket: a request written down, so it can be queued, logged, or cancelled.</li>
+    <li class="star"><b>State</b> — the restaurant behaves differently when <i>open</i>, <i>closing</i>, or <i>closed</i>.</li>
+    <li class="star"><b>Chain of Responsibility</b> — a complaint goes waiter → manager → owner until someone handles it.</li>
+    <li class="star"><b>Mediator</b> — the head waiter coordinates so staff don't all shout at each other.</li>
+  </ul>
+
+  <h3>The nine patterns</h3>
+  <div class="wrap"><table>
+    <tr><th>Pattern</th><th>Intent</th><th>Everyday use</th></tr>
+    <tr><td><b>Strategy</b></td><td>a family of interchangeable algorithms behind one interface</td><td>pricing rules, sorting options, retry policies, compression codecs</td></tr>
+    <tr><td><b>Observer</b></td><td>one subject notifies many subscribers of changes</td><td>UI data binding, domain events, webhooks (in-process)</td></tr>
+    <tr><td><b>Command</b></td><td>encapsulate a request as an object</td><td>undo/redo, job queues, macros, transactional scripts</td></tr>
+    <tr><td><b>State</b></td><td>an object changes behavior when its internal state changes</td><td>order lifecycle, TCP connection, document workflow</td></tr>
+    <tr><td><b>Template Method</b></td><td>a base algorithm with overridable steps</td><td>frameworks' <code>setUp/run/tearDown</code>, report generation</td></tr>
+    <tr><td><b>Chain of Responsibility</b></td><td>pass a request along handlers until one handles it</td><td>HTTP middleware, validation pipelines, support escalation</td></tr>
+    <tr><td><b>Mediator</b></td><td>central object coordinates colleagues</td><td>chat rooms, form widgets that depend on each other, air-traffic control</td></tr>
+    <tr><td><b>Memento</b></td><td>capture and restore state without exposing internals</td><td>undo snapshots, checkpoints</td></tr>
+    <tr><td><b>Visitor</b></td><td>add operations over an object structure without changing its classes</td><td>compilers walking ASTs, exporters, linters</td></tr>
+  </table></div>
+
+  <aside class="sticky"><b>Exam tip!</b><br>Strategy vs State: same shape. Strategy = client picks. State = object switches itself and knows the next state.</aside>
+  <h3>Strategy vs State</h3>
+  <p>Structurally identical (a context delegates to an interface). <i>Strategy</i>: the client chooses the algorithm, and strategies don't know each other. <i>State</i>: the object switches its own state object as events happen, and states usually know which state comes next.</p>
+
+  <h3>Observer vs pub/sub</h3>
+  <p>Observer: subscribers register directly with the subject, in process, usually synchronously; the subject knows its observer list. Pub/sub: publishers and subscribers only know a <i>topic</i> on a broker in between (Kafka, Redis, SNS); fully decoupled, often async and cross-process.</p>
+
+  <h3>In Python, many patterns shrink</h3>
+  <p>A Strategy can be just a function passed as an argument; Command can be a callable plus arguments; Template Method can be a higher-order function. Use classes when the "strategy" has state or several methods.</p>
+
+  <div class="pagebreak">~ page 2 ~</div>
+
+  <h2>Prereqs</h2>
+  <ul>
+    <li><a href="ch06-gof-structural-patterns.notes.html">Chapter 6 — GoF Structural Patterns</a></li>
+  </ul>
+
+  <h2>Diagram</h2>
+  <h3>Strategy (interchangeable algorithms)</h3>
+  <figure>
+    <svg viewBox="0 0 660 300" role="img" aria-label="Class diagram: Checkout uses a PricingStrategy interface, implemented by RegularPricing, BlackFridayPricing and MemberPricing">
+      <rect class="sk" x="10" y="20" width="240" height="110" rx="6"/>
+      <text class="lbl b" x="130" y="44" text-anchor="middle">Checkout</text>
+      <path class="sk" d="M10 54 L250 54"/>
+      <text class="lbl" x="18" y="76" style="font-size:14px">-pricing: PricingStrategy</text>
+      <path class="sk" d="M10 86 L250 86"/>
+      <text class="lbl" x="18" y="108" style="font-size:14px">+total(cart) int</text>
+      <rect class="sk" x="400" y="20" width="240" height="88" rx="6"/>
+      <text class="lbl" x="520" y="41" text-anchor="middle" style="font-size:13px">&lt;&lt;interface&gt;&gt;</text>
+      <text class="lbl b" x="520" y="62" text-anchor="middle">PricingStrategy</text>
+      <path class="sk" d="M400 72 L640 72"/>
+      <text class="lbl" x="408" y="96" style="font-size:14px">+apply(cart) int</text>
+      <rect class="sk" x="20" y="230" width="170" height="44" rx="6"/>
+      <text class="lbl b" x="105" y="258" text-anchor="middle" style="font-size:15px">RegularPricing</text>
+      <rect class="sk" x="245" y="230" width="170" height="44" rx="6"/>
+      <text class="lbl b" x="330" y="258" text-anchor="middle" style="font-size:15px">BlackFridayPricing</text>
+      <rect class="sk" x="470" y="230" width="170" height="44" rx="6"/>
+      <text class="lbl b" x="555" y="258" text-anchor="middle" style="font-size:15px">MemberPricing</text>
+      <path class="sk blue" d="M252 66 L398 66" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M105 230 C 130 170, 360 150, 450 112" style="color:var(--ink);stroke-dasharray:6 5" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M330 230 C 340 190, 450 150, 505 112" style="color:var(--ink);stroke-dasharray:6 5" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M555 230 C 555 190, 560 150, 565 112" style="color:var(--ink);stroke-dasharray:6 5" marker-end="url(#arr)"/>
+    </svg>
+    <figcaption>Fig 1: Strategy — Checkout holds a PricingStrategy; dashed = implements (<code>&lt;|..</code>)</figcaption>
+  </figure>
+
+  <h3>Observer (publish/subscribe inside one process)</h3>
+  <figure>
+    <svg viewBox="0 0 660 268" role="img" aria-label="Sequence diagram: Order marks itself paid then notifies the email, inventory and analytics observers">
+      <rect class="sk" x="15" y="10" width="150" height="36" rx="6"/>
+      <text class="lbl b" x="90" y="33" text-anchor="middle" style="font-size:14px">Order (subject)</text>
+      <path class="sk" d="M90 46 L90 262" style="stroke-dasharray:3 7;stroke-width:1.6"/>
+      <rect class="sk" x="175" y="10" width="150" height="36" rx="6"/>
+      <text class="lbl b" x="250" y="33" text-anchor="middle" style="font-size:14px">EmailObserver</text>
+      <path class="sk" d="M250 46 L250 262" style="stroke-dasharray:3 7;stroke-width:1.6"/>
+      <rect class="sk" x="335" y="10" width="150" height="36" rx="6"/>
+      <text class="lbl b" x="410" y="33" text-anchor="middle" style="font-size:14px">InventoryObserver</text>
+      <path class="sk" d="M410 46 L410 262" style="stroke-dasharray:3 7;stroke-width:1.6"/>
+      <rect class="sk" x="495" y="10" width="150" height="36" rx="6"/>
+      <text class="lbl b" x="570" y="33" text-anchor="middle" style="font-size:14px">AnalyticsObserver</text>
+      <path class="sk" d="M570 46 L570 262" style="stroke-dasharray:3 7;stroke-width:1.6"/>
+      <rect class="sk" x="10" y="70" width="251" height="28" rx="3" style="fill:var(--sticky)"/>
+      <text class="lbl" x="20" y="89" style="font-size:14px">subscribers registered at startup</text>
+      <path class="sk blue" d="M90 126 C 140 126, 140 150, 93 150" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <text class="lbl sq" x="146" y="142">mark_paid()</text>
+      <path class="sk blue" d="M90 170 L247 170" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <text class="lbl sq" x="98" y="162">notify("paid", order)</text>
+      <path class="sk blue" d="M90 204 L407 204" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <text class="lbl sq" x="98" y="196">notify("paid", order)</text>
+      <path class="sk blue" d="M90 238 L567 238" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <text class="lbl sq" x="98" y="230">notify("paid", order)</text>
+      </svg>
+    <figcaption>Fig 2: Observer — note over Order: "subscribers registered at startup"; then <code>mark_paid()</code> on itself, and a <code>notify</code> to each observer</figcaption>
+  </figure>
+
+  <h3>State: an order's lifecycle</h3>
+  <figure>
+    <svg viewBox="0 0 660 380" role="img" aria-label="State diagram: start to Pending; Pending to Paid on pay(); Pending to Cancelled on cancel(); Paid to Shipped on ship(); Paid to Refunded on refund(); Shipped to Delivered on deliver(); Delivered, Cancelled and Refunded go to end">
+      <circle class="sk" cx="40" cy="62" r="10"/>
+      <circle class="sk" cx="40" cy="62" r="4"/>
+      <text class="lbl" x="40" y="96" text-anchor="middle" style="font-size:14px">[*]</text>
+      <rect class="sk" x="100" y="40" width="120" height="44" rx="20"/>
+      <text class="lbl b" x="160" y="68" text-anchor="middle">Pending</text>
+      <rect class="sk" x="300" y="40" width="120" height="44" rx="20"/>
+      <text class="lbl b" x="360" y="68" text-anchor="middle">Paid</text>
+      <rect class="sk" x="500" y="40" width="130" height="44" rx="20"/>
+      <text class="lbl b" x="565" y="68" text-anchor="middle">Shipped</text>
+      <rect class="sk red" x="100" y="190" width="120" height="44" rx="20"/>
+      <text class="lbl r" x="160" y="218" text-anchor="middle">Cancelled</text>
+      <rect class="sk red" x="300" y="190" width="120" height="44" rx="20"/>
+      <text class="lbl r" x="360" y="218" text-anchor="middle">Refunded</text>
+      <rect class="sk green" x="500" y="190" width="130" height="44" rx="20"/>
+      <text class="lbl g" x="565" y="218" text-anchor="middle">Delivered</text>
+      <path class="sk blue" d="M52 62 L98 62" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M220 62 L298 62" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <text class="lbl r" x="259" y="50" text-anchor="middle" style="font-size:15px">pay()</text>
+      <path class="sk blue" d="M420 62 L498 62" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <text class="lbl r" x="459" y="50" text-anchor="middle" style="font-size:15px">ship()</text>
+      <path class="sk blue" d="M160 84 L160 188" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <text class="lbl r" x="172" y="142" style="font-size:15px">cancel()</text>
+      <path class="sk blue" d="M360 84 L360 188" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <text class="lbl r" x="372" y="142" style="font-size:15px">refund()</text>
+      <path class="sk blue" d="M565 84 L565 188" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <text class="lbl r" x="577" y="142" style="font-size:15px">deliver()</text>
+      <!-- end states -->
+      <path class="sk blue" d="M160 234 L160 314" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M360 234 L360 314" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M565 234 L565 314" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <circle class="sk" cx="160" cy="330" r="14"/><circle class="sk" cx="160" cy="330" r="7"/>
+      <circle class="sk" cx="360" cy="330" r="14"/><circle class="sk" cx="360" cy="330" r="7"/>
+      <circle class="sk" cx="565" cy="330" r="14"/><circle class="sk" cx="565" cy="330" r="7"/>
+      <text class="lbl" x="160" y="368" text-anchor="middle" style="font-size:14px">[*]</text>
+      <text class="lbl" x="360" y="368" text-anchor="middle" style="font-size:14px">[*]</text>
+      <text class="lbl" x="565" y="368" text-anchor="middle" style="font-size:14px">[*]</text>
+    </svg>
+    <figcaption>Fig 3: order lifecycle — [*] = start (left) and end (bottom) markers; Cancelled, Refunded and Delivered are terminal</figcaption>
+  </figure>
+
+  <h3>Chain of Responsibility (HTTP middleware)</h3>
+<pre class="code ascii"><code> Chain of Responsibility (HTTP middleware)
+ request ─► [RequestId] ─► [Auth] ─► [RateLimit] ─► [Validate] ─► handler
+                             │ 401        │ 429          │ 422
+                             ▼            ▼              ▼
+                         any handler can stop the chain and respond</code></pre>
+
+  <div class="pagebreak">~ page 3 ~</div>
+
+  <h2>Example</h2>
+  <span class="lang">python</span>
+<pre class="code"><code>from typing import Protocol, Callable
+from collections import defaultdict
+
+# ---- Strategy ------------------------------------------------------------
+class PricingStrategy(Protocol):
+    def apply(self, cents: int) -&gt; int: ...
+
+class Regular:
+    def apply(self, cents): return cents
+
+class PercentOff:
+    def __init__(self, pct): self.pct = pct
+    def apply(self, cents): return cents * (100 - self.pct) // 100
+
+class Checkout:
+    def __init__(self, pricing: PricingStrategy): self.pricing = pricing
+    def total(self, items): return self.pricing.apply(sum(items))
+
+print(Checkout(Regular()).total([1000, 500]), Checkout(PercentOff(20)).total([1000, 500]))   # 1500 1200
+
+# ---- Observer ------------------------------------------------------------
+class EventSource:
+    def __init__(self): self._subs: dict[str, list[Callable]] = defaultdict(list)
+    def subscribe(self, event, fn):
+        self._subs[event].append(fn)
+        return lambda: self._subs[event].remove(fn)        # unsubscribe handle
+    def emit(self, event, payload):
+        for fn in list(self._subs[event]):
+            try:
+                fn(payload)
+            except Exception as e:                          # one bad observer must not break others
+                print(f"observer failed: {e!r}")
+
+orders = EventSource()
+orders.subscribe("paid", lambda o: print("email receipt", o["id"]))
+unsub = orders.subscribe("paid", lambda o: print("reserve stock", o["id"]))
+orders.emit("paid", {"id": 42})
+unsub(); orders.emit("paid", {"id": 43})                    # only the email observer now
+
+# ---- State ---------------------------------------------------------------
+class OrderState:
+    name = "?"
+    def pay(self, o): raise ValueError(f"cannot pay when {self.name}")
+    def ship(self, o): raise ValueError(f"cannot ship when {self.name}")
+    def cancel(self, o): raise ValueError(f"cannot cancel when {self.name}")
+
+class Pending(OrderState):
+    name = "pending"
+    def pay(self, o): o.state = Paid()
+    def cancel(self, o): o.state = Cancelled()
+
+class Paid(OrderState):
+    name = "paid"
+    def ship(self, o): o.state = Shipped()
+
+class Shipped(OrderState): name = "shipped"
+class Cancelled(OrderState): name = "cancelled"
+
+class Order:
+    def __init__(self): self.state = Pending()
+    def pay(self): self.state.pay(self)
+    def ship(self): self.state.ship(self)
+    def cancel(self): self.state.cancel(self)
+
+o = Order(); o.pay(); o.ship(); print(o.state.name)        # shipped
+try: o.cancel()
+except ValueError as e: print(e)                           # cannot cancel when shipped
+
+# ---- Command with undo -----------------------------------------------------
+class AddItem:
+    def __init__(self, cart, item): self.cart, self.item = cart, item
+    def do(self): self.cart.append(self.item)
+    def undo(self): self.cart.remove(self.item)
+
+cart, history = [], []
+for cmd in (AddItem(cart, "pen"), AddItem(cart, "ink")):
+    cmd.do(); history.append(cmd)
+history.pop().undo()
+print(cart)                                                 # ['pen']</code></pre>
+
+  <h2>Exercises</h2>
+  <ol style="list-style:none;padding-left:0">
+    <li>1. Implement strategy for a sorting option.
+      <div class="box"><b>Solution</b>
+        <span class="lang">python</span>
+<pre class="code"><code>SORTS = {
+    "price_asc":  lambda ps: sorted(ps, key=lambda p: p.price),
+    "price_desc": lambda ps: sorted(ps, key=lambda p: -p.price),
+    "newest":     lambda ps: sorted(ps, key=lambda p: p.created, reverse=True),
+    "relevance":  lambda ps: sorted(ps, key=lambda p: -p.score),
+}
+def list_products(products, sort="relevance"):
+    return SORTS[sort](products)            # add a strategy = add a dict entry</code></pre>
+        <p>Validate <code>sort</code> against the keys at the API boundary.</p>
+      </div></li>
+    <li>2. Build an observer that decouples producer and consumers.
+      <div class="box"><b>Solution</b> See <code>EventSource</code>: the producer only calls <code>emit</code> and knows nothing about who listens. Consumers register at the composition root. Isolate failures per observer, return an unsubscribe handle, and consider async dispatch (a queue) if observers are slow.</div></li>
+    <li>3. You have <code>if kind == "a": … elif kind == "b": …</code> repeated in five methods. Which pattern helps?
+      <div class="box"><b>Solution</b> Strategy (or State, if <code>kind</code> changes over the object's life): move each branch into its own class implementing the five methods, and have the context delegate to the chosen object. Adding a kind becomes adding a class instead of editing five switch statements.</div></li>
+  </ol>
+
+  <div class="pagebreak">~ page 4 ~</div>
+
+  <h2>Mini project</h2>
+  <p><b>An event notification system (observer) with pluggable strategies.</b></p>
+  <figure>
+    <svg viewBox="0 0 660 555" role="img" aria-label="Flow: Order.pay emits order.paid to NotificationHub; then RoutingStrategy, ChannelStrategy per user, ThrottleStrategy, then deliveries and audit log; each delivery is a Command (dotted link into deliveries)">
+      <rect class="sk" x="60" y="15" width="360" height="64" rx="12"/>
+      <text class="lbl b" x="240" y="41" text-anchor="middle">domain: Order.pay()</text>
+      <text class="lbl b" x="240" y="63" text-anchor="middle">emits 'order.paid'</text>
+      <path class="sk blue" d="M240 79 C 246 90, 234 98, 240 105" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <rect class="sk" x="60" y="107" width="360" height="44" rx="12"/>
+      <text class="lbl b" x="240" y="135" text-anchor="middle">NotificationHub (observer subject)</text>
+      <path class="sk blue" d="M240 151 C 246 162, 234 170, 240 177" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <rect class="sk" x="60" y="179" width="360" height="82" rx="12"/>
+      <text class="lbl b" x="240" y="205" text-anchor="middle">RoutingStrategy</text>
+      <text class="lbl" x="240" y="227" text-anchor="middle">(who gets notified?)</text>
+      <text class="lbl" x="240" y="249" text-anchor="middle">all · by-region · VIP-only</text>
+      <path class="sk blue" d="M240 261 C 246 272, 234 280, 240 287" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <rect class="sk" x="60" y="289" width="360" height="64" rx="12"/>
+      <text class="lbl b" x="240" y="315" text-anchor="middle">ChannelStrategy per user</text>
+      <text class="lbl" x="240" y="337" text-anchor="middle">email · SMS · push · webhook</text>
+      <path class="sk blue" d="M240 353 C 246 364, 234 372, 240 379" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <rect class="sk" x="60" y="381" width="360" height="64" rx="12"/>
+      <text class="lbl b" x="240" y="407" text-anchor="middle">ThrottleStrategy</text>
+      <text class="lbl" x="240" y="429" text-anchor="middle">none · 1 per hour · digest</text>
+      <path class="sk blue" d="M240 445 C 246 456, 234 464, 240 471" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <rect class="sk green" x="60" y="473" width="360" height="44" rx="12"/>
+      <text class="lbl g" x="240" y="501" text-anchor="middle">deliveries + audit log</text>
+      <rect class="sk red" x="455" y="450" width="195" height="90" rx="12"/>
+      <text class="lbl r" x="552" y="476" text-anchor="middle" style="font-size:15px">each delivery is a</text>
+      <text class="lbl r" x="552" y="498" text-anchor="middle" style="font-size:15px">Command</text>
+      <text class="lbl r" x="552" y="520" text-anchor="middle" style="font-size:15px">(retryable, loggable)</text>
+      <path class="sk red" d="M453 495 L424 495" style="color:var(--red);stroke-dasharray:6 5" marker-end="url(#arr)"/>
+    </svg>
+    <figcaption>Fig 4: the notification pipeline; the red dashed link means each delivery is a retryable, loggable Command</figcaption>
+  </figure>
+
+  <h3>Steps</h3>
+  <ol style="list-style:none;padding-left:0">
+    <li>1. A <code>NotificationHub</code> where handlers subscribe to event names (Observer).</li>
+    <li>2. Pluggable strategies: routing (who), channel (how), throttle (how often), each an interface with 2–3 implementations.</li>
+    <li>3. Each delivery becomes a <code>SendNotification</code> command put on a queue, so it can be retried and logged.</li>
+    <li>4. Configure the strategies per event type in a small config file.</li>
+    <li>5. Tests with fake channels: verify routing, throttling (a fake clock), and that a failing channel doesn't block others.</li>
+  </ol>
+  <div class="box"><b>Done when:</b> adding a channel or rule is one new class plus config, and the hub never imports a concrete channel.</div>
+
+  <h2>Open source</h2>
+  <ul>
+    <li><a href="https://github.com/ReactiveX/RxPY"><code>ReactiveX/RxPY</code></a> — Observer taken to the extreme: observables, subscribers, and operators composing streams.</li>
+    <li><a href="https://github.com/rust-lang/rust"><code>rust-lang/rust</code></a> (command/state in GUIs) — the Rust Book chapter 17 builds a blog post with the State pattern (and a type-state version where invalid transitions don't compile). Iced/Elm-style GUIs model user actions as <code>Message</code> commands.</li>
+  </ul>
+
+  <h2>Interview</h2>
+  <ol style="list-style:none;padding-left:0">
+    <li>1. <b>"Strategy vs State?"</b>
+      <div class="box"><b>Answer</b> Same structure — a context delegating to an interface — but different intent. Strategy: the <i>client</i> selects an algorithm (a pricing rule, a sort order); strategies are independent, and the choice usually doesn't change on its own. State: the <i>object itself</i> swaps its state object in response to events, and each state knows the legal transitions (pending → paid → shipped). Behavior depends on lifecycle, not on caller preference.</div></li>
+    <li>2. <b>"Observer vs pub/sub?"</b>
+      <div class="box"><b>Answer</b> In Observer, subscribers register directly with the subject, which holds the list and notifies them, usually synchronously and in process — coupled by reference. In pub/sub, a broker or channel sits between them: publishers send to topics without knowing subscribers, and delivery is often asynchronous, persistent, and cross-process. Pub/sub gives more decoupling and scale at the cost of infrastructure and eventual consistency.</div></li>
+  </ol>
+
+  <h2>Checklist</h2>
+  <ul>
+    <li class="todo">swap behavior via strategy</li>
+    <li class="todo">decouple with observer</li>
+    <li class="todo">know when each behavioral pattern earns its keep</li>
+  </ul>
+  <div class="gap"></div>
+  <p class="black"><a href="index.md">Contents</a> · ← <a href="ch06-gof-structural-patterns.notes.html">Chapter 6 — GoF Structural Patterns</a> · Next → <a href="ch08-clean-architecture.notes.html">Chapter 8 — Clean Architecture</a></p>
+
+  <nav class="nav"><a href="ch06-gof-structural-patterns.notes.html">← Ch 6 — GoF Structural Patterns</a><a href="index.notes.html">☰ Contents</a><a href="ch08-clean-architecture.notes.html">Ch 8 — Clean Architecture →</a></nav>
+</main>
+</body>
+</html>

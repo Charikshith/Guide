@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ch 35 — Dynamic Programming, Greedy, Divide &amp; Conquer, Sliding Window &amp; Two Pointers — Notes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;700&family=Kalam:wght@400;700&family=Patrick+Hand&display=swap" rel="stylesheet">
+<style>
+/* ===== Page tokens ===== */
+:root{
+  --line:32px;                 /* ruled-line spacing; every vertical size is a multiple */
+  --paper:#fdfbf4; --rule:#c9dcef; --margin:#e8a0a0;
+  --ink:#1f3a93;               /* blue pen (body) */
+  --ink2:#222;                 /* black pen (headings) */
+  --red:#c0392b; --green:#1e8449;
+  --hl-yellow:rgba(255,235,59,.55); --hl-pink:rgba(255,128,171,.45);
+  --hl-green:rgba(118,255,3,.35); --hl-blue:rgba(64,196,255,.35);
+  --sticky:#fff59d; --desk:#e9e4d8;
+  --hand:'Kalam','Patrick Hand','Comic Sans MS','Segoe Print','Bradley Hand',cursive;
+  --title:'Caveat','Kalam','Segoe Print','Bradley Hand',cursive;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){ --desk:#2b2b2b; }
+}
+:root[data-theme="dark"]{ --desk:#2b2b2b; }
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--desk);font-family:var(--hand);color:var(--ink);}
+
+/* ===== Notebook sheet ===== */
+.page{
+  position:relative; max-width:860px; margin:24px auto; padding:var(--line) 28px calc(var(--line)*2) 84px;
+  background:
+    linear-gradient(90deg,transparent 64px,var(--margin) 64px,var(--margin) 66px,transparent 66px),
+    repeating-linear-gradient(var(--paper) 0,var(--paper) calc(var(--line) - 1px),var(--rule) calc(var(--line) - 1px),var(--rule) var(--line));
+  background-color:var(--paper);
+  box-shadow:0 2px 6px rgba(0,0,0,.15),0 12px 28px rgba(0,0,0,.12);
+  font-size:20px; line-height:var(--line);
+}
+.page::before{ /* punched holes */
+  content:""; position:absolute; left:22px; top:0; bottom:0; width:18px;
+  background:radial-gradient(circle,var(--desk) 7px,transparent 8px) 0 40px/18px 220px repeat-y;
+}
+@media (max-width:600px){
+  .page{margin:0;padding-left:52px;padding-right:16px;font-size:18px;
+    background:
+      linear-gradient(90deg,transparent 40px,var(--margin) 40px,var(--margin) 42px,transparent 42px),
+      repeating-linear-gradient(var(--paper) 0,var(--paper) calc(var(--line) - 1px),var(--rule) calc(var(--line) - 1px),var(--rule) var(--line));
+    background-color:var(--paper);}
+  .page::before{left:10px;width:16px}
+}
+
+/* ===== Text (all margins are multiples of --line so text sits on the rules) ===== */
+.date{position:absolute;top:0;right:24px;font-family:var(--title);font-size:22px;color:var(--ink2);line-height:var(--line)}
+h1{font-family:var(--title);font-weight:700;color:var(--ink2);font-size:46px;line-height:calc(var(--line)*2);margin:0;transform:rotate(-1deg)}
+h1 .u{background:linear-gradient(transparent 62%,var(--hl-yellow) 62%,var(--hl-yellow) 92%,transparent 92%)}
+h2{font-family:var(--title);font-weight:700;color:var(--red);font-size:32px;line-height:calc(var(--line)*1.5);margin:calc(var(--line)*.5) 0 0}
+h2::before{content:"➤ ";font-size:22px}
+p,li{margin:0}
+ul,ol{margin:0;padding-left:28px}
+ul{list-style:none}
+ul>li::before{content:"–";position:absolute;margin-left:-20px}
+ul>li.star::before{content:"★";color:var(--red)}
+ul>li.arrow::before{content:"→"}
+ul>li.check::before{content:"✓";color:var(--green)}
+.gap{height:var(--line)}
+
+/* ===== Pen effects ===== */
+.hl{background:var(--hl-yellow);padding:0 3px;border-radius:3px 6px 4px 7px}
+.hl.pink{background:var(--hl-pink)} .hl.green{background:var(--hl-green)} .hl.blue{background:var(--hl-blue)}
+.red{color:var(--red)} .green{color:var(--green)} .black{color:var(--ink2)}
+.ul{text-decoration:underline wavy var(--red);text-underline-offset:5px}
+.circ{border:2px solid var(--red);border-radius:50% 45% 55% 48%;padding:0 6px}
+.strike{text-decoration:line-through 2px var(--red)}
+.term{font-weight:700;color:var(--ink2)}
+.box{display:flow-root;border:2.5px solid var(--ink2);border-radius:4px 10px 6px 12px;padding:calc(var(--line)*.5 - 2.5px) 14px;margin:calc(var(--line)*.5) 0;transform:rotate(-.4deg);background:rgba(255,255,255,.35)}
+.box.red{border-color:var(--red)}
+.formula{font-family:var(--title);font-size:28px;text-align:center;color:var(--ink2)}
+
+/* sticky note */
+.sticky{float:right;width:min(250px,42%);margin:0 0 var(--line) 20px;padding:var(--line) 16px;background:var(--sticky);
+  color:#333;transform:rotate(2.2deg);box-shadow:2px 4px 8px rgba(0,0,0,.18);font-size:18px}
+.sticky b{font-family:var(--title);font-size:24px;color:var(--red)}
+@media (max-width:600px){.sticky{float:none;width:auto;margin:var(--line) 0}}
+
+/* margin annotation (lives in the red margin) */
+.side{position:absolute;left:4px;width:58px;text-align:center;font-family:var(--title);font-size:17px;line-height:18px;color:var(--red);transform:rotate(-8deg)}
+@media (max-width:600px){.side{display:none}}
+
+/* two-column notes */
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:0 28px}
+@media (max-width:600px){.cols{grid-template-columns:1fr}}
+
+/* diagrams */
+figure{margin:var(--line) 0;text-align:center}
+figure svg{width:100%;max-width:640px;height:auto;overflow:visible}
+figcaption{font-family:var(--title);font-size:20px;color:var(--ink2)}
+/* phones: keep labels readable — diagram scrolls inside its own box instead of shrinking */
+@media (max-width:600px){figure{overflow-x:auto}figure svg{min-width:520px}}
+.sk{fill:none;stroke:var(--ink2);stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round;filter:url(#rough)}
+.sk.blue{stroke:var(--ink)} .sk.red{stroke:var(--red)} .sk.green{stroke:var(--green)}
+.lbl{font-family:var(--hand);font-size:17px;fill:var(--ink)}
+.lbl.b{font-weight:700;fill:var(--ink2)} .lbl.r{fill:var(--red)} .lbl.g{fill:var(--green)}
+
+/* table */
+.wrap{overflow-x:auto}
+table{border-collapse:collapse;margin:calc(var(--line)*.5) 0;min-width:100%}
+th,td{border:2px solid var(--ink2);padding:0 10px;text-align:left;vertical-align:top}
+th{font-family:var(--title);font-size:24px;color:var(--ink2)}
+
+@media print{body{background:#fff}.page{box-shadow:none;margin:0}.page::before{display:none}}
+
+/* ===== Added for long chapter notes ===== */
+pre.code{font-family:Consolas,'Courier New',monospace;font-size:14px;line-height:var(--line);color:var(--ink);background:rgba(255,255,255,.45);
+  border-left:4px solid var(--red);margin:calc(var(--line)*.5) 0;padding:0 12px;overflow-x:auto;white-space:pre}
+pre.code.ascii{border-left-color:var(--green)}
+code{font-family:Consolas,'Courier New',monospace;font-size:.82em;background:rgba(0,0,0,.06);padding:0 3px;border-radius:3px}
+pre.code code{background:none;padding:0;font-size:inherit}
+.lang{font-family:var(--title);font-size:18px;color:var(--red)}
+h3{font-family:var(--title);font-weight:700;color:var(--ink2);font-size:26px;line-height:var(--line);margin:calc(var(--line)*.5) 0 0}
+h3::before{content:"✎ ";font-size:18px;color:var(--red)}
+.nav{display:flex;justify-content:space-between;gap:12px;font-family:var(--title);font-size:22px;line-height:var(--line)}
+.nav a{color:var(--red);text-decoration:none}
+.nav a:hover{text-decoration:underline wavy}
+.pagebreak{border-top:3px dashed var(--margin);margin:var(--line) 0;text-align:center;font-family:var(--title);color:var(--red);line-height:var(--line)}
+li.todo::before{content:"☐";color:var(--ink2)}
+a{color:var(--ink);text-decoration:underline dotted}
+</style>
+</head>
+<body>
+<!-- One shared hand-drawn wobble filter; give every diagram stroke class="sk" -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <!-- userSpaceOnUse region: a % region collapses to nothing on perfectly straight lines (zero-height bbox) -->
+  <filter id="rough" filterUnits="userSpaceOnUse" x="-500" y="-500" width="3000" height="3000">
+    <feTurbulence type="fractalNoise" baseFrequency="0.03" numOctaves="2" seed="3" result="n"/>
+    <feDisplacementMap in="SourceGraphic" in2="n" scale="3"/>
+  </filter>
+  <marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+    <path d="M1 1 L9 5 L1 9" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+  </marker>
+</defs></svg>
+
+<main class="page">
+  <nav class="nav"><a href="ch34-graph-algorithms-dfs-bfs-topological-sort-and.notes.html">← Ch 34 — Graph Algorithms: DFS, BFS, Topological Sort &amp; Backtracking</a><a href="index.notes.html">☰ Contents</a><a href="ch36-binary-cpu-registers-cache-and-memory-hierarchy.notes.html">Ch 36 — Binary, CPU, Registers, Cache &amp; Memory Hierarchy →</a></nav>
+  <div class="date">2026-10-10</div>
+  <h1><span class="u">Ch 35 — Dynamic Programming, Greedy, Divide &amp; Conquer, Sliding Window &amp; Two Pointers</span></h1>
+  <p class="black">Chapter 35 — Dynamic Programming, Greedy, Divide &amp; Conquer, Sliding Window &amp; Two Pointers</p>
+  <p class="black"><b>Volume 1 — Computer Science Foundations</b> · <a href="index.md">Contents</a> · ← <a href="ch34-graph-algorithms-dfs-bfs-topological-sort-and.notes.html">Chapter 34 — Graph Algorithms: DFS, BFS, Topological Sort &amp; Backtracking</a> · Next → <a href="ch36-binary-cpu-registers-cache-and-memory-hierarchy.notes.html">Chapter 36 — Binary, CPU, Registers, Cache &amp; Memory Hierarchy</a></p>
+  <h2>Concept</h2>
+  <p>Overlapping subproblems + memoization (DP), local-optimal choices (greedy), split-and-combine (divide &amp; conquer), and the sliding-window / two-pointer patterns.</p>
+  <div class="box"><b>In one sentence:</b> these are five recipes for turning an obvious-but-slow brute force into a fast algorithm — remember answers you already computed (DP), commit to the best-looking choice when that's provably safe (greedy), split the problem in half (divide &amp; conquer), or move two indices through the data instead of trying every pair (window / two pointers).</div>
+  <h3>Mental model.</h3>
+  <ul>
+<li><b>DP</b> — a notebook: before solving a subproblem, check whether you already wrote down its answer.</li>
+<li><b>Greedy</b> — always grab the biggest coin that fits. Works for euros, fails for some odd coin systems.</li>
+<li><b>Divide &amp; conquer</b> — split a stack of exams between two helpers, then merge their sorted piles.</li>
+<li><b>Sliding window</b> — a magnifying glass sliding along a line of text: add the character entering on the right, drop the one leaving on the left.</li>
+</ul>
+  <h3>Recognizing the pattern</h3>
+  <div class="wrap"><table>
+<tr><th>Clue in the problem</th><th>Try</th></tr>
+<tr><td>"number of ways", "min/max cost", choices that affect later choices, brute force recomputes the same subproblems</td><td><b>DP</b></td></tr>
+<tr><td>a local choice provably never hurts (exchange argument), intervals, scheduling</td><td><b>greedy</b></td></tr>
+<tr><td>the problem splits into independent halves; combining is cheap</td><td><b>divide &amp; conquer</b></td></tr>
+<tr><td>contiguous subarray/substring with a constraint (sum ≤ k, no repeats)</td><td><b>sliding window</b></td></tr>
+<tr><td>sorted array, pairs/triples meeting a target, partitioning in place</td><td><b>two pointers</b></td></tr>
+</table></div>
+  <h3>DP in four steps</h3>
+  <ol style="list-style:none;padding-left:0">
+<li>1. <b>State:</b> what defines a subproblem? e.g. <code>best(i, cap)</code> = best value using items <code>i..n</code> with capacity <code>cap</code>.</li>
+<li>2. <b>Transition:</b> how does a state depend on smaller ones? <code>best(i, cap) = max(skip, take)</code>.</li>
+<li>3. <b>Base cases:</b> <code>best(n, cap) = 0</code>.</li>
+<li>4. <b>Order:</b> top-down with memoization (recursion + cache) or bottom-up (fill a table in dependency order).</li>
+</ol>
+  <p>Time = number of states × work per state. Space can often shrink to one or two rows.</p>
+  <p><b>Greedy needs a proof.</b> The usual one is an <i>exchange argument</i>: take any optimal solution, swap in the greedy choice, and show it's no worse. Example that works: activity selection by earliest finish time. Example that fails: coins {1, 3, 4} for amount 6 — greedy gives 4+1+1 (3 coins), optimal is 3+3 (2 coins).</p>
+  <h2>Prereqs</h2>
+  <ul>
+<li><a href="ch33-sorting-searching-and-binary-search.notes.html">Chapter 33 — Sorting, Searching &amp; Binary Search</a></li>
+<li><a href="ch34-graph-algorithms-dfs-bfs-topological-sort-and.notes.html">Chapter 34 — Graph Algorithms: DFS, BFS, Topological Sort &amp; Backtracking</a></li>
+</ul>
+  <h2>Diagram</h2>
+  <h3>Why memoization helps: the fib(5) call tree</h3>
+  <figure>
+<svg viewBox="0 0 497 372" style="max-width:497px" role="img" aria-label="Why memoization helps: the fib(5) call tree"><g transform="translate(316,0)"><path class="sk blue" d="M-48 46 C -48 79, -108 79, -108 112" style="color:var(--ink)" marker-end="url(#arr)"/><path class="sk blue" d="M-22 46 C -22 79, 37 79, 37 112" style="color:var(--ink)" marker-end="url(#arr)"/><path class="sk blue" d="M-121 148 C -121 181, -204 181, -204 214" style="color:var(--ink)" marker-end="url(#arr)"/><path class="sk blue" d="M-95 148 C -95 181, -96 181, -96 214" style="color:var(--ink)" marker-end="url(#arr)"/><path class="sk blue" d="M24 148 C 24 181, 13 181, 13 214" style="color:var(--ink)" marker-end="url(#arr)"/><path class="sk blue" d="M50 148 C 50 181, 122 181, 122 214" style="color:var(--ink)" marker-end="url(#arr)"/><path class="sk blue" d="M-217 250 C -217 283, -256 283, -256 316" style="color:var(--ink)" marker-end="url(#arr)"/><path class="sk blue" d="M-191 250 C -191 283, -147 283, -147 316" style="color:var(--ink)" marker-end="url(#arr)"/><rect class="sk" x="-75" y="10" width="79" height="36" rx="10" style="fill:#fdfbf4"/><rect class="sk" x="-147" y="112" width="79" height="36" rx="10" style="fill:#fdfbf4"/><rect class="sk" x="-2" y="112" width="79" height="36" rx="10" style="fill:#fdd"/><rect class="sk" x="-244" y="214" width="79" height="36" rx="10" style="fill:#fdfbf4"/><rect class="sk" x="-135" y="214" width="79" height="36" rx="10" style="fill:#fdfbf4"/><rect class="sk" x="-26" y="214" width="79" height="36" rx="10" style="fill:#fdd"/><rect class="sk" x="83" y="214" width="79" height="36" rx="10" style="fill:#fdfbf4"/><rect class="sk" x="-296" y="316" width="79" height="36" rx="10" style="fill:#fdd"/><rect class="sk" x="-187" y="316" width="79" height="36" rx="10" style="fill:#fdfbf4"/><text class="lbl b" x="-35" y="34" text-anchor="middle">fib(5)</text><text class="lbl b" x="-108" y="136" text-anchor="middle">fib(4)</text><text class="lbl b" x="37" y="136" text-anchor="middle">fib(3)</text><text class="lbl b" x="-204" y="238" text-anchor="middle">fib(3)</text><text class="lbl b" x="-96" y="238" text-anchor="middle">fib(2)</text><text class="lbl b" x="13" y="238" text-anchor="middle">fib(2)</text><text class="lbl b" x="122" y="238" text-anchor="middle">fib(1)</text><text class="lbl b" x="-256" y="340" text-anchor="middle">fib(2)</text><text class="lbl b" x="-147" y="340" text-anchor="middle">fib(1)</text></g></svg>
+<figcaption>Fig 1: Why memoization helps: the fib(5) call tree (redrawn from the chapter diagram)</figcaption>
+</figure>
+  <p>Red nodes are repeats. With a memo, each <code>fib(k)</code> is computed once: O(n) instead of O(φⁿ).</p>
+  <p><b>A DP memo table for 0/1 knapsack</b> — items (weight, value): A(1, 1), B(3, 4), C(4, 5), D(5, 7); capacity 7.</p>
+  <pre class="code ascii"><code> dp[i][c] = best value using the first i items with capacity c
+
+            c=0  1   2   3   4   5   6   7
+ no items    0   0   0   0   0   0   0   0
+ +A (1,1)    0   1   1   1   1   1   1   1
+ +B (3,4)    0   1   1   4   5   5   5   5
+ +C (4,5)    0   1   1   4   5   6   6   9     ← B + C = 4 + 5
+ +D (5,7)    0   1   1   4   5   7   8   9
+ each cell = max(cell above,  value + cell above at c − weight)
+             (skip the item)  (take it)
+</code></pre>
+  <p><b>A sliding window shrinking and expanding</b> — longest substring without repeats in <code>"abcabcbb"</code></p>
+  <pre class="code ascii"><code> a b c a b c b b
+ [a b c]                 expand right: window "abc", best = 3
+   [b c a]               'a' repeats → shrink left past the old 'a'
+     [c a b]
+       [a b c]
+           [c b]         'b' repeats → jump left past it
+               [b]       best stays 3
+ each index enters and leaves the window at most once → O(n)
+</code></pre>
+  <p><b>Two pointers on a sorted array</b> — find a pair summing to 10 in <code>[1, 2, 4, 6, 8, 9]</code></p>
+  <pre class="code ascii"><code> L=1, R=9  → 10 ✓ found in one step
+ (if sum &lt; target, move L right; if sum &gt; target, move R left)
+</code></pre>
+  <div class="pagebreak">~ page 2 ~</div>
+  <h2>Example</h2>
+  <span class="lang">python</span>
+<pre class="code"><code>from functools import lru_cache
+
+@lru_cache(maxsize=None)
+def fib(n):
+    return n if n &lt; 2 else fib(n - 1) + fib(n - 2)
+
+def knapsack_top_down(items, cap):
+    @lru_cache(maxsize=None)
+    def best(i, c):
+        if i == len(items):
+            return 0
+        w, v = items[i]
+        skip = best(i + 1, c)
+        take = v + best(i + 1, c - w) if w &lt;= c else 0
+        return max(skip, take)
+    return best(0, cap)
+
+def knapsack_bottom_up(items, cap):
+    dp = [0] * (cap + 1)                 # one row is enough
+    for w, v in items:
+        for c in range(cap, w - 1, -1):  # go downward so each item is used at most once
+            dp[c] = max(dp[c], v + dp[c - w])
+    return dp[cap]
+
+items = [(1, 1), (3, 4), (4, 5), (5, 7)]
+print(knapsack_top_down(items, 7), knapsack_bottom_up(items, 7))   # 9 9
+
+def max_sum_window(xs, k):               # fixed-size sliding window
+    s = best = sum(xs[:k])
+    for i in range(k, len(xs)):
+        s += xs[i] - xs[i - k]           # add the entering element, drop the leaving one
+        best = max(best, s)
+    return best
+
+def longest_unique(s):                   # variable-size window
+    last, left, best = {}, 0, 0
+    for right, ch in enumerate(s):
+        if ch in last and last[ch] &gt;= left:
+            left = last[ch] + 1          # shrink past the previous copy
+        last[ch] = right
+        best = max(best, right - left + 1)
+    return best
+
+def coin_change(coins, amount):          # min coins; DP because greedy can fail
+    INF = float("inf")
+    dp = [0] + [INF] * amount
+    for a in range(1, amount + 1):
+        dp[a] = min((dp[a - c] + 1 for c in coins if c &lt;= a), default=INF)
+    return dp[amount] if dp[amount] != INF else -1
+
+print(max_sum_window([2, 1, 5, 1, 3, 2], 3), longest_unique("abcabcbb"), coin_change([1, 3, 4], 6))
+# 9 3 2
+</code></pre>
+  <h2>Exercises</h2>
+  <ol style="list-style:none;padding-left:0">
+<li>1. Solve 0/1 knapsack top-down and bottom-up.
+<div class="box"><b>Solution</b> See both versions above. Top-down has O(n·cap) states with O(1) work each. The bottom-up single row must iterate capacity <i>downward</i>; upward would let one item be taken many times, which is the <i>unbounded</i> knapsack.</div></li>
+<li>2. Longest substring without repeating chars via sliding window.
+<div class="box"><b>Solution</b> See <code>longest_unique</code>: track each character's last index; when the entering character was seen inside the window, move <code>left</code> just past it. O(n) time, O(alphabet) space.</div></li>
+<li>3. Is "pick the interval that starts first" a correct greedy rule for scheduling the most non-overlapping meetings?
+<div class="box"><b>Solution</b> No: one long early meeting can block many short ones. The correct rule is <i>earliest finish time</i>. Exchange argument: the first meeting of any optimal schedule can be swapped for the earliest-finishing meeting without creating an overlap.</div></li>
+</ol>
+  <h2>Mini project</h2>
+  <p><b>A coin-change solver and a longest-substring tool with visual step output.</b></p>
+  <figure>
+<svg viewBox="0 0 572 754" style="max-width:572px" role="img" aria-label="A coin-change solver and a longest-substring tool with visual step output."><g transform="translate(246,0)"><rect class="sk" x="-208" y="16" width="496" height="338" rx="12" style="stroke-dasharray:8 6"/><text class="lbl b" x="-194" y="40">Coins</text><rect class="sk" x="-226" y="396" width="532" height="338" rx="12" style="stroke-dasharray:8 6"/><text class="lbl b" x="-212" y="420">Window</text><path class="sk blue" d="M-28 86 C -28 119, -109 119, -109 152" style="color:var(--ink)" marker-end="url(#arr)"/><path class="sk blue" d="M-2 86 C -2 119, 79 119, 79 152" style="color:var(--ink)" marker-end="url(#arr)"/><path class="sk blue" d="M-109 188 C -109 221, -102 221, -102 254" style="color:var(--ink)" marker-end="url(#arr)"/><path class="sk blue" d="M66 188 C 66 221, -76 221, -76 254" style="color:var(--ink)" marker-end="url(#arr)"/><path class="sk blue" d="M92 188 C 92 232, 156 232, 156 276" style="color:var(--ink)" marker-end="url(#arr)"/><path class="sk blue" d="M0 466 C 0 499, 0 499, 0 532" style="color:var(--ink)" marker-end="url(#arr)"/><path class="sk blue" d="M0 590 C 0 623, 0 623, 0 656" style="color:var(--ink)" marker-end="url(#arr)"/><rect class="sk" x="-90" y="50" width="149" height="36" rx="10" style="fill:#fdfbf4"/><rect class="sk" x="-180" y="152" width="140" height="36" rx="10" style="fill:#fdfbf4"/><rect class="sk" x="-9" y="152" width="176" height="36" rx="10" style="fill:#fdfbf4"/><rect class="sk" x="-190" y="254" width="202" height="80" rx="10" style="fill:#fdfbf4"/><rect class="sk" x="42" y="276" width="228" height="36" rx="10" style="fill:#fdfbf4"/><rect class="sk" x="-39" y="430" width="79" height="36" rx="10" style="fill:#fdfbf4"/><rect class="sk" x="-136" y="532" width="272" height="58" rx="10" style="fill:#fdfbf4"/><rect class="sk" x="-101" y="656" width="202" height="58" rx="10" style="fill:#fdfbf4"/><text class="lbl b" x="-15" y="74" text-anchor="middle">coins + amount</text><text class="lbl b" x="-109" y="176" text-anchor="middle">greedy answer</text><text class="lbl b" x="79" y="176" text-anchor="middle">DP answer + table</text><text class="lbl b" x="-89" y="278" text-anchor="middle">compare; show a</text><text class="lbl b" x="-89" y="300" text-anchor="middle">counterexample</text><text class="lbl b" x="-89" y="322" text-anchor="middle">when greedy is wrong</text><text class="lbl b" x="156" y="300" text-anchor="middle">reconstruct which coins</text><text class="lbl b" x="0" y="454" text-anchor="middle">string</text><text class="lbl b" x="0" y="556" text-anchor="middle">window steps: [left, right],</text><text class="lbl b" x="0" y="578" text-anchor="middle">best so far</text><text class="lbl b" x="0" y="680" text-anchor="middle">print each step with</text><text class="lbl b" x="0" y="702" text-anchor="middle">brackets</text></g></svg>
+<figcaption>Fig 2: A coin-change solver and a longest-substring tool with visual step output. (redrawn from the chapter diagram)</figcaption>
+</figure>
+  <h3>Steps</h3>
+  <ol style="list-style:none;padding-left:0">
+<li>1. Coin change: DP for the minimum count, plus back-pointers to print the coins used.</li>
+<li>2. Run greedy alongside; search small coin systems for inputs where greedy loses, and print them.</li>
+<li>3. Count the number of <i>ways</i> to make the amount (a different DP: <code>ways[a] += ways[a − c]</code>, looping coins in the outer loop).</li>
+<li>4. Window tool: print each step as <code>a b [c a b] c b b  best=3</code>.</li>
+<li>5. Test both against brute force for small inputs.</li>
+</ol>
+  <div class="box"><b>Done when:</b> the tool finds greedy counterexamples automatically, and every DP answer matches brute force for amounts ≤ 30.</div>
+  <div class="pagebreak">~ page 3 ~</div>
+  <h2>Open source</h2>
+  <ul>
+<li>[<code>TheAlgorithms/Python</code>](https://github.com/TheAlgorithms/Python) — <code>dynamic_programming/</code>, <code>greedy_methods/</code>, and <code>divide_and_conquer/</code> hold hundreds of small, documented implementations to compare with yours.</li>
+</ul>
+  <h2>Interview</h2>
+  <ol style="list-style:none;padding-left:0">
+<li>1. <b>"How do you recognize a DP problem?"</b>
+<div class="box"><b>Answer</b> The question asks for an optimum or a count; the answer is built from answers to smaller versions of the same question (optimal substructure); and a naive recursion solves the same subproblems repeatedly (overlapping subproblems). Then define the state, the transition, and the base cases, and memoize or tabulate.</div></li>
+<li>2. <b>"When is greedy provably optimal?"</b>
+<div class="box"><b>Answer</b> When the problem has the greedy-choice property (some optimal solution starts with the greedy choice) plus optimal substructure. Prove it with an exchange argument, or with matroid theory. Classic correct cases: activity selection by earliest finish, Huffman coding, Dijkstra with non-negative weights, Kruskal/Prim MST. Without a proof, test against brute force.</div></li>
+</ol>
+  <h2>Checklist</h2>
+  <ul>
+<li class="todo">write top-down + bottom-up DP</li>
+<li class="todo">prove a greedy choice</li>
+<li class="todo">apply two-pointer/sliding-window</li>
+</ul>
+  <p class="black"><a href="index.md">Contents</a> · ← <a href="ch34-graph-algorithms-dfs-bfs-topological-sort-and.notes.html">Chapter 34 — Graph Algorithms: DFS, BFS, Topological Sort &amp; Backtracking</a> · Next → <a href="ch36-binary-cpu-registers-cache-and-memory-hierarchy.notes.html">Chapter 36 — Binary, CPU, Registers, Cache &amp; Memory Hierarchy</a></p>
+  <nav class="nav"><a href="ch34-graph-algorithms-dfs-bfs-topological-sort-and.notes.html">← Ch 34 — Graph Algorithms: DFS, BFS, Topological Sort &amp; Backtracking</a><a href="index.notes.html">☰ Contents</a><a href="ch36-binary-cpu-registers-cache-and-memory-hierarchy.notes.html">Ch 36 — Binary, CPU, Registers, Cache &amp; Memory Hierarchy →</a></nav>
+</main>
+</body>
+</html>

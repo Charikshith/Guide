@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ch 9 — Linear Algebra for AI — Notes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;700&family=Kalam:wght@400;700&family=Patrick+Hand&display=swap" rel="stylesheet">
+<style>
+/* ===== Page tokens ===== */
+:root{
+  --line:32px;                 /* ruled-line spacing; every vertical size is a multiple */
+  --paper:#fdfbf4; --rule:#c9dcef; --margin:#e8a0a0;
+  --ink:#1f3a93;               /* blue pen (body) */
+  --ink2:#222;                 /* black pen (headings) */
+  --red:#c0392b; --green:#1e8449;
+  --hl-yellow:rgba(255,235,59,.55); --hl-pink:rgba(255,128,171,.45);
+  --hl-green:rgba(118,255,3,.35); --hl-blue:rgba(64,196,255,.35);
+  --sticky:#fff59d; --desk:#e9e4d8;
+  --hand:'Kalam','Patrick Hand','Comic Sans MS','Segoe Print','Bradley Hand',cursive;
+  --title:'Caveat','Kalam','Segoe Print','Bradley Hand',cursive;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){ --desk:#2b2b2b; }
+}
+:root[data-theme="dark"]{ --desk:#2b2b2b; }
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--desk);font-family:var(--hand);color:var(--ink);}
+
+/* ===== Notebook sheet ===== */
+.page{
+  position:relative; max-width:860px; margin:24px auto; padding:var(--line) 28px calc(var(--line)*2) 84px;
+  background:
+    linear-gradient(90deg,transparent 64px,var(--margin) 64px,var(--margin) 66px,transparent 66px),
+    repeating-linear-gradient(var(--paper) 0,var(--paper) calc(var(--line) - 1px),var(--rule) calc(var(--line) - 1px),var(--rule) var(--line));
+  background-color:var(--paper);
+  box-shadow:0 2px 6px rgba(0,0,0,.15),0 12px 28px rgba(0,0,0,.12);
+  font-size:20px; line-height:var(--line);
+}
+.page::before{ /* punched holes */
+  content:""; position:absolute; left:22px; top:0; bottom:0; width:18px;
+  background:radial-gradient(circle,var(--desk) 7px,transparent 8px) 0 40px/18px 220px repeat-y;
+}
+@media (max-width:600px){
+  .page{margin:0;padding-left:52px;padding-right:16px;font-size:18px;
+    background:
+      linear-gradient(90deg,transparent 40px,var(--margin) 40px,var(--margin) 42px,transparent 42px),
+      repeating-linear-gradient(var(--paper) 0,var(--paper) calc(var(--line) - 1px),var(--rule) calc(var(--line) - 1px),var(--rule) var(--line));
+    background-color:var(--paper);}
+  .page::before{left:10px;width:16px}
+}
+
+/* ===== Text (all margins are multiples of --line so text sits on the rules) ===== */
+.date{position:absolute;top:0;right:24px;font-family:var(--title);font-size:22px;color:var(--ink2);line-height:var(--line)}
+h1{font-family:var(--title);font-weight:700;color:var(--ink2);font-size:46px;line-height:calc(var(--line)*2);margin:0;transform:rotate(-1deg)}
+h1 .u{background:linear-gradient(transparent 62%,var(--hl-yellow) 62%,var(--hl-yellow) 92%,transparent 92%)}
+h2{font-family:var(--title);font-weight:700;color:var(--red);font-size:32px;line-height:calc(var(--line)*1.5);margin:calc(var(--line)*.5) 0 0}
+h2::before{content:"➤ ";font-size:22px}
+p,li{margin:0}
+ul,ol{margin:0;padding-left:28px}
+ul{list-style:none}
+ul>li::before{content:"–";position:absolute;margin-left:-20px}
+ul>li.star::before{content:"★";color:var(--red)}
+ul>li.arrow::before{content:"→"}
+ul>li.check::before{content:"✓";color:var(--green)}
+.gap{height:var(--line)}
+
+/* ===== Pen effects ===== */
+.hl{background:var(--hl-yellow);padding:0 3px;border-radius:3px 6px 4px 7px}
+.hl.pink{background:var(--hl-pink)} .hl.green{background:var(--hl-green)} .hl.blue{background:var(--hl-blue)}
+.red{color:var(--red)} .green{color:var(--green)} .black{color:var(--ink2)}
+.ul{text-decoration:underline wavy var(--red);text-underline-offset:5px}
+.circ{border:2px solid var(--red);border-radius:50% 45% 55% 48%;padding:0 6px}
+.strike{text-decoration:line-through 2px var(--red)}
+.term{font-weight:700;color:var(--ink2)}
+.box{display:flow-root;border:2.5px solid var(--ink2);border-radius:4px 10px 6px 12px;padding:calc(var(--line)*.5 - 2.5px) 14px;margin:calc(var(--line)*.5) 0;transform:rotate(-.4deg);background:rgba(255,255,255,.35)}
+.box.red{border-color:var(--red)}
+.formula{font-family:var(--title);font-size:28px;text-align:center;color:var(--ink2)}
+
+/* sticky note */
+.sticky{float:right;width:min(250px,42%);margin:0 0 var(--line) 20px;padding:var(--line) 16px;background:var(--sticky);
+  color:#333;transform:rotate(2.2deg);box-shadow:2px 4px 8px rgba(0,0,0,.18);font-size:18px}
+.sticky b{font-family:var(--title);font-size:24px;color:var(--red)}
+@media (max-width:600px){.sticky{float:none;width:auto;margin:var(--line) 0}}
+
+/* margin annotation (lives in the red margin) */
+.side{position:absolute;left:4px;width:58px;text-align:center;font-family:var(--title);font-size:17px;line-height:18px;color:var(--red);transform:rotate(-8deg)}
+@media (max-width:600px){.side{display:none}}
+
+/* two-column notes */
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:0 28px}
+@media (max-width:600px){.cols{grid-template-columns:1fr}}
+
+/* diagrams */
+figure{margin:var(--line) 0;text-align:center}
+figure svg{width:100%;max-width:640px;height:auto;overflow:visible}
+figcaption{font-family:var(--title);font-size:20px;color:var(--ink2)}
+/* phones: keep labels readable — diagram scrolls inside its own box instead of shrinking */
+@media (max-width:600px){figure{overflow-x:auto}figure svg{min-width:520px}}
+.sk{fill:none;stroke:var(--ink2);stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round;filter:url(#rough)}
+.sk.blue{stroke:var(--ink)} .sk.red{stroke:var(--red)} .sk.green{stroke:var(--green)}
+.lbl{font-family:var(--hand);font-size:17px;fill:var(--ink)}
+.lbl.b{font-weight:700;fill:var(--ink2)} .lbl.r{fill:var(--red)} .lbl.g{fill:var(--green)}
+
+/* table */
+.wrap{overflow-x:auto}
+table{border-collapse:collapse;margin:calc(var(--line)*.5) 0;min-width:100%}
+th,td{border:2px solid var(--ink2);padding:0 10px;text-align:left;vertical-align:top}
+th{font-family:var(--title);font-size:24px;color:var(--ink2)}
+
+@media print{body{background:#fff}.page{box-shadow:none;margin:0}.page::before{display:none}}
+
+/* ===== Added for long chapter notes ===== */
+pre.code{font-family:Consolas,'Courier New',monospace;font-size:14px;line-height:var(--line);color:var(--ink);background:rgba(255,255,255,.45);
+  border-left:4px solid var(--red);margin:calc(var(--line)*.5) 0;padding:0 12px;overflow-x:auto;white-space:pre}
+pre.code.ascii{border-left-color:var(--green)}
+code{font-family:Consolas,'Courier New',monospace;font-size:.82em;background:rgba(0,0,0,.06);padding:0 3px;border-radius:3px}
+pre.code code{background:none;padding:0;font-size:inherit}
+.lang{font-family:var(--title);font-size:18px;color:var(--red)}
+h3{font-family:var(--title);font-weight:700;color:var(--ink2);font-size:26px;line-height:var(--line);margin:calc(var(--line)*.5) 0 0}
+h3::before{content:"✎ ";font-size:18px;color:var(--red)}
+.nav{display:flex;justify-content:space-between;gap:12px;font-family:var(--title);font-size:22px;line-height:var(--line)}
+.nav a{color:var(--red);text-decoration:none}
+.nav a:hover{text-decoration:underline wavy}
+.pagebreak{border-top:3px dashed var(--margin);margin:var(--line) 0;text-align:center;font-family:var(--title);color:var(--red);line-height:var(--line)}
+li.todo::before{content:"☐";color:var(--ink2)}
+a{color:var(--ink);text-decoration:underline dotted}
+</style>
+</head>
+<body>
+<!-- One shared hand-drawn wobble filter; give every diagram stroke class="sk" -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <!-- userSpaceOnUse region: a % region collapses to nothing on perfectly straight lines (zero-height bbox) -->
+  <filter id="rough" filterUnits="userSpaceOnUse" x="-500" y="-500" width="3000" height="3000">
+    <feTurbulence type="fractalNoise" baseFrequency="0.03" numOctaves="2" seed="3" result="n"/>
+    <feDisplacementMap in="SourceGraphic" in2="n" scale="3"/>
+  </filter>
+  <marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+    <path d="M1 1 L9 5 L1 9" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+  </marker>
+</defs></svg>
+
+<main class="page">
+  <nav class="nav"><a href="ch08-probability-distributions-and-bayes.notes.html">← Ch 8 — Probability, Distributions &amp; Bayes</a><a href="index.notes.html">☰ Contents</a><span></span></nav>
+  <div class="date">2026-10-10</div>
+  <h1><span class="u">Ch 9 — Linear Algebra for AI</span></h1>
+  <p class="black">Volume 0 — Math &amp; Mental Models · <a href="index.md">Contents</a> · ← <a href="ch08-probability-distributions-and-bayes.notes.html">Chapter 8 — Probability, Distributions &amp; Bayes</a></p>
+
+  <p class="black">Chapter 9 — Linear Algebra for AI</p>
+
+  <h2>Concept</h2>
+  <p>Vectors, vector spaces, matrices &amp; operations, dot product as similarity, eigenvalues/eigenvectors (intuition), gradients &amp; derivatives as the engine of backprop.</p>
+  <div class="box"><b>In one sentence:</b> in AI, everything is a list of numbers (a vector), every layer is a matrix that moves those vectors around, and the gradient tells you which way to nudge the numbers to make the answer better.</div>
+
+  <p><b>Mental model — arrows in space.</b> A vector is an arrow from the origin. Its direction is <i>meaning</i>; its length is <i>strength</i>. Two arrows pointing the same way mean similar things. A matrix is a machine that stretches, rotates, or squashes every arrow at once.</p>
+
+  <h3>Vectors</h3>
+  <div class="wrap"><table>
+    <tr><th>Operation</th><th>Formula</th><th>Meaning</th></tr>
+    <tr><td>Add</td><td><code>a + b = (a₁+b₁, a₂+b₂)</code></td><td>walk a, then walk b</td></tr>
+    <tr><td>Scale</td><td><code>c·a</code></td><td>same direction, c times longer</td></tr>
+    <tr><td>Length (norm)</td><td><code>‖a‖ = √(a₁² + a₂² + …)</code></td><td>how long the arrow is</td></tr>
+    <tr><td>Dot product</td><td><code>a · b = Σ aᵢbᵢ = ‖a‖‖b‖cos θ</code></td><td>how much they point the same way</td></tr>
+    <tr><td>Cosine similarity</td><td><code>(a · b) / (‖a‖‖b‖)</code></td><td>angle only, ignores length; range −1..1</td></tr>
+  </table></div>
+
+  <h3>Dot product sign</h3>
+  <div class="wrap"><table>
+    <tr><th><code>a · b</code></th><th>Angle</th><th>Meaning</th></tr>
+    <tr><td>&gt; 0</td><td>&lt; 90°</td><td>similar direction</td></tr>
+    <tr><td>= 0</td><td>90°</td><td>unrelated (orthogonal)</td></tr>
+    <tr><td>&lt; 0</td><td>&gt; 90°</td><td>opposite</td></tr>
+  </table></div>
+
+  <aside class="sticky"><b>Exam tip!</b><br>Dot &gt; 0 similar, = 0 orthogonal, &lt; 0 opposite. Cosine drops the length.</aside>
+  <h3>Matrices</h3>
+  <ul>
+    <li class="star">An <code>m × n</code> matrix maps n-dimensional vectors to m-dimensional ones: <code>y = W x</code>.</li>
+    <li class="star">Multiply <code>A (m×k) · B (k×n) = C (m×n)</code>; entry <code>Cᵢⱼ</code> = row i of A · column j of B. Inner sizes must match.</li>
+    <li class="star">Not commutative: <code>AB ≠ BA</code> in general.</li>
+    <li class="star">A neural-network layer is <code>y = activation(W x + b)</code>.</li>
+  </ul>
+
+  <p><b>Eigenvectors (intuition)</b> — for most arrows, a matrix changes their direction. An <i>eigenvector</i> is a special arrow that the matrix only stretches: <code>A v = λ v</code>. The <i>eigenvalue</i> λ is the stretch factor. They reveal a matrix's "natural axes" — the idea behind PCA.</p>
+
+  <p><b>Gradients</b> — for <code>f(x, y)</code>, the gradient <code>∇f = (∂f/∂x, ∂f/∂y)</code> points in the direction of steepest increase. Gradient descent steps the <i>opposite</i> way: <code>θ ← θ − η ∇L(θ)</code>, where L is the loss and η the learning rate. Backpropagation is the chain rule, applied layer by layer, to compute that gradient efficiently.</p>
+  <p class="formula">θ ← θ − η ∇L(θ)</p>
+  <div class="gap"></div>
+
+  <div class="pagebreak">~ page 2 ~</div>
+
+  <h2>Prereqs</h2>
+  <ul>
+    <li><a href="ch02-sets-relations-and-functions.notes.html">Chapter 2 — Sets, Relations &amp; Functions</a></li>
+    <li><a href="ch08-probability-distributions-and-bayes.notes.html">Chapter 8 — Probability, Distributions &amp; Bayes</a></li>
+  </ul>
+
+  <h2>Diagram</h2>
+  <h3>Dot product as similarity</h3>
+<pre class="code ascii"><code>       y
+       │      b (0.9, 0.8)   "puppy"
+       │     ╱
+       │    ╱ θ small → cos θ ≈ 0.99 → very similar
+       │   ╱_____ a (1.0, 0.7)  "dog"
+       │  ╱
+       │ ╱
+  ─────┼──────────────── x
+       │ ╲
+       │   ╲  c (0.8, −0.9)  "invoice"
+       │     ╲   θ ≈ 83° → cos θ ≈ 0.12 → nearly unrelated</code></pre>
+
+  <h3>A matrix as a transformation of space</h3>
+  <p><code>W = [[2, 0], [0, 1]]</code> stretches x by 2.</p>
+<pre class="code ascii"><code> before                     after W
+   ┌───┐                    ┌───────┐
+   │ ■ │  unit square  ──►  │   ■   │   width doubled,
+   └───┘                    └───────┘   height unchanged
+   eigenvectors: (1,0) with λ=2, (0,1) with λ=1</code></pre>
+
+  <h3>Gradient descent on a bowl <code>L(x, y) = x² + y²</code></h3>
+<pre class="code ascii"><code>   contour lines of the loss          each step moves against ∇L
+      ╭───────────────╮
+     ╭┼───────────╮   │                 ● start (3, 2)
+    ╭┼┼─────────╮ │   │                  ╲
+    │││   ╭──╮  │ │   │                   ● (1.8, 1.2)
+    │││   │★ │  │ │   │                    ╲
+    ││╰── ╰──╯ ─╯ │   │                     ● (1.08, 0.72)
+    │╰────────────╯   │                      ╲
+    ╰─────────────────╯                       ★ minimum (0, 0)</code></pre>
+
+  <h3>Backprop is the chain rule flowing backward</h3>
+  <figure>
+    <svg viewBox="0 0 640 440" role="img" aria-label="Forward chain x to h = W1 x to a = relu(h) to y-hat = W2 a to L = (y-hat minus y) squared; dotted backward arrows carry dL/dy-hat to the last layer, dL/da = W2 transpose times dL/dy-hat, dL/dh, and dL/dW1 back to x">
+      <rect class="sk" x="60" y="20" width="200" height="44" rx="10"/><text class="lbl b" x="160" y="48" text-anchor="middle">x</text>
+      <rect class="sk" x="60" y="110" width="200" height="44" rx="10"/><text class="lbl b" x="160" y="138" text-anchor="middle">h = W₁x</text>
+      <rect class="sk" x="60" y="200" width="200" height="44" rx="10"/><text class="lbl b" x="160" y="228" text-anchor="middle">a = relu(h)</text>
+      <rect class="sk" x="60" y="290" width="200" height="44" rx="10"/><text class="lbl b" x="160" y="318" text-anchor="middle">ŷ = W₂a</text>
+      <rect class="sk green" x="60" y="380" width="200" height="44" rx="10"/><text class="lbl g" x="160" y="408" text-anchor="middle">L = (ŷ − y)²</text>
+      <path class="sk blue" d="M160 64 L160 108" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M160 154 L160 198" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M160 244 L160 288" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M160 334 L160 378" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk red" d="M262 392 C 330 385, 330 330, 264 320" style="color:var(--red);stroke-dasharray:6 6" marker-end="url(#arr)"/>
+      <text class="lbl r" x="345" y="362">∂L/∂ŷ</text>
+      <path class="sk red" d="M262 302 C 330 295, 330 240, 264 230" style="color:var(--red);stroke-dasharray:6 6" marker-end="url(#arr)"/>
+      <text class="lbl r" x="345" y="272">∂L/∂a = W₂ᵀ · ∂L/∂ŷ</text>
+      <path class="sk red" d="M262 212 C 330 205, 330 150, 264 140" style="color:var(--red);stroke-dasharray:6 6" marker-end="url(#arr)"/>
+      <text class="lbl r" x="345" y="182">∂L/∂h</text>
+      <path class="sk red" d="M262 122 C 330 115, 330 60, 264 50" style="color:var(--red);stroke-dasharray:6 6" marker-end="url(#arr)"/>
+      <text class="lbl r" x="345" y="92">∂L/∂W₁</text>
+    </svg>
+    <figcaption>Fig 1: forward pass (solid, blue) and backward gradients (dotted, red)</figcaption>
+  </figure>
+
+  <div class="pagebreak">~ page 3 ~</div>
+
+  <h2>Example</h2>
+  <span class="lang">python</span>
+<pre class="code"><code>import numpy as np
+from numpy.linalg import norm
+
+a = np.array([1.0, 0.7])      # "dog"
+b = np.array([0.9, 0.8])      # "puppy"
+c = np.array([0.8, -0.9])     # "invoice"
+
+cos = lambda u, v: (u @ v) / (norm(u) * norm(v))
+print(round(cos(a, b), 3), round(cos(a, c), 3))   # 0.993  0.116
+
+# A matrix transforms vectors
+W = np.array([[2, 0], [0, 1]])
+print(W @ np.array([1, 1]))                        # [2 1]
+
+# Eigenvectors: directions W only stretches
+vals, vecs = np.linalg.eig(W)
+print(vals)                                        # [2. 1.]
+
+# Gradient descent on L = x² + y², gradient = (2x, 2y)
+p, lr = np.array([3.0, 2.0]), 0.2
+for _ in range(20):
+    p -= lr * 2 * p
+print(p.round(5))                                  # ≈ [0. 0.]</code></pre>
+
+  <h3>The same gradient, computed automatically</h3>
+  <span class="lang">python</span>
+<pre class="code"><code>import torch
+x = torch.tensor([3.0, 2.0], requires_grad=True)
+loss = (x ** 2).sum()
+loss.backward()
+print(x.grad)                                      # tensor([6., 4.]) = (2x, 2y)</code></pre>
+
+  <h2>Exercises</h2>
+  <ol style="list-style:none;padding-left:0">
+    <li>1. Compute a dot product by hand and interpret the sign.
+      <div class="box"><b>Solution</b> <code>(2, 3) · (4, −1) = 8 − 3 = 5</code>. Positive, so the vectors point in broadly the same direction (angle below 90°).</div></li>
+    <li>2. Compute the gradient of <code>f(x)=x²</code> and <code>f(x,y)=x²+y²</code> at a point.
+      <div class="box"><b>Solution</b> <code>f'(x) = 2x</code>, so at x = 3 the slope is 6. <code>∇f(x, y) = (2x, 2y)</code>, so at (1, 2) it is (2, 4) — it points straight away from the minimum at the origin.</div></li>
+    <li>3. What shape is the result of <code>(32 × 768) @ (768 × 3072)</code>? What does this mean in a transformer?
+      <div class="box"><b>Solution</b> <code>32 × 3072</code>. A batch of 32 token vectors of width 768 is projected up to width 3072 — the first layer of a transformer's feed-forward block.</div></li>
+  </ol>
+
+  <div class="pagebreak">~ page 4 ~</div>
+
+  <h2>Mini project</h2>
+  <p><b>A 2D embedding visualizer that computes cosine similarity and nearest neighbors for a small vector set.</b></p>
+  <figure>
+    <svg viewBox="0 0 640 380" role="img" aria-label="Pipeline: words plus 2D vectors (or real embeddings via PCA to 2D) feed a cosine similarity matrix, which feeds top-k nearest neighbors; words and the neighbors both feed a scatter plot with arrows">
+      <rect class="sk" x="130" y="20" width="380" height="60" rx="10"/>
+      <text class="lbl b" x="320" y="46" text-anchor="middle">words + 2D vectors</text>
+      <text class="lbl b" x="320" y="68" text-anchor="middle">(or real embeddings → PCA to 2D)</text>
+      <path class="sk blue" d="M250 80 C 220 100, 160 105, 135 118" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <rect class="sk" x="20" y="120" width="230" height="44" rx="10"/><text class="lbl b" x="135" y="148" text-anchor="middle">Cosine similarity matrix</text>
+      <path class="sk blue" d="M135 164 L135 198" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <rect class="sk" x="20" y="200" width="230" height="44" rx="10"/><text class="lbl b" x="135" y="228" text-anchor="middle">Top-k nearest neighbors</text>
+      <path class="sk blue" d="M135 244 C 135 290, 170 320, 188 328" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M510 60 C 600 100, 600 300, 452 330" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <rect class="sk green" x="190" y="310" width="260" height="44" rx="10"/><text class="lbl g" x="320" y="338" text-anchor="middle">Scatter plot with arrows</text>
+    </svg>
+    <figcaption>Fig 2: embedding visualizer pipeline</figcaption>
+  </figure>
+
+  <h3>Steps</h3>
+  <ol style="list-style:none;padding-left:0">
+    <li>1. Start with ~15 hand-made 2D vectors for words from 3 topics (animals, finance, sports).</li>
+    <li>2. Compute the full cosine-similarity matrix with one matrix multiply on normalized vectors.</li>
+    <li>3. For a query word, print its top 3 neighbors.</li>
+    <li>4. Plot each vector as an arrow from the origin with <code>matplotlib</code>, colored by topic.</li>
+    <li>5. Bonus: load real embeddings, reduce to 2D with PCA (eigenvectors of the covariance matrix), and plot again.</li>
+  </ol>
+  <div class="box"><b>Done when:</b> each query's neighbors come from its own topic, and the plot shows topics as separate "directions".</div>
+
+  <h2>Open source</h2>
+  <ul>
+    <li><a href="https://github.com/numpy/numpy"><code>numpy/numpy</code></a> — <code>numpy.linalg</code> (<code>norm</code>, <code>eig</code>, <code>svd</code>).</li>
+    <li><a href="https://github.com/pytorch/pytorch"><code>pytorch/pytorch</code></a> — <code>torch.autograd</code>. Read the "Autograd mechanics" notes to see how every operation records how to compute its own gradient.</li>
+  </ul>
+
+  <h2>Interview</h2>
+  <ol style="list-style:none;padding-left:0">
+    <li>1. <b>"Why does the dot product measure similarity?"</b>
+      <div class="box"><b>Answer</b> <code>a · b = ‖a‖‖b‖ cos θ</code>. For fixed lengths, it grows as the angle shrinks. If vectors encode features, a large dot product means they share many features with the same signs. Normalizing to cosine removes the effect of length.</div></li>
+    <li>2. <b>"What does an eigenvector represent?"</b>
+      <div class="box"><b>Answer</b> A direction that a linear transformation only scales, never rotates. Its eigenvalue is the scale factor. In PCA, the top eigenvectors of the covariance matrix are the directions of greatest variance in the data.</div></li>
+  </ol>
+
+  <h2>Checklist</h2>
+  <ul>
+    <li class="todo">multiply matrices correctly</li>
+    <li class="todo">explain dot-product similarity</li>
+    <li class="todo">state what a gradient tells you</li>
+    <li class="todo">intuit eigenvalues as scaling directions</li>
+  </ul>
+  <div class="gap"></div>
+  <p class="black"><a href="index.md">Contents</a> · ← <a href="ch08-probability-distributions-and-bayes.notes.html">Chapter 8 — Probability, Distributions &amp; Bayes</a></p>
+
+  <nav class="nav"><a href="ch08-probability-distributions-and-bayes.notes.html">← Ch 8 — Probability, Distributions &amp; Bayes</a><a href="index.notes.html">☰ Contents</a><span></span></nav>
+</main>
+</body>
+</html>

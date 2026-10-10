@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ch 24 — Logging — Notes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;700&family=Kalam:wght@400;700&family=Patrick+Hand&display=swap" rel="stylesheet">
+<style>
+/* ===== Page tokens ===== */
+:root{
+  --line:32px;                 /* ruled-line spacing; every vertical size is a multiple */
+  --paper:#fdfbf4; --rule:#c9dcef; --margin:#e8a0a0;
+  --ink:#1f3a93;               /* blue pen (body) */
+  --ink2:#222;                 /* black pen (headings) */
+  --red:#c0392b; --green:#1e8449;
+  --hl-yellow:rgba(255,235,59,.55); --hl-pink:rgba(255,128,171,.45);
+  --hl-green:rgba(118,255,3,.35); --hl-blue:rgba(64,196,255,.35);
+  --sticky:#fff59d; --desk:#e9e4d8;
+  --hand:'Kalam','Patrick Hand','Comic Sans MS','Segoe Print','Bradley Hand',cursive;
+  --title:'Caveat','Kalam','Segoe Print','Bradley Hand',cursive;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){ --desk:#2b2b2b; }
+}
+:root[data-theme="dark"]{ --desk:#2b2b2b; }
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--desk);font-family:var(--hand);color:var(--ink);}
+
+/* ===== Notebook sheet ===== */
+.page{
+  position:relative; max-width:860px; margin:24px auto; padding:var(--line) 28px calc(var(--line)*2) 84px;
+  background:
+    linear-gradient(90deg,transparent 64px,var(--margin) 64px,var(--margin) 66px,transparent 66px),
+    repeating-linear-gradient(var(--paper) 0,var(--paper) calc(var(--line) - 1px),var(--rule) calc(var(--line) - 1px),var(--rule) var(--line));
+  background-color:var(--paper);
+  box-shadow:0 2px 6px rgba(0,0,0,.15),0 12px 28px rgba(0,0,0,.12);
+  font-size:20px; line-height:var(--line);
+}
+.page::before{ /* punched holes */
+  content:""; position:absolute; left:22px; top:0; bottom:0; width:18px;
+  background:radial-gradient(circle,var(--desk) 7px,transparent 8px) 0 40px/18px 220px repeat-y;
+}
+@media (max-width:600px){
+  .page{margin:0;padding-left:52px;padding-right:16px;font-size:18px;
+    background:
+      linear-gradient(90deg,transparent 40px,var(--margin) 40px,var(--margin) 42px,transparent 42px),
+      repeating-linear-gradient(var(--paper) 0,var(--paper) calc(var(--line) - 1px),var(--rule) calc(var(--line) - 1px),var(--rule) var(--line));
+    background-color:var(--paper);}
+  .page::before{left:10px;width:16px}
+}
+
+/* ===== Text (all margins are multiples of --line so text sits on the rules) ===== */
+.date{position:absolute;top:0;right:24px;font-family:var(--title);font-size:22px;color:var(--ink2);line-height:var(--line)}
+h1{font-family:var(--title);font-weight:700;color:var(--ink2);font-size:46px;line-height:calc(var(--line)*2);margin:0;transform:rotate(-1deg)}
+h1 .u{background:linear-gradient(transparent 62%,var(--hl-yellow) 62%,var(--hl-yellow) 92%,transparent 92%)}
+h2{font-family:var(--title);font-weight:700;color:var(--red);font-size:32px;line-height:calc(var(--line)*1.5);margin:calc(var(--line)*.5) 0 0}
+h2::before{content:"➤ ";font-size:22px}
+p,li{margin:0}
+ul,ol{margin:0;padding-left:28px}
+ul{list-style:none}
+ul>li::before{content:"–";position:absolute;margin-left:-20px}
+ul>li.star::before{content:"★";color:var(--red)}
+ul>li.arrow::before{content:"→"}
+ul>li.check::before{content:"✓";color:var(--green)}
+.gap{height:var(--line)}
+
+/* ===== Pen effects ===== */
+.hl{background:var(--hl-yellow);padding:0 3px;border-radius:3px 6px 4px 7px}
+.hl.pink{background:var(--hl-pink)} .hl.green{background:var(--hl-green)} .hl.blue{background:var(--hl-blue)}
+.red{color:var(--red)} .green{color:var(--green)} .black{color:var(--ink2)}
+.ul{text-decoration:underline wavy var(--red);text-underline-offset:5px}
+.circ{border:2px solid var(--red);border-radius:50% 45% 55% 48%;padding:0 6px}
+.strike{text-decoration:line-through 2px var(--red)}
+.term{font-weight:700;color:var(--ink2)}
+.box{display:flow-root;border:2.5px solid var(--ink2);border-radius:4px 10px 6px 12px;padding:calc(var(--line)*.5 - 2.5px) 14px;margin:calc(var(--line)*.5) 0;transform:rotate(-.4deg);background:rgba(255,255,255,.35)}
+.box.red{border-color:var(--red)}
+.formula{font-family:var(--title);font-size:28px;text-align:center;color:var(--ink2)}
+
+/* sticky note */
+.sticky{float:right;width:min(250px,42%);margin:0 0 var(--line) 20px;padding:var(--line) 16px;background:var(--sticky);
+  color:#333;transform:rotate(2.2deg);box-shadow:2px 4px 8px rgba(0,0,0,.18);font-size:18px}
+.sticky b{font-family:var(--title);font-size:24px;color:var(--red)}
+@media (max-width:600px){.sticky{float:none;width:auto;margin:var(--line) 0}}
+
+/* margin annotation (lives in the red margin) */
+.side{position:absolute;left:4px;width:58px;text-align:center;font-family:var(--title);font-size:17px;line-height:18px;color:var(--red);transform:rotate(-8deg)}
+@media (max-width:600px){.side{display:none}}
+
+/* two-column notes */
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:0 28px}
+@media (max-width:600px){.cols{grid-template-columns:1fr}}
+
+/* diagrams */
+figure{margin:var(--line) 0;text-align:center}
+figure svg{width:100%;max-width:640px;height:auto;overflow:visible}
+figcaption{font-family:var(--title);font-size:20px;color:var(--ink2)}
+/* phones: keep labels readable — diagram scrolls inside its own box instead of shrinking */
+@media (max-width:600px){figure{overflow-x:auto}figure svg{min-width:520px}}
+.sk{fill:none;stroke:var(--ink2);stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round;filter:url(#rough)}
+.sk.blue{stroke:var(--ink)} .sk.red{stroke:var(--red)} .sk.green{stroke:var(--green)}
+.lbl{font-family:var(--hand);font-size:17px;fill:var(--ink)}
+.lbl.b{font-weight:700;fill:var(--ink2)} .lbl.r{fill:var(--red)} .lbl.g{fill:var(--green)}
+
+/* table */
+.wrap{overflow-x:auto}
+table{border-collapse:collapse;margin:calc(var(--line)*.5) 0;min-width:100%}
+th,td{border:2px solid var(--ink2);padding:0 10px;text-align:left;vertical-align:top}
+th{font-family:var(--title);font-size:24px;color:var(--ink2)}
+
+@media print{body{background:#fff}.page{box-shadow:none;margin:0}.page::before{display:none}}
+
+/* ===== Added for long chapter notes ===== */
+pre.code{font-family:Consolas,'Courier New',monospace;font-size:14px;line-height:var(--line);color:var(--ink);background:rgba(255,255,255,.45);
+  border-left:4px solid var(--red);margin:calc(var(--line)*.5) 0;padding:0 12px;overflow-x:auto;white-space:pre}
+pre.code.ascii{border-left-color:var(--green)}
+code{font-family:Consolas,'Courier New',monospace;font-size:.82em;background:rgba(0,0,0,.06);padding:0 3px;border-radius:3px}
+pre.code code{background:none;padding:0;font-size:inherit}
+.lang{font-family:var(--title);font-size:18px;color:var(--red)}
+h3{font-family:var(--title);font-weight:700;color:var(--ink2);font-size:26px;line-height:var(--line);margin:calc(var(--line)*.5) 0 0}
+h3::before{content:"✎ ";font-size:18px;color:var(--red)}
+.nav{display:flex;justify-content:space-between;gap:12px;font-family:var(--title);font-size:22px;line-height:var(--line)}
+.nav a{color:var(--red);text-decoration:none}
+.nav a:hover{text-decoration:underline wavy}
+.pagebreak{border-top:3px dashed var(--margin);margin:var(--line) 0;text-align:center;font-family:var(--title);color:var(--red);line-height:var(--line)}
+li.todo::before{content:"☐";color:var(--ink2)}
+a{color:var(--ink);text-decoration:underline dotted}
+</style>
+</head>
+<body>
+<!-- One shared hand-drawn wobble filter; give every diagram stroke class="sk" -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <!-- userSpaceOnUse region: a % region collapses to nothing on perfectly straight lines (zero-height bbox) -->
+  <filter id="rough" filterUnits="userSpaceOnUse" x="-500" y="-500" width="3000" height="3000">
+    <feTurbulence type="fractalNoise" baseFrequency="0.03" numOctaves="2" seed="3" result="n"/>
+    <feDisplacementMap in="SourceGraphic" in2="n" scale="3"/>
+  </filter>
+  <marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+    <path d="M1 1 L9 5 L1 9" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+  </marker>
+</defs></svg>
+
+<main class="page">
+  <nav class="nav"><a href="ch23-documentation-adrs-and-readmes.notes.html">← Ch 23 — Documentation, ADRs &amp; READMEs</a><a href="index.notes.html">☰ Contents</a><a href="ch25-configuration-and-secrets-management.notes.html">Ch 25 — Configuration &amp; Secrets Management →</a></nav>
+  <div class="date">2026-10-10</div>
+  <h1><span class="u">Ch 24 — Logging</span></h1>
+    <p class="black">Volume 1 — Computer Science Foundations · <a href="index.md">Contents</a> · ← <a href="ch23-documentation-adrs-and-readmes.notes.html">Chapter 23 — Documentation, ADRs &amp; READMEs</a> · Next → <a href="ch25-configuration-and-secrets-management.notes.html">Chapter 25 — Configuration &amp; Secrets Management</a></p>
+
+  <p class="black">Chapter 24 — Logging</p>
+
+  <h2>Concept</h2>
+  <p>Log levels, structured logging, correlation IDs, and log hygiene (never leak secrets).</p>
+  <div class="box"><b>In one sentence:</b> logs are the diary your program keeps for the person debugging it at 3 a.m., so they must be leveled, machine-parseable, linked by a request ID, and free of secrets.</div>
+
+  <h3>Mental model — a ship's logbook</h3>
+  <p>Every entry has a time, a severity ("routine", "warning", "emergency"), and facts in fixed fields (position, speed, crew). A voyage number on every page lets you follow one trip across many pages. You never write the safe combination in the logbook.</p>
+
+  <h3>Log levels</h3>
+  <div class="wrap"><table>
+    <tr><th>Level</th><th>Use for</th><th>Example</th><th>Pages someone?</th></tr>
+    <tr><td><code>DEBUG</code></td><td>detail for developers; off in production</td><td>"cache lookup key=user:42 hit=false"</td><td>no</td></tr>
+    <tr><td><code>INFO</code></td><td>normal business events</td><td>"order_placed order_id=123"</td><td>no</td></tr>
+    <tr><td><code>WARNING</code></td><td>unexpected but handled; may need attention</td><td>"retrying payment attempt=2"</td><td>no</td></tr>
+    <tr><td><code>ERROR</code></td><td>an operation failed; a user or request was affected</td><td>"payment_failed order_id=123 reason=card_declined"</td><td>maybe (via alerts on rate)</td></tr>
+    <tr><td><code>CRITICAL</code></td><td>the service can't function</td><td>"database unreachable, shutting down"</td><td>yes</td></tr>
+  </table></div>
+  <div class="box"><b>Rule of thumb:</b> a <i>recoverable</i> failure you retried successfully is <code>WARNING</code>; a failure that surfaces to the caller is <code>ERROR</code>.</div>
+
+  <h3>Structured vs free-text</h3>
+  <div class="wrap"><table>
+    <tr><th>Free text</th><th>Structured (JSON)</th></tr>
+    <tr><td><code>User 7 placed order 123 for $45.00</code></td><td><code>{"event":"order_placed","user_id":7,"order_id":123,"amount_cents":4500}</code></td></tr>
+    <tr><td>easy for humans, hard to query</td><td>trivially filterable: <code>order_id=123</code>, <code>sum(amount_cents)</code></td></tr>
+    <tr><td>message format drifts</td><td>stable field names become a contract</td></tr>
+  </table></div>
+
+  <h3>Correlation IDs</h3>
+  <p>Generate an ID at the edge (or accept <code>traceparent</code> / <code>X-Request-ID</code>), attach it to every log line, and pass it to every downstream call. One search then shows the full story of one request across services. This is the logging half of distributed tracing (<a href="ch58-observability-logs-metrics-traces-and-opentelemetry.notes.html">Ch 58</a>).</p>
+
+  <aside class="sticky"><b>Never log!</b><br>passwords, tokens, API keys, cookies, card numbers. Redact by field name in the logger.</aside>
+  <h3>Hygiene — never log</h3>
+  <p>Passwords, tokens, API keys, session cookies, full card numbers, secrets in URLs, or personal data you don't need (emails, addresses, health data). Redact by <i>field name</i> in the logger itself, so one careless <code>log.info(request)</code> can't leak.</p>
+
+  <div class="pagebreak">~ page 2 ~</div>
+
+  <h2>Prereqs</h2>
+  <ul>
+    <li><a href="ch22-clean-code-and-refactoring.notes.html">Chapter 22 — Clean Code &amp; Refactoring</a></li>
+  </ul>
+
+  <h2>Diagram</h2>
+  <h3>A correlation ID threaded through services into one log stream</h3>
+  <figure>
+    <svg viewBox="0 0 660 520" role="img" aria-label="Sequence diagram: Client posts /orders to API gateway; gateway sets request_id r-8f2a; passes X-Request-ID to Order service; order service logs order_received to the Log store, passes X-Request-ID to Payment service; payment service logs charge_ok with 212 ms; order service logs order_placed">
+      <path class="sk" d="M50 54 L50 495 M160 54 L160 495 M300 54 L300 495 M440 54 L440 495 M590 54 L590 495" style="stroke-dasharray:6 7;stroke-width:1.6"/>
+      <rect class="sk" x="2" y="10" width="96" height="44" rx="8"/>
+      <text class="lbl b" x="50" y="38" text-anchor="middle" style="font-size:15px">Client</text>
+      <rect class="sk" x="112" y="10" width="96" height="44" rx="8"/>
+      <text class="lbl b" x="160" y="29" text-anchor="middle" style="font-size:14px">API</text>
+      <text class="lbl b" x="160" y="46" text-anchor="middle" style="font-size:14px">gateway</text>
+      <rect class="sk" x="252" y="10" width="96" height="44" rx="8"/>
+      <text class="lbl b" x="300" y="29" text-anchor="middle" style="font-size:14px">Order</text>
+      <text class="lbl b" x="300" y="46" text-anchor="middle" style="font-size:14px">service</text>
+      <rect class="sk" x="392" y="10" width="96" height="44" rx="8"/>
+      <text class="lbl b" x="440" y="29" text-anchor="middle" style="font-size:14px">Payment</text>
+      <text class="lbl b" x="440" y="46" text-anchor="middle" style="font-size:14px">service</text>
+      <rect class="sk" x="542" y="10" width="96" height="44" rx="8"/>
+      <text class="lbl b" x="590" y="29" text-anchor="middle" style="font-size:14px">Log</text>
+      <text class="lbl b" x="590" y="46" text-anchor="middle" style="font-size:14px">store</text>
+
+      <path class="sk blue" d="M52 100 L156 100" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <text class="lbl" x="105" y="92" text-anchor="middle" style="font-size:13px">POST /orders</text>
+
+      <path class="sk red" d="M162 135 L215 135 L215 158 L166 158" style="color:var(--red)" marker-end="url(#arr)"/>
+      <text class="lbl r" x="225" y="152" style="font-size:13px">request_id = r-8f2a</text>
+
+      <path class="sk blue" d="M162 205 L296 205" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <text class="lbl" x="230" y="197" text-anchor="middle" style="font-size:13px">X-Request-ID: r-8f2a</text>
+
+      <path class="sk green" d="M302 275 L586 275" style="color:var(--green)" marker-end="url(#arr)"/>
+      <text class="lbl g" x="445" y="251" text-anchor="middle" style="font-size:12px">{"request_id":"r-8f2a",</text>
+      <text class="lbl g" x="445" y="267" text-anchor="middle" style="font-size:12px">"event":"order_received"}</text>
+
+      <path class="sk blue" d="M302 335 L436 335" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <text class="lbl" x="369" y="327" text-anchor="middle" style="font-size:13px">X-Request-ID: r-8f2a</text>
+
+      <path class="sk green" d="M442 405 L586 405" style="color:var(--green)" marker-end="url(#arr)"/>
+      <text class="lbl g" x="520" y="381" text-anchor="middle" style="font-size:12px">{"request_id":"r-8f2a",</text>
+      <text class="lbl g" x="520" y="397" text-anchor="middle" style="font-size:12px">"event":"charge_ok","ms":212}</text>
+
+      <path class="sk green" d="M302 470 L586 470" style="color:var(--green)" marker-end="url(#arr)"/>
+      <text class="lbl g" x="445" y="446" text-anchor="middle" style="font-size:12px">{"request_id":"r-8f2a",</text>
+      <text class="lbl g" x="445" y="462" text-anchor="middle" style="font-size:12px">"event":"order_placed"}</text>
+    </svg>
+    <figcaption>Fig 1: one request_id travels through every hop, so one search reconstructs the request</figcaption>
+  </figure>
+
+  <span class="lang">search result</span>
+<pre class="code ascii"><code> search: request_id="r-8f2a"
+ 10:02:11.101  gateway  INFO  request_started    path=/orders
+ 10:02:11.109  order    INFO  order_received     order_id=123
+ 10:02:11.321  payment  INFO  charge_ok          ms=212
+ 10:02:11.330  order    INFO  order_placed       order_id=123</code></pre>
+
+  <h3>Where logs go</h3>
+  <figure>
+    <svg viewBox="0 0 640 270" role="img" aria-label="app writes JSON to stdout; agent (Vector / Fluent Bit) ships to log store (Loki / Elasticsearch), which feeds search and dashboards; the agent also does redaction and sampling">
+      <rect class="sk" x="10" y="30" width="210" height="60" rx="10"/>
+      <text class="lbl b" x="115" y="66" text-anchor="middle" style="font-size:15px">app → JSON to stdout</text>
+      <path class="sk blue" d="M220 60 L256 60" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <rect class="sk" x="260" y="30" width="180" height="60" rx="10"/>
+      <text class="lbl b" x="350" y="54" text-anchor="middle" style="font-size:15px">agent</text>
+      <text class="lbl" x="350" y="77" text-anchor="middle" style="font-size:13px">(Vector / Fluent Bit)</text>
+      <path class="sk blue" d="M440 60 L476 60" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <rect class="sk green" x="480" y="30" width="150" height="60" rx="14"/>
+      <path class="sk green" d="M480 44 C 480 56, 630 56, 630 44"/>
+      <text class="lbl g" x="555" y="70" text-anchor="middle" style="font-size:13px">log store</text>
+      <text class="lbl g" x="555" y="86" text-anchor="middle" style="font-size:12px">Loki / Elasticsearch</text>
+      <path class="sk blue" d="M555 90 L555 168" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <rect class="sk" x="480" y="170" width="150" height="60" rx="10"/>
+      <text class="lbl b" x="555" y="195" text-anchor="middle" style="font-size:13px">search +</text>
+      <text class="lbl b" x="555" y="216" text-anchor="middle" style="font-size:13px">dashboards</text>
+      <path class="sk blue" d="M350 90 L350 168" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <rect class="sk red" x="260" y="170" width="180" height="60" rx="10"/>
+      <text class="lbl r" x="350" y="206" text-anchor="middle" style="font-size:14px">redaction / sampling</text>
+    </svg>
+    <figcaption>Fig 2: the log pipeline — redact and sample in the agent before logs are stored</figcaption>
+  </figure>
+
+  <div class="pagebreak">~ page 3 ~</div>
+
+  <h2>Example</h2>
+  <span class="lang">python</span>
+<pre class="code"><code>import logging, json, sys, uuid, contextvars
+
+request_id = contextvars.ContextVar("request_id", default="-")
+SENSITIVE = {"password", "token", "authorization", "card_number", "api_key"}
+
+class JsonFormatter(logging.Formatter):
+    def format(self, record):
+        entry = {
+            "ts": self.formatTime(record, "%Y-%m-%dT%H:%M:%S%z"),
+            "level": record.levelname,
+            "event": record.getMessage(),
+            "logger": record.name,
+            "request_id": request_id.get(),
+        }
+        for k, v in getattr(record, "fields", {}).items():
+            entry[k] = "[REDACTED]" if k.lower() in SENSITIVE else v
+        if record.exc_info:
+            entry["exc"] = self.formatException(record.exc_info)
+        return json.dumps(entry)
+
+handler = logging.StreamHandler(sys.stdout)
+handler.setFormatter(JsonFormatter())
+log = logging.getLogger("orders")
+log.addHandler(handler)
+log.setLevel(logging.INFO)
+
+def handle(req):
+    request_id.set(req.headers.get("X-Request-ID") or str(uuid.uuid4()))
+    log.info("order_placed", extra={"fields": {"order_id": 123, "user_id": 7, "token": "abc"}})
+
+# {"ts": "...", "level": "INFO", "event": "order_placed", "logger": "orders",
+#  "request_id": "r-8f2a", "order_id": 123, "user_id": 7, "token": "[REDACTED]"}</code></pre>
+
+  <span class="lang">python</span>
+<pre class="code"><code># With structlog: the same idea, less code
+import structlog
+log = structlog.get_logger()
+log.info("order_placed", order_id=123, user_id=7, trace_id="t-91c")</code></pre>
+
+  <h2>Exercises</h2>
+  <ol style="list-style:none;padding-left:0">
+    <li>1. Add a correlation ID to a request pipeline.
+      <div class="box"><b>Solution</b> In middleware, read <code>X-Request-ID</code> (or generate a UUID), store it in a <code>contextvars.ContextVar</code> (safe with async), include it in the formatter, return it in the response header, and forward it on outgoing HTTP calls.</div></li>
+    <li>2. Pick the right level for a warning vs error.
+      <div class="box"><b>Solution</b> Disk at 85% → WARNING. A cache miss → DEBUG. A payment declined by the bank (expected business outcome) → INFO. An upstream timeout that you retried successfully → WARNING. The same timeout after all retries, returning 503 → ERROR.</div></li>
+    <li>3. Find the leak: <code>log.info(f"login attempt {request.json}")</code>.
+      <div class="box"><b>Solution</b> The body contains the password. Log specific safe fields (<code>username</code>, <code>ip</code>, <code>result</code>) and redact centrally by field name as a backstop.</div></li>
+  </ol>
+
+  <div class="pagebreak">~ page 4 ~</div>
+
+  <h2>Mini project</h2>
+  <p><b>A structured logger that emits JSON and injects a trace ID into every line.</b></p>
+  <figure>
+    <svg viewBox="0 0 640 470" role="img" aria-label="middleware accepts or creates trace_id into a ContextVar; log.info call and ContextVar feed the JSON formatter with trace_id and redaction; output is stdout one JSON object per line; then jq selects one trace_id">
+      <rect class="sk" x="20" y="20" width="220" height="54" rx="10"/>
+      <text class="lbl b" x="130" y="44" text-anchor="middle" style="font-size:15px">middleware:</text>
+      <text class="lbl" x="130" y="65" text-anchor="middle" style="font-size:14px">accept or create trace_id</text>
+      <path class="sk blue" d="M130 74 L130 118" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <rect class="sk" x="20" y="120" width="220" height="44" rx="10"/>
+      <text class="lbl b" x="130" y="148" text-anchor="middle" style="font-size:15px">ContextVar</text>
+      <rect class="sk" x="330" y="20" width="290" height="44" rx="10"/>
+      <text class="lbl b" x="475" y="48" text-anchor="middle" style="font-size:14px">log.info('event', **fields)</text>
+      <path class="sk blue" d="M130 164 C 140 190, 190 205, 235 220" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M475 64 C 480 130, 440 190, 405 220" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <rect class="sk green" x="170" y="222" width="300" height="64" rx="10"/>
+      <text class="lbl g" x="320" y="248" text-anchor="middle" style="font-size:15px">JSON formatter</text>
+      <text class="lbl g" x="320" y="271" text-anchor="middle" style="font-size:14px">+ trace_id + redaction</text>
+      <path class="sk blue" d="M320 286 L320 318" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <rect class="sk" x="170" y="320" width="300" height="44" rx="10"/>
+      <text class="lbl b" x="320" y="348" text-anchor="middle" style="font-size:14px">stdout (one JSON object per line)</text>
+      <path class="sk blue" d="M320 364 L320 398" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <rect class="sk" x="170" y="400" width="300" height="44" rx="10"/>
+      <text class="lbl b" x="320" y="428" text-anchor="middle" style="font-size:14px">jq: select one trace_id</text>
+    </svg>
+    <figcaption>Fig 3: trace_id flows from middleware through a ContextVar into the formatter</figcaption>
+  </figure>
+
+  <h3>Steps</h3>
+  <ol style="list-style:none;padding-left:0">
+    <li>1. A tiny logger API: <code>log.info(event, **fields)</code> that validates <code>event</code> is <code>snake_case</code>.</li>
+    <li>2. Formatter: ISO timestamp, level, event, trace ID from a ContextVar, fields, and exception info.</li>
+    <li>3. Redaction by key name (case-insensitive), including nested dicts.</li>
+    <li>4. Middleware for a small FastAPI/Flask app that sets and returns the trace ID.</li>
+    <li>5. Tests: every line is valid JSON, secrets never appear, and concurrent async requests keep their own IDs.</li>
+  </ol>
+  <div class="box"><b>Done when:</b> <code>jq 'select(.trace_id=="…")'</code> reconstructs one request's full story, and a test proves tokens are redacted.</div>
+
+  <h2>Open source</h2>
+  <ul>
+    <li><a href="https://github.com/python/cpython"><code>python/cpython</code></a> <code>logging</code> — <code>Lib/logging/__init__.py</code>: loggers, handlers, formatters, and filters; the "Logging Cookbook" in the docs covers context injection.</li>
+    <li><a href="https://github.com/Delgan/loguru"><code>Delgan/loguru</code></a> — pleasant logging with <code>bind()</code> for context and <code>serialize=True</code> for JSON.</li>
+  </ul>
+
+  <h2>Interview</h2>
+  <ol style="list-style:none;padding-left:0">
+    <li>1. <b>"Structured vs free-text logging?"</b>
+      <div class="box"><b>Answer</b> Structured logs emit key–value fields (usually JSON), so machines can filter, aggregate, and alert on them reliably, and field names become a stable contract. Free text is easier to read raw but needs fragile regexes to query. In production, prefer structured and render it prettily for humans in development.</div></li>
+    <li>2. <b>"What level is a recoverable failure?"</b>
+      <div class="box"><b>Answer</b> WARNING if you handled it (retried successfully, fell back to a default) and the user wasn't affected. It becomes ERROR only when the operation ultimately fails for the caller. Alert on error <i>rates</i>, not on individual lines.</div></li>
+  </ol>
+
+  <h2>Checklist</h2>
+  <ul>
+    <li class="todo">use levels consistently</li>
+    <li class="todo">emit machine-parseable logs</li>
+    <li class="todo">redact secrets</li>
+  </ul>
+  <div class="gap"></div>
+  <p class="black"><a href="index.md">Contents</a> · ← <a href="ch23-documentation-adrs-and-readmes.notes.html">Chapter 23 — Documentation, ADRs &amp; READMEs</a> · Next → <a href="ch25-configuration-and-secrets-management.notes.html">Chapter 25 — Configuration &amp; Secrets Management</a></p>
+
+  <nav class="nav"><a href="ch23-documentation-adrs-and-readmes.notes.html">← Ch 23 — Documentation, ADRs &amp; READMEs</a><a href="index.notes.html">☰ Contents</a><a href="ch25-configuration-and-secrets-management.notes.html">Ch 25 — Configuration &amp; Secrets Management →</a></nav>
+</main>
+</body>
+</html>

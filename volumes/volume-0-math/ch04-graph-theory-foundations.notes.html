@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ch 4 — Graph Theory Foundations — Notes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;700&family=Kalam:wght@400;700&family=Patrick+Hand&display=swap" rel="stylesheet">
+<style>
+/* ===== Page tokens ===== */
+:root{
+  --line:32px;                 /* ruled-line spacing; every vertical size is a multiple */
+  --paper:#fdfbf4; --rule:#c9dcef; --margin:#e8a0a0;
+  --ink:#1f3a93;               /* blue pen (body) */
+  --ink2:#222;                 /* black pen (headings) */
+  --red:#c0392b; --green:#1e8449;
+  --hl-yellow:rgba(255,235,59,.55); --hl-pink:rgba(255,128,171,.45);
+  --hl-green:rgba(118,255,3,.35); --hl-blue:rgba(64,196,255,.35);
+  --sticky:#fff59d; --desk:#e9e4d8;
+  --hand:'Kalam','Patrick Hand','Comic Sans MS','Segoe Print','Bradley Hand',cursive;
+  --title:'Caveat','Kalam','Segoe Print','Bradley Hand',cursive;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){ --desk:#2b2b2b; }
+}
+:root[data-theme="dark"]{ --desk:#2b2b2b; }
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--desk);font-family:var(--hand);color:var(--ink);}
+
+/* ===== Notebook sheet ===== */
+.page{
+  position:relative; max-width:860px; margin:24px auto; padding:var(--line) 28px calc(var(--line)*2) 84px;
+  background:
+    linear-gradient(90deg,transparent 64px,var(--margin) 64px,var(--margin) 66px,transparent 66px),
+    repeating-linear-gradient(var(--paper) 0,var(--paper) calc(var(--line) - 1px),var(--rule) calc(var(--line) - 1px),var(--rule) var(--line));
+  background-color:var(--paper);
+  box-shadow:0 2px 6px rgba(0,0,0,.15),0 12px 28px rgba(0,0,0,.12);
+  font-size:20px; line-height:var(--line);
+}
+.page::before{ /* punched holes */
+  content:""; position:absolute; left:22px; top:0; bottom:0; width:18px;
+  background:radial-gradient(circle,var(--desk) 7px,transparent 8px) 0 40px/18px 220px repeat-y;
+}
+@media (max-width:600px){
+  .page{margin:0;padding-left:52px;padding-right:16px;font-size:18px;
+    background:
+      linear-gradient(90deg,transparent 40px,var(--margin) 40px,var(--margin) 42px,transparent 42px),
+      repeating-linear-gradient(var(--paper) 0,var(--paper) calc(var(--line) - 1px),var(--rule) calc(var(--line) - 1px),var(--rule) var(--line));
+    background-color:var(--paper);}
+  .page::before{left:10px;width:16px}
+}
+
+/* ===== Text (all margins are multiples of --line so text sits on the rules) ===== */
+.date{position:absolute;top:0;right:24px;font-family:var(--title);font-size:22px;color:var(--ink2);line-height:var(--line)}
+h1{font-family:var(--title);font-weight:700;color:var(--ink2);font-size:46px;line-height:calc(var(--line)*2);margin:0;transform:rotate(-1deg)}
+h1 .u{background:linear-gradient(transparent 62%,var(--hl-yellow) 62%,var(--hl-yellow) 92%,transparent 92%)}
+h2{font-family:var(--title);font-weight:700;color:var(--red);font-size:32px;line-height:calc(var(--line)*1.5);margin:calc(var(--line)*.5) 0 0}
+h2::before{content:"➤ ";font-size:22px}
+p,li{margin:0}
+ul,ol{margin:0;padding-left:28px}
+ul{list-style:none}
+ul>li::before{content:"–";position:absolute;margin-left:-20px}
+ul>li.star::before{content:"★";color:var(--red)}
+ul>li.arrow::before{content:"→"}
+ul>li.check::before{content:"✓";color:var(--green)}
+.gap{height:var(--line)}
+
+/* ===== Pen effects ===== */
+.hl{background:var(--hl-yellow);padding:0 3px;border-radius:3px 6px 4px 7px}
+.hl.pink{background:var(--hl-pink)} .hl.green{background:var(--hl-green)} .hl.blue{background:var(--hl-blue)}
+.red{color:var(--red)} .green{color:var(--green)} .black{color:var(--ink2)}
+.ul{text-decoration:underline wavy var(--red);text-underline-offset:5px}
+.circ{border:2px solid var(--red);border-radius:50% 45% 55% 48%;padding:0 6px}
+.strike{text-decoration:line-through 2px var(--red)}
+.term{font-weight:700;color:var(--ink2)}
+.box{display:flow-root;border:2.5px solid var(--ink2);border-radius:4px 10px 6px 12px;padding:calc(var(--line)*.5 - 2.5px) 14px;margin:calc(var(--line)*.5) 0;transform:rotate(-.4deg);background:rgba(255,255,255,.35)}
+.box.red{border-color:var(--red)}
+.formula{font-family:var(--title);font-size:28px;text-align:center;color:var(--ink2)}
+
+/* sticky note */
+.sticky{float:right;width:min(250px,42%);margin:0 0 var(--line) 20px;padding:var(--line) 16px;background:var(--sticky);
+  color:#333;transform:rotate(2.2deg);box-shadow:2px 4px 8px rgba(0,0,0,.18);font-size:18px}
+.sticky b{font-family:var(--title);font-size:24px;color:var(--red)}
+@media (max-width:600px){.sticky{float:none;width:auto;margin:var(--line) 0}}
+
+/* margin annotation (lives in the red margin) */
+.side{position:absolute;left:4px;width:58px;text-align:center;font-family:var(--title);font-size:17px;line-height:18px;color:var(--red);transform:rotate(-8deg)}
+@media (max-width:600px){.side{display:none}}
+
+/* two-column notes */
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:0 28px}
+@media (max-width:600px){.cols{grid-template-columns:1fr}}
+
+/* diagrams */
+figure{margin:var(--line) 0;text-align:center}
+figure svg{width:100%;max-width:640px;height:auto;overflow:visible}
+figcaption{font-family:var(--title);font-size:20px;color:var(--ink2)}
+/* phones: keep labels readable — diagram scrolls inside its own box instead of shrinking */
+@media (max-width:600px){figure{overflow-x:auto}figure svg{min-width:520px}}
+.sk{fill:none;stroke:var(--ink2);stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round;filter:url(#rough)}
+.sk.blue{stroke:var(--ink)} .sk.red{stroke:var(--red)} .sk.green{stroke:var(--green)}
+.lbl{font-family:var(--hand);font-size:17px;fill:var(--ink)}
+.lbl.b{font-weight:700;fill:var(--ink2)} .lbl.r{fill:var(--red)} .lbl.g{fill:var(--green)}
+
+/* table */
+.wrap{overflow-x:auto}
+table{border-collapse:collapse;margin:calc(var(--line)*.5) 0;min-width:100%}
+th,td{border:2px solid var(--ink2);padding:0 10px;text-align:left;vertical-align:top}
+th{font-family:var(--title);font-size:24px;color:var(--ink2)}
+
+@media print{body{background:#fff}.page{box-shadow:none;margin:0}.page::before{display:none}}
+
+/* ===== Added for long chapter notes ===== */
+pre.code{font-family:Consolas,'Courier New',monospace;font-size:14px;line-height:var(--line);color:var(--ink);background:rgba(255,255,255,.45);
+  border-left:4px solid var(--red);margin:calc(var(--line)*.5) 0;padding:0 12px;overflow-x:auto;white-space:pre}
+pre.code.ascii{border-left-color:var(--green)}
+code{font-family:Consolas,'Courier New',monospace;font-size:.82em;background:rgba(0,0,0,.06);padding:0 3px;border-radius:3px}
+pre.code code{background:none;padding:0;font-size:inherit}
+.lang{font-family:var(--title);font-size:18px;color:var(--red)}
+h3{font-family:var(--title);font-weight:700;color:var(--ink2);font-size:26px;line-height:var(--line);margin:calc(var(--line)*.5) 0 0}
+h3::before{content:"✎ ";font-size:18px;color:var(--red)}
+.nav{display:flex;justify-content:space-between;gap:12px;font-family:var(--title);font-size:22px;line-height:var(--line)}
+.nav a{color:var(--red);text-decoration:none}
+.nav a:hover{text-decoration:underline wavy}
+.pagebreak{border-top:3px dashed var(--margin);margin:var(--line) 0;text-align:center;font-family:var(--title);color:var(--red);line-height:var(--line)}
+li.todo::before{content:"☐";color:var(--ink2)}
+a{color:var(--ink);text-decoration:underline dotted}
+</style>
+</head>
+<body>
+<!-- One shared hand-drawn wobble filter; give every diagram stroke class="sk" -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <!-- userSpaceOnUse region: a % region collapses to nothing on perfectly straight lines (zero-height bbox) -->
+  <filter id="rough" filterUnits="userSpaceOnUse" x="-500" y="-500" width="3000" height="3000">
+    <feTurbulence type="fractalNoise" baseFrequency="0.03" numOctaves="2" seed="3" result="n"/>
+    <feDisplacementMap in="SourceGraphic" in2="n" scale="3"/>
+  </filter>
+  <marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+    <path d="M1 1 L9 5 L1 9" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+  </marker>
+</defs></svg>
+
+<main class="page">
+  <nav class="nav"><a href="ch03-combinatorics-and-counting.notes.html">← Ch 3 — Combinatorics &amp; Counting</a><a href="index.notes.html">☰ Contents</a><a href="ch05-proof-by-induction.notes.html">Ch 5 — Proof by Induction →</a></nav>
+  <div class="date">2026-10-10</div>
+  <h1><span class="u">Ch 4 — Graph Theory Foundations</span></h1>
+  <p class="black">Volume 0 — Math &amp; Mental Models · <a href="index.md">Contents</a> · ← <a href="ch03-combinatorics-and-counting.notes.html">Chapter 3 — Combinatorics &amp; Counting</a> · Next → <a href="ch05-proof-by-induction.notes.html">Chapter 5 — Proof by Induction</a></p>
+
+  <p class="black">Chapter 4 — Graph Theory Foundations</p>
+
+  <h2>Concept</h2>
+  <p>Vertices, edges, directed vs undirected, degree, paths/cycles, connectivity, trees (n−1 edges, acyclic).</p>
+  <div class="box"><b>In one sentence:</b> a graph is dots (vertices) joined by lines (edges), and it is the shape behind maps, social networks, package dependencies, and the internet.</div>
+
+  <p><b>Mental model — a city map.</b> Intersections are vertices. Streets are edges. One-way streets make it <i>directed</i>. Road length makes it <i>weighted</i>. "Can I drive from here to there?" is a <i>path</i> question.</p>
+
+  <h3>Key terms</h3>
+  <div class="wrap"><table>
+    <tr><th>Term</th><th>Meaning</th></tr>
+    <tr><td>Vertex (node)</td><td>a point, e.g. a person or a city</td></tr>
+    <tr><td>Edge</td><td>a link between two vertices</td></tr>
+    <tr><td>Directed / undirected</td><td>edge has a direction (<code>a → b</code>) or not (<code>a — b</code>)</td></tr>
+    <tr><td>Weighted</td><td>edge carries a number (distance, cost)</td></tr>
+    <tr><td>Degree</td><td>number of edges touching a vertex; in directed graphs, <i>in-degree</i> and <i>out-degree</i></td></tr>
+    <tr><td>Walk</td><td>any sequence of connected vertices (may repeat)</td></tr>
+    <tr><td>Path</td><td>a walk with no repeated vertices</td></tr>
+    <tr><td>Cycle</td><td>a path that returns to its start</td></tr>
+    <tr><td>Connected</td><td>every vertex can reach every other</td></tr>
+    <tr><td>Component</td><td>a maximal connected piece</td></tr>
+    <tr><td>Tree</td><td>connected and acyclic; always has <code>n − 1</code> edges</td></tr>
+    <tr><td>DAG</td><td>directed acyclic graph — the shape of build steps and task dependencies</td></tr>
+    <tr><td>Bridge / cut vertex</td><td>an edge / vertex whose removal disconnects the graph</td></tr>
+    <tr><td>Biconnected</td><td>no cut vertex — survives the loss of any single vertex</td></tr>
+  </table></div>
+
+  <h3>Two ways to store a graph</h3>
+  <div class="wrap"><table>
+    <tr><th></th><th>Adjacency list</th><th>Adjacency matrix</th></tr>
+    <tr><td>Memory</td><td><code>O(V + E)</code></td><td><code>O(V²)</code></td></tr>
+    <tr><td>"Is a–b an edge?"</td><td><code>O(deg a)</code></td><td><code>O(1)</code></td></tr>
+    <tr><td>List neighbors</td><td><code>O(deg a)</code></td><td><code>O(V)</code></td></tr>
+    <tr><td>Best for</td><td>sparse graphs (most real ones)</td><td>dense graphs, small V</td></tr>
+  </table></div>
+
+  <div class="box"><b>Handshaking lemma:</b> <code>Σ deg(v) = 2 · |E|</code>, because every edge adds 1 to the degree of each of its two ends.</div>
+  <aside class="sticky"><b>Mnemonic!</b><br>Tree = any 2 of 3: connected, acyclic, E = V − 1.</aside>
+  <div class="gap"></div>
+
+  <div class="pagebreak">~ page 2 ~</div>
+
+  <h2>Prereqs</h2>
+  <ul>
+    <li><a href="ch02-sets-relations-and-functions.notes.html">Chapter 2 — Sets, Relations &amp; Functions</a> — a graph is a set of vertices plus a relation (edges) on it.</li>
+  </ul>
+
+  <h2>Diagram</h2>
+  <h3>A small graph, labeled</h3>
+<pre class="code ascii"><code>        deg=2        deg=3
+         (A)─────────(B)
+          │         ╱ │
+          │       ╱   │        Path:  A → B → D → E
+          │     ╱     │        Cycle: B → C → D → B
+          │   ╱       │        Degrees: A2 + B3 + C3 + D3 + E1 = 12
+         (C)─────────(D)───(E)          = 2 × 6 edges ✓
+        deg=3        deg=3  deg=1</code></pre>
+  <figure>
+    <svg viewBox="0 0 640 230" role="img" aria-label="Undirected graph with vertices A to E; edges A-B, A-C, B-C, B-D, C-D, D-E">
+      <path class="sk" d="M100 110 L250 50"/>
+      <path class="sk" d="M100 110 L250 170"/>
+      <path class="sk" d="M250 50 L250 170"/>
+      <path class="sk" d="M250 50 L400 110"/>
+      <path class="sk" d="M250 170 L400 110"/>
+      <path class="sk" d="M400 110 L540 110"/>
+      <circle class="sk" cx="100" cy="110" r="26" style="fill:#fdfbf4"/><text class="lbl b" x="100" y="116" text-anchor="middle">A</text>
+      <circle class="sk" cx="250" cy="50" r="26" style="fill:#fdfbf4"/><text class="lbl b" x="250" y="56" text-anchor="middle">B</text>
+      <circle class="sk" cx="250" cy="170" r="26" style="fill:#fdfbf4"/><text class="lbl b" x="250" y="176" text-anchor="middle">C</text>
+      <circle class="sk" cx="400" cy="110" r="26" style="fill:#fdfbf4"/><text class="lbl b" x="400" y="116" text-anchor="middle">D</text>
+      <circle class="sk" cx="540" cy="110" r="26" style="fill:#fdfbf4"/><text class="lbl b" x="540" y="116" text-anchor="middle">E</text>
+      <text class="lbl r" x="100" y="160" text-anchor="middle">deg=2</text>
+      <text class="lbl r" x="320" y="38" text-anchor="middle">deg=3</text>
+      <text class="lbl r" x="250" y="218" text-anchor="middle">deg=3</text>
+      <text class="lbl r" x="400" y="168" text-anchor="middle">deg=3</text>
+      <text class="lbl r" x="540" y="160" text-anchor="middle">deg=1</text>
+    </svg>
+    <figcaption>Fig 1: the small graph (A–B, A–C, B–C, B–D, C–D, D–E); degrees sum to 12 = 2 × 6 edges</figcaption>
+  </figure>
+
+  <h3>A spanning tree of that graph</h3>
+  <p>Keep every vertex, drop edges until there are no cycles. 5 vertices → 4 edges.</p>
+  <figure>
+    <svg viewBox="0 0 640 230" role="img" aria-label="Spanning tree: vertices A to E; edges A-B, A-C, B-D, D-E">
+      <path class="sk" d="M100 110 L250 50"/>
+      <path class="sk" d="M100 110 L250 170"/>
+      <path class="sk" d="M250 50 L400 110"/>
+      <path class="sk" d="M400 110 L540 110"/>
+      <circle class="sk" cx="100" cy="110" r="26" style="fill:#fdfbf4"/><text class="lbl b" x="100" y="116" text-anchor="middle">A</text>
+      <circle class="sk" cx="250" cy="50" r="26" style="fill:#fdfbf4"/><text class="lbl b" x="250" y="56" text-anchor="middle">B</text>
+      <circle class="sk" cx="250" cy="170" r="26" style="fill:#fdfbf4"/><text class="lbl b" x="250" y="176" text-anchor="middle">C</text>
+      <circle class="sk" cx="400" cy="110" r="26" style="fill:#fdfbf4"/><text class="lbl b" x="400" y="116" text-anchor="middle">D</text>
+      <circle class="sk" cx="540" cy="110" r="26" style="fill:#fdfbf4"/><text class="lbl b" x="540" y="116" text-anchor="middle">E</text>
+      <path class="sk red" d="M300 140 L340 190" style="stroke-dasharray:6 6"/>
+      <text class="lbl r" x="390" y="204" text-anchor="middle">B–C and C–D dropped</text>
+    </svg>
+    <figcaption>Fig 2: spanning tree (4 edges for 5 vertices)</figcaption>
+  </figure>
+
+  <h3>Directed acyclic graph (DAG) — build order</h3>
+  <figure>
+    <svg viewBox="0 0 640 190" role="img" aria-label="DAG: fetch deps and codegen feed compile; compile feeds test and package; test and package feed release">
+      <rect class="sk" x="20" y="25" width="120" height="40" rx="8"/><text class="lbl b" x="80" y="50" text-anchor="middle">fetch deps</text>
+      <rect class="sk" x="20" y="125" width="120" height="40" rx="8"/><text class="lbl b" x="80" y="150" text-anchor="middle">codegen</text>
+      <rect class="sk" x="225" y="75" width="110" height="40" rx="8"/><text class="lbl b" x="280" y="100" text-anchor="middle">compile</text>
+      <rect class="sk" x="410" y="25" width="90" height="40" rx="8"/><text class="lbl b" x="455" y="50" text-anchor="middle">test</text>
+      <rect class="sk" x="410" y="125" width="90" height="40" rx="8"/><text class="lbl b" x="455" y="150" text-anchor="middle">package</text>
+      <rect class="sk green" x="545" y="75" width="85" height="40" rx="8"/><text class="lbl g" x="587" y="100" text-anchor="middle">release</text>
+      <path class="sk blue" d="M140 45 C 180 45, 190 80, 223 88" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M140 145 C 180 145, 190 110, 223 102" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M335 88 C 370 80, 380 45, 408 45" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M335 102 C 370 110, 380 145, 408 145" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M500 45 C 520 45, 530 80, 543 88" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M500 145 C 520 145, 530 110, 543 102" style="color:var(--ink)" marker-end="url(#arr)"/>
+    </svg>
+    <figcaption>Fig 3: build-order DAG</figcaption>
+  </figure>
+
+  <div class="pagebreak">~ page 3 ~</div>
+
+  <h2>Example</h2>
+  <span class="lang">python</span>
+<pre class="code"><code># Undirected triangle as an adjacency list
+G = {0: {1, 2}, 1: {0, 2}, 2: {0, 1}}
+
+degrees = {v: len(nbrs) for v, nbrs in G.items()}
+edges = sum(degrees.values()) // 2                 # handshaking lemma
+print(degrees, edges)                              # {0: 2, 1: 2, 2: 2} 3
+
+def has_path(g, start, goal):
+    seen, stack = set(), [start]
+    while stack:
+        v = stack.pop()
+        if v == goal:
+            return True
+        if v not in seen:
+            seen.add(v)
+            stack.extend(g[v] - seen)
+    return False
+
+def has_cycle_undirected(g):
+    seen = set()
+    for root in g:
+        if root in seen:
+            continue
+        stack = [(root, None)]
+        while stack:
+            v, parent = stack.pop()
+            if v in seen:
+                return True                        # reached again by another route
+            seen.add(v)
+            stack.extend((n, v) for n in g[v] if n != parent)
+    return False
+
+print(has_path(G, 0, 2), has_cycle_undirected(G))  # True True
+
+tree = {0: {1, 2}, 1: {0}, 2: {0}}
+print(has_cycle_undirected(tree))                  # False — 3 vertices, 2 edges</code></pre>
+
+  <h2>Exercises</h2>
+  <ol style="list-style:none;padding-left:0">
+    <li>1. Prove a tree with n vertices has n−1 edges.
+      <div class="box"><b>Solution</b>
+        <p>Induction on n. Base: n = 1 has 0 edges. Step: a tree with n ≥ 2 vertices has a leaf (a vertex of degree 1), because a longest path must end at one. Remove the leaf and its edge. What remains is still connected and acyclic, so it is a tree with n − 1 vertices and, by hypothesis, n − 2 edges. Adding the leaf back gives n − 1 edges.</p>
+      </div></li>
+    <li>2. Show the handshaking lemma: sum of degrees = 2·|E|.
+      <div class="box"><b>Solution</b> Count (vertex, edge) pairs where the vertex is an end of the edge. By vertex: Σ deg(v). By edge: each edge has exactly 2 ends, so 2|E|. Same set, so the counts are equal. Corollary: the number of odd-degree vertices is always even.</div></li>
+    <li>3. Can a party of 7 people have everyone shake hands with exactly 3 others?
+      <div class="box"><b>Solution</b> No. Degree sum would be 7 × 3 = 21, which is odd, but it must equal 2|E|.</div></li>
+  </ol>
+
+  <div class="pagebreak">~ page 4 ~</div>
+
+  <h2>Mini project</h2>
+  <p><b>A graph class with degree, path-existence, and cycle-detection helpers.</b></p>
+  <figure>
+    <svg viewBox="0 0 640 320" role="img" aria-label="Class diagram: Graph with private dict adj, public bool directed, methods add_edge(u, v), degree(v) int, has_path(u, v) bool, has_cycle() bool, components() list, is_tree() bool">
+      <rect class="sk" x="170" y="20" width="300" height="280" rx="6"/>
+      <text class="lbl b" x="320" y="46" text-anchor="middle">Graph</text>
+      <path class="sk" d="M170 58 L470 58"/>
+      <text class="lbl" x="190" y="84">-dict adj</text>
+      <text class="lbl" x="190" y="110">+bool directed</text>
+      <path class="sk" d="M170 124 L470 124"/>
+      <text class="lbl" x="190" y="150">+add_edge(u, v)</text>
+      <text class="lbl" x="190" y="176">+degree(v) int</text>
+      <text class="lbl" x="190" y="202">+has_path(u, v) bool</text>
+      <text class="lbl" x="190" y="228">+has_cycle() bool</text>
+      <text class="lbl" x="190" y="254">+components() list</text>
+      <text class="lbl" x="190" y="280">+is_tree() bool</text>
+    </svg>
+    <figcaption>Fig 4: the Graph class (attributes above the line, methods below)</figcaption>
+  </figure>
+
+  <h3>Steps</h3>
+  <ol style="list-style:none;padding-left:0">
+    <li>1. Store adjacency as <code>dict[vertex, set[vertex]]</code>; support <code>directed=True/False</code>.</li>
+    <li>2. Implement <code>degree</code> (in/out for directed), <code>has_path</code> (DFS), <code>components</code>.</li>
+    <li>3. Implement <code>has_cycle</code>: parent tracking for undirected, three-color DFS for directed.</li>
+    <li>4. <code>is_tree()</code> = connected and <code>E == V − 1</code>.</li>
+    <li>5. Test against <code>networkx</code> on 100 random graphs.</li>
+  </ol>
+  <div class="box"><b>Done when:</b> all helpers agree with <code>networkx</code> on random inputs.</div>
+
+  <h2>Open source</h2>
+  <ul>
+    <li><a href="https://github.com/networkx/networkx"><code>networkx/networkx</code></a> — read <code>networkx/classes/graph.py</code> for the dict-of-dicts storage, and <code>networkx/algorithms/cycles.py</code> for cycle detection.</li>
+  </ul>
+
+  <h2>Interview</h2>
+  <ol style="list-style:none;padding-left:0">
+    <li>1. <b>"What's the difference between a path and a walk?"</b>
+      <div class="box"><b>Answer</b> A walk is any sequence of vertices joined by edges and may repeat vertices or edges. A path repeats no vertices. Every path is a walk; a walk from u to v always contains a path from u to v.</div></li>
+    <li>2. <b>"When is a graph a tree?"</b>
+      <div class="box"><b>Answer</b> Any two of these three imply the third: connected, acyclic, E = V − 1. Equivalently, there is exactly one path between every pair of vertices.</div></li>
+  </ol>
+
+  <h2>Checklist</h2>
+  <ul>
+    <li class="todo">state the handshaking lemma</li>
+    <li class="todo">detect a cycle</li>
+    <li class="todo">explain connectivity vs biconnectivity</li>
+  </ul>
+  <div class="gap"></div>
+  <p class="black"><a href="index.md">Contents</a> · ← <a href="ch03-combinatorics-and-counting.notes.html">Chapter 3 — Combinatorics &amp; Counting</a> · Next → <a href="ch05-proof-by-induction.notes.html">Chapter 5 — Proof by Induction</a></p>
+
+  <nav class="nav"><a href="ch03-combinatorics-and-counting.notes.html">← Ch 3 — Combinatorics &amp; Counting</a><a href="index.notes.html">☰ Contents</a><a href="ch05-proof-by-induction.notes.html">Ch 5 — Proof by Induction →</a></nav>
+</main>
+</body>
+</html>

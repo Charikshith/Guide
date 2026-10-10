@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ch 18 — Cost &amp; Latency Optimization — Notes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;700&family=Kalam:wght@400;700&family=Patrick+Hand&display=swap" rel="stylesheet">
+<style>
+/* ===== Page tokens ===== */
+:root{
+  --line:32px;                 /* ruled-line spacing; every vertical size is a multiple */
+  --paper:#fdfbf4; --rule:#c9dcef; --margin:#e8a0a0;
+  --ink:#1f3a93;               /* blue pen (body) */
+  --ink2:#222;                 /* black pen (headings) */
+  --red:#c0392b; --green:#1e8449;
+  --hl-yellow:rgba(255,235,59,.55); --hl-pink:rgba(255,128,171,.45);
+  --hl-green:rgba(118,255,3,.35); --hl-blue:rgba(64,196,255,.35);
+  --sticky:#fff59d; --desk:#e9e4d8;
+  --hand:'Kalam','Patrick Hand','Comic Sans MS','Segoe Print','Bradley Hand',cursive;
+  --title:'Caveat','Kalam','Segoe Print','Bradley Hand',cursive;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){ --desk:#2b2b2b; }
+}
+:root[data-theme="dark"]{ --desk:#2b2b2b; }
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--desk);font-family:var(--hand);color:var(--ink);}
+
+/* ===== Notebook sheet ===== */
+.page{
+  position:relative; max-width:860px; margin:24px auto; padding:var(--line) 28px calc(var(--line)*2) 84px;
+  background:
+    linear-gradient(90deg,transparent 64px,var(--margin) 64px,var(--margin) 66px,transparent 66px),
+    repeating-linear-gradient(var(--paper) 0,var(--paper) calc(var(--line) - 1px),var(--rule) calc(var(--line) - 1px),var(--rule) var(--line));
+  background-color:var(--paper);
+  box-shadow:0 2px 6px rgba(0,0,0,.15),0 12px 28px rgba(0,0,0,.12);
+  font-size:20px; line-height:var(--line);
+}
+.page::before{ /* punched holes */
+  content:""; position:absolute; left:22px; top:0; bottom:0; width:18px;
+  background:radial-gradient(circle,var(--desk) 7px,transparent 8px) 0 40px/18px 220px repeat-y;
+}
+@media (max-width:600px){
+  .page{margin:0;padding-left:52px;padding-right:16px;font-size:18px;
+    background:
+      linear-gradient(90deg,transparent 40px,var(--margin) 40px,var(--margin) 42px,transparent 42px),
+      repeating-linear-gradient(var(--paper) 0,var(--paper) calc(var(--line) - 1px),var(--rule) calc(var(--line) - 1px),var(--rule) var(--line));
+    background-color:var(--paper);}
+  .page::before{left:10px;width:16px}
+}
+
+/* ===== Text (all margins are multiples of --line so text sits on the rules) ===== */
+.date{position:absolute;top:0;right:24px;font-family:var(--title);font-size:22px;color:var(--ink2);line-height:var(--line)}
+h1{font-family:var(--title);font-weight:700;color:var(--ink2);font-size:46px;line-height:calc(var(--line)*2);margin:0;transform:rotate(-1deg)}
+h1 .u{background:linear-gradient(transparent 62%,var(--hl-yellow) 62%,var(--hl-yellow) 92%,transparent 92%)}
+h2{font-family:var(--title);font-weight:700;color:var(--red);font-size:32px;line-height:calc(var(--line)*1.5);margin:calc(var(--line)*.5) 0 0}
+h2::before{content:"➤ ";font-size:22px}
+p,li{margin:0}
+ul,ol{margin:0;padding-left:28px}
+ul{list-style:none}
+ul>li::before{content:"–";position:absolute;margin-left:-20px}
+ul>li.star::before{content:"★";color:var(--red)}
+ul>li.arrow::before{content:"→"}
+ul>li.check::before{content:"✓";color:var(--green)}
+.gap{height:var(--line)}
+
+/* ===== Pen effects ===== */
+.hl{background:var(--hl-yellow);padding:0 3px;border-radius:3px 6px 4px 7px}
+.hl.pink{background:var(--hl-pink)} .hl.green{background:var(--hl-green)} .hl.blue{background:var(--hl-blue)}
+.red{color:var(--red)} .green{color:var(--green)} .black{color:var(--ink2)}
+.ul{text-decoration:underline wavy var(--red);text-underline-offset:5px}
+.circ{border:2px solid var(--red);border-radius:50% 45% 55% 48%;padding:0 6px}
+.strike{text-decoration:line-through 2px var(--red)}
+.term{font-weight:700;color:var(--ink2)}
+.box{display:flow-root;border:2.5px solid var(--ink2);border-radius:4px 10px 6px 12px;padding:calc(var(--line)*.5 - 2.5px) 14px;margin:calc(var(--line)*.5) 0;transform:rotate(-.4deg);background:rgba(255,255,255,.35)}
+.box.red{border-color:var(--red)}
+.formula{font-family:var(--title);font-size:28px;text-align:center;color:var(--ink2)}
+
+/* sticky note */
+.sticky{float:right;width:min(250px,42%);margin:0 0 var(--line) 20px;padding:var(--line) 16px;background:var(--sticky);
+  color:#333;transform:rotate(2.2deg);box-shadow:2px 4px 8px rgba(0,0,0,.18);font-size:18px}
+.sticky b{font-family:var(--title);font-size:24px;color:var(--red)}
+@media (max-width:600px){.sticky{float:none;width:auto;margin:var(--line) 0}}
+
+/* margin annotation (lives in the red margin) */
+.side{position:absolute;left:4px;width:58px;text-align:center;font-family:var(--title);font-size:17px;line-height:18px;color:var(--red);transform:rotate(-8deg)}
+@media (max-width:600px){.side{display:none}}
+
+/* two-column notes */
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:0 28px}
+@media (max-width:600px){.cols{grid-template-columns:1fr}}
+
+/* diagrams */
+figure{margin:var(--line) 0;text-align:center}
+figure svg{width:100%;max-width:640px;height:auto;overflow:visible}
+figcaption{font-family:var(--title);font-size:20px;color:var(--ink2)}
+/* phones: keep labels readable — diagram scrolls inside its own box instead of shrinking */
+@media (max-width:600px){figure{overflow-x:auto}figure svg{min-width:520px}}
+.sk{fill:none;stroke:var(--ink2);stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round;filter:url(#rough)}
+.sk.blue{stroke:var(--ink)} .sk.red{stroke:var(--red)} .sk.green{stroke:var(--green)}
+.lbl{font-family:var(--hand);font-size:17px;fill:var(--ink)}
+.lbl.b{font-weight:700;fill:var(--ink2)} .lbl.r{fill:var(--red)} .lbl.g{fill:var(--green)}
+
+/* table */
+.wrap{overflow-x:auto}
+table{border-collapse:collapse;margin:calc(var(--line)*.5) 0;min-width:100%}
+th,td{border:2px solid var(--ink2);padding:0 10px;text-align:left;vertical-align:top}
+th{font-family:var(--title);font-size:24px;color:var(--ink2)}
+
+@media print{body{background:#fff}.page{box-shadow:none;margin:0}.page::before{display:none}}
+
+/* ===== Added for long chapter notes ===== */
+pre.code{font-family:Consolas,'Courier New',monospace;font-size:14px;line-height:var(--line);color:var(--ink);background:rgba(255,255,255,.45);
+  border-left:4px solid var(--red);margin:calc(var(--line)*.5) 0;padding:0 12px;overflow-x:auto;white-space:pre}
+pre.code.ascii{border-left-color:var(--green)}
+code{font-family:Consolas,'Courier New',monospace;font-size:.82em;background:rgba(0,0,0,.06);padding:0 3px;border-radius:3px}
+pre.code code{background:none;padding:0;font-size:inherit}
+.lang{font-family:var(--title);font-size:18px;color:var(--red)}
+h3{font-family:var(--title);font-weight:700;color:var(--ink2);font-size:26px;line-height:var(--line);margin:calc(var(--line)*.5) 0 0}
+h3::before{content:"✎ ";font-size:18px;color:var(--red)}
+.nav{display:flex;justify-content:space-between;gap:12px;font-family:var(--title);font-size:22px;line-height:var(--line)}
+.nav a{color:var(--red);text-decoration:none}
+.nav a:hover{text-decoration:underline wavy}
+.pagebreak{border-top:3px dashed var(--margin);margin:var(--line) 0;text-align:center;font-family:var(--title);color:var(--red);line-height:var(--line)}
+li.todo::before{content:"☐";color:var(--ink2)}
+a{color:var(--ink);text-decoration:underline dotted}
+</style>
+</head>
+<body>
+<!-- One shared hand-drawn wobble filter; give every diagram stroke class="sk" -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <!-- userSpaceOnUse region: a % region collapses to nothing on perfectly straight lines (zero-height bbox) -->
+  <filter id="rough" filterUnits="userSpaceOnUse" x="-500" y="-500" width="3000" height="3000">
+    <feTurbulence type="fractalNoise" baseFrequency="0.03" numOctaves="2" seed="3" result="n"/>
+    <feDisplacementMap in="SourceGraphic" in2="n" scale="3"/>
+  </filter>
+  <marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+    <path d="M1 1 L9 5 L1 9" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+  </marker>
+</defs></svg>
+
+<main class="page">
+  <nav class="nav"><a href="ch17-evaluation.notes.html">← Ch 17 — Evaluation</a><a href="index.notes.html">☰ Contents</a><a href="ch19-ai-security.notes.html">Ch 19 — AI Security →</a></nav>
+  <div class="date">2026-10-10</div>
+  <h1><span class="u">Ch 18 — Cost &amp; Latency Optimization</span></h1>
+  <p class="black">Chapter 18 — Cost &amp; Latency Optimization</p>
+
+  <p class="black"><b>Volume 5 — AI Systems Engineering</b> · <a href="index.md">Contents</a> · ← <a href="ch17-evaluation.notes.html">Chapter 17 — Evaluation</a> · Next → <a href="ch19-ai-security.notes.html">Chapter 19 — AI Security</a></p>
+  <h2>Concept</h2>
+  <p>Caching (semantic + exact), batching, streaming, model routing, and reducing tokens.</p>
+  <div class="box"><b><span class="hl">In one sentence:</span></b> you make LLM apps cheaper and faster by not calling the model when you don't have to (caching), sending fewer tokens when you do (prompt trimming and prompt caching), sending easy work to small models (routing), doing work in bulk (batching), and showing output as soon as it exists (streaming) — each verified against your evals so quality doesn't silently drop.</div>
+  <p><b>Mental model — a busy café.</b> Pre-made popular drinks sit ready on the counter (cache). Simple orders go to the junior barista; complex ones to the head barista (routing). Ten identical orders are made in one go (batching). You hand over the coffee while the pastry is still warming (streaming). And you don't read the customer their whole order history before every cup (fewer tokens).</p>
+  <h3>Where cost and latency come from</h3>
+  <div class="wrap"><table>
+    <tr><th>Driver</th><th>Cost</th><th>Latency</th></tr>
+    <tr><td>input tokens</td><td>✓ (per token)</td><td>prefill time grows with prompt length</td></tr>
+    <tr><td><b>output tokens</b></td><td>✓✓ (priced several times higher than input)</td><td>decode is sequential: roughly tokens ÷ tokens-per-second</td></tr>
+    <tr><td>model size</td><td>bigger = pricier</td><td>bigger = slower per token</td></tr>
+    <tr><td>number of calls (agents, chains)</td><td>multiplies everything</td><td>sequential calls add up</td></tr>
+    <tr><td>network / queueing</td><td>—</td><td>TTFT under load</td></tr>
+  </table></div>
+  <h3>The toolbox</h3>
+  <div class="wrap"><table>
+    <tr><th>Technique</th><th>How</th><th>Typical effect</th><th>Risk</th></tr>
+    <tr><td><b>Exact cache</b></td><td>key = hash(model, prompt, params) → stored response</td><td>100% saving on repeats</td><td>only identical requests hit</td></tr>
+    <tr><td><b>Semantic cache</b></td><td>embed the query; if a past query is similar above a threshold, return its answer</td><td>hits paraphrases ("reset password" ≈ "forgot my password")</td><td><b>wrong answers</b> on near-but-different queries ("cancel order 12" vs "cancel order 13"); needs a strict threshold and scoping</td></tr>
+    <tr><td><b>Prompt caching</b> (provider-side)</td><td>mark a stable prefix (system prompt, tools, documents) as cacheable; later calls reuse it</td><td>cached input tokens cost a fraction and prefill is faster</td><td>the prefix must be byte-identical; put variable content last</td></tr>
+    <tr><td><b>Model routing</b></td><td>a cheap classifier or rules send easy requests to a small model, hard ones to a large model</td><td>often 50–80% cost reduction</td><td>misroutes → quality loss; monitor per route</td></tr>
+    <tr><td>Cascade</td><td>try the small model; escalate if confidence or validation fails</td><td>quality of the large model at a lower average cost</td><td>extra latency on escalations</td></tr>
+    <tr><td><b>Batching</b></td><td>offline: batch APIs (large discount, results within hours); self-hosted: continuous batching in vLLM (<a href="ch04-inference-and-serving.notes.html">Ch 4</a>)</td><td>throughput ↑, cost per token ↓</td><td>batch APIs aren't real-time</td></tr>
+    <tr><td><b>Streaming</b></td><td>send tokens as they're generated</td><td>perceived latency ↓ dramatically (TTFT matters)</td><td>none — just do it for user-facing text</td></tr>
+    <tr><td>Token reduction</td><td>shorter system prompts, fewer and shorter examples, trimmed retrieved chunks, summarize history (<a href="ch12-agent-memory.notes.html">Ch 12</a>), ask for concise output, set <code>max_tokens</code></td><td>linear savings</td><td>too aggressive → lost context</td></tr>
+    <tr><td>Parallelize</td><td>independent calls concurrently (<code>asyncio.gather</code>)</td><td>latency = the slowest call, not the sum</td><td>rate limits</td></tr>
+    <tr><td>Structured, short outputs</td><td>JSON with only needed fields</td><td>fewer output tokens</td><td>—</td></tr>
+  </table></div>
+  <p><b>Measure first</b> — use the traces from <a href="ch16-ai-observability.notes.html">Ch 16</a>: cost per request by route, tokens per step, cache hit rates, TTFT and total latency. Optimize the biggest line item, and re-run the eval (<a href="ch17-evaluation.notes.html">Ch 17</a>) after each change.</p>
+  <h2>Prereqs</h2>
+  <ul>
+    <li><a href="ch16-ai-observability.notes.html">Chapter 16 — AI Observability</a></li>
+  </ul>
+  <h2>Diagram</h2>
+  <h3>A request path with cache hits, batching, and a small/large model router</h3>
+  <figure>
+    <svg viewBox="-42.2 16 784.7 1234.6" role="img" aria-label="A request path with cache hits, batching, and a small/large model router">
+      <path class="sk blue" d="M291.5 87 C291.5 120.5, 280.4 120.5, 280.4 154" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M295.4 286.8 C295.4 361.7, 336.3 361.7, 336.3 436.6 C336.3 534.1, 355.1 534.1, 355.1 631.7 C355.1 707.1, 362.7 707.1, 362.7 782.6 C362.7 843.6, 359.1 843.6, 359.1 904.6 C359.1 962.1, 344.3 962.1, 344.3 1019.6 C344.3 1073.1, 318.3 1073.1, 318.3 1126.6 C318.3 1161.6, 285.7 1161.6, 285.7 1196.6" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M265.4 286.8 C265.4 325.6, 191.2 325.6, 191.2 364.4" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M206.2 500.1 C206.2 565.9, 257 565.9, 257 631.7 C257 707.1, 286 707.1, 286 782.6 C286 843.6, 303.8 843.6, 303.8 904.6 C303.8 962.1, 303.7 962.1, 303.7 1019.6 C303.7 1073.1, 292.3 1073.1, 292.3 1126.6 C292.3 1161.6, 255.7 1161.6, 255.7 1196.6" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M176.2 500.1 C176.2 537.5, 130.8 537.5, 130.8 574.8" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M115.8 680.6 C115.8 717.6, 98.2 717.6, 98.2 754.6" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M145.8 680.6 C145.8 731.6, 196.4 731.6, 196.4 782.6 C196.4 829.6, 224.8 829.6, 224.8 876.6" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M113.2 810.6 C113.2 843.6, 194.8 843.6, 194.8 876.6" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M83.2 810.6 C83.2 857.6, 115.8 857.6, 115.8 904.6 C115.8 943.6, 149.4 943.6, 149.4 982.6" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M209.8 932.6 C209.8 957.6, 179.4 957.6, 179.4 982.6" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M164.4 1056.6 C164.4 1081.6, 156.3 1081.6, 156.3 1106.6" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M156.3 1146.6 C156.3 1171.6, 225.7 1171.6, 225.7 1196.6" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M667.1 104 C667.1 146.6, 667.1 146.6, 667.1 189.2" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <rect class="sk" x="251.1" y="47" width="80.8" height="40" rx="8" style="fill:#fdfbf4"/>
+      <text class="lbl b" x="291.5" y="72" text-anchor="middle" style="font-size:15px">request</text>
+      <path class="sk red" d="M280.4 154 L374 226.2 L280.4 298.4 L186.8 226.2 Z" style="fill:#fff3c4"/>
+      <text class="lbl b" x="280.4" y="204.2" text-anchor="middle" style="font-size:15px">exact</text>
+      <text class="lbl b" x="280.4" y="222.2" text-anchor="middle" style="font-size:15px">cache</text>
+      <text class="lbl b" x="280.4" y="240.2" text-anchor="middle" style="font-size:15px">hash(prompt,</text>
+      <text class="lbl b" x="280.4" y="258.2" text-anchor="middle" style="font-size:15px">model)</text>
+      <rect class="sk green" x="160.7" y="1196.6" width="190" height="40" rx="8" style="fill:#fdfbf4"/>
+      <text class="lbl b" x="255.7" y="1221.6" text-anchor="middle" style="font-size:15px">response (≈0 ms, $0)</text>
+      <path class="sk red" d="M191.2 364.4 L316.3 436.6 L191.2 508.8 L66.1 436.6 Z" style="fill:#fff3c4"/>
+      <text class="lbl b" x="191.2" y="414.6" text-anchor="middle" style="font-size:15px">semantic cache</text>
+      <text class="lbl b" x="191.2" y="432.6" text-anchor="middle" style="font-size:15px">similarity ≥ 0.95</text>
+      <text class="lbl b" x="191.2" y="450.6" text-anchor="middle" style="font-size:15px">same tenant +</text>
+      <text class="lbl b" x="191.2" y="468.6" text-anchor="middle" style="font-size:15px">intent</text>
+      <path class="sk red" d="M130.8 574.8 L237 631.7 L130.8 688.6 L24.6 631.7 Z" style="fill:#fff3c4"/>
+      <text class="lbl b" x="130.8" y="618.7" text-anchor="middle" style="font-size:15px">router</text>
+      <text class="lbl b" x="130.8" y="636.7" text-anchor="middle" style="font-size:15px">(rules + small</text>
+      <text class="lbl b" x="130.8" y="654.7" text-anchor="middle" style="font-size:15px">classifier)</text>
+      <rect class="sk" x="20" y="754.6" width="156.4" height="56" rx="8" style="fill:#fdfbf4"/>
+      <text class="lbl b" x="98.2" y="778.6" text-anchor="middle" style="font-size:15px">small model</text>
+      <text class="lbl b" x="98.2" y="796.6" text-anchor="middle" style="font-size:15px">claude-haiku-4-5</text>
+      <rect class="sk" x="135.8" y="876.6" width="148" height="56" rx="8" style="fill:#fdfbf4"/>
+      <text class="lbl b" x="209.8" y="900.6" text-anchor="middle" style="font-size:15px">large model</text>
+      <text class="lbl b" x="209.8" y="918.6" text-anchor="middle" style="font-size:15px">claude-opus-5-5</text>
+      <rect class="sk" x="61" y="982.6" width="206.8" height="74" rx="8" style="fill:#fdfbf4"/>
+      <text class="lbl b" x="164.4" y="1006.6" text-anchor="middle" style="font-size:15px">provider prompt cache:</text>
+      <text class="lbl b" x="164.4" y="1024.6" text-anchor="middle" style="font-size:15px">system + tools + docs</text>
+      <text class="lbl b" x="164.4" y="1042.6" text-anchor="middle" style="font-size:15px">prefix</text>
+      <rect class="sk" x="40.3" y="1106.6" width="232" height="40" rx="8" style="fill:#fdfbf4"/>
+      <text class="lbl b" x="156.3" y="1131.6" text-anchor="middle" style="font-size:15px">stream tokens to the user</text>
+      <rect class="sk" x="605.7" y="30" width="122.8" height="74" rx="8" style="fill:#fdfbf4"/>
+      <text class="lbl b" x="667.1" y="54" text-anchor="middle" style="font-size:15px">offline jobs</text>
+      <text class="lbl b" x="667.1" y="72" text-anchor="middle" style="font-size:15px">(nightly</text>
+      <text class="lbl b" x="667.1" y="90" text-anchor="middle" style="font-size:15px">tagging)</text>
+      <rect class="sk green" x="605.7" y="189.2" width="122.8" height="74" rx="8" style="fill:#fdfbf4"/>
+      <text class="lbl b" x="667.1" y="213.2" text-anchor="middle" style="font-size:15px">Batch API</text>
+      <text class="lbl b" x="667.1" y="231.2" text-anchor="middle" style="font-size:15px">(discounted,</text>
+      <text class="lbl b" x="667.1" y="249.2" text-anchor="middle" style="font-size:15px">async)</text>
+      <text class="lbl r" x="321.8" y="365.7" text-anchor="start" style="font-size:14px;paint-order:stroke;stroke:#fdfbf4;stroke-width:5px;stroke-linejoin:round">hit</text>
+      <text class="lbl r" x="222.3" y="329.6" text-anchor="end" style="font-size:14px;paint-order:stroke;stroke:#fdfbf4;stroke-width:5px;stroke-linejoin:round">miss</text>
+      <text class="lbl r" x="237.6" y="569.9" text-anchor="start" style="font-size:14px;paint-order:stroke;stroke:#fdfbf4;stroke-width:5px;stroke-linejoin:round">hit</text>
+      <text class="lbl r" x="147.5" y="541.5" text-anchor="end" style="font-size:14px;paint-order:stroke;stroke:#fdfbf4;stroke-width:5px;stroke-linejoin:round">miss</text>
+      <text class="lbl r" x="101" y="713.6" text-anchor="end" style="font-size:14px;paint-order:stroke;stroke:#fdfbf4;stroke-width:5px;stroke-linejoin:round">easy: FAQ,</text>
+      <text class="lbl r" x="101" y="729.6" text-anchor="end" style="font-size:14px;paint-order:stroke;stroke:#fdfbf4;stroke-width:5px;stroke-linejoin:round">classify, extract</text>
+      <text class="lbl r" x="177.1" y="727.6" text-anchor="start" style="font-size:14px;paint-order:stroke;stroke:#fdfbf4;stroke-width:5px;stroke-linejoin:round">hard: reasoning,</text>
+      <text class="lbl r" x="177.1" y="743.6" text-anchor="start" style="font-size:14px;paint-order:stroke;stroke:#fdfbf4;stroke-width:5px;stroke-linejoin:round">code, multi-step</text>
+      <text class="lbl r" x="160" y="839.6" text-anchor="start" style="font-size:14px;paint-order:stroke;stroke:#fdfbf4;stroke-width:5px;stroke-linejoin:round">low confidence /</text>
+      <text class="lbl r" x="160" y="855.6" text-anchor="start" style="font-size:14px;paint-order:stroke;stroke:#fdfbf4;stroke-width:5px;stroke-linejoin:round">invalid JSON</text>
+    </svg>
+    <figcaption>Fig 1: A request path with cache hits, batching, and a small/large model router</figcaption>
+  </figure>
+  <h3>Before and after (example numbers from one workload)</h3>
+  <pre class="code ascii"><code>                         before      after       change
+ requests/day            100,000     100,000
+ exact + semantic hits   0%          28%
+ routed to small model   0%          55% of misses
+ avg input tokens        6,200       2,900       prompt trimmed + cached prefix
+ avg output tokens       480         260         "answer in ≤ 120 words"
+ p50 TTFT                1.9 s       0.6 s       streaming + smaller model
+ cost/day                $1,420      $310        −78%
+ eval score              8.4         8.3         within the noise band ✅</code></pre>
+  <h3>Semantic cache danger zone</h3>
+  <pre class="code ascii"><code> cached query: "cancel order 1234"          similarity to new query
+ new: "please cancel order #1234"           0.97 → hit ✓ (same intent, same entity)
+ new: "cancel order 1235"                   0.96 → WRONG hit ✗ — must key on entities too
+ new: "how do I cancel an order?"           0.88 → miss ✓</code></pre>
+  <div class="pagebreak">~ page 2 ~</div>
+
+  <h2>Example</h2>
+  <span class="lang">python</span>
+<pre class="code"><code>import hashlib, json, anthropic, numpy as np
+client = anthropic.Anthropic()
+
+# 1) Exact cache
+EXACT: dict[str, str] = {}
+def exact_key(model, system, user): return hashlib.sha256(json.dumps([model, system, user]).encode()).hexdigest()
+
+# 2) Semantic cache — scoped by tenant, only for "static" intents, strict threshold
+class SemanticCache:
+    def __init__(self, embed, threshold=0.95):
+        self.embed, self.threshold, self.items = embed, threshold, []   # (tenant, vector, answer)
+    def get(self, tenant, query):
+        q = self.embed(query)
+        best = max(((float(q @ v), a) for t, v, a in self.items if t == tenant), default=(0, None))
+        return best[1] if best[0] &gt;= self.threshold else None
+    def put(self, tenant, query, answer):
+        self.items.append((tenant, self.embed(query), answer))
+
+# 3) Router: rules first, then a cheap classifier call
+def route(user_msg: str) -&gt; str:
+    if len(user_msg) &lt; 200 and any(k in user_msg.lower() for k in ("opening hours", "price", "reset password")):
+        return "claude-haiku-4-5-20251001"
+    verdict = client.messages.create(model="claude-haiku-4-5-20251001", max_tokens=5,
+        messages=[{"role": "user", "content": f"Answer EASY or HARD only. Is this request simple FAQ/lookup (EASY) or multi-step reasoning/code (HARD)?\n\n{user_msg}"}])
+    return "claude-opus-5-5" if "HARD" in verdict.content[0].text else "claude-haiku-4-5-20251001"
+
+# 4) Provider prompt caching: mark the large, stable prefix as cacheable
+POLICY_DOC = open("policy.md").read()          # thousands of tokens, identical every call
+def answer(user_msg: str, tenant="t1", sem: SemanticCache | None = None) -&gt; str:
+    key = exact_key("any", "support-v14", user_msg)
+    if key in EXACT: return EXACT[key]
+    if sem and (hit := sem.get(tenant, user_msg)): return hit
+    model = route(user_msg)
+    with client.messages.stream(
+        model=model, max_tokens=400,
+        system=[{"type": "text", "text": "You are a concise support agent. Answer in at most 120 words."},
+                {"type": "text", "text": POLICY_DOC, "cache_control": {"type": "ephemeral"}}],
+        messages=[{"role": "user", "content": user_msg}],
+    ) as stream:
+        text = "".join(stream.text_stream)        # in a UI, forward each chunk as it arrives
+    EXACT[key] = text
+    if sem: sem.put(tenant, user_msg, text)
+    return text</code></pre>
+  <span class="lang">python</span>
+<pre class="code"><code># Offline work → the Message Batches API (asynchronous, discounted)
+batch = client.messages.batches.create(requests=[
+    {"custom_id": f"doc-{i}", "params": {"model": "claude-haiku-4-5-20251001", "max_tokens": 50,
+     "messages": [{"role": "user", "content": f"Classify the sentiment: {t}"}]}}
+    for i, t in enumerate(reviews)])
+# poll client.messages.batches.retrieve(batch.id); then read results</code></pre>
+  <h2>Exercises</h2>
+  <ol style="list-style:none;padding-left:0">
+    <li>1. Add a semantic cache.
+      <div class="box"><b>Solution</b> Embed incoming queries, search past queries for the same tenant, and return the cached answer only above a strict threshold (tune it on labeled pairs of "same" vs "different" questions). Restrict it to intents whose answers don't depend on user-specific or changing data, include extracted entities (order IDs, dates) in the key, and set a TTL. Measure hit rate <i>and</i> wrong-hit rate on a test set.</div></li>
+  </ol>
+  <ol style="list-style:none;padding-left:0">
+    <li>2. Build a model router by task difficulty.
+      <div class="box"><b>Solution</b> Start with rules for obvious cases, then a cheap classifier (a small model with a one-word answer, or a trained logistic regression on embeddings). Label ~200 historical requests with which model is <i>needed</i> (run both, judge the outputs), and tune the router for high recall on HARD. Add a cascade: if the small model's output fails validation, retry on the large model. Report cost and eval score per route.</div></li>
+  </ol>
+  <ol style="list-style:none;padding-left:0">
+    <li>3. Your system prompt is 4,000 tokens and changes every request because it includes the current timestamp at the top. What's the problem?
+      <div class="box"><b>Solution</b> Provider prompt caching needs an identical prefix, so a timestamp at the start breaks every cache hit. Move variable content (time, user data) after the stable part, or into the user message.</div></li>
+  </ol>
+  <h2>Mini project</h2>
+  <p><b>An optimized pipeline with cache + routing, showing cost/latency before/after.</b></p>
+  <figure>
+    <svg viewBox="6 16 635.3 458" role="img" aria-label="An optimized pipeline with cache + routing, showing cost/latency before/after">
+      <path class="sk blue" d="M280.9 86 C280.9 115.5, 85.9 115.5, 85.9 145" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M310.9 86 C310.9 124.5, 243.1 124.5, 243.1 163" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M340.9 86 C340.9 124.5, 408.7 124.5, 408.7 163" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M370.9 86 C370.9 111, 565.9 111, 565.9 136" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M70.9 237 C70.9 266.5, 124.6 266.5, 124.6 296" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M228.1 219 C228.1 257.5, 154.6 257.5, 154.6 296" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M393.7 219 C393.7 257.5, 184.6 257.5, 184.6 296" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M550.9 246 C550.9 271, 214.6 271, 214.6 296" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M100.9 237 C100.9 275, 437.2 275, 437.2 313" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M258.1 219 C258.1 266, 467.2 266, 467.2 313" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M423.7 219 C423.7 266, 497.2 266, 497.2 313" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M580.9 246 C580.9 279.5, 527.2 279.5, 527.2 313" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M169.6 370 C169.6 395, 310.9 395, 310.9 420" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M482.2 353 C482.2 386.5, 340.9 386.5, 340.9 420" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <rect class="sk" x="184.7" y="30" width="282.4" height="56" rx="8" style="fill:#fdfbf4"/>
+      <text class="lbl b" x="325.9" y="54" text-anchor="middle" style="font-size:15px">replay 2,000 realistic requests</text>
+      <text class="lbl b" x="325.9" y="72" text-anchor="middle" style="font-size:15px">(with ~30% paraphrased repeats)</text>
+      <rect class="sk" x="24.5" y="145" width="122.8" height="92" rx="8" style="fill:#fdfbf4"/>
+      <text class="lbl b" x="85.9" y="169" text-anchor="middle" style="font-size:15px">v0: large</text>
+      <text class="lbl b" x="85.9" y="187" text-anchor="middle" style="font-size:15px">model,</text>
+      <text class="lbl b" x="85.9" y="205" text-anchor="middle" style="font-size:15px">no cache, no</text>
+      <text class="lbl b" x="85.9" y="223" text-anchor="middle" style="font-size:15px">streaming</text>
+      <rect class="sk" x="173.3" y="163" width="139.6" height="56" rx="8" style="fill:#fdfbf4"/>
+      <text class="lbl b" x="243.1" y="187" text-anchor="middle" style="font-size:15px">v1: + exact +</text>
+      <text class="lbl b" x="243.1" y="205" text-anchor="middle" style="font-size:15px">semantic cache</text>
+      <rect class="sk" x="338.9" y="163" width="139.6" height="56" rx="8" style="fill:#fdfbf4"/>
+      <text class="lbl b" x="408.7" y="187" text-anchor="middle" style="font-size:15px">v2: + router +</text>
+      <text class="lbl b" x="408.7" y="205" text-anchor="middle" style="font-size:15px">cascade</text>
+      <rect class="sk" x="504.5" y="136" width="122.8" height="110" rx="8" style="fill:#fdfbf4"/>
+      <text class="lbl b" x="565.9" y="160" text-anchor="middle" style="font-size:15px">v3: + prompt</text>
+      <text class="lbl b" x="565.9" y="178" text-anchor="middle" style="font-size:15px">caching +</text>
+      <text class="lbl b" x="565.9" y="196" text-anchor="middle" style="font-size:15px">trimmed</text>
+      <text class="lbl b" x="565.9" y="214" text-anchor="middle" style="font-size:15px">prompts +</text>
+      <text class="lbl b" x="565.9" y="232" text-anchor="middle" style="font-size:15px">streaming</text>
+      <rect class="sk" x="20" y="296" width="299.2" height="74" rx="8" style="fill:#fdfbf4"/>
+      <text class="lbl b" x="169.6" y="320" text-anchor="middle" style="font-size:15px">metrics: $/request, TTFT p50/p95,</text>
+      <text class="lbl b" x="169.6" y="338" text-anchor="middle" style="font-size:15px">total latency, cache hits, wrong</text>
+      <text class="lbl b" x="169.6" y="356" text-anchor="middle" style="font-size:15px">hits</text>
+      <rect class="sk" x="345.2" y="313" width="274" height="40" rx="8" style="fill:#fdfbf4"/>
+      <text class="lbl b" x="482.2" y="338" text-anchor="middle" style="font-size:15px">eval score (Ch 17) per version</text>
+      <rect class="sk green" x="226.7" y="420" width="198.4" height="40" rx="8" style="fill:#fdfbf4"/>
+      <text class="lbl b" x="325.9" y="445" text-anchor="middle" style="font-size:15px">results table + chart</text>
+    </svg>
+    <figcaption>Fig 2: An optimized pipeline with cache + routing, showing cost/latency before/after</figcaption>
+  </figure>
+  <h3>Steps</h3>
+  <ol style="list-style:none;padding-left:0">
+    <li>1. Build a replayable request set from real or synthetic traffic, including paraphrases and near-miss queries.</li>
+    <li>2. Measure v0 (baseline) for cost, latency, and eval score.</li>
+    <li>3. Add each optimization one at a time and re-measure all three.</li>
+    <li>4. Track semantic-cache wrong hits explicitly; tune the threshold.</li>
+    <li>5. Produce a table and chart; keep only optimizations that don't drop the eval score beyond the noise band.</li>
+  </ol>
+  <div class="box"><b>Done when:</b> you show a large cost and latency reduction with the eval score unchanged within noise, and you can say what each technique contributed.</div>
+  <h2>Open source</h2>
+  <ul>
+    <li><a href="https://github.com/zilliztech/GPTCache"><code>zilliztech/GPTCache</code></a> — a semantic cache for LLM responses with pluggable embeddings, stores, and similarity evaluators.</li>
+    <li><a href="https://github.com/vllm-project/vllm"><code>vllm-project/vllm</code></a> (batching) — continuous batching, PagedAttention, and automatic prefix caching for self-hosted serving. See also <code>lm-sys/RouteLLM</code> for learned model routing.</li>
+  </ul>
+  <h2>Interview</h2>
+  <ol style="list-style:none;padding-left:0">
+    <li>1. <b>"How do you cut LLM cost without hurting quality?"</b>
+      <div class="box"><b>Answer</b> Measure cost per route first. Then: cache exact and (carefully) semantic repeats; use provider prompt caching for stable prefixes; trim prompts, examples, and retrieved context; cap and shorten outputs; route easy requests to smaller models with a cascade fallback; use batch APIs for offline work; cut unnecessary agent steps. Re-run the eval suite after each change and ship only changes whose quality stays within the noise band.</div></li>
+  </ol>
+  <ol style="list-style:none;padding-left:0">
+    <li>2. <b>"Semantic vs exact cache?"</b>
+      <div class="box"><b>Answer</b> An exact cache keys on the exact request, so it's always correct but hits only identical requests. A semantic cache matches by embedding similarity, so it hits paraphrases, but it can return wrong answers for queries that look similar but differ in an important detail (IDs, dates, negation, user-specific data). Use semantic caching only for stable, non-personalized intents, with strict thresholds, entity-aware keys, tenant scoping, TTLs, and measured false-hit rates.</div></li>
+  </ol>
+  <div class="pagebreak">~ page 3 ~</div>
+
+  <h2>Checklist</h2>
+  <ul>
+    <li class="todo">cache aggressively</li>
+    <li class="todo">route by difficulty</li>
+    <li class="todo">stream and batch</li>
+  </ul>
+  <p class="black"><a href="index.md">Contents</a> · ← <a href="ch17-evaluation.notes.html">Chapter 17 — Evaluation</a> · Next → <a href="ch19-ai-security.notes.html">Chapter 19 — AI Security</a></p>
+  <nav class="nav"><a href="ch17-evaluation.notes.html">← Ch 17 — Evaluation</a><a href="index.notes.html">☰ Contents</a><a href="ch19-ai-security.notes.html">Ch 19 — AI Security →</a></nav>
+</main>
+</body>
+</html>

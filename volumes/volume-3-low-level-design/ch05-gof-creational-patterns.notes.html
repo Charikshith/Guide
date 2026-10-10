@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ch 5 — GoF Creational Patterns — Notes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;700&family=Kalam:wght@400;700&family=Patrick+Hand&display=swap" rel="stylesheet">
+<style>
+/* ===== Page tokens ===== */
+:root{
+  --line:32px;                 /* ruled-line spacing; every vertical size is a multiple */
+  --paper:#fdfbf4; --rule:#c9dcef; --margin:#e8a0a0;
+  --ink:#1f3a93;               /* blue pen (body) */
+  --ink2:#222;                 /* black pen (headings) */
+  --red:#c0392b; --green:#1e8449;
+  --hl-yellow:rgba(255,235,59,.55); --hl-pink:rgba(255,128,171,.45);
+  --hl-green:rgba(118,255,3,.35); --hl-blue:rgba(64,196,255,.35);
+  --sticky:#fff59d; --desk:#e9e4d8;
+  --hand:'Kalam','Patrick Hand','Comic Sans MS','Segoe Print','Bradley Hand',cursive;
+  --title:'Caveat','Kalam','Segoe Print','Bradley Hand',cursive;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){ --desk:#2b2b2b; }
+}
+:root[data-theme="dark"]{ --desk:#2b2b2b; }
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--desk);font-family:var(--hand);color:var(--ink);}
+
+/* ===== Notebook sheet ===== */
+.page{
+  position:relative; max-width:860px; margin:24px auto; padding:var(--line) 28px calc(var(--line)*2) 84px;
+  background:
+    linear-gradient(90deg,transparent 64px,var(--margin) 64px,var(--margin) 66px,transparent 66px),
+    repeating-linear-gradient(var(--paper) 0,var(--paper) calc(var(--line) - 1px),var(--rule) calc(var(--line) - 1px),var(--rule) var(--line));
+  background-color:var(--paper);
+  box-shadow:0 2px 6px rgba(0,0,0,.15),0 12px 28px rgba(0,0,0,.12);
+  font-size:20px; line-height:var(--line);
+}
+.page::before{ /* punched holes */
+  content:""; position:absolute; left:22px; top:0; bottom:0; width:18px;
+  background:radial-gradient(circle,var(--desk) 7px,transparent 8px) 0 40px/18px 220px repeat-y;
+}
+@media (max-width:600px){
+  .page{margin:0;padding-left:52px;padding-right:16px;font-size:18px;
+    background:
+      linear-gradient(90deg,transparent 40px,var(--margin) 40px,var(--margin) 42px,transparent 42px),
+      repeating-linear-gradient(var(--paper) 0,var(--paper) calc(var(--line) - 1px),var(--rule) calc(var(--line) - 1px),var(--rule) var(--line));
+    background-color:var(--paper);}
+  .page::before{left:10px;width:16px}
+}
+
+/* ===== Text (all margins are multiples of --line so text sits on the rules) ===== */
+.date{position:absolute;top:0;right:24px;font-family:var(--title);font-size:22px;color:var(--ink2);line-height:var(--line)}
+h1{font-family:var(--title);font-weight:700;color:var(--ink2);font-size:46px;line-height:calc(var(--line)*2);margin:0;transform:rotate(-1deg)}
+h1 .u{background:linear-gradient(transparent 62%,var(--hl-yellow) 62%,var(--hl-yellow) 92%,transparent 92%)}
+h2{font-family:var(--title);font-weight:700;color:var(--red);font-size:32px;line-height:calc(var(--line)*1.5);margin:calc(var(--line)*.5) 0 0}
+h2::before{content:"➤ ";font-size:22px}
+p,li{margin:0}
+ul,ol{margin:0;padding-left:28px}
+ul{list-style:none}
+ul>li::before{content:"–";position:absolute;margin-left:-20px}
+ul>li.star::before{content:"★";color:var(--red)}
+ul>li.arrow::before{content:"→"}
+ul>li.check::before{content:"✓";color:var(--green)}
+.gap{height:var(--line)}
+
+/* ===== Pen effects ===== */
+.hl{background:var(--hl-yellow);padding:0 3px;border-radius:3px 6px 4px 7px}
+.hl.pink{background:var(--hl-pink)} .hl.green{background:var(--hl-green)} .hl.blue{background:var(--hl-blue)}
+.red{color:var(--red)} .green{color:var(--green)} .black{color:var(--ink2)}
+.ul{text-decoration:underline wavy var(--red);text-underline-offset:5px}
+.circ{border:2px solid var(--red);border-radius:50% 45% 55% 48%;padding:0 6px}
+.strike{text-decoration:line-through 2px var(--red)}
+.term{font-weight:700;color:var(--ink2)}
+.box{display:flow-root;border:2.5px solid var(--ink2);border-radius:4px 10px 6px 12px;padding:calc(var(--line)*.5 - 2.5px) 14px;margin:calc(var(--line)*.5) 0;transform:rotate(-.4deg);background:rgba(255,255,255,.35)}
+.box.red{border-color:var(--red)}
+.formula{font-family:var(--title);font-size:28px;text-align:center;color:var(--ink2)}
+
+/* sticky note */
+.sticky{float:right;width:min(250px,42%);margin:0 0 var(--line) 20px;padding:var(--line) 16px;background:var(--sticky);
+  color:#333;transform:rotate(2.2deg);box-shadow:2px 4px 8px rgba(0,0,0,.18);font-size:18px}
+.sticky b{font-family:var(--title);font-size:24px;color:var(--red)}
+@media (max-width:600px){.sticky{float:none;width:auto;margin:var(--line) 0}}
+
+/* margin annotation (lives in the red margin) */
+.side{position:absolute;left:4px;width:58px;text-align:center;font-family:var(--title);font-size:17px;line-height:18px;color:var(--red);transform:rotate(-8deg)}
+@media (max-width:600px){.side{display:none}}
+
+/* two-column notes */
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:0 28px}
+@media (max-width:600px){.cols{grid-template-columns:1fr}}
+
+/* diagrams */
+figure{margin:var(--line) 0;text-align:center}
+figure svg{width:100%;max-width:640px;height:auto;overflow:visible}
+figcaption{font-family:var(--title);font-size:20px;color:var(--ink2)}
+/* phones: keep labels readable — diagram scrolls inside its own box instead of shrinking */
+@media (max-width:600px){figure{overflow-x:auto}figure svg{min-width:520px}}
+.sk{fill:none;stroke:var(--ink2);stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round;filter:url(#rough)}
+.sk.blue{stroke:var(--ink)} .sk.red{stroke:var(--red)} .sk.green{stroke:var(--green)}
+.lbl{font-family:var(--hand);font-size:17px;fill:var(--ink)}
+.lbl.b{font-weight:700;fill:var(--ink2)} .lbl.r{fill:var(--red)} .lbl.g{fill:var(--green)}
+
+/* table */
+.wrap{overflow-x:auto}
+table{border-collapse:collapse;margin:calc(var(--line)*.5) 0;min-width:100%}
+th,td{border:2px solid var(--ink2);padding:0 10px;text-align:left;vertical-align:top}
+th{font-family:var(--title);font-size:24px;color:var(--ink2)}
+
+@media print{body{background:#fff}.page{box-shadow:none;margin:0}.page::before{display:none}}
+
+/* ===== Added for long chapter notes ===== */
+pre.code{font-family:Consolas,'Courier New',monospace;font-size:14px;line-height:var(--line);color:var(--ink);background:rgba(255,255,255,.45);
+  border-left:4px solid var(--red);margin:calc(var(--line)*.5) 0;padding:0 12px;overflow-x:auto;white-space:pre}
+pre.code.ascii{border-left-color:var(--green)}
+code{font-family:Consolas,'Courier New',monospace;font-size:.82em;background:rgba(0,0,0,.06);padding:0 3px;border-radius:3px}
+pre.code code{background:none;padding:0;font-size:inherit}
+.lang{font-family:var(--title);font-size:18px;color:var(--red)}
+h3{font-family:var(--title);font-weight:700;color:var(--ink2);font-size:26px;line-height:var(--line);margin:calc(var(--line)*.5) 0 0}
+h3::before{content:"✎ ";font-size:18px;color:var(--red)}
+.nav{display:flex;justify-content:space-between;gap:12px;font-family:var(--title);font-size:22px;line-height:var(--line)}
+.nav a{color:var(--red);text-decoration:none}
+.nav a:hover{text-decoration:underline wavy}
+.pagebreak{border-top:3px dashed var(--margin);margin:var(--line) 0;text-align:center;font-family:var(--title);color:var(--red);line-height:var(--line)}
+li.todo::before{content:"☐";color:var(--ink2)}
+a{color:var(--ink);text-decoration:underline dotted}
+</style>
+</head>
+<body>
+<!-- One shared hand-drawn wobble filter; give every diagram stroke class="sk" -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <!-- userSpaceOnUse region: a % region collapses to nothing on perfectly straight lines (zero-height bbox) -->
+  <filter id="rough" filterUnits="userSpaceOnUse" x="-500" y="-500" width="3000" height="3000">
+    <feTurbulence type="fractalNoise" baseFrequency="0.03" numOctaves="2" seed="3" result="n"/>
+    <feDisplacementMap in="SourceGraphic" in2="n" scale="3"/>
+  </filter>
+  <marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+    <path d="M1 1 L9 5 L1 9" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+  </marker>
+</defs></svg>
+
+<main class="page">
+  <nav class="nav"><a href="ch04-uml-and-diagramming.notes.html">← Ch 4 — UML &amp; Diagramming</a><a href="index.notes.html">☰ Contents</a><a href="ch06-gof-structural-patterns.notes.html">Ch 6 — GoF Structural Patterns →</a></nav>
+  <div class="date">2026-10-10</div>
+  <h1><span class="u">Ch 5 — GoF Creational Patterns</span></h1>
+    <style>.lbl.sq{font-size:14px;paint-order:stroke;stroke:#fdfbf4;stroke-width:5px}</style>
+  <p class="black">Volume 3 — Low-Level Design · <a href="index.md">Contents</a> · ← <a href="ch04-uml-and-diagramming.notes.html">Chapter 4 — UML &amp; Diagramming</a> · Next → <a href="ch06-gof-structural-patterns.notes.html">Chapter 6 — GoF Structural Patterns</a></p>
+
+  <p class="black">Chapter 5 — GoF Creational Patterns</p>
+
+  <h2>Concept</h2>
+  <p>Factory Method, Abstract Factory, Builder, Singleton, Prototype — intent, structure, and when to reach for each.</p>
+  <div class="box"><b>In one sentence:</b> creational patterns move the decision of <i>which</i> object to create and <i>how</i> to assemble it out of the code that uses it, so callers can depend on an interface while the creation logic lives in one place.</div>
+
+  <h3>Mental model — ordering at a restaurant</h3>
+  <p>You say "a coffee" (Factory Method) and the barista decides which machine and beans. You pick "the Italian menu" (Abstract Factory), and every dish that arrives matches that style. You build a custom burger step by step — bun, patty, no onions, extra cheese — and then say "done" (Builder). The restaurant has exactly one head chef (Singleton). A chef makes a new dish by copying yesterday's special and changing one thing (Prototype).</p>
+
+  <h3>The five patterns</h3>
+  <div class="wrap"><table>
+    <tr><th>Pattern</th><th>Intent</th><th>Reach for it when</th><th>Pythonic / modern form</th></tr>
+    <tr><td><b>Factory Method</b></td><td>let a method (or subclass) decide which concrete class to instantiate</td><td>callers shouldn't know concrete classes; the choice depends on input or config</td><td>a function or <code>dict</code> registry: <code>PARSERS[fmt]()</code></td></tr>
+    <tr><td><b>Abstract Factory</b></td><td>create <i>families</i> of related objects that must match</td><td>several products must be consistent (UI widgets per theme; clients per cloud)</td><td>an object with <code>create_x()</code>/<code>create_y()</code> methods, chosen once</td></tr>
+    <tr><td><b>Builder</b></td><td>construct a complex object step by step, validating at the end</td><td>many optional parameters; invariants spanning several fields; immutable results</td><td>fluent builder, or keyword arguments + a dataclass for simple cases</td></tr>
+    <tr><td><b>Singleton</b></td><td>ensure one instance and a global access point</td><td>almost never; genuinely one shared resource (a process-wide registry)</td><td>a module-level instance, or better, create one at the composition root and inject it</td></tr>
+    <tr><td><b>Prototype</b></td><td>create objects by copying an existing instance</td><td>construction is expensive or configured at runtime; many near-identical variants</td><td><code>copy.deepcopy</code>, <code>dataclasses.replace</code></td></tr>
+  </table></div>
+
+  <h3>Builder vs Factory</h3>
+  <div class="wrap"><table>
+    <tr><th></th><th>Factory</th><th>Builder</th></tr>
+    <tr><td>Question</td><td><i>which</i> class to create</td><td><i>how</i> to assemble one complex object</td></tr>
+    <tr><td>Calls</td><td>one call → a finished object</td><td>several steps → <code>build()</code></td></tr>
+    <tr><td>Varies</td><td>the concrete type</td><td>the configuration</td></tr>
+    <tr><td>Example</td><td><code>parser_for("csv")</code> → <code>CsvParser</code></td><td><code>HttpRequest.builder().url(…).header(…).timeout(5).build()</code></td></tr>
+  </table></div>
+
+  <aside class="sticky"><b>Exam tip!</b><br>Factory = <i>which</i> class. Builder = <i>how</i> to assemble one complex object. Singleton = prefer inject-one-instance.</aside>
+  <h3>Why Singleton is controversial</h3>
+  <ul>
+    <li class="star">It's <b>global mutable state</b> in disguise: hidden dependencies, order-of-initialization bugs.</li>
+    <li class="star">It makes <b>testing hard</b>: you can't easily substitute a fake, and state leaks between tests.</li>
+    <li class="star">It hard-codes "exactly one", which often stops being true (two databases, multi-tenant).</li>
+    <li class="star">Thread-safe lazy initialization is subtle in some languages.</li>
+  </ul>
+  <p>The better alternative: create one instance in <code>main()</code> and <b>pass it in</b> (<a href="../volume-2-software-engineering/ch03-dependency-injection-and-inversion-of-control.notes.html">Vol 2 Ch 3</a>) — "single instance" without "global access".</p>
+
+  <div class="box red"><b>Avoid over-applying patterns.</b> A factory with one product, a builder for a 3-field object, or an abstract factory with one family is ceremony. Use a pattern when it removes real duplication or decouples a real seam.</div>
+
+  <div class="pagebreak">~ page 2 ~</div>
+
+  <h2>Prereqs</h2>
+  <ul>
+    <li><a href="ch01-oop-fundamentals.notes.html">Chapter 1 — OOP Fundamentals</a></li>
+  </ul>
+
+  <h2>Diagram</h2>
+  <h3>Factory Method</h3>
+  <figure>
+    <svg viewBox="0 0 660 400" role="img" aria-label="Class diagram: Parser interface implemented by CsvParser, JsonParser and ParquetParser; ParserFactory creates Parser; Importer asks ParserFactory and uses Parser">
+      <rect class="sk" x="10" y="20" width="140" height="44" rx="6"/>
+      <text class="lbl b" x="80" y="48" text-anchor="middle">Importer</text>
+      <rect class="sk" x="235" y="20" width="190" height="68" rx="6"/>
+      <text class="lbl b" x="330" y="44" text-anchor="middle">ParserFactory</text>
+      <path class="sk" d="M235 54 L425 54"/>
+      <text class="lbl" x="243" y="77" style="font-size:14px">+for_format(fmt) Parser</text>
+      <rect class="sk" x="235" y="170" width="190" height="88" rx="6"/>
+      <text class="lbl" x="330" y="191" text-anchor="middle" style="font-size:13px">&lt;&lt;interface&gt;&gt;</text>
+      <text class="lbl b" x="330" y="212" text-anchor="middle">Parser</text>
+      <path class="sk" d="M235 222 L425 222"/>
+      <text class="lbl" x="243" y="246" style="font-size:14px">+parse(bytes) Records</text>
+      <rect class="sk" x="20" y="330" width="160" height="44" rx="6"/>
+      <text class="lbl b" x="100" y="358" text-anchor="middle">CsvParser</text>
+      <rect class="sk" x="250" y="330" width="160" height="44" rx="6"/>
+      <text class="lbl b" x="330" y="358" text-anchor="middle">JsonParser</text>
+      <rect class="sk" x="480" y="330" width="160" height="44" rx="6"/>
+      <text class="lbl b" x="560" y="358" text-anchor="middle">ParquetParser</text>
+      <path class="sk blue" d="M100 330 C 120 300, 200 280, 262 262" style="color:var(--ink);stroke-dasharray:6 5" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M330 330 L330 262" style="color:var(--ink);stroke-dasharray:6 5" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M560 330 C 540 300, 460 280, 398 262" style="color:var(--ink);stroke-dasharray:6 5" marker-end="url(#arr)"/>
+      <path class="sk green" d="M330 88 L330 168" style="color:var(--green);stroke-dasharray:6 5" marker-end="url(#arr)"/>
+      <text class="lbl g" x="342" y="132" style="font-size:15px">creates</text>
+      <path class="sk blue" d="M150 42 L233 42" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <text class="lbl r" x="191" y="34" text-anchor="middle" style="font-size:15px">asks</text>
+      <path class="sk blue" d="M80 64 C 80 150, 150 214, 231 214" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <text class="lbl r" x="112" y="172" style="font-size:15px">uses</text>
+    </svg>
+    <figcaption>Fig 1: Factory Method — dashed blue = implements <code>Parser</code> (<code>&lt;|..</code>); dashed green = creates; solid = Importer asks the factory and uses the Parser</figcaption>
+  </figure>
+
+  <h3>Abstract Factory — families that must match</h3>
+  <figure>
+    <svg viewBox="0 0 660 480" role="img" aria-label="Class diagram: CloudFactory interface implemented by AwsFactory and GcpFactory; AwsFactory creates S3Store and SqsQueue, GcpFactory creates GcsStore and PubSubQueue; S3Store and GcsStore implement BlobStore, SqsQueue and PubSubQueue implement Queue">
+      <rect class="sk" x="210" y="15" width="240" height="100" rx="6"/>
+      <text class="lbl" x="330" y="36" text-anchor="middle" style="font-size:13px">&lt;&lt;interface&gt;&gt;</text>
+      <text class="lbl b" x="330" y="57" text-anchor="middle">CloudFactory</text>
+      <path class="sk" d="M210 67 L450 67"/>
+      <text class="lbl" x="220" y="89" style="font-size:14px">+storage() BlobStore</text>
+      <text class="lbl" x="220" y="108" style="font-size:14px">+queue() Queue</text>
+      <rect class="sk" x="90" y="170" width="160" height="44" rx="6"/>
+      <text class="lbl b" x="170" y="198" text-anchor="middle">AwsFactory</text>
+      <rect class="sk" x="410" y="170" width="160" height="44" rx="6"/>
+      <text class="lbl b" x="490" y="198" text-anchor="middle">GcpFactory</text>
+      <rect class="sk" x="15" y="270" width="140" height="44" rx="6"/>
+      <text class="lbl b" x="85" y="298" text-anchor="middle" style="font-size:15px">S3Store</text>
+      <rect class="sk" x="185" y="270" width="140" height="44" rx="6"/>
+      <text class="lbl b" x="255" y="298" text-anchor="middle" style="font-size:15px">GcsStore</text>
+      <rect class="sk" x="335" y="270" width="140" height="44" rx="6"/>
+      <text class="lbl b" x="405" y="298" text-anchor="middle" style="font-size:15px">SqsQueue</text>
+      <rect class="sk" x="505" y="270" width="140" height="44" rx="6"/>
+      <text class="lbl b" x="575" y="298" text-anchor="middle" style="font-size:15px">PubSubQueue</text>
+      <rect class="sk" x="70" y="400" width="200" height="56" rx="6"/>
+      <text class="lbl" x="170" y="421" text-anchor="middle" style="font-size:13px">&lt;&lt;interface&gt;&gt;</text>
+      <text class="lbl b" x="170" y="443" text-anchor="middle">BlobStore</text>
+      <rect class="sk" x="390" y="400" width="200" height="56" rx="6"/>
+      <text class="lbl" x="490" y="421" text-anchor="middle" style="font-size:13px">&lt;&lt;interface&gt;&gt;</text>
+      <text class="lbl b" x="490" y="443" text-anchor="middle">Queue</text>
+      <!-- realizations (blue dashed) -->
+      <path class="sk blue" d="M290 115 C 270 140, 230 150, 205 168" style="color:var(--ink);stroke-dasharray:6 5" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M370 115 C 390 140, 430 150, 455 168" style="color:var(--ink);stroke-dasharray:6 5" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M85 314 C 90 350, 110 375, 130 398" style="color:var(--ink);stroke-dasharray:6 5" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M255 314 C 250 350, 220 375, 205 398" style="color:var(--ink);stroke-dasharray:6 5" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M405 314 C 410 350, 430 375, 450 398" style="color:var(--ink);stroke-dasharray:6 5" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M575 314 C 570 350, 540 375, 525 398" style="color:var(--ink);stroke-dasharray:6 5" marker-end="url(#arr)"/>
+      <!-- creates (green dashed) -->
+      <path class="sk green" d="M140 214 C 120 235, 105 250, 96 268" style="color:var(--green);stroke-dasharray:6 5" marker-end="url(#arr)"/>
+      <path class="sk green" d="M195 214 C 260 235, 340 245, 385 268" style="color:var(--green);stroke-dasharray:6 5" marker-end="url(#arr)"/>
+      <path class="sk green" d="M450 214 C 400 230, 320 240, 270 268" style="color:var(--green);stroke-dasharray:6 5" marker-end="url(#arr)"/>
+      <path class="sk green" d="M520 214 C 540 235, 560 250, 568 268" style="color:var(--green);stroke-dasharray:6 5" marker-end="url(#arr)"/>
+    </svg>
+    <figcaption>Fig 2: Abstract Factory — blue dashed = implements (<code>&lt;|..</code>, <code>..|&gt;</code>); green dashed = creates (<code>..&gt;</code>): AwsFactory → S3Store, SqsQueue; GcpFactory → GcsStore, PubSubQueue</figcaption>
+  </figure>
+
+  <h3>Builder — participants</h3>
+  <figure>
+    <svg viewBox="0 0 660 360" role="img" aria-label="Sequence diagram: Client configures RequestBuilder step by step, build() validates and creates an immutable HttpRequest">
+      <rect class="sk" x="25" y="10" width="170" height="36" rx="6"/>
+      <text class="lbl b" x="110" y="33" text-anchor="middle" style="font-size:14px">Client</text>
+      <path class="sk" d="M110 46 L110 354" style="stroke-dasharray:3 7;stroke-width:1.6"/>
+      <rect class="sk" x="245" y="10" width="170" height="36" rx="6"/>
+      <text class="lbl b" x="330" y="33" text-anchor="middle" style="font-size:14px">RequestBuilder</text>
+      <path class="sk" d="M330 46 L330 354" style="stroke-dasharray:3 7;stroke-width:1.6"/>
+      <rect class="sk" x="465" y="10" width="170" height="36" rx="6"/>
+      <text class="lbl b" x="550" y="33" text-anchor="middle" style="font-size:14px">HttpRequest (immutable)</text>
+      <path class="sk" d="M550 46 L550 354" style="stroke-dasharray:3 7;stroke-width:1.6"/>
+      <path class="sk blue" d="M110 82 L327 82" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <text class="lbl sq" x="118" y="74">builder("GET", url)</text>
+      <path class="sk blue" d="M110 116 L327 116" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <text class="lbl sq" x="118" y="108">header("Accept", "application/json")</text>
+      <path class="sk blue" d="M110 150 L327 150" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <text class="lbl sq" x="118" y="142">timeout(5)</text>
+      <path class="sk blue" d="M110 184 L327 184" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <text class="lbl sq" x="118" y="176">retries(3)</text>
+      <path class="sk blue" d="M110 218 L327 218" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <text class="lbl sq" x="118" y="210">build()</text>
+      <path class="sk blue" d="M330 252 C 380 252, 380 276, 333 276" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <text class="lbl sq" x="386" y="268">validate (url set, timeout &gt; 0)</text>
+      <path class="sk blue" d="M330 296 L547 296" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <text class="lbl sq" x="338" y="288">create with all fields</text>
+      <path class="sk blue" d="M330 330 L113 330" style="color:var(--ink);stroke-dasharray:6 5" marker-end="url(#arr)"/>
+      <text class="lbl sq" x="118" y="322">HttpRequest</text>
+      </svg>
+    <figcaption>Fig 3: Builder — Client, RequestBuilder, HttpRequest (immutable)</figcaption>
+  </figure>
+
+  <h3>Singleton vs an injected single instance; Prototype</h3>
+<pre class="code ascii"><code> SINGLETON (global access)               INJECTED (one instance, explicit)       PROTOTYPE
+ Metrics.instance().inc("x")             metrics = Metrics()   # in main()        base = Report(template, styles, …)
+   hidden dependency; hard to fake       svc = Service(metrics)                  q1 = replace(base, period="Q1")
+                                         test: Service(FakeMetrics())            q2 = replace(base, period="Q2")</code></pre>
+
+  <div class="pagebreak">~ page 3 ~</div>
+
+  <h2>Example</h2>
+  <span class="lang">python</span>
+<pre class="code"><code>from __future__ import annotations
+import csv, io, json, copy
+from dataclasses import dataclass, field, replace
+from typing import Protocol, Callable
+
+# ---- Factory Method as a registry ----
+class Parser(Protocol):
+    def parse(self, data: bytes) -&gt; list[dict]: ...
+
+class CsvParser:
+    def parse(self, data): return list(csv.DictReader(io.StringIO(data.decode())))
+
+class JsonParser:
+    def parse(self, data): return json.loads(data)
+
+PARSERS: dict[str, Callable[[], Parser]] = {"csv": CsvParser, "json": JsonParser}
+
+def parser_for(fmt: str) -&gt; Parser:
+    try:
+        return PARSERS[fmt]()
+    except KeyError:
+        raise ValueError(f"unsupported format {fmt!r}; expected one of {sorted(PARSERS)}") from None
+
+print(parser_for("csv").parse(b"a,b\n1,2\n"))       # [{'a': '1', 'b': '2'}]
+
+# ---- Builder for an immutable config object with defaults ----
+@dataclass(frozen=True)
+class HttpRequest:
+    method: str
+    url: str
+    headers: tuple[tuple[str, str], ...] = ()
+    timeout: float = 10.0
+    retries: int = 0
+
+class RequestBuilder:
+    def __init__(self, method: str, url: str):
+        self._method, self._url = method.upper(), url
+        self._headers: list[tuple[str, str]] = []
+        self._timeout, self._retries = 10.0, 0
+
+    def header(self, k, v): self._headers.append((k, v)); return self
+    def timeout(self, s): self._timeout = s; return self
+    def retries(self, n): self._retries = n; return self
+
+    def build(self) -&gt; HttpRequest:
+        if not self._url.startswith(("http://", "https://")):
+            raise ValueError("url must be absolute")
+        if self._timeout &lt;= 0 or self._retries &lt; 0:
+            raise ValueError("timeout must be &gt; 0 and retries &gt;= 0")
+        if self._method not in {"GET", "HEAD", "PUT", "DELETE"} and self._retries:
+            raise ValueError("retries only allowed for idempotent methods")   # a cross-field invariant
+        return HttpRequest(self._method, self._url, tuple(self._headers), self._timeout, self._retries)
+
+req = (RequestBuilder("get", "https://api.example.com/orders")
+       .header("Accept", "application/json").timeout(5).retries(3).build())
+print(req.method, req.timeout, req.retries)           # GET 5 3
+
+# ---- Prototype ----
+@dataclass(frozen=True)
+class ReportSpec:
+    title: str
+    period: str
+    sections: tuple[str, ...] = ("summary", "revenue", "churn")
+
+base = ReportSpec("Quarterly", "Q1")
+q2 = replace(base, period="Q2")                      # copy + change one field
+print(q2)
+
+# ---- "Singleton" the Pythonic way: one instance, created once, injected ----
+class Metrics:
+    def __init__(self): self.counts = {}
+    def inc(self, k): self.counts[k] = self.counts.get(k, 0) + 1
+
+def main():
+    metrics = Metrics()                              # the single instance lives here
+    run_app(metrics=metrics)                         # passed where needed, fakeable in tests</code></pre>
+
+  <h2>Exercises</h2>
+  <ol style="list-style:none;padding-left:0">
+    <li>1. Implement a builder for a complex object.
+      <div class="box"><b>Solution</b> An <code>EmailMessage</code> builder: <code>to()</code> (repeatable), <code>cc()</code>, <code>subject()</code>, <code>text_body()</code> / <code>html_body()</code>, <code>attach(path)</code>. <code>build()</code> validates cross-field rules — at least one recipient, a subject, at least one body, attachments under 20 MB total — and returns a frozen object. Test that invalid combinations raise and valid ones produce an immutable result. (If there were only 3 optional fields, keyword arguments on a dataclass would be simpler — say so.)</div></li>
+    <li>2. Replace a <code>new</code> scattered across callers with a factory.
+      <div class="box"><b>Solution</b> Before: ten call sites do <code>if env == "prod": client = S3Client(...) else: client = LocalDiskClient(...)</code>. After: one <code>storage_for(config) -&gt; BlobStore</code> factory (or an abstract factory if queue and storage must match per environment), called once at the composition root and injected. Callers depend on the <code>BlobStore</code> interface only; adding a new backend changes one function.</div></li>
+    <li>3. When is a Singleton acceptable?
+      <div class="box"><b>Solution</b> Rarely: for truly process-wide, stateless or read-only resources where "exactly one" is a real constraint — a logging configuration, an immutable registry built at import. Even then, prefer creating it at the composition root and passing it in, so tests can swap it.</div></li>
+  </ol>
+
+  <div class="pagebreak">~ page 4 ~</div>
+
+  <h2>Mini project</h2>
+  <p><b>A config/request builder library used across multiple handlers.</b></p>
+  <figure>
+    <svg viewBox="0 0 660 360" role="img" aria-label="Flow: httpkit library offers RequestBuilder, ClientFactory.for_env and prototype presets; all three are used by handlers orders, payments and shipping; tests with FakeClient and builder validation cases exercise the library">
+      <rect class="sk" x="250" y="15" width="160" height="44" rx="10"/>
+      <text class="lbl b" x="330" y="43" text-anchor="middle">httpkit library</text>
+      <rect class="sk red" x="450" y="8" width="200" height="66" rx="10"/>
+      <text class="lbl r" x="550" y="27" text-anchor="middle" style="font-size:14px">tests: FakeClient via</text>
+      <text class="lbl r" x="550" y="45" text-anchor="middle" style="font-size:14px">the factory, builder</text>
+      <text class="lbl r" x="550" y="63" text-anchor="middle" style="font-size:14px">validation cases</text>
+      <path class="sk red" d="M450 40 L414 38" style="color:var(--red)" marker-end="url(#arr)"/>
+      <rect class="sk" x="10" y="110" width="205" height="84" rx="10"/>
+      <text class="lbl b" x="112" y="136" text-anchor="middle" style="font-size:15px">RequestBuilder</text>
+      <text class="lbl" x="112" y="158" text-anchor="middle" style="font-size:14px">(fluent, validates,</text>
+      <text class="lbl" x="112" y="180" text-anchor="middle" style="font-size:14px">immutable result)</text>
+      <rect class="sk" x="225" y="110" width="205" height="84" rx="10"/>
+      <text class="lbl b" x="327" y="136" text-anchor="middle" style="font-size:14px">ClientFactory.for_env(cfg)</text>
+      <text class="lbl" x="327" y="158" text-anchor="middle" style="font-size:13px">→ RealClient / RecordingClient</text>
+      <text class="lbl" x="327" y="180" text-anchor="middle" style="font-size:13px">/ FakeClient</text>
+      <rect class="sk" x="440" y="110" width="205" height="84" rx="10"/>
+      <text class="lbl b" x="542" y="136" text-anchor="middle" style="font-size:15px">prototype presets:</text>
+      <text class="lbl" x="542" y="158" text-anchor="middle" style="font-size:13px">JSON_API = builder defaults,</text>
+      <text class="lbl" x="542" y="180" text-anchor="middle" style="font-size:13px">copied per service</text>
+      <path class="sk blue" d="M300 59 C 250 80, 150 90, 112 108" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M330 59 L328 108" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M360 59 C 410 80, 500 90, 542 108" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <!-- bus -->
+      <path class="sk blue" d="M150 194 L150 242 M280 194 L280 242 M500 194 L500 242" style="color:var(--ink)"/>
+      <path class="sk blue" d="M110 242 L540 242" style="color:var(--ink)"/>
+      <path class="sk blue" d="M110 242 L110 288" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M370 242 L370 288" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M540 242 L540 288" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <rect class="sk green" x="10" y="290" width="205" height="44" rx="10"/>
+      <text class="lbl g" x="112" y="318" text-anchor="middle">handler: orders</text>
+      <rect class="sk green" x="268" y="290" width="205" height="44" rx="10"/>
+      <text class="lbl g" x="370" y="318" text-anchor="middle">handler: payments</text>
+      <rect class="sk green" x="440" y="290" width="205" height="44" rx="10"/>
+      <text class="lbl g" x="542" y="318" text-anchor="middle">handler: shipping</text>
+    </svg>
+    <figcaption>Fig 4: RequestBuilder, ClientFactory and prototype presets all feed each of the three handlers (joined bus); tests exercise the library</figcaption>
+  </figure>
+
+  <h3>Steps</h3>
+  <ol style="list-style:none;padding-left:0">
+    <li>1. <code>RequestBuilder</code> with defaults, fluent methods, cross-field validation, and an immutable <code>HttpRequest</code>.</li>
+    <li>2. Prototype presets: a <code>JSON_API</code> base request (headers, timeout) that services copy and adjust with <code>replace</code>.</li>
+    <li>3. A <code>ClientFactory.for_env(config)</code> that returns a real, recording, or fake client behind one <code>HttpClient</code> protocol.</li>
+    <li>4. Use it from three handlers; none of them construct clients or set default headers directly.</li>
+    <li>5. Tests: builder validation (a table of invalid combinations), and handlers tested with the fake client from the factory.</li>
+  </ol>
+  <div class="box"><b>Done when:</b> changing the default timeout or adding an auth header for every service is a one-line change in the library, and handler tests never touch the network.</div>
+
+  <h2>Open source</h2>
+  <ul>
+    <li><a href="https://github.com/spring-projects/spring-framework"><code>spring-projects/spring-framework</code></a> (factories) — <code>BeanFactory</code> and <code>FactoryBean</code> are factory patterns at the heart of the IoC container; Spring beans default to "singleton" <i>scope</i> managed by the container, not the global-access GoF singleton.</li>
+    <li><a href="https://github.com/rust-lang/rust"><code>rust-lang/rust</code></a> builder crates — <code>std::process::Command</code> and <code>std::thread::Builder</code> are builders in the standard library; the <code>derive_builder</code> and <code>typed-builder</code> crates generate them (typed-builder checks required fields at compile time).</li>
+  </ul>
+
+  <h2>Interview</h2>
+  <ol style="list-style:none;padding-left:0">
+    <li>1. <b>"Builder vs Factory?"</b>
+      <div class="box"><b>Answer</b> A factory decides <i>which</i> concrete type to create and returns it in one call, hiding the class choice behind an interface (a parser per format). A builder handles <i>how</i> to assemble one complex object step by step — many optional parts, validation across fields, often producing an immutable result. You can combine them: a factory that returns a pre-configured builder.</div></li>
+    <li>2. <b>"Why is Singleton controversial?"</b>
+      <div class="box"><b>Answer</b> It combines "one instance" with "global access", which makes it global mutable state: dependencies become hidden, tests can't easily substitute it and state leaks between them, initialization order and thread-safety get tricky, and "exactly one" often turns out to be false (multiple tenants or databases). Usually you want one instance created at the composition root and injected, which keeps the benefit without the global.</div></li>
+  </ol>
+
+  <h2>Checklist</h2>
+  <ul>
+    <li class="todo">know each pattern's intent</li>
+    <li class="todo">use a factory at a real seam</li>
+    <li class="todo">avoid over-applying patterns</li>
+  </ul>
+  <div class="gap"></div>
+  <p class="black"><a href="index.md">Contents</a> · ← <a href="ch04-uml-and-diagramming.notes.html">Chapter 4 — UML &amp; Diagramming</a> · Next → <a href="ch06-gof-structural-patterns.notes.html">Chapter 6 — GoF Structural Patterns</a></p>
+
+  <nav class="nav"><a href="ch04-uml-and-diagramming.notes.html">← Ch 4 — UML &amp; Diagramming</a><a href="index.notes.html">☰ Contents</a><a href="ch06-gof-structural-patterns.notes.html">Ch 6 — GoF Structural Patterns →</a></nav>
+</main>
+</body>
+</html>

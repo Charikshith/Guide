@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ch 4 — UML &amp; Diagramming — Notes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;700&family=Kalam:wght@400;700&family=Patrick+Hand&display=swap" rel="stylesheet">
+<style>
+/* ===== Page tokens ===== */
+:root{
+  --line:32px;                 /* ruled-line spacing; every vertical size is a multiple */
+  --paper:#fdfbf4; --rule:#c9dcef; --margin:#e8a0a0;
+  --ink:#1f3a93;               /* blue pen (body) */
+  --ink2:#222;                 /* black pen (headings) */
+  --red:#c0392b; --green:#1e8449;
+  --hl-yellow:rgba(255,235,59,.55); --hl-pink:rgba(255,128,171,.45);
+  --hl-green:rgba(118,255,3,.35); --hl-blue:rgba(64,196,255,.35);
+  --sticky:#fff59d; --desk:#e9e4d8;
+  --hand:'Kalam','Patrick Hand','Comic Sans MS','Segoe Print','Bradley Hand',cursive;
+  --title:'Caveat','Kalam','Segoe Print','Bradley Hand',cursive;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){ --desk:#2b2b2b; }
+}
+:root[data-theme="dark"]{ --desk:#2b2b2b; }
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--desk);font-family:var(--hand);color:var(--ink);}
+
+/* ===== Notebook sheet ===== */
+.page{
+  position:relative; max-width:860px; margin:24px auto; padding:var(--line) 28px calc(var(--line)*2) 84px;
+  background:
+    linear-gradient(90deg,transparent 64px,var(--margin) 64px,var(--margin) 66px,transparent 66px),
+    repeating-linear-gradient(var(--paper) 0,var(--paper) calc(var(--line) - 1px),var(--rule) calc(var(--line) - 1px),var(--rule) var(--line));
+  background-color:var(--paper);
+  box-shadow:0 2px 6px rgba(0,0,0,.15),0 12px 28px rgba(0,0,0,.12);
+  font-size:20px; line-height:var(--line);
+}
+.page::before{ /* punched holes */
+  content:""; position:absolute; left:22px; top:0; bottom:0; width:18px;
+  background:radial-gradient(circle,var(--desk) 7px,transparent 8px) 0 40px/18px 220px repeat-y;
+}
+@media (max-width:600px){
+  .page{margin:0;padding-left:52px;padding-right:16px;font-size:18px;
+    background:
+      linear-gradient(90deg,transparent 40px,var(--margin) 40px,var(--margin) 42px,transparent 42px),
+      repeating-linear-gradient(var(--paper) 0,var(--paper) calc(var(--line) - 1px),var(--rule) calc(var(--line) - 1px),var(--rule) var(--line));
+    background-color:var(--paper);}
+  .page::before{left:10px;width:16px}
+}
+
+/* ===== Text (all margins are multiples of --line so text sits on the rules) ===== */
+.date{position:absolute;top:0;right:24px;font-family:var(--title);font-size:22px;color:var(--ink2);line-height:var(--line)}
+h1{font-family:var(--title);font-weight:700;color:var(--ink2);font-size:46px;line-height:calc(var(--line)*2);margin:0;transform:rotate(-1deg)}
+h1 .u{background:linear-gradient(transparent 62%,var(--hl-yellow) 62%,var(--hl-yellow) 92%,transparent 92%)}
+h2{font-family:var(--title);font-weight:700;color:var(--red);font-size:32px;line-height:calc(var(--line)*1.5);margin:calc(var(--line)*.5) 0 0}
+h2::before{content:"➤ ";font-size:22px}
+p,li{margin:0}
+ul,ol{margin:0;padding-left:28px}
+ul{list-style:none}
+ul>li::before{content:"–";position:absolute;margin-left:-20px}
+ul>li.star::before{content:"★";color:var(--red)}
+ul>li.arrow::before{content:"→"}
+ul>li.check::before{content:"✓";color:var(--green)}
+.gap{height:var(--line)}
+
+/* ===== Pen effects ===== */
+.hl{background:var(--hl-yellow);padding:0 3px;border-radius:3px 6px 4px 7px}
+.hl.pink{background:var(--hl-pink)} .hl.green{background:var(--hl-green)} .hl.blue{background:var(--hl-blue)}
+.red{color:var(--red)} .green{color:var(--green)} .black{color:var(--ink2)}
+.ul{text-decoration:underline wavy var(--red);text-underline-offset:5px}
+.circ{border:2px solid var(--red);border-radius:50% 45% 55% 48%;padding:0 6px}
+.strike{text-decoration:line-through 2px var(--red)}
+.term{font-weight:700;color:var(--ink2)}
+.box{display:flow-root;border:2.5px solid var(--ink2);border-radius:4px 10px 6px 12px;padding:calc(var(--line)*.5 - 2.5px) 14px;margin:calc(var(--line)*.5) 0;transform:rotate(-.4deg);background:rgba(255,255,255,.35)}
+.box.red{border-color:var(--red)}
+.formula{font-family:var(--title);font-size:28px;text-align:center;color:var(--ink2)}
+
+/* sticky note */
+.sticky{float:right;width:min(250px,42%);margin:0 0 var(--line) 20px;padding:var(--line) 16px;background:var(--sticky);
+  color:#333;transform:rotate(2.2deg);box-shadow:2px 4px 8px rgba(0,0,0,.18);font-size:18px}
+.sticky b{font-family:var(--title);font-size:24px;color:var(--red)}
+@media (max-width:600px){.sticky{float:none;width:auto;margin:var(--line) 0}}
+
+/* margin annotation (lives in the red margin) */
+.side{position:absolute;left:4px;width:58px;text-align:center;font-family:var(--title);font-size:17px;line-height:18px;color:var(--red);transform:rotate(-8deg)}
+@media (max-width:600px){.side{display:none}}
+
+/* two-column notes */
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:0 28px}
+@media (max-width:600px){.cols{grid-template-columns:1fr}}
+
+/* diagrams */
+figure{margin:var(--line) 0;text-align:center}
+figure svg{width:100%;max-width:640px;height:auto;overflow:visible}
+figcaption{font-family:var(--title);font-size:20px;color:var(--ink2)}
+/* phones: keep labels readable — diagram scrolls inside its own box instead of shrinking */
+@media (max-width:600px){figure{overflow-x:auto}figure svg{min-width:520px}}
+.sk{fill:none;stroke:var(--ink2);stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round;filter:url(#rough)}
+.sk.blue{stroke:var(--ink)} .sk.red{stroke:var(--red)} .sk.green{stroke:var(--green)}
+.lbl{font-family:var(--hand);font-size:17px;fill:var(--ink)}
+.lbl.b{font-weight:700;fill:var(--ink2)} .lbl.r{fill:var(--red)} .lbl.g{fill:var(--green)}
+
+/* table */
+.wrap{overflow-x:auto}
+table{border-collapse:collapse;margin:calc(var(--line)*.5) 0;min-width:100%}
+th,td{border:2px solid var(--ink2);padding:0 10px;text-align:left;vertical-align:top}
+th{font-family:var(--title);font-size:24px;color:var(--ink2)}
+
+@media print{body{background:#fff}.page{box-shadow:none;margin:0}.page::before{display:none}}
+
+/* ===== Added for long chapter notes ===== */
+pre.code{font-family:Consolas,'Courier New',monospace;font-size:14px;line-height:var(--line);color:var(--ink);background:rgba(255,255,255,.45);
+  border-left:4px solid var(--red);margin:calc(var(--line)*.5) 0;padding:0 12px;overflow-x:auto;white-space:pre}
+pre.code.ascii{border-left-color:var(--green)}
+code{font-family:Consolas,'Courier New',monospace;font-size:.82em;background:rgba(0,0,0,.06);padding:0 3px;border-radius:3px}
+pre.code code{background:none;padding:0;font-size:inherit}
+.lang{font-family:var(--title);font-size:18px;color:var(--red)}
+h3{font-family:var(--title);font-weight:700;color:var(--ink2);font-size:26px;line-height:var(--line);margin:calc(var(--line)*.5) 0 0}
+h3::before{content:"✎ ";font-size:18px;color:var(--red)}
+.nav{display:flex;justify-content:space-between;gap:12px;font-family:var(--title);font-size:22px;line-height:var(--line)}
+.nav a{color:var(--red);text-decoration:none}
+.nav a:hover{text-decoration:underline wavy}
+.pagebreak{border-top:3px dashed var(--margin);margin:var(--line) 0;text-align:center;font-family:var(--title);color:var(--red);line-height:var(--line)}
+li.todo::before{content:"☐";color:var(--ink2)}
+a{color:var(--ink);text-decoration:underline dotted}
+</style>
+</head>
+<body>
+<!-- One shared hand-drawn wobble filter; give every diagram stroke class="sk" -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <!-- userSpaceOnUse region: a % region collapses to nothing on perfectly straight lines (zero-height bbox) -->
+  <filter id="rough" filterUnits="userSpaceOnUse" x="-500" y="-500" width="3000" height="3000">
+    <feTurbulence type="fractalNoise" baseFrequency="0.03" numOctaves="2" seed="3" result="n"/>
+    <feDisplacementMap in="SourceGraphic" in2="n" scale="3"/>
+  </filter>
+  <marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+    <path d="M1 1 L9 5 L1 9" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+  </marker>
+</defs></svg>
+
+<main class="page">
+  <nav class="nav"><a href="ch03-design-principles-cohesion-coupling-yagni-dry-kiss.notes.html">← Ch 3 — Design Principles (Cohesion, Coupling, YAGNI, DRY, KISS)</a><a href="index.notes.html">☰ Contents</a><a href="ch05-gof-creational-patterns.notes.html">Ch 5 — GoF Creational Patterns →</a></nav>
+  <div class="date">2026-10-10</div>
+  <h1><span class="u">Ch 4 — UML &amp; Diagramming</span></h1>
+    <style>.lbl.sq{font-size:14px;paint-order:stroke;stroke:#fdfbf4;stroke-width:5px}</style>
+  <p class="black">Volume 3 — Low-Level Design · <a href="index.md">Contents</a> · ← <a href="ch03-design-principles-cohesion-coupling-yagni-dry-kiss.notes.html">Chapter 3 — Design Principles (Cohesion, Coupling, YAGNI, DRY, KISS)</a> · Next → <a href="ch05-gof-creational-patterns.notes.html">Chapter 5 — GoF Creational Patterns</a></p>
+
+  <p class="black">Chapter 4 — UML &amp; Diagramming</p>
+
+  <h2>Concept</h2>
+  <p>Class, sequence, and component diagrams; reading and writing the diagrams that communicate design.</p>
+  <div class="box"><b>In one sentence:</b> a design diagram is a deliberately simplified picture that answers one question — <i>what things exist and how they relate</i> (class), <i>who calls whom in what order</i> (sequence), or <i>which deployable parts talk to which</i> (component) — at the right level of detail for its audience.</div>
+
+  <h3>Mental model — maps at different zoom levels</h3>
+  <p>A world map, a city map, and a floor plan are all "maps", but each answers different questions, and one map that tried to show everything would be unreadable. Diagrams are the same: choose the zoom level (altitude) and the question first, then draw only what answers it.</p>
+
+  <h3>The three diagrams you'll use 90% of the time</h3>
+  <div class="wrap"><table>
+    <tr><th>Diagram</th><th>Question it answers</th><th>Shows</th><th>Typical audience</th></tr>
+    <tr><td><b>Class</b></td><td>what types exist, what they hold, how they relate</td><td>classes, fields, methods, relationships, multiplicity</td><td>developers designing or reviewing a module</td></tr>
+    <tr><td><b>Sequence</b></td><td>what happens, in what order, for one scenario</td><td>participants (lifelines), messages, returns, alt/loop blocks</td><td>developers + reviewers of a flow (login, checkout)</td></tr>
+    <tr><td><b>Component</b></td><td>how the system is split into parts and how they connect</td><td>services, libraries, databases, queues, interfaces</td><td>the team, architects, new joiners</td></tr>
+  </table></div>
+
+  <p>Others worth knowing: <b>state</b> (lifecycle of one object, <a href="../volume-1-cs-foundations/ch17-linux-processes-signals-services-systemd-ssh-cron.notes.html">Vol 1 Ch 17</a> has one), <b>activity/flowchart</b> (a process with decisions), <b>ER</b> (database tables, <a href="../volume-1-cs-foundations/ch45-sql-and-the-relational-model.notes.html">Vol 1 Ch 45</a>), <b>deployment</b> (what runs where). The <b>C4 model</b> gives a clean set of zoom levels: Context → Containers → Components → Code.</p>
+
+  <h3>Class diagram notation</h3>
+  <div class="wrap"><table>
+    <tr><th>Symbol (UML)</th><th>Mermaid</th><th>Meaning</th><th>Example</th></tr>
+    <tr><td><code>+</code> / <code>-</code> / <code>#</code></td><td>same</td><td>public / private / protected</td><td><code>-balance: Money</code></td></tr>
+    <tr><td>hollow triangle ▷</td><td><code>&lt;|--</code></td><td>inheritance (is-a)</td><td><code>Account &lt;|-- SavingsAccount</code></td></tr>
+    <tr><td>dashed + triangle</td><td><code>&lt;|..</code> / <code>..|&gt;</code></td><td>implements an interface</td><td><code>StripeGateway ..|&gt; PaymentGateway</code></td></tr>
+    <tr><td>filled diamond ◆</td><td><code>*--</code></td><td><b>composition</b>: the part's life is bound to the whole</td><td><code>Order *-- OrderLine</code></td></tr>
+    <tr><td>hollow diamond ◇</td><td><code>o--</code></td><td><b>aggregation</b>: a whole groups parts that live independently</td><td><code>Team o-- Player</code></td></tr>
+    <tr><td>arrow →</td><td><code>--&gt;</code></td><td>association / "uses"</td><td><code>Order --&gt; Customer</code></td></tr>
+    <tr><td>dashed arrow ⇢</td><td><code>..&gt;</code></td><td>dependency (temporary use)</td><td><code>ReportService ..&gt; PdfRenderer</code></td></tr>
+    <tr><td><code>1</code>, <code>0..1</code>, <code>*</code>, <code>1..*</code></td><td><code>"1" -- "*"</code></td><td>multiplicity</td><td>one customer, many orders</td></tr>
+  </table></div>
+
+  <aside class="sticky"><b>Remember!</b><br>Filled diamond = composition (part dies with the whole). Hollow diamond = aggregation. Hollow triangle = is-a.</aside>
+  <h3>Sequence diagram notation</h3>
+  <div class="wrap"><table>
+    <tr><th>Element</th><th>Meaning</th></tr>
+    <tr><td>lifeline</td><td>a participant over time (a vertical line)</td></tr>
+    <tr><td>solid arrow <code>-&gt;&gt;</code></td><td>a call / message</td></tr>
+    <tr><td>dashed arrow <code>--&gt;&gt;</code></td><td>a return / response</td></tr>
+    <tr><td>activation bar</td><td>the participant is busy handling a call</td></tr>
+    <tr><td><code>alt / else</code>, <code>opt</code>, <code>loop</code>, <code>par</code></td><td>conditional, optional, repeated, parallel fragments</td></tr>
+    <tr><td>note</td><td>a comment attached to participants</td></tr>
+  </table></div>
+
+  <h3>When is a diagram worth maintaining?</h3>
+  <p>When it's <i>expensive to rediscover</i> and <i>changes slowly</i>: system context and component maps, key flows (auth, payments), and domain models. Keep them as <b>diagrams-as-code</b> (Mermaid, PlantUML, Structurizr) next to the code, reviewed in PRs. Throwaway whiteboard sketches for a design discussion don't need maintaining — photograph them into the ADR and move on. Generated diagrams (from DB schemas or code) never go stale.</p>
+
+  <div class="pagebreak">~ page 2 ~</div>
+
+  <h2>Prereqs</h2>
+  <ul>
+    <li><a href="ch01-oop-fundamentals.notes.html">Chapter 1 — OOP Fundamentals</a></li>
+  </ul>
+
+  <h2>Diagram</h2>
+  <p><i>(This chapter is the diagram.)</i></p>
+
+  <h3>Class diagram — an ordering domain</h3>
+  <figure>
+    <svg viewBox="0 0 660 470" role="img" aria-label="Class diagram of an ordering domain: Customer places many Orders; Order contains one or more OrderLines (composition); Order has a Status enumeration; StripeGateway implements PaymentGateway; Order depends on PaymentGateway">
+      <!-- Customer -->
+      <rect class="sk" x="10" y="20" width="180" height="124" rx="6"/>
+      <text class="lbl b" x="100" y="44" text-anchor="middle">Customer</text>
+      <path class="sk" d="M10 54 L190 54"/>
+      <text class="lbl" x="18" y="76" style="font-size:14px">+CustomerId id</text>
+      <text class="lbl" x="18" y="98" style="font-size:14px">+Email email</text>
+      <path class="sk" d="M10 108 L190 108"/>
+      <text class="lbl" x="18" y="130" style="font-size:14px">+place_order(cart) Order</text>
+      <!-- Order -->
+      <rect class="sk" x="250" y="20" width="180" height="168" rx="6"/>
+      <text class="lbl b" x="340" y="44" text-anchor="middle">Order</text>
+      <path class="sk" d="M250 54 L430 54"/>
+      <text class="lbl" x="258" y="76" style="font-size:14px">+OrderId id</text>
+      <text class="lbl" x="258" y="98" style="font-size:14px">-Status status</text>
+      <path class="sk" d="M250 108 L430 108"/>
+      <text class="lbl" x="258" y="130" style="font-size:14px">+add_line(product, qty)</text>
+      <text class="lbl" x="258" y="152" style="font-size:14px">+submit()</text>
+      <text class="lbl" x="258" y="174" style="font-size:14px">+total() Money</text>
+      <!-- OrderLine -->
+      <rect class="sk" x="490" y="20" width="160" height="112" rx="6"/>
+      <text class="lbl b" x="570" y="44" text-anchor="middle">OrderLine</text>
+      <path class="sk" d="M490 54 L650 54"/>
+      <text class="lbl" x="498" y="76" style="font-size:14px">+Sku sku</text>
+      <text class="lbl" x="498" y="98" style="font-size:14px">+int qty</text>
+      <text class="lbl" x="498" y="120" style="font-size:14px">+Money unit_price</text>
+      <!-- Status -->
+      <rect class="sk" x="250" y="270" width="180" height="152" rx="6"/>
+      <text class="lbl" x="340" y="291" text-anchor="middle" style="font-size:13px">&lt;&lt;enumeration&gt;&gt;</text>
+      <text class="lbl b" x="340" y="312" text-anchor="middle">Status</text>
+      <path class="sk" d="M250 322 L430 322"/>
+      <text class="lbl" x="258" y="344" style="font-size:14px">DRAFT</text>
+      <text class="lbl" x="258" y="366" style="font-size:14px">SUBMITTED</text>
+      <text class="lbl" x="258" y="388" style="font-size:14px">PAID</text>
+      <text class="lbl" x="258" y="410" style="font-size:14px">CANCELLED</text>
+      <!-- PaymentGateway -->
+      <rect class="sk" x="490" y="270" width="160" height="88" rx="6"/>
+      <text class="lbl" x="570" y="291" text-anchor="middle" style="font-size:13px">&lt;&lt;interface&gt;&gt;</text>
+      <text class="lbl b" x="570" y="312" text-anchor="middle">PaymentGateway</text>
+      <path class="sk" d="M490 322 L650 322"/>
+      <text class="lbl" x="498" y="346" style="font-size:14px">+charge(Money) ChargeId</text>
+      <!-- StripeGateway -->
+      <rect class="sk" x="490" y="410" width="160" height="44" rx="6"/>
+      <text class="lbl b" x="570" y="438" text-anchor="middle" style="font-size:15px">StripeGateway</text>
+      <!-- edges -->
+      <path class="sk blue" d="M192 90 C 210 88, 228 92, 248 90" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <text class="lbl" x="196" y="108" style="font-size:14px">1</text>
+      <text class="lbl" x="236" y="108" style="font-size:14px">*</text>
+      <text class="lbl r" x="221" y="78" text-anchor="middle" style="font-size:14px">places</text>
+      <path class="sk" d="M430 90 L442 82 L454 90 L442 98 Z" style="fill:var(--hl-blue)"/>
+      <path class="sk blue" d="M454 90 L488 90" style="color:var(--ink)"/>
+      <text class="lbl" x="434" y="76" style="font-size:14px">1</text>
+      <text class="lbl" x="458" y="110" style="font-size:14px">1..*</text>
+      <text class="lbl r" x="460" y="150" text-anchor="middle" style="font-size:14px">contains</text>
+      <path class="sk blue" d="M340 188 L340 268" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M420 188 C 440 230, 500 230, 530 268" style="color:var(--ink);stroke-dasharray:6 5" marker-end="url(#arr)"/>
+      <text class="lbl r" x="575" y="236" style="font-size:14px">pays via</text>
+      <path class="sk blue" d="M570 410 L570 362" style="color:var(--ink);stroke-dasharray:6 5" marker-end="url(#arr)"/>
+    </svg>
+    <figcaption>Fig 1: Customer "1" --&gt; "*" Order : places · Order "1" *-- "1..*" OrderLine : contains · Order --&gt; Status · StripeGateway ..|&gt; PaymentGateway · Order ..&gt; PaymentGateway : pays via</figcaption>
+  </figure>
+
+  <h3>Sequence diagram — a request through controller → service → repo</h3>
+  <figure>
+    <svg viewBox="0 0 660 526" role="img" aria-label="Sequence diagram of submitting an order through controller, service, repository and payment gateway">
+      <rect class="sk" x="0" y="10" width="120" height="36" rx="6"/>
+      <text class="lbl b" x="60" y="33" text-anchor="middle" style="font-size:14px">User</text>
+      <path class="sk" d="M60 46 L60 520" style="stroke-dasharray:3 7;stroke-width:1.6"/>
+      <rect class="sk" x="135" y="10" width="120" height="36" rx="6"/>
+      <text class="lbl b" x="195" y="33" text-anchor="middle" style="font-size:14px">OrderController</text>
+      <path class="sk" d="M195 46 L195 520" style="stroke-dasharray:3 7;stroke-width:1.6"/>
+      <rect class="sk" x="270" y="10" width="120" height="36" rx="6"/>
+      <text class="lbl b" x="330" y="33" text-anchor="middle" style="font-size:14px">OrderService</text>
+      <path class="sk" d="M330 46 L330 520" style="stroke-dasharray:3 7;stroke-width:1.6"/>
+      <rect class="sk" x="405" y="10" width="120" height="36" rx="6"/>
+      <text class="lbl b" x="465" y="33" text-anchor="middle" style="font-size:14px">OrderRepository</text>
+      <path class="sk" d="M465 46 L465 520" style="stroke-dasharray:3 7;stroke-width:1.6"/>
+      <rect class="sk" x="540" y="10" width="120" height="36" rx="6"/>
+      <text class="lbl b" x="600" y="33" text-anchor="middle" style="font-size:14px">PaymentGateway</text>
+      <path class="sk" d="M600 46 L600 520" style="stroke-dasharray:3 7;stroke-width:1.6"/>
+      <path class="sk blue" d="M60 82 L192 82" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <text class="lbl sq" x="68" y="74">1. POST /orders/42/submit</text>
+      <path class="sk blue" d="M195 116 L327 116" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <text class="lbl sq" x="203" y="108">2. submit(order_id=42, user)</text>
+      <path class="sk blue" d="M330 150 L462 150" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <text class="lbl sq" x="338" y="142">3. get(42)</text>
+      <path class="sk blue" d="M465 184 L333 184" style="color:var(--ink);stroke-dasharray:6 5" marker-end="url(#arr)"/>
+      <text class="lbl sq" x="338" y="176">4. Order (DRAFT)</text>
+      <text class="lbl r sq" x="28" y="221">alt [order belongs to the user and is not empty]</text>
+      <path class="sk blue" d="M330 248 L597 248" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <text class="lbl sq" x="338" y="240">5. charge(total)</text>
+      <path class="sk blue" d="M600 282 L333 282" style="color:var(--ink);stroke-dasharray:6 5" marker-end="url(#arr)"/>
+      <text class="lbl sq" x="338" y="274">6. charge_id</text>
+      <path class="sk blue" d="M330 316 L462 316" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <text class="lbl sq" x="338" y="308">7. save(order with status PAID)</text>
+      <path class="sk blue" d="M330 350 L198 350" style="color:var(--ink);stroke-dasharray:6 5" marker-end="url(#arr)"/>
+      <text class="lbl sq" x="203" y="342">8. Order (PAID)</text>
+      <path class="sk blue" d="M195 384 L63 384" style="color:var(--ink);stroke-dasharray:6 5" marker-end="url(#arr)"/>
+      <text class="lbl sq" x="68" y="376">9. 200 OK</text>
+      <path class="sk red" d="M15 404 L645 404" style="color:var(--red);stroke-dasharray:6 5"/>
+      <text class="lbl r sq" x="28" y="421">[invalid]</text>
+      <path class="sk blue" d="M330 448 L198 448" style="color:var(--ink);stroke-dasharray:6 5" marker-end="url(#arr)"/>
+      <text class="lbl sq" x="203" y="440">10. DomainError</text>
+      <path class="sk blue" d="M195 482 L63 482" style="color:var(--ink);stroke-dasharray:6 5" marker-end="url(#arr)"/>
+      <text class="lbl sq" x="68" y="474">11. 422 Unprocessable</text>
+      <rect class="sk red" x="15" y="204" width="630" height="292" rx="4"/>
+      </svg>
+    <figcaption>Fig 2: submit an order (messages auto-numbered; red frame = alt / else)</figcaption>
+  </figure>
+
+  <h3>Component diagram (C4 "container" level)</h3>
+  <figure>
+    <svg viewBox="0 0 660 540" role="img" aria-label="C4 container diagram: Customer (browser) to Web app (React SPA) to Orders API (Python/FastAPI); API to Orders DB (PostgreSQL) via SQL; API publishes OrderPaid to Event bus (Kafka), which feeds Shipping service and Notification service; API calls Stripe (external) over HTTPS">
+      <rect class="sk" x="230" y="15" width="200" height="50" rx="25"/>
+      <text class="lbl b" x="330" y="46" text-anchor="middle" style="font-size:15px">Customer (browser)</text>
+      <path class="sk blue" d="M330 65 C 336 80, 324 92, 330 108" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <rect class="sk" x="230" y="110" width="200" height="60" rx="8"/>
+      <text class="lbl b" x="330" y="135" text-anchor="middle">Web app</text>
+      <text class="lbl" x="330" y="157" text-anchor="middle" style="font-size:15px">React SPA</text>
+      <path class="sk blue" d="M330 170 C 336 185, 324 197, 330 208" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <text class="lbl r" x="345" y="196" style="font-size:15px">JSON/HTTPS</text>
+      <rect class="sk" x="230" y="210" width="200" height="60" rx="8"/>
+      <text class="lbl b" x="330" y="235" text-anchor="middle">Orders API</text>
+      <text class="lbl" x="330" y="257" text-anchor="middle" style="font-size:15px">Python/FastAPI</text>
+      <!-- DB cylinder -->
+      <path class="sk" d="M20 345 L20 385 C 20 405, 190 405, 190 385 L190 345"/>
+      <path class="sk" d="M20 345 C 20 325, 190 325, 190 345 C 190 365, 20 365, 20 345 Z"/>
+      <text class="lbl b" x="105" y="386" text-anchor="middle" style="font-size:15px">Orders DB</text>
+      <text class="lbl" x="105" y="404" text-anchor="middle" style="font-size:13px">PostgreSQL</text>
+      <path class="sk blue" d="M270 270 C 240 295, 150 295, 110 322" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <text class="lbl r" x="165" y="300" style="font-size:15px">SQL</text>
+      <!-- Event bus -->
+      <rect class="sk" x="250" y="330" width="160" height="60" rx="4"/>
+      <path class="sk" d="M262 330 L262 390 M398 330 L398 390"/>
+      <text class="lbl b" x="330" y="355" text-anchor="middle">Event bus</text>
+      <text class="lbl" x="330" y="377" text-anchor="middle" style="font-size:15px">Kafka</text>
+      <path class="sk blue" d="M330 270 L330 328" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <text class="lbl r" x="340" y="305" style="font-size:15px">publishes OrderPaid</text>
+      <!-- PSP -->
+      <rect class="sk" x="480" y="330" width="170" height="60" rx="8"/>
+      <text class="lbl b" x="565" y="355" text-anchor="middle">Stripe</text>
+      <text class="lbl" x="565" y="377" text-anchor="middle" style="font-size:15px">(external)</text>
+      <path class="sk blue" d="M430 250 C 520 250, 560 285, 565 328" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <text class="lbl r" x="560" y="290" style="font-size:15px">HTTPS</text>
+      <!-- consumers -->
+      <rect class="sk" x="150" y="450" width="190" height="50" rx="8"/>
+      <text class="lbl b" x="245" y="481" text-anchor="middle" style="font-size:15px">Shipping service</text>
+      <rect class="sk" x="370" y="450" width="200" height="50" rx="8"/>
+      <text class="lbl b" x="470" y="481" text-anchor="middle" style="font-size:15px">Notification service</text>
+      <path class="sk blue" d="M295 390 C 280 410, 262 430, 252 448" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M365 390 C 385 410, 440 430, 462 448" style="color:var(--ink)" marker-end="url(#arr)"/>
+    </svg>
+    <figcaption>Fig 3: containers and their connections (cylinder = database, double-sided box = queue / event bus)</figcaption>
+  </figure>
+
+  <h3>Choosing the altitude</h3>
+<pre class="code ascii"><code> zoom out ▲  Context     "our system, its users, the external systems it talks to"  → execs, new joiners
+          │  Container   "the deployable parts: web app, API, DB, queue"             → the whole team
+          │  Component   "the modules inside one container"                           → that service's devs
+ zoom in  ▼  Code        "classes and methods"                                        → usually generate, don't draw</code></pre>
+
+  <div class="pagebreak">~ page 3 ~</div>
+
+  <h2>Example</h2>
+  <h3>Diagrams as code, living next to the code they describe</h3>
+  <span class="lang">markdown</span>
+<pre class="code"><code>&lt;!-- docs/architecture/checkout.md --&gt;
+# Checkout flow
+
+The diagram below is the source of truth for the checkout sequence.
+Update it in the same PR as any change to `OrderService.submit`.
+
+```mermaid
+sequenceDiagram
+    participant C as OrderController
+    participant S as OrderService
+    C-&gt;&gt;S: submit(order_id, user)
+```</code></pre>
+  <p>The Mermaid block above, as it renders:</p>
+  <figure>
+    <svg viewBox="0 0 660 112" role="img" aria-label="Sequence diagram: OrderController calls OrderService.submit(order_id, user)">
+      <rect class="sk" x="0" y="10" width="120" height="36" rx="6"/>
+      <text class="lbl b" x="60" y="33" text-anchor="middle" style="font-size:14px">OrderController</text>
+      <path class="sk" d="M60 46 L60 106" style="stroke-dasharray:3 7;stroke-width:1.6"/>
+      <rect class="sk" x="540" y="10" width="120" height="36" rx="6"/>
+      <text class="lbl b" x="600" y="33" text-anchor="middle" style="font-size:14px">OrderService</text>
+      <path class="sk" d="M600 46 L600 106" style="stroke-dasharray:3 7;stroke-width:1.6"/>
+      <path class="sk blue" d="M60 82 L597 82" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <text class="lbl sq" x="68" y="74">submit(order_id, user)</text>
+      </svg>
+    <figcaption>Fig 4: the rendered Mermaid block (participants C = OrderController, S = OrderService)</figcaption>
+  </figure>
+
+  <span class="lang">python</span>
+<pre class="code"><code># Generate a class diagram from real code, so it can never go stale
+# pip install pylint   → pyreverse ships with pylint
+#   pyreverse -o mmd -p shop src/shop          (writes classes_shop.mmd, packages_shop.mmd)
+# Or: an ER diagram straight from the database schema
+#   pip install eralchemy &amp;&amp; eralchemy -i postgresql://localhost/shop -o docs/erd.md</code></pre>
+
+  <span class="lang">text</span>
+<pre class="code"><code>Reading checklist for someone else's class diagram
+1. Find the aggregates: which classes own others (filled diamonds)?
+2. Follow the interfaces: which dependencies can be swapped?
+3. Check multiplicities: can an Order exist with zero lines? (1..* says no)
+4. Look for cycles between classes — often a design smell.</code></pre>
+
+  <h2>Exercises</h2>
+  <ol style="list-style:none;padding-left:0">
+    <li>1. Draw a class diagram for a small domain.
+      <div class="box"><b>Solution</b> A library: <code>Member "1" --&gt; "*" Loan</code>, <code>Loan --&gt; "1" Copy</code>, <code>Book "1" *-- "*" Copy</code> (copies don't exist without their book record), <code>Member o-- Branch</code> (a member belongs to a home branch, but both exist independently), <code>Loan</code> with <code>due_date</code> and a <code>renew()</code> method, a <code>LoanStatus</code> enumeration, and a <code>FinePolicy</code> interface implemented by <code>StandardFines</code>. Show only the fields and methods needed to discuss the design.</div></li>
+    <li>2. Draw a sequence diagram for a login flow.
+      <div class="box"><b>Solution</b>
+        <figure>
+          <svg viewBox="0 0 660 556" role="img" aria-label="Sequence diagram of a login flow with optional MFA">
+      <rect class="sk" x="-5" y="10" width="130" height="36" rx="6"/>
+      <text class="lbl b" x="60" y="33" text-anchor="middle" style="font-size:14px">User</text>
+      <path class="sk" d="M60 46 L60 550" style="stroke-dasharray:3 7;stroke-width:1.6"/>
+      <rect class="sk" x="175" y="10" width="130" height="36" rx="6"/>
+      <text class="lbl b" x="240" y="33" text-anchor="middle" style="font-size:14px">Web</text>
+      <path class="sk" d="M240 46 L240 550" style="stroke-dasharray:3 7;stroke-width:1.6"/>
+      <rect class="sk" x="355" y="10" width="130" height="36" rx="6"/>
+      <text class="lbl b" x="420" y="33" text-anchor="middle" style="font-size:14px">AuthService</text>
+      <path class="sk" d="M420 46 L420 550" style="stroke-dasharray:3 7;stroke-width:1.6"/>
+      <rect class="sk" x="535" y="10" width="130" height="36" rx="6"/>
+      <text class="lbl b" x="600" y="33" text-anchor="middle" style="font-size:14px">UserStore</text>
+      <path class="sk" d="M600 46 L600 550" style="stroke-dasharray:3 7;stroke-width:1.6"/>
+      <path class="sk blue" d="M60 82 L237 82" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <text class="lbl sq" x="68" y="74">submit email + password</text>
+      <path class="sk blue" d="M240 116 L417 116" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <text class="lbl sq" x="248" y="108">login(email, password)</text>
+      <path class="sk blue" d="M420 150 L597 150" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <text class="lbl sq" x="428" y="142">find_by_email(email)</text>
+      <path class="sk blue" d="M600 184 L423 184" style="color:var(--ink);stroke-dasharray:6 5" marker-end="url(#arr)"/>
+      <text class="lbl sq" x="428" y="176">user (hash, mfa_enabled)</text>
+      <text class="lbl r sq" x="28" y="221">alt [password ok and MFA enabled]</text>
+      <path class="sk blue" d="M420 248 L243 248" style="color:var(--ink);stroke-dasharray:6 5" marker-end="url(#arr)"/>
+      <text class="lbl sq" x="248" y="240">mfa_required (challenge id)</text>
+      <path class="sk blue" d="M60 282 L237 282" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <text class="lbl sq" x="68" y="274">enter a 6-digit code</text>
+      <path class="sk blue" d="M240 316 L417 316" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <text class="lbl sq" x="248" y="308">verify_mfa(challenge id, code)</text>
+      <path class="sk blue" d="M420 350 L243 350" style="color:var(--ink);stroke-dasharray:6 5" marker-end="url(#arr)"/>
+      <text class="lbl sq" x="248" y="342">session token</text>
+      <path class="sk red" d="M15 370 L645 370" style="color:var(--red);stroke-dasharray:6 5"/>
+      <text class="lbl r sq" x="28" y="387">[password ok, no MFA]</text>
+      <path class="sk blue" d="M420 414 L243 414" style="color:var(--ink);stroke-dasharray:6 5" marker-end="url(#arr)"/>
+      <text class="lbl sq" x="248" y="406">session token</text>
+      <path class="sk red" d="M15 434 L645 434" style="color:var(--red);stroke-dasharray:6 5"/>
+      <text class="lbl r sq" x="28" y="451">[wrong password]</text>
+      <path class="sk blue" d="M420 478 L243 478" style="color:var(--ink);stroke-dasharray:6 5" marker-end="url(#arr)"/>
+      <text class="lbl sq" x="248" y="470">401 (generic message, attempt counted)</text>
+      <rect class="sk red" x="15" y="204" width="630" height="288" rx="4"/>
+      <path class="sk blue" d="M240 526 L63 526" style="color:var(--ink);stroke-dasharray:6 5" marker-end="url(#arr)"/>
+      <text class="lbl sq" x="68" y="518">set cookie + redirect</text>
+      </svg>
+          <figcaption>Fig 5: login with optional MFA</figcaption>
+        </figure>
+      </div></li>
+    <li>3. Your architecture diagram in the wiki is two years out of date. What do you change so it doesn't happen again?
+      <div class="box"><b>Solution</b> Move it into the repo as Mermaid or Structurizr next to the code, reduce it to the level that changes slowly (containers, not classes), generate the detailed parts (ERDs, class diagrams) from the source, add "diagram updated?" to the PR template, and link it from the README so people actually see it.</div></li>
+  </ol>
+
+  <div class="pagebreak">~ page 4 ~</div>
+
+  <h2>Mini project</h2>
+  <p><b>Document a real component with class + sequence diagrams (Mermaid).</b></p>
+  <figure>
+    <svg viewBox="0 0 660 420" role="img" aria-label="Flow: pick a real component, then context and container diagram, hand-drawn class diagram, generated class diagram, two sequence diagrams; context, class and sequence diagrams feed docs/architecture/COMPONENT.md rendered in CI">
+      <rect class="sk" x="130" y="15" width="400" height="64" rx="12"/>
+      <text class="lbl b" x="330" y="41" text-anchor="middle">pick a real component</text>
+      <text class="lbl" x="330" y="63" text-anchor="middle" style="font-size:15px">(from your earlier projects, or an OSS lib)</text>
+      <rect class="sk" x="10" y="140" width="145" height="108" rx="10"/>
+      <text class="lbl b" x="82" y="166" text-anchor="middle" style="font-size:15px">context +</text>
+      <text class="lbl b" x="82" y="188" text-anchor="middle" style="font-size:15px">container diagram</text>
+      <text class="lbl" x="82" y="210" text-anchor="middle" style="font-size:15px">(where it sits)</text>
+      <rect class="sk" x="173" y="140" width="145" height="108" rx="10"/>
+      <text class="lbl b" x="245" y="166" text-anchor="middle" style="font-size:15px">class diagram of</text>
+      <text class="lbl b" x="245" y="188" text-anchor="middle" style="font-size:15px">its core domain</text>
+      <text class="lbl" x="245" y="210" text-anchor="middle" style="font-size:15px">(hand-drawn, only</text>
+      <text class="lbl" x="245" y="232" text-anchor="middle" style="font-size:15px">key members)</text>
+      <rect class="sk" x="336" y="140" width="145" height="108" rx="10"/>
+      <text class="lbl b" x="408" y="166" text-anchor="middle" style="font-size:15px">generated class</text>
+      <text class="lbl b" x="408" y="188" text-anchor="middle" style="font-size:15px">diagram</text>
+      <text class="lbl" x="408" y="210" text-anchor="middle" style="font-size:15px">(pyreverse) —</text>
+      <text class="lbl" x="408" y="232" text-anchor="middle" style="font-size:15px">compare</text>
+      <rect class="sk" x="499" y="140" width="145" height="108" rx="10"/>
+      <text class="lbl b" x="571" y="166" text-anchor="middle" style="font-size:15px">2 sequence</text>
+      <text class="lbl b" x="571" y="188" text-anchor="middle" style="font-size:15px">diagrams:</text>
+      <text class="lbl" x="571" y="210" text-anchor="middle" style="font-size:15px">the happy path +</text>
+      <text class="lbl" x="571" y="232" text-anchor="middle" style="font-size:15px">one failure path</text>
+      <path class="sk blue" d="M290 79 C 230 100, 120 110, 82 138" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M310 79 C 290 100, 260 115, 245 138" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M350 79 C 370 100, 395 115, 408 138" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M370 79 C 430 100, 540 110, 571 138" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <rect class="sk green" x="130" y="330" width="400" height="64" rx="12"/>
+      <text class="lbl g" x="330" y="356" text-anchor="middle">docs/architecture/COMPONENT.md</text>
+      <text class="lbl g" x="330" y="378" text-anchor="middle">rendered in CI</text>
+      <path class="sk blue" d="M82 248 C 100 290, 200 310, 270 328" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M245 248 C 250 280, 280 305, 300 328" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M571 248 C 560 290, 460 310, 390 328" style="color:var(--ink)" marker-end="url(#arr)"/>
+    </svg>
+    <figcaption>Fig 6: the context, hand-drawn class and sequence diagrams feed the doc; the generated class diagram is only for comparison</figcaption>
+  </figure>
+
+  <h3>Steps</h3>
+  <ol style="list-style:none;padding-left:0">
+    <li>1. Choose a component you know well (e.g. the transfer service from <a href="ch01-oop-fundamentals.notes.html">Ch 1</a>, or <code>requests.Session</code>).</li>
+    <li>2. Draw the context/container view: what it talks to.</li>
+    <li>3. Hand-draw a class diagram with only the members that matter for understanding; then generate one with <code>pyreverse</code> and write down what the hand-drawn one leaves out on purpose.</li>
+    <li>4. Draw two sequence diagrams: the main flow and one error or retry flow, with <code>alt</code>/<code>loop</code> fragments.</li>
+    <li>5. Put them in <code>docs/architecture/</code>, render them in the doc site, and ask someone unfamiliar with the code to explain the flow back to you from the diagrams alone.</li>
+  </ol>
+  <div class="box"><b>Done when:</b> a newcomer can correctly explain the component's main flow and its key classes using only your diagrams.</div>
+
+  <h2>Open source</h2>
+  <ul>
+    <li><a href="https://github.com/mermaid-js/mermaid"><code>mermaid-js/mermaid</code></a> — diagrams as text, rendered natively by GitHub, GitLab, and most docs tools; its docs cover class, sequence, state, ER, and C4 syntax. See also PlantUML and Structurizr (C4) for larger models, and c4model.com.</li>
+  </ul>
+
+  <h2>Interview</h2>
+  <ol style="list-style:none;padding-left:0">
+    <li>1. <b>"Class vs sequence diagram — what does each show?"</b>
+      <div class="box"><b>Answer</b> A class diagram shows static structure: the types, their data and operations, and relationships (inheritance, composition, association) with multiplicities — what exists. A sequence diagram shows dynamic behavior for one scenario: which participants exchange which messages, in what order, including conditions and loops — what happens over time. Use class diagrams to discuss the model and responsibilities, and sequence diagrams to discuss a flow and its failure cases.</div></li>
+    <li>2. <b>"When is a diagram worth maintaining?"</b>
+      <div class="box"><b>Answer</b> When the information is valuable, hard to reconstruct from the code, and changes slowly: system context and container maps, key cross-service flows, and the core domain model. Keep those as diagrams-as-code in the repo, reviewed in PRs, at a high enough altitude that they don't churn. Generate low-level diagrams (class, ER) from source instead of maintaining them, and treat whiteboard sketches as disposable, captured in ADRs.</div></li>
+  </ol>
+
+  <h2>Checklist</h2>
+  <ul>
+    <li class="todo">draw readable class diagrams</li>
+    <li class="todo">show message flow in sequence diagrams</li>
+    <li class="todo">keep diagrams at the right altitude</li>
+  </ul>
+  <div class="gap"></div>
+  <p class="black"><a href="index.md">Contents</a> · ← <a href="ch03-design-principles-cohesion-coupling-yagni-dry-kiss.notes.html">Chapter 3 — Design Principles (Cohesion, Coupling, YAGNI, DRY, KISS)</a> · Next → <a href="ch05-gof-creational-patterns.notes.html">Chapter 5 — GoF Creational Patterns</a></p>
+
+  <nav class="nav"><a href="ch03-design-principles-cohesion-coupling-yagni-dry-kiss.notes.html">← Ch 3 — Design Principles (Cohesion, Coupling, YAGNI, DRY, KISS)</a><a href="index.notes.html">☰ Contents</a><a href="ch05-gof-creational-patterns.notes.html">Ch 5 — GoF Creational Patterns →</a></nav>
+</main>
+</body>
+</html>

@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ch 56 — IaC: Terraform, State &amp; Config Drift — Notes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;700&family=Kalam:wght@400;700&family=Patrick+Hand&display=swap" rel="stylesheet">
+<style>
+/* ===== Page tokens ===== */
+:root{
+  --line:32px;                 /* ruled-line spacing; every vertical size is a multiple */
+  --paper:#fdfbf4; --rule:#c9dcef; --margin:#e8a0a0;
+  --ink:#1f3a93;               /* blue pen (body) */
+  --ink2:#222;                 /* black pen (headings) */
+  --red:#c0392b; --green:#1e8449;
+  --hl-yellow:rgba(255,235,59,.55); --hl-pink:rgba(255,128,171,.45);
+  --hl-green:rgba(118,255,3,.35); --hl-blue:rgba(64,196,255,.35);
+  --sticky:#fff59d; --desk:#e9e4d8;
+  --hand:'Kalam','Patrick Hand','Comic Sans MS','Segoe Print','Bradley Hand',cursive;
+  --title:'Caveat','Kalam','Segoe Print','Bradley Hand',cursive;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){ --desk:#2b2b2b; }
+}
+:root[data-theme="dark"]{ --desk:#2b2b2b; }
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--desk);font-family:var(--hand);color:var(--ink);}
+
+/* ===== Notebook sheet ===== */
+.page{
+  position:relative; max-width:860px; margin:24px auto; padding:var(--line) 28px calc(var(--line)*2) 84px;
+  background:
+    linear-gradient(90deg,transparent 64px,var(--margin) 64px,var(--margin) 66px,transparent 66px),
+    repeating-linear-gradient(var(--paper) 0,var(--paper) calc(var(--line) - 1px),var(--rule) calc(var(--line) - 1px),var(--rule) var(--line));
+  background-color:var(--paper);
+  box-shadow:0 2px 6px rgba(0,0,0,.15),0 12px 28px rgba(0,0,0,.12);
+  font-size:20px; line-height:var(--line);
+}
+.page::before{ /* punched holes */
+  content:""; position:absolute; left:22px; top:0; bottom:0; width:18px;
+  background:radial-gradient(circle,var(--desk) 7px,transparent 8px) 0 40px/18px 220px repeat-y;
+}
+@media (max-width:600px){
+  .page{margin:0;padding-left:52px;padding-right:16px;font-size:18px;
+    background:
+      linear-gradient(90deg,transparent 40px,var(--margin) 40px,var(--margin) 42px,transparent 42px),
+      repeating-linear-gradient(var(--paper) 0,var(--paper) calc(var(--line) - 1px),var(--rule) calc(var(--line) - 1px),var(--rule) var(--line));
+    background-color:var(--paper);}
+  .page::before{left:10px;width:16px}
+}
+
+/* ===== Text (all margins are multiples of --line so text sits on the rules) ===== */
+.date{position:absolute;top:0;right:24px;font-family:var(--title);font-size:22px;color:var(--ink2);line-height:var(--line)}
+h1{font-family:var(--title);font-weight:700;color:var(--ink2);font-size:46px;line-height:calc(var(--line)*2);margin:0;transform:rotate(-1deg)}
+h1 .u{background:linear-gradient(transparent 62%,var(--hl-yellow) 62%,var(--hl-yellow) 92%,transparent 92%)}
+h2{font-family:var(--title);font-weight:700;color:var(--red);font-size:32px;line-height:calc(var(--line)*1.5);margin:calc(var(--line)*.5) 0 0}
+h2::before{content:"➤ ";font-size:22px}
+p,li{margin:0}
+ul,ol{margin:0;padding-left:28px}
+ul{list-style:none}
+ul>li::before{content:"–";position:absolute;margin-left:-20px}
+ul>li.star::before{content:"★";color:var(--red)}
+ul>li.arrow::before{content:"→"}
+ul>li.check::before{content:"✓";color:var(--green)}
+.gap{height:var(--line)}
+
+/* ===== Pen effects ===== */
+.hl{background:var(--hl-yellow);padding:0 3px;border-radius:3px 6px 4px 7px}
+.hl.pink{background:var(--hl-pink)} .hl.green{background:var(--hl-green)} .hl.blue{background:var(--hl-blue)}
+.red{color:var(--red)} .green{color:var(--green)} .black{color:var(--ink2)}
+.ul{text-decoration:underline wavy var(--red);text-underline-offset:5px}
+.circ{border:2px solid var(--red);border-radius:50% 45% 55% 48%;padding:0 6px}
+.strike{text-decoration:line-through 2px var(--red)}
+.term{font-weight:700;color:var(--ink2)}
+.box{display:flow-root;border:2.5px solid var(--ink2);border-radius:4px 10px 6px 12px;padding:calc(var(--line)*.5 - 2.5px) 14px;margin:calc(var(--line)*.5) 0;transform:rotate(-.4deg);background:rgba(255,255,255,.35)}
+.box.red{border-color:var(--red)}
+.formula{font-family:var(--title);font-size:28px;text-align:center;color:var(--ink2)}
+
+/* sticky note */
+.sticky{float:right;width:min(250px,42%);margin:0 0 var(--line) 20px;padding:var(--line) 16px;background:var(--sticky);
+  color:#333;transform:rotate(2.2deg);box-shadow:2px 4px 8px rgba(0,0,0,.18);font-size:18px}
+.sticky b{font-family:var(--title);font-size:24px;color:var(--red)}
+@media (max-width:600px){.sticky{float:none;width:auto;margin:var(--line) 0}}
+
+/* margin annotation (lives in the red margin) */
+.side{position:absolute;left:4px;width:58px;text-align:center;font-family:var(--title);font-size:17px;line-height:18px;color:var(--red);transform:rotate(-8deg)}
+@media (max-width:600px){.side{display:none}}
+
+/* two-column notes */
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:0 28px}
+@media (max-width:600px){.cols{grid-template-columns:1fr}}
+
+/* diagrams */
+figure{margin:var(--line) 0;text-align:center}
+figure svg{width:100%;max-width:640px;height:auto;overflow:visible}
+figcaption{font-family:var(--title);font-size:20px;color:var(--ink2)}
+/* phones: keep labels readable — diagram scrolls inside its own box instead of shrinking */
+@media (max-width:600px){figure{overflow-x:auto}figure svg{min-width:520px}}
+.sk{fill:none;stroke:var(--ink2);stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round;filter:url(#rough)}
+.sk.blue{stroke:var(--ink)} .sk.red{stroke:var(--red)} .sk.green{stroke:var(--green)}
+.lbl{font-family:var(--hand);font-size:17px;fill:var(--ink)}
+.lbl.b{font-weight:700;fill:var(--ink2)} .lbl.r{fill:var(--red)} .lbl.g{fill:var(--green)}
+
+/* table */
+.wrap{overflow-x:auto}
+table{border-collapse:collapse;margin:calc(var(--line)*.5) 0;min-width:100%}
+th,td{border:2px solid var(--ink2);padding:0 10px;text-align:left;vertical-align:top}
+th{font-family:var(--title);font-size:24px;color:var(--ink2)}
+
+@media print{body{background:#fff}.page{box-shadow:none;margin:0}.page::before{display:none}}
+
+/* ===== Added for long chapter notes ===== */
+pre.code{font-family:Consolas,'Courier New',monospace;font-size:14px;line-height:var(--line);color:var(--ink);background:rgba(255,255,255,.45);
+  border-left:4px solid var(--red);margin:calc(var(--line)*.5) 0;padding:0 12px;overflow-x:auto;white-space:pre}
+pre.code.ascii{border-left-color:var(--green)}
+code{font-family:Consolas,'Courier New',monospace;font-size:.82em;background:rgba(0,0,0,.06);padding:0 3px;border-radius:3px}
+pre.code code{background:none;padding:0;font-size:inherit}
+.lang{font-family:var(--title);font-size:18px;color:var(--red)}
+h3{font-family:var(--title);font-weight:700;color:var(--ink2);font-size:26px;line-height:var(--line);margin:calc(var(--line)*.5) 0 0}
+h3::before{content:"✎ ";font-size:18px;color:var(--red)}
+.nav{display:flex;justify-content:space-between;gap:12px;font-family:var(--title);font-size:22px;line-height:var(--line)}
+.nav a{color:var(--red);text-decoration:none}
+.nav a:hover{text-decoration:underline wavy}
+.pagebreak{border-top:3px dashed var(--margin);margin:var(--line) 0;text-align:center;font-family:var(--title);color:var(--red);line-height:var(--line)}
+li.todo::before{content:"☐";color:var(--ink2)}
+a{color:var(--ink);text-decoration:underline dotted}
+</style>
+</head>
+<body>
+<!-- One shared hand-drawn wobble filter; give every diagram stroke class="sk" -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <!-- userSpaceOnUse region: a % region collapses to nothing on perfectly straight lines (zero-height bbox) -->
+  <filter id="rough" filterUnits="userSpaceOnUse" x="-500" y="-500" width="3000" height="3000">
+    <feTurbulence type="fractalNoise" baseFrequency="0.03" numOctaves="2" seed="3" result="n"/>
+    <feDisplacementMap in="SourceGraphic" in2="n" scale="3"/>
+  </filter>
+  <marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+    <path d="M1 1 L9 5 L1 9" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+  </marker>
+</defs></svg>
+
+<main class="page">
+  <nav class="nav"><a href="ch55-containers-docker-kubernetes-and-helm.notes.html">← Ch 55 — Containers: Docker, Kubernetes &amp; Helm</a><a href="index.notes.html">☰ Contents</a><a href="ch57-ci-cd-and-github-actions.notes.html">Ch 57 — CI/CD &amp; GitHub Actions →</a></nav>
+  <div class="date">2026-10-10</div>
+  <h1><span class="u">Ch 56 — IaC: Terraform, State &amp; Config Drift</span></h1>
+    <p class="black">Volume 1 — Computer Science Foundations · <a href="index.md">Contents</a> · ← <a href="ch55-containers-docker-kubernetes-and-helm.notes.html">Chapter 55 — Containers: Docker, Kubernetes &amp; Helm</a> · Next → <a href="ch57-ci-cd-and-github-actions.notes.html">Chapter 57 — CI/CD &amp; GitHub Actions</a></p>
+
+  <p class="black">Chapter 56 — IaC: Terraform, State &amp; Config Drift</p>
+
+  <h2>Concept</h2>
+  <p>Infrastructure as code, Terraform state, and detecting/configuring drift.</p>
+  <div class="box"><b>In one sentence:</b> infrastructure as code means your servers, networks, and databases are described in version-controlled files; Terraform compares those files with what actually exists (using a state file as its memory) and shows a plan of changes; and <span class="hl">drift</span> is when someone changes the real infrastructure by hand so it no longer matches the code.</div>
+
+  <h3>Mental model — an architect's blueprint</h3>
+  <p>The <code>.tf</code> files are the blueprint. The state file is the builder's logbook: "wall A is the brick wall with serial #123". <code>terraform plan</code> walks the building with the blueprint and the logbook and lists every difference. Drift is someone knocking a hole in a wall without updating the blueprint — next time you build from the blueprint, the hole gets bricked up.</p>
+
+  <h3>Why IaC</h3>
+  <div class="wrap"><table>
+    <tr><th>Without IaC ("ClickOps")</th><th>With IaC</th></tr>
+    <tr><td>changes are invisible and undocumented</td><td>every change is a reviewed pull request with history</td></tr>
+    <tr><td>environments slowly diverge</td><td>dev/staging/prod come from the same modules</td></tr>
+    <tr><td>disaster recovery = heroics</td><td>recreate from code</td></tr>
+    <tr><td>"who opened port 22 to the world?"</td><td><code>git blame</code></td></tr>
+  </table></div>
+
+  <h3>Terraform core concepts</h3>
+  <div class="wrap"><table>
+    <tr><th>Concept</th><th>Meaning</th></tr>
+    <tr><td>Provider</td><td>a plugin talking to an API (AWS, GCP, Kubernetes, Cloudflare, GitHub)</td></tr>
+    <tr><td>Resource</td><td>one managed object: <code>aws_instance.web</code></td></tr>
+    <tr><td>Data source</td><td>read-only lookup of something existing: <code>data.aws_ami.ubuntu</code></td></tr>
+    <tr><td>Variable / output / local</td><td>inputs, exported values, computed helpers</td></tr>
+    <tr><td>Module</td><td>a reusable folder of resources with inputs and outputs</td></tr>
+    <tr><td><b>State</b></td><td>a JSON map from resource addresses → real IDs and attributes</td></tr>
+    <tr><td>Plan / apply</td><td>compute the diff (desired vs state vs reality) / execute it</td></tr>
+    <tr><td>Workspace / separate state per env</td><td>isolate dev and prod</td></tr>
+  </table></div>
+
+  <aside class="sticky"><b>Exam tip!</b><br><code>terraform plan -detailed-exitcode</code>: 0 = no changes, 1 = error, 2 = drift / changes.</aside>
+  <h3>Why state is remote</h3>
+  <div class="wrap"><table>
+    <tr><th>Local <code>terraform.tfstate</code> problem</th><th>Remote backend fix (S3 + DynamoDB lock, GCS, Terraform Cloud)</th></tr>
+    <tr><td>lives on one laptop → lost or out of date</td><td>one shared source of truth</td></tr>
+    <tr><td>two people apply at once → corruption</td><td><b>state locking</b></td></tr>
+    <tr><td>contains secrets in plain text</td><td>encryption at rest + tight access control</td></tr>
+    <tr><td>no history</td><td>versioned bucket → recover old state</td></tr>
+  </table></div>
+
+  <div class="pagebreak">~ page 2 ~</div>
+
+  <h3>Drift: detect and reconcile</h3>
+  <div class="wrap"><table>
+    <tr><th>Step</th><th>How</th></tr>
+    <tr><td>Detect</td><td>scheduled <code>terraform plan -detailed-exitcode</code> in CI (exit code 2 = changes), or <code>terraform plan -refresh-only</code></td></tr>
+    <tr><td>Decide</td><td>was the manual change <i>right</i> (update the code) or <i>wrong</i> (re-apply the code)?</td></tr>
+    <tr><td>Reconcile</td><td>update <code>.tf</code> and apply; or <code>terraform apply</code> to revert; <code>terraform import</code> / <code>import</code> blocks for resources created by hand</td></tr>
+    <tr><td>Prevent</td><td>no console write access in prod; changes only via the pipeline; policy as code (OPA/Sentinel/Checkov)</td></tr>
+  </table></div>
+
+  <h2>Prereqs</h2>
+  <ul>
+    <li><a href="ch55-containers-docker-kubernetes-and-helm.notes.html">Chapter 55 — Containers: Docker, Kubernetes &amp; Helm</a></li>
+  </ul>
+
+  <h2>Diagram</h2>
+  <h3>The Terraform plan/apply cycle</h3>
+  <figure>
+    <svg viewBox="0 0 660 400" role="img" aria-label="Flowchart: the .tf files (desired), the remote state (last known) and the cloud APIs (actual, via refresh) all feed terraform plan (+ create, ~ update, minus destroy); the plan goes to PR review (plan posted as a comment), then terraform apply with state lock; apply writes to the cloud APIs and to the remote state">
+      <rect class="sk" x="10" y="20" width="190" height="45" rx="10"/>
+      <text class="lbl b" x="105" y="48" text-anchor="middle">*.tf (desired)</text>
+      <rect class="sk" x="470" y="20" width="180" height="65" rx="22"/>
+      <text class="lbl b" x="560" y="46" text-anchor="middle" style="font-size:15px">remote state</text>
+      <text class="lbl" x="560" y="68" text-anchor="middle" style="font-size:15px">(last known)</text>
+      <rect class="sk" x="10" y="270" width="190" height="75" rx="10"/>
+      <text class="lbl b" x="105" y="298" text-anchor="middle" style="font-size:15px">cloud APIs</text>
+      <text class="lbl" x="105" y="320" text-anchor="middle" style="font-size:15px">(actual, via refresh)</text>
+      <rect class="sk red" x="230" y="105" width="200" height="80" rx="10"/>
+      <text class="lbl r" x="330" y="130" text-anchor="middle" style="font-size:15px">terraform plan</text>
+      <text class="lbl" x="330" y="152" text-anchor="middle" style="font-size:15px">+ create ~ update</text>
+      <text class="lbl" x="330" y="172" text-anchor="middle" style="font-size:15px">− destroy</text>
+      <path class="sk blue" d="M200 50 C 215 80, 220 110, 228 128" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M470 62 C 450 90, 445 120, 432 135" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M105 270 C 120 230, 180 190, 228 168" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M330 185 L330 218" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <rect class="sk" x="230" y="220" width="200" height="65" rx="10"/>
+      <text class="lbl b" x="330" y="246" text-anchor="middle" style="font-size:15px">PR review</text>
+      <text class="lbl" x="330" y="268" text-anchor="middle" style="font-size:14px">(plan posted as a comment)</text>
+      <path class="sk blue" d="M330 285 L330 318" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <rect class="sk green" x="230" y="320" width="200" height="60" rx="10"/>
+      <text class="lbl g" x="330" y="346" text-anchor="middle" style="font-size:15px">terraform apply</text>
+      <text class="lbl g" x="330" y="368" text-anchor="middle" style="font-size:15px">(with state lock)</text>
+      <path class="sk blue" d="M230 350 C 200 352, 190 345, 160 347" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M430 350 C 540 350, 565 230, 560 87" style="color:var(--ink)" marker-end="url(#arr)"/>
+    </svg>
+    <figcaption>Fig 1: plan compares desired (code) vs last known (state) vs actual (cloud); apply updates the cloud and the state</figcaption>
+  </figure>
+
+  <h3>State file vs live infra diff (drift)</h3>
+<pre class="code ascii"><code> code (main.tf)             state (last apply)            live AWS (someone used the console)
+ ingress 443 from 0.0.0.0   ingress 443 from 0.0.0.0      ingress 443 from 0.0.0.0
+                                                          ingress 22  from 0.0.0.0   ← drift!
+ instance_type = t3.small   instance_type = t3.small      instance_type = t3.large  ← drift!
+
+ terraform plan:
+   ~ aws_security_group.web   − ingress 22 from 0.0.0.0/0      (would remove the manual rule)
+   ~ aws_instance.web         instance_type: t3.large → t3.small</code></pre>
+
+  <h3>Module composition</h3>
+  <figure>
+    <svg viewBox="0 0 660 350" role="img" aria-label="Flowchart top to bottom: envs/prod/main.tf calls module network (vpc, subnets, NAT), module web_service (instance, security group, DNS) and module postgres (RDS, parameter group); network passes outputs subnet_ids and vpc_id to web_service and postgres">
+      <rect class="sk" x="220" y="10" width="220" height="45" rx="10"/>
+      <text class="lbl b" x="330" y="38" text-anchor="middle">envs/prod/main.tf</text>
+      <rect class="sk" x="10" y="140" width="190" height="62" rx="10"/>
+      <text class="lbl b" x="105" y="166" text-anchor="middle" style="font-size:15px">module network</text>
+      <text class="lbl" x="105" y="188" text-anchor="middle" style="font-size:15px">vpc, subnets, NAT</text>
+      <rect class="sk" x="240" y="140" width="200" height="80" rx="10"/>
+      <text class="lbl b" x="340" y="164" text-anchor="middle" style="font-size:15px">module web_service</text>
+      <text class="lbl" x="340" y="186" text-anchor="middle" style="font-size:15px">(instance, security</text>
+      <text class="lbl" x="340" y="206" text-anchor="middle" style="font-size:15px">group, DNS)</text>
+      <rect class="sk" x="480" y="140" width="170" height="80" rx="10"/>
+      <text class="lbl b" x="565" y="164" text-anchor="middle" style="font-size:15px">module postgres</text>
+      <text class="lbl" x="565" y="186" text-anchor="middle" style="font-size:15px">(RDS, parameter</text>
+      <text class="lbl" x="565" y="206" text-anchor="middle" style="font-size:15px">group)</text>
+      <path class="sk blue" d="M290 55 C 220 85, 130 105, 105 138" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M330 55 C 335 85, 338 105, 340 138" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M380 55 C 450 85, 540 105, 565 138" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk green" d="M70 202 C 80 262, 310 272, 320 222" style="color:var(--green)" marker-end="url(#arr)"/>
+      <path class="sk green" d="M140 202 C 150 300, 560 305, 565 222" style="color:var(--green)" marker-end="url(#arr)"/>
+      <text class="lbl g" x="330" y="338" text-anchor="middle">outputs: subnet_ids, vpc_id</text>
+    </svg>
+    <figcaption>Fig 2: the root module composes three modules; the network module's outputs feed web_service and postgres (green arrows)</figcaption>
+  </figure>
+
+  <div class="pagebreak">~ page 3 ~</div>
+
+  <h2>Example</h2>
+  <span class="lang">hcl</span>
+<pre class="code"><code># modules/web_service/main.tf
+variable "name"          { type = string }
+variable "subnet_id"     { type = string }
+variable "vpc_id"        { type = string }
+variable "instance_type" {
+  type    = string
+  default = "t3.small"
+}
+
+data "aws_ami" "ubuntu" {
+  most_recent = true
+  owners      = ["099720109477"]                       # Canonical
+  filter {
+    name   = "name"
+    values = ["ubuntu/images/hvm-ssd-gp3/ubuntu-noble-24.04-amd64-server-*"]
+  }
+}
+
+resource "aws_security_group" "web" {
+  name   = "${var.name}-web"
+  vpc_id = var.vpc_id
+  ingress {
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+}
+
+resource "aws_instance" "web" {
+  ami                    = data.aws_ami.ubuntu.id
+  instance_type          = var.instance_type
+  subnet_id              = var.subnet_id
+  vpc_security_group_ids = [aws_security_group.web.id]
+  tags                   = { Name = var.name, ManagedBy = "terraform" }
+}
+
+output "public_ip" { value = aws_instance.web.public_ip }</code></pre>
+
+  <span class="lang">hcl</span>
+<pre class="code"><code># envs/prod/backend.tf — remote, locked, encrypted state
+terraform {
+  required_version = "&gt;= 1.6"
+  backend "s3" {
+    bucket         = "acme-tfstate"
+    key            = "prod/web.tfstate"
+    region         = "eu-west-1"
+    dynamodb_table = "tf-locks"      # newer versions can use use_lockfile = true instead
+    encrypt        = true
+  }
+  required_providers {
+    aws = { source = "hashicorp/aws", version = "~&gt; 5.0" }
+  }
+}</code></pre>
+
+  <span class="lang">bash</span>
+<pre class="code"><code>terraform init
+terraform fmt -check &amp;&amp; terraform validate
+terraform plan -out=tfplan
+terraform apply tfplan
+terraform plan -detailed-exitcode        # 0 = no changes, 1 = error, 2 = drift / changes
+terraform state list</code></pre>
+
+  <h2>Exercises</h2>
+  <ol style="list-style:none;padding-left:0">
+    <li>1. Write Terraform for a small stack.
+      <div class="box"><b>Solution</b> A VPC with public and private subnets, the <code>web_service</code> module above in the public subnet, and a managed Postgres in the private one, with a security group that allows 5432 only from the web security group. Variables per environment in <code>envs/dev</code> and <code>envs/prod</code>; outputs for the IP and DB endpoint; remote state; <code>terraform plan</code> reviewed in a PR.</div></li>
+    <li>2. Detect and reconcile drift.
+      <div class="box"><b>Solution</b> Change the instance type in the console. Run <code>terraform plan -detailed-exitcode</code>: exit 2, with the diff shown. Decide: if the bigger size is needed, change <code>instance_type</code> in code and apply (now code and reality agree); if not, apply to revert. Put the plan in a nightly CI job that alerts on exit code 2.</div></li>
+    <li>3. You rename a resource block from <code>aws_instance.web</code> to <code>aws_instance.app</code>. Why does the plan want to destroy and recreate the server, and how do you avoid it?
+      <div class="box"><b>Solution</b> State is keyed by resource address; the old address disappeared and a new one appeared. Add a <code>moved { from = aws_instance.web  to = aws_instance.app }</code> block (or run <code>terraform state mv</code>) so Terraform knows it's the same object.</div></li>
+  </ol>
+
+  <div class="pagebreak">~ page 4 ~</div>
+
+  <h2>Mini project</h2>
+  <p><b>A Terraform module + a drift-check script that alerts on differences.</b></p>
+  <figure>
+    <svg viewBox="0 0 660 380" role="img" aria-label="Flowchart: module s3 static site (bucket, policy, versioning, CloudFront distribution) to envs/dev and envs/prod with remote state and locking; separately a nightly CI job runs drift_check.sh (terraform plan -detailed-exitcode for each env); on exit 2 it posts the plan summary to Slack and opens an issue; on exit 0 it stays quiet">
+      <rect class="sk" x="10" y="10" width="290" height="82" rx="10"/>
+      <text class="lbl b" x="155" y="35" text-anchor="middle" style="font-size:15px">module: s3 static site</text>
+      <text class="lbl" x="155" y="57" text-anchor="middle" style="font-size:15px">(bucket, policy, versioning,</text>
+      <text class="lbl" x="155" y="77" text-anchor="middle" style="font-size:15px">CloudFront distribution)</text>
+      <path class="sk blue" d="M300 50 L388 50" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <rect class="sk" x="390" y="18" width="260" height="65" rx="10"/>
+      <text class="lbl b" x="520" y="44" text-anchor="middle" style="font-size:15px">envs/dev, envs/prod</text>
+      <text class="lbl" x="520" y="66" text-anchor="middle" style="font-size:15px">remote state + locking</text>
+      <rect class="sk" x="10" y="170" width="200" height="45" rx="10"/>
+      <text class="lbl b" x="110" y="198" text-anchor="middle" style="font-size:15px">nightly CI job</text>
+      <path class="sk blue" d="M210 192 L268 192" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <rect class="sk" x="270" y="150" width="270" height="85" rx="10"/>
+      <text class="lbl b" x="405" y="176" text-anchor="middle" style="font-size:15px">drift_check.sh:</text>
+      <text class="lbl" x="405" y="198" text-anchor="middle" style="font-size:14px">terraform plan -detailed-exitcode</text>
+      <text class="lbl" x="405" y="220" text-anchor="middle" style="font-size:15px">for each env</text>
+      <path class="sk red" d="M480 235 L480 298" style="color:var(--red)" marker-end="url(#arr)"/>
+      <text class="lbl r" x="495" y="272" style="font-size:15px">exit 2</text>
+      <rect class="sk red" x="385" y="300" width="265" height="62" rx="10"/>
+      <text class="lbl r" x="517" y="326" text-anchor="middle" style="font-size:15px">post the plan summary to Slack</text>
+      <text class="lbl r" x="517" y="348" text-anchor="middle" style="font-size:15px">+ open an issue</text>
+      <path class="sk green" d="M310 235 L310 298" style="color:var(--green)" marker-end="url(#arr)"/>
+      <text class="lbl g" x="298" y="272" text-anchor="end" style="font-size:15px">exit 0</text>
+      <rect class="sk green" x="250" y="300" width="120" height="45" rx="10"/>
+      <text class="lbl g" x="310" y="328" text-anchor="middle" style="font-size:15px">quiet</text>
+    </svg>
+    <figcaption>Fig 3: the module feeds two environments; the nightly drift check branches on the exit code</figcaption>
+  </figure>
+
+  <h3>Steps</h3>
+  <ol style="list-style:none;padding-left:0">
+    <li>1. Write a reusable module (a static site on S3 + CloudFront, or the equivalent on LocalStack or GCP) with variables, outputs, and validations.</li>
+    <li>2. Two environments using the module with separate remote states.</li>
+    <li>3. <code>drift_check.sh</code>: loop over envs, <code>init</code>, <code>plan -detailed-exitcode -no-color</code>, and capture changed resource addresses.</li>
+    <li>4. On drift, post a summary (resource, attribute, before → after) to a webhook.</li>
+    <li>5. Test by changing a bucket tag by hand; confirm the alert, then reconcile.</li>
+    <li>6. Add <code>checkov</code> or <code>tflint</code> to the PR pipeline.</li>
+  </ol>
+  <div class="box"><b>Done when:</b> a manual console change is reported within one run, with the exact attribute that drifted.</div>
+
+  <h2>Open source</h2>
+  <ul>
+    <li><a href="https://github.com/hashicorp/terraform"><code>hashicorp/terraform</code></a> — <code>internal/terraform/</code> holds the graph builder and plan/apply walk.</li>
+    <li><a href="https://github.com/opentofu/opentofu"><code>opentofu/opentofu</code></a> — the open-source fork (MPL-licensed) with the same workflow, plus state encryption.</li>
+  </ul>
+
+  <h2>Interview</h2>
+  <ol style="list-style:none;padding-left:0">
+    <li>1. <b>"Why is state remote?"</b>
+      <div class="box"><b>Answer</b> State is Terraform's memory of which real resource each block manages. It must be shared (so everyone plans against the same truth), locked (so two applies can't corrupt it), durable and versioned (a lost state means orphaned infrastructure), and protected (it contains secrets). A local file on a laptop has none of those properties.</div></li>
+    <li>2. <b>"How do you handle config drift?"</b>
+      <div class="box"><b>Answer</b> Prevent it: no manual write access in prod; all changes through PRs and a pipeline; policy checks. Detect it: scheduled <code>terraform plan -detailed-exitcode</code> (or a drift feature in Terraform Cloud or Spacelift) with alerts. Reconcile it deliberately: fold intentional changes into the code, and revert unintended ones by applying. Import resources created by hand.</div></li>
+  </ol>
+
+  <h2>Checklist</h2>
+  <ul>
+    <li class="todo">version infra as code</li>
+    <li class="todo">store state remotely</li>
+    <li class="todo">detect drift automatically</li>
+  </ul>
+  <div class="gap"></div>
+  <p class="black"><a href="index.md">Contents</a> · ← <a href="ch55-containers-docker-kubernetes-and-helm.notes.html">Chapter 55 — Containers: Docker, Kubernetes &amp; Helm</a> · Next → <a href="ch57-ci-cd-and-github-actions.notes.html">Chapter 57 — CI/CD &amp; GitHub Actions</a></p>
+
+  <nav class="nav"><a href="ch55-containers-docker-kubernetes-and-helm.notes.html">← Ch 55 — Containers: Docker, Kubernetes &amp; Helm</a><a href="index.notes.html">☰ Contents</a><a href="ch57-ci-cd-and-github-actions.notes.html">Ch 57 — CI/CD &amp; GitHub Actions →</a></nav>
+</main>
+</body>
+</html>

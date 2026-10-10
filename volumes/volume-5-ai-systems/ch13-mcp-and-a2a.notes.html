@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ch 13 — MCP &amp; A2A — Notes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;700&family=Kalam:wght@400;700&family=Patrick+Hand&display=swap" rel="stylesheet">
+<style>
+/* ===== Page tokens ===== */
+:root{
+  --line:32px;                 /* ruled-line spacing; every vertical size is a multiple */
+  --paper:#fdfbf4; --rule:#c9dcef; --margin:#e8a0a0;
+  --ink:#1f3a93;               /* blue pen (body) */
+  --ink2:#222;                 /* black pen (headings) */
+  --red:#c0392b; --green:#1e8449;
+  --hl-yellow:rgba(255,235,59,.55); --hl-pink:rgba(255,128,171,.45);
+  --hl-green:rgba(118,255,3,.35); --hl-blue:rgba(64,196,255,.35);
+  --sticky:#fff59d; --desk:#e9e4d8;
+  --hand:'Kalam','Patrick Hand','Comic Sans MS','Segoe Print','Bradley Hand',cursive;
+  --title:'Caveat','Kalam','Segoe Print','Bradley Hand',cursive;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){ --desk:#2b2b2b; }
+}
+:root[data-theme="dark"]{ --desk:#2b2b2b; }
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--desk);font-family:var(--hand);color:var(--ink);}
+
+/* ===== Notebook sheet ===== */
+.page{
+  position:relative; max-width:860px; margin:24px auto; padding:var(--line) 28px calc(var(--line)*2) 84px;
+  background:
+    linear-gradient(90deg,transparent 64px,var(--margin) 64px,var(--margin) 66px,transparent 66px),
+    repeating-linear-gradient(var(--paper) 0,var(--paper) calc(var(--line) - 1px),var(--rule) calc(var(--line) - 1px),var(--rule) var(--line));
+  background-color:var(--paper);
+  box-shadow:0 2px 6px rgba(0,0,0,.15),0 12px 28px rgba(0,0,0,.12);
+  font-size:20px; line-height:var(--line);
+}
+.page::before{ /* punched holes */
+  content:""; position:absolute; left:22px; top:0; bottom:0; width:18px;
+  background:radial-gradient(circle,var(--desk) 7px,transparent 8px) 0 40px/18px 220px repeat-y;
+}
+@media (max-width:600px){
+  .page{margin:0;padding-left:52px;padding-right:16px;font-size:18px;
+    background:
+      linear-gradient(90deg,transparent 40px,var(--margin) 40px,var(--margin) 42px,transparent 42px),
+      repeating-linear-gradient(var(--paper) 0,var(--paper) calc(var(--line) - 1px),var(--rule) calc(var(--line) - 1px),var(--rule) var(--line));
+    background-color:var(--paper);}
+  .page::before{left:10px;width:16px}
+}
+
+/* ===== Text (all margins are multiples of --line so text sits on the rules) ===== */
+.date{position:absolute;top:0;right:24px;font-family:var(--title);font-size:22px;color:var(--ink2);line-height:var(--line)}
+h1{font-family:var(--title);font-weight:700;color:var(--ink2);font-size:46px;line-height:calc(var(--line)*2);margin:0;transform:rotate(-1deg)}
+h1 .u{background:linear-gradient(transparent 62%,var(--hl-yellow) 62%,var(--hl-yellow) 92%,transparent 92%)}
+h2{font-family:var(--title);font-weight:700;color:var(--red);font-size:32px;line-height:calc(var(--line)*1.5);margin:calc(var(--line)*.5) 0 0}
+h2::before{content:"➤ ";font-size:22px}
+p,li{margin:0}
+ul,ol{margin:0;padding-left:28px}
+ul{list-style:none}
+ul>li::before{content:"–";position:absolute;margin-left:-20px}
+ul>li.star::before{content:"★";color:var(--red)}
+ul>li.arrow::before{content:"→"}
+ul>li.check::before{content:"✓";color:var(--green)}
+.gap{height:var(--line)}
+
+/* ===== Pen effects ===== */
+.hl{background:var(--hl-yellow);padding:0 3px;border-radius:3px 6px 4px 7px}
+.hl.pink{background:var(--hl-pink)} .hl.green{background:var(--hl-green)} .hl.blue{background:var(--hl-blue)}
+.red{color:var(--red)} .green{color:var(--green)} .black{color:var(--ink2)}
+.ul{text-decoration:underline wavy var(--red);text-underline-offset:5px}
+.circ{border:2px solid var(--red);border-radius:50% 45% 55% 48%;padding:0 6px}
+.strike{text-decoration:line-through 2px var(--red)}
+.term{font-weight:700;color:var(--ink2)}
+.box{display:flow-root;border:2.5px solid var(--ink2);border-radius:4px 10px 6px 12px;padding:calc(var(--line)*.5 - 2.5px) 14px;margin:calc(var(--line)*.5) 0;transform:rotate(-.4deg);background:rgba(255,255,255,.35)}
+.box.red{border-color:var(--red)}
+.formula{font-family:var(--title);font-size:28px;text-align:center;color:var(--ink2)}
+
+/* sticky note */
+.sticky{float:right;width:min(250px,42%);margin:0 0 var(--line) 20px;padding:var(--line) 16px;background:var(--sticky);
+  color:#333;transform:rotate(2.2deg);box-shadow:2px 4px 8px rgba(0,0,0,.18);font-size:18px}
+.sticky b{font-family:var(--title);font-size:24px;color:var(--red)}
+@media (max-width:600px){.sticky{float:none;width:auto;margin:var(--line) 0}}
+
+/* margin annotation (lives in the red margin) */
+.side{position:absolute;left:4px;width:58px;text-align:center;font-family:var(--title);font-size:17px;line-height:18px;color:var(--red);transform:rotate(-8deg)}
+@media (max-width:600px){.side{display:none}}
+
+/* two-column notes */
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:0 28px}
+@media (max-width:600px){.cols{grid-template-columns:1fr}}
+
+/* diagrams */
+figure{margin:var(--line) 0;text-align:center}
+figure svg{width:100%;max-width:640px;height:auto;overflow:visible}
+figcaption{font-family:var(--title);font-size:20px;color:var(--ink2)}
+/* phones: keep labels readable — diagram scrolls inside its own box instead of shrinking */
+@media (max-width:600px){figure{overflow-x:auto}figure svg{min-width:520px}}
+.sk{fill:none;stroke:var(--ink2);stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round;filter:url(#rough)}
+.sk.blue{stroke:var(--ink)} .sk.red{stroke:var(--red)} .sk.green{stroke:var(--green)}
+.lbl{font-family:var(--hand);font-size:17px;fill:var(--ink)}
+.lbl.b{font-weight:700;fill:var(--ink2)} .lbl.r{fill:var(--red)} .lbl.g{fill:var(--green)}
+
+/* table */
+.wrap{overflow-x:auto}
+table{border-collapse:collapse;margin:calc(var(--line)*.5) 0;min-width:100%}
+th,td{border:2px solid var(--ink2);padding:0 10px;text-align:left;vertical-align:top}
+th{font-family:var(--title);font-size:24px;color:var(--ink2)}
+
+@media print{body{background:#fff}.page{box-shadow:none;margin:0}.page::before{display:none}}
+
+/* ===== Added for long chapter notes ===== */
+pre.code{font-family:Consolas,'Courier New',monospace;font-size:14px;line-height:var(--line);color:var(--ink);background:rgba(255,255,255,.45);
+  border-left:4px solid var(--red);margin:calc(var(--line)*.5) 0;padding:0 12px;overflow-x:auto;white-space:pre}
+pre.code.ascii{border-left-color:var(--green)}
+code{font-family:Consolas,'Courier New',monospace;font-size:.82em;background:rgba(0,0,0,.06);padding:0 3px;border-radius:3px}
+pre.code code{background:none;padding:0;font-size:inherit}
+.lang{font-family:var(--title);font-size:18px;color:var(--red)}
+h3{font-family:var(--title);font-weight:700;color:var(--ink2);font-size:26px;line-height:var(--line);margin:calc(var(--line)*.5) 0 0}
+h3::before{content:"✎ ";font-size:18px;color:var(--red)}
+.nav{display:flex;justify-content:space-between;gap:12px;font-family:var(--title);font-size:22px;line-height:var(--line)}
+.nav a{color:var(--red);text-decoration:none}
+.nav a:hover{text-decoration:underline wavy}
+.pagebreak{border-top:3px dashed var(--margin);margin:var(--line) 0;text-align:center;font-family:var(--title);color:var(--red);line-height:var(--line)}
+li.todo::before{content:"☐";color:var(--ink2)}
+a{color:var(--ink);text-decoration:underline dotted}
+</style>
+</head>
+<body>
+<!-- One shared hand-drawn wobble filter; give every diagram stroke class="sk" -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <!-- userSpaceOnUse region: a % region collapses to nothing on perfectly straight lines (zero-height bbox) -->
+  <filter id="rough" filterUnits="userSpaceOnUse" x="-500" y="-500" width="3000" height="3000">
+    <feTurbulence type="fractalNoise" baseFrequency="0.03" numOctaves="2" seed="3" result="n"/>
+    <feDisplacementMap in="SourceGraphic" in2="n" scale="3"/>
+  </filter>
+  <marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+    <path d="M1 1 L9 5 L1 9" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+  </marker>
+</defs></svg>
+
+<main class="page">
+  <nav class="nav"><a href="ch12-agent-memory.notes.html">← Ch 12 — Agent Memory</a><a href="index.notes.html">☰ Contents</a><a href="ch14-multi-agent-systems.notes.html">Ch 14 — Multi-Agent Systems →</a></nav>
+  <div class="date">2026-10-10</div>
+  <h1><span class="u">Ch 13 — MCP &amp; A2A</span></h1>
+  <p class="black">Chapter 13 — MCP &amp; A2A</p>
+
+  <p class="black"><b>Volume 5 — AI Systems Engineering</b> · <a href="index.md">Contents</a> · ← <a href="ch12-agent-memory.notes.html">Chapter 12 — Agent Memory</a> · Next → <a href="ch14-multi-agent-systems.notes.html">Chapter 14 — Multi-Agent Systems</a></p>
+  <h2>Concept</h2>
+  <p>The Model Context Protocol (tools/resources for agents) and Agent-to-Agent protocol (interoperability).</p>
+  <div class="box"><b><span class="hl">In one sentence:</span></b> MCP is a standard plug that lets any AI application connect to any tool or data source through one protocol instead of custom glue code, and A2A is a standard way for independent agents — possibly built by different teams or vendors — to discover each other and hand off tasks.</div>
+  <p><b>Mental model — USB and a phone network.</b> MCP is USB for AI apps: a laptop (the host app) can use any keyboard, drive, or camera (MCP servers) that speaks USB, without a custom driver for each pair. A2A is the phone network between companies: each agent has a public listing (its Agent Card), you call it, describe the job, and it reports back as the job progresses.</p>
+  <h3>MCP — the Model Context Protocol</h3>
+  <div class="wrap"><table>
+    <tr><th>Piece</th><th>Meaning</th></tr>
+    <tr><td><b>Host</b></td><td>the AI application the user works in (Claude Desktop, Claude Code, an IDE, your agent)</td></tr>
+    <tr><td><b>Client</b></td><td>a connector inside the host; one client per server connection</td></tr>
+    <tr><td><b>Server</b></td><td>a program exposing capabilities (GitHub, a database, a file system, your internal API)</td></tr>
+    <tr><td>Wire format</td><td><b>JSON-RPC 2.0</b> messages</td></tr>
+    <tr><td>Transports</td><td><b>stdio</b> (the host launches the server as a local subprocess) or <b>Streamable HTTP</b> (a remote server over HTTP, optionally streaming with SSE)</td></tr>
+    <tr><td>Lifecycle</td><td><code>initialize</code> → capability negotiation → <code>notifications/initialized</code> → normal operation</td></tr>
+  </table></div>
+  <h3>What a server can offer</h3>
+  <div class="wrap"><table>
+    <tr><th>Primitive</th><th>Controlled by</th><th>Methods</th><th>Example</th></tr>
+    <tr><td><b>Tools</b></td><td>the model decides to call them</td><td><code>tools/list</code>, <code>tools/call</code></td><td><code>get_weather(city)</code>, <code>create_issue(title, body)</code></td></tr>
+    <tr><td><b>Resources</b></td><td>the application / user chooses what to attach</td><td><code>resources/list</code>, <code>resources/read</code> (URIs like <code>file:///…</code>, <code>db://orders/42</code>)</td><td>a file, a table schema, a log</td></tr>
+    <tr><td><b>Prompts</b></td><td>the user picks them (e.g. slash commands)</td><td><code>prompts/list</code>, <code>prompts/get</code></td><td>"summarize this PR" template</td></tr>
+  </table></div>
+  <p>Clients can offer features back to servers too, such as <i>sampling</i> (the server asks the host's model for a completion) and <i>elicitation</i> (the server asks the user for input). Remote servers use OAuth 2.1 for authorization.</p>
+  <p><b>What MCP standardizes:</b> discovery (what can this server do?), invocation (call with JSON arguments matching a JSON Schema), results and errors, and notifications (e.g. "the tool list changed"). It turns an N × M integration problem (every app × every tool) into N + M.</p>
+  <p><b>A2A — the Agent2Agent protocol</b> (open source, originally from Google, now a Linux Foundation project)</p>
+  <div class="wrap"><table>
+    <tr><th>Piece</th><th>Meaning</th></tr>
+    <tr><td><b>Agent Card</b></td><td>a JSON document (commonly at <code>/.well-known/agent-card.json</code>) describing the agent: name, skills, endpoint, supported input/output types, auth requirements</td></tr>
+    <tr><td>Client agent / remote agent</td><td>the one delegating / the one doing the work</td></tr>
+    <tr><td>Transport</td><td>JSON-RPC 2.0 over HTTP(S); streaming via SSE; optional push notifications (webhooks) for long jobs</td></tr>
+    <tr><td><b>Task</b></td><td>the unit of work, with an ID and a lifecycle: <code>submitted</code> → <code>working</code> → (<code>input-required</code>) → <code>completed</code> / <code>failed</code> / <code>canceled</code></td></tr>
+    <tr><td>Message / Part</td><td>turns between agents; parts can be text, files, or structured data</td></tr>
+    <tr><td><b>Artifact</b></td><td>the output the task produces</td></tr>
+  </table></div>
+  <h3>MCP vs A2A</h3>
+  <div class="wrap"><table>
+    <tr><th></th><th>MCP</th><th>A2A</th></tr>
+    <tr><td>Connects</td><td>an agent ↔ tools and data</td><td>an agent ↔ another agent</td></tr>
+    <tr><td>The other side is</td><td>a capability with a schema (usually deterministic)</td><td>an autonomous peer with its own model, tools, and state (opaque)</td></tr>
+    <tr><td>Interaction</td><td>call a function, get a result</td><td>delegate a task that may take long, ask follow-up questions, and stream progress</td></tr>
+    <tr><td>Use when</td><td>"let my agent read our tickets DB"</td><td>"let our travel agent ask the partner's booking agent to book a hotel"</td></tr>
+  </table></div>
+  <p>They complement each other: an A2A agent often uses MCP servers internally.</p>
+  <h2>Prereqs</h2>
+  <ul>
+    <li><a href="ch11-agent-frameworks-and-tool-use.notes.html">Chapter 11 — Agent Frameworks &amp; Tool Use</a></li>
+  </ul>
+  <h2>Diagram</h2>
+  <h3>MCP client ↔ server</h3>
+  <figure>
+    <svg viewBox="0 0 640 400" role="img" aria-label="MCP client ↔ server">
+      <rect class="sk" x="20" y="10" width="600" height="205" rx="14" style="stroke-dasharray:8 6"/>
+      <text class="lbl r" x="34" y="32" style="font-size:15px">Host application (e.g. Claude Desktop, your agent)</text>
+      <rect class="sk" x="240" y="50" width="160" height="40" rx="8" style="fill:#fdfbf4"/>
+      <text class="lbl b" x="320.0" y="75.0" text-anchor="middle" style="font-size:15px">model</text>
+      <rect class="sk" x="60" y="150" width="200" height="44" rx="8" style="fill:#fdfbf4"/>
+      <text class="lbl b" x="160.0" y="177.0" text-anchor="middle" style="font-size:15px">MCP client 1</text>
+      <rect class="sk" x="380" y="150" width="200" height="44" rx="8" style="fill:#fdfbf4"/>
+      <text class="lbl b" x="480.0" y="177.0" text-anchor="middle" style="font-size:15px">MCP client 2</text>
+      <rect class="sk green" x="20" y="290" width="290" height="80" rx="8" style="fill:#fdfbf4"/>
+      <text class="lbl b" x="165.0" y="317.0" text-anchor="middle" style="font-size:15px">local server: filesystem</text>
+      <text class="lbl b" x="165.0" y="335.0" text-anchor="middle" style="font-size:15px">tools: read_file, write_file</text>
+      <text class="lbl b" x="165.0" y="353.0" text-anchor="middle" style="font-size:15px">resources: file:///project/...</text>
+      <rect class="sk green" x="340" y="290" width="280" height="80" rx="8" style="fill:#fdfbf4"/>
+      <text class="lbl b" x="480.0" y="317.0" text-anchor="middle" style="font-size:15px">remote server: weather API</text>
+      <text class="lbl b" x="480.0" y="335.0" text-anchor="middle" style="font-size:15px">tools: get_weather</text>
+      <text class="lbl b" x="480.0" y="353.0" text-anchor="middle" style="font-size:15px">prompts: daily_briefing</text>
+
+      <path class="sk blue" d="M285 92 C270 115, 190 120, 170 148" style="color:var(--ink);stroke-dasharray:6 5" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M355 92 C370 115, 450 120, 470 148" style="color:var(--ink);stroke-dasharray:6 5" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M160 198 C157 230, 163 260, 160 286" style="color:var(--ink)" marker-end="url(#arr)" marker-start="url(#arr)"/>
+      <path class="sk blue" d="M480 198 C477 230, 483 260, 480 286" style="color:var(--ink)" marker-end="url(#arr)" marker-start="url(#arr)"/>
+      <text class="lbl r" x="190" y="112" text-anchor="end" style="font-size:14px;paint-order:stroke;stroke:#fdfbf4;stroke-width:5px;stroke-linejoin:round">decides tool calls</text>
+      <text class="lbl r" x="450" y="112" text-anchor="start" style="font-size:14px;paint-order:stroke;stroke:#fdfbf4;stroke-width:5px;stroke-linejoin:round">decides tool calls</text>
+      <text class="lbl r" x="176" y="244" text-anchor="start" style="font-size:14px;paint-order:stroke;stroke:#fdfbf4;stroke-width:5px;stroke-linejoin:round">JSON-RPC over</text>
+      <text class="lbl r" x="176" y="261" text-anchor="start" style="font-size:14px;paint-order:stroke;stroke:#fdfbf4;stroke-width:5px;stroke-linejoin:round">stdio</text>
+      <text class="lbl r" x="466" y="236" text-anchor="end" style="font-size:14px;paint-order:stroke;stroke:#fdfbf4;stroke-width:5px;stroke-linejoin:round">JSON-RPC over</text>
+      <text class="lbl r" x="466" y="253" text-anchor="end" style="font-size:14px;paint-order:stroke;stroke:#fdfbf4;stroke-width:5px;stroke-linejoin:round">Streamable HTTP +</text>
+      <text class="lbl r" x="466" y="270" text-anchor="end" style="font-size:14px;paint-order:stroke;stroke:#fdfbf4;stroke-width:5px;stroke-linejoin:round">OAuth</text>
+      </svg>
+    <figcaption>Fig 1: MCP client ↔ server</figcaption>
+  </figure>
+  <h3>The MCP session</h3>
+  <figure>
+    <svg viewBox="0 0 640 528" role="img" aria-label="The MCP session">
+      <path class="sk" d="M170 58 L170 513" style="stroke-dasharray:3 7;stroke-width:1.8"/>
+      <path class="sk" d="M470 58 L470 513" style="stroke-dasharray:3 7;stroke-width:1.8"/>
+      <rect class="sk" x="85" y="20" width="170" height="38" rx="8" style="fill:#fdfbf4"/>
+      <text class="lbl b" x="170" y="40" text-anchor="middle" style="font-size:15px">MCP client</text>
+      <rect class="sk" x="385" y="20" width="170" height="38" rx="8" style="fill:#fdfbf4"/>
+      <text class="lbl b" x="470" y="40" text-anchor="middle" style="font-size:15px">MCP server</text>
+      <text class="lbl" x="320" y="91" text-anchor="middle" style="font-size:14px;paint-order:stroke;stroke:#fdfbf4;stroke-width:5px">initialize (protocolVersion, client</text>
+      <text class="lbl" x="320" y="108" text-anchor="middle" style="font-size:14px;paint-order:stroke;stroke:#fdfbf4;stroke-width:5px">capabilities)</text>
+      <path class="sk blue" d="M174 116 C261.9 114, 379.1 118, 467 116" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <text class="lbl" x="320" y="151" text-anchor="middle" style="font-size:14px;paint-order:stroke;stroke:#fdfbf4;stroke-width:5px">result (server capabilities: tools,</text>
+      <text class="lbl" x="320" y="168" text-anchor="middle" style="font-size:14px;paint-order:stroke;stroke:#fdfbf4;stroke-width:5px">resources, prompts)</text>
+      <path class="sk blue" d="M466 176 C378.1 174, 260.9 178, 173 176" style="color:var(--ink);stroke-dasharray:6 5" marker-end="url(#arr)"/>
+      <text class="lbl" x="320" y="211" text-anchor="middle" style="font-size:14px;paint-order:stroke;stroke:#fdfbf4;stroke-width:5px">notifications/initialized</text>
+      <path class="sk blue" d="M174 219 C261.9 217, 379.1 221, 467 219" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <text class="lbl" x="320" y="254" text-anchor="middle" style="font-size:14px;paint-order:stroke;stroke:#fdfbf4;stroke-width:5px">tools/list</text>
+      <path class="sk blue" d="M174 262 C261.9 260, 379.1 264, 467 262" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <text class="lbl" x="320" y="297" text-anchor="middle" style="font-size:14px;paint-order:stroke;stroke:#fdfbf4;stroke-width:5px">get_weather (inputSchema: city</text>
+      <text class="lbl" x="320" y="314" text-anchor="middle" style="font-size:14px;paint-order:stroke;stroke:#fdfbf4;stroke-width:5px">string)</text>
+      <path class="sk blue" d="M466 322 C378.1 320, 260.9 324, 173 322" style="color:var(--ink);stroke-dasharray:6 5" marker-end="url(#arr)"/>
+      <rect class="sk" x="75" y="342" width="190" height="48" rx="4" style="fill:var(--sticky)"/>
+      <text class="lbl" x="170" y="357" text-anchor="middle" style="font-size:14px">the model decides to</text>
+      <text class="lbl" x="170" y="374" text-anchor="middle" style="font-size:14px">call the tool</text>
+      <text class="lbl" x="320" y="423" text-anchor="middle" style="font-size:14px;paint-order:stroke;stroke:#fdfbf4;stroke-width:5px">tools/call get_weather city=Lisbon</text>
+      <path class="sk blue" d="M174 431 C261.9 429, 379.1 433, 467 431" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <text class="lbl" x="320" y="466" text-anchor="middle" style="font-size:14px;paint-order:stroke;stroke:#fdfbf4;stroke-width:5px">content text "22 C, sunny", isError</text>
+      <text class="lbl" x="320" y="483" text-anchor="middle" style="font-size:14px;paint-order:stroke;stroke:#fdfbf4;stroke-width:5px">false</text>
+      <path class="sk blue" d="M466 491 C378.1 489, 260.9 493, 173 491" style="color:var(--ink);stroke-dasharray:6 5" marker-end="url(#arr)"/>
+    </svg>
+    <figcaption>Fig 2: The MCP session</figcaption>
+  </figure>
+  <h3>An A2A task hand-off</h3>
+  <figure>
+    <svg viewBox="0 0 640 480" role="img" aria-label="An A2A task hand-off">
+      <path class="sk" d="M170 76 L170 465" style="stroke-dasharray:3 7;stroke-width:1.8"/>
+      <path class="sk" d="M470 76 L470 465" style="stroke-dasharray:3 7;stroke-width:1.8"/>
+      <rect class="sk" x="85" y="20" width="170" height="56" rx="8" style="fill:#fdfbf4"/>
+      <text class="lbl b" x="170" y="40" text-anchor="middle" style="font-size:15px">Travel agent</text>
+      <text class="lbl b" x="170" y="58" text-anchor="middle" style="font-size:15px">(client)</text>
+      <rect class="sk" x="385" y="20" width="170" height="56" rx="8" style="fill:#fdfbf4"/>
+      <text class="lbl b" x="470" y="40" text-anchor="middle" style="font-size:15px">Hotel agent</text>
+      <text class="lbl b" x="470" y="58" text-anchor="middle" style="font-size:15px">(remote)</text>
+      <text class="lbl" x="320" y="109" text-anchor="middle" style="font-size:14px;paint-order:stroke;stroke:#fdfbf4;stroke-width:5px">GET /.well-known/agent-card.json</text>
+      <path class="sk blue" d="M174 117 C261.9 115, 379.1 119, 467 117" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <text class="lbl" x="320" y="152" text-anchor="middle" style="font-size:14px;paint-order:stroke;stroke:#fdfbf4;stroke-width:5px">Agent Card (skill book_hotel,</text>
+      <text class="lbl" x="320" y="169" text-anchor="middle" style="font-size:14px;paint-order:stroke;stroke:#fdfbf4;stroke-width:5px">JSON-RPC endpoint, auth)</text>
+      <path class="sk blue" d="M466 177 C378.1 175, 260.9 179, 173 177" style="color:var(--ink);stroke-dasharray:6 5" marker-end="url(#arr)"/>
+      <text class="lbl" x="320" y="212" text-anchor="middle" style="font-size:14px;paint-order:stroke;stroke:#fdfbf4;stroke-width:5px">message/send "Book 2 nights in</text>
+      <text class="lbl" x="320" y="229" text-anchor="middle" style="font-size:14px;paint-order:stroke;stroke:#fdfbf4;stroke-width:5px">Lisbon, May 3, under 150 EUR"</text>
+      <path class="sk blue" d="M174 237 C261.9 235, 379.1 239, 467 237" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <text class="lbl" x="320" y="272" text-anchor="middle" style="font-size:14px;paint-order:stroke;stroke:#fdfbf4;stroke-width:5px">Task t-91 state working</text>
+      <path class="sk blue" d="M466 280 C378.1 278, 260.9 282, 173 280" style="color:var(--ink);stroke-dasharray:6 5" marker-end="url(#arr)"/>
+      <text class="lbl" x="320" y="315" text-anchor="middle" style="font-size:14px;paint-order:stroke;stroke:#fdfbf4;stroke-width:5px">Task t-91 state input-required "Sea</text>
+      <text class="lbl" x="320" y="332" text-anchor="middle" style="font-size:14px;paint-order:stroke;stroke:#fdfbf4;stroke-width:5px">view for 20 EUR more?"</text>
+      <path class="sk blue" d="M466 340 C378.1 338, 260.9 342, 173 340" style="color:var(--ink);stroke-dasharray:6 5" marker-end="url(#arr)"/>
+      <text class="lbl" x="320" y="375" text-anchor="middle" style="font-size:14px;paint-order:stroke;stroke:#fdfbf4;stroke-width:5px">message/send taskId t-91 "Yes"</text>
+      <path class="sk blue" d="M174 383 C261.9 381, 379.1 385, 467 383" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <text class="lbl" x="320" y="418" text-anchor="middle" style="font-size:14px;paint-order:stroke;stroke:#fdfbf4;stroke-width:5px">Task t-91 state completed + artifact</text>
+      <text class="lbl" x="320" y="435" text-anchor="middle" style="font-size:14px;paint-order:stroke;stroke:#fdfbf4;stroke-width:5px">(booking confirmation)</text>
+      <path class="sk blue" d="M466 443 C378.1 441, 260.9 445, 173 443" style="color:var(--ink);stroke-dasharray:6 5" marker-end="url(#arr)"/>
+    </svg>
+    <figcaption>Fig 3: An A2A task hand-off</figcaption>
+  </figure>
+  <div class="pagebreak">~ page 2 ~</div>
+
+  <h2>Example</h2>
+  <span class="lang">python</span>
+<pre class="code"><code># An MCP server exposing a get_weather tool (official Python SDK, FastMCP API)
+# pip install "mcp[cli]"
+from mcp.server.fastmcp import FastMCP
+
+mcp = FastMCP("weather")
+
+@mcp.tool()
+def get_weather(city: str) -&gt; str:
+    """Current weather for a city. Returns temperature (C) and conditions."""
+    fake = {"lisbon": "22 C, sunny", "oslo": "9 C, rain"}
+    return fake.get(city.lower(), f"no data for {city}")
+
+@mcp.resource("weather://cities")
+def cities() -&gt; str:
+    """The list of supported cities."""
+    return "Lisbon, Oslo"
+
+@mcp.prompt()
+def packing_advice(city: str) -&gt; str:
+    return f"Check the weather in {city} with get_weather and suggest what to pack."
+
+if __name__ == "__main__":
+    mcp.run()          # stdio by default; mcp.run(transport="streamable-http") for a remote server</code></pre>
+  <span class="lang">python</span>
+<pre class="code"><code># An MCP client: launch the server over stdio, list tools, call one
+import asyncio
+from mcp import ClientSession, StdioServerParameters
+from mcp.client.stdio import stdio_client
+
+async def main():
+    params = StdioServerParameters(command="python", args=["weather_server.py"])
+    async with stdio_client(params) as (read, write):
+        async with ClientSession(read, write) as session:
+            await session.initialize()
+            tools = await session.list_tools()
+            print([t.name for t in tools.tools])                    # ['get_weather']
+            result = await session.call_tool("get_weather", {"city": "Lisbon"})
+            print(result.content[0].text)                           # 22 C, sunny
+
+asyncio.run(main())</code></pre>
+  <span class="lang">json</span>
+<pre class="code"><code>// Register the server in a host (e.g. claude_desktop_config.json or .mcp.json)
+{ "mcpServers": { "weather": { "command": "python", "args": ["weather_server.py"] } } }</code></pre>
+  <span class="lang">json</span>
+<pre class="code"><code>// A2A: an Agent Card (abridged) and a JSON-RPC task request
+{
+  "name": "Hotel Booking Agent",
+  "description": "Finds and books hotels.",
+  "url": "https://hotels.example.com/a2a",
+  "version": "1.0.0",
+  "capabilities": { "streaming": true, "pushNotifications": true },
+  "defaultInputModes": ["text/plain"],
+  "defaultOutputModes": ["text/plain", "application/json"],
+  "skills": [{ "id": "book_hotel", "name": "Book a hotel",
+               "description": "Book rooms given a city, dates, and budget." }]
+}
+
+{ "jsonrpc": "2.0", "id": 1, "method": "message/send",
+  "params": { "message": { "role": "user", "messageId": "m-1",
+    "parts": [{ "kind": "text", "text": "Book 2 nights in Lisbon from May 3, under 150 EUR" }] } } }</code></pre>
+  <p>(Field names follow the A2A spec at the time of writing; check the current spec version before building.)</p>
+  <h2>Exercises</h2>
+  <ol style="list-style:none;padding-left:0">
+    <li>1. Build an MCP server with one tool.
+      <div class="box"><b>Solution</b> Use the FastMCP example: the function signature and docstring become the tool's input schema and description. Test it with the MCP Inspector (<code>mcp dev weather_server.py</code>), then register it in a host and ask the model a question that needs the tool. Return clear errors (e.g. unknown city) as tool results rather than crashing.</div></li>
+  </ol>
+  <ol style="list-style:none;padding-left:0">
+    <li>2. Design an A2A message exchange for a task hand-off.
+      <div class="box"><b>Solution</b> Client fetches the remote Agent Card and checks the skill and auth scheme. It sends <code>message/send</code> (or <code>message/stream</code>) with the task description and constraints. The remote returns a Task in <code>working</code>, may move to <code>input-required</code> with a question, the client answers with a message on the same task ID, and the task ends <code>completed</code> with an artifact (or <code>failed</code> with a reason). For long jobs, register a push-notification webhook. Log the task ID on both sides for tracing.</div></li>
+  </ol>
+  <ol style="list-style:none;padding-left:0">
+    <li>3. Your team wants to connect an agent to Postgres. MCP or A2A?
+      <div class="box"><b>Solution</b> MCP: a database is a capability with a clear schema, not an autonomous peer. Expose a read-only <code>query</code> tool plus schema resources, with row limits and least-privilege credentials.</div></li>
+  </ol>
+  <h2>Mini project</h2>
+  <p><b>An MCP server + client, plus a two-agent A2A hand-off.</b></p>
+  <figure>
+    <svg viewBox="0 0 640 400" role="img" aria-label="An MCP server + client, plus a two-agent A2A hand-off">
+      <rect class="sk" x="20" y="10" width="600" height="165" rx="14" style="stroke-dasharray:8 6"/>
+      <text class="lbl r" x="34" y="32" style="font-size:15px">Part 2 — A2A</text>
+      <rect class="sk" x="20" y="230" width="600" height="155" rx="14" style="stroke-dasharray:8 6"/>
+      <text class="lbl r" x="34" y="252" style="font-size:15px">Part 1 — MCP</text>
+      <rect class="sk" x="40" y="60" width="170" height="70" rx="8" style="fill:#fdfbf4"/>
+      <text class="lbl b" x="125.0" y="91.0" text-anchor="middle" style="font-size:15px">planner agent</text>
+      <text class="lbl b" x="125.0" y="109.0" text-anchor="middle" style="font-size:15px">(client)</text>
+      <rect class="sk" x="410" y="60" width="190" height="70" rx="8" style="fill:#fdfbf4"/>
+      <text class="lbl b" x="505.0" y="91.0" text-anchor="middle" style="font-size:15px">research agent (remote)</text>
+      <text class="lbl b" x="505.0" y="109.0" text-anchor="middle" style="font-size:15px">skill: summarize_topic</text>
+      <rect class="sk" x="40" y="285" width="190" height="70" rx="8" style="fill:#fdfbf4"/>
+      <text class="lbl b" x="135.0" y="316.0" text-anchor="middle" style="font-size:15px">your agent (Ch 11 loop)</text>
+      <text class="lbl b" x="135.0" y="334.0" text-anchor="middle" style="font-size:15px">as an MCP client</text>
+      <rect class="sk green" x="340" y="275" width="250" height="90" rx="8" style="fill:#fdfbf4"/>
+      <text class="lbl b" x="465.0" y="298.0" text-anchor="middle" style="font-size:15px">notes MCP server</text>
+      <text class="lbl b" x="465.0" y="316.0" text-anchor="middle" style="font-size:15px">tools: add_note, search_notes</text>
+      <text class="lbl b" x="465.0" y="334.0" text-anchor="middle" style="font-size:15px">resource: notes://all</text>
+      <text class="lbl b" x="465.0" y="352.0" text-anchor="middle" style="font-size:15px">prompt: weekly_review</text>
+
+      <path class="sk blue" d="M214 82 C260 78, 360 86, 406 82" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M406 112 C360 116, 260 108, 214 112" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M234 320 C270 316, 300 324, 336 320" style="color:var(--ink)" marker-end="url(#arr)" marker-start="url(#arr)"/>
+      <path class="sk blue" d="M500 134 C496 190, 504 220, 500 271" style="color:var(--ink);stroke-dasharray:6 5" marker-end="url(#arr)"/>
+      <text class="lbl r" x="312" y="52" text-anchor="middle" style="font-size:14px;paint-order:stroke;stroke:#fdfbf4;stroke-width:5px;stroke-linejoin:round">Agent Card +</text>
+      <text class="lbl r" x="312" y="70" text-anchor="middle" style="font-size:14px;paint-order:stroke;stroke:#fdfbf4;stroke-width:5px;stroke-linejoin:round">message/send</text>
+      <text class="lbl r" x="312" y="130" text-anchor="middle" style="font-size:14px;paint-order:stroke;stroke:#fdfbf4;stroke-width:5px;stroke-linejoin:round">task states +</text>
+      <text class="lbl r" x="312" y="148" text-anchor="middle" style="font-size:14px;paint-order:stroke;stroke:#fdfbf4;stroke-width:5px;stroke-linejoin:round">artifact</text>
+      <text class="lbl r" x="285" y="310" text-anchor="middle" style="font-size:14px;paint-order:stroke;stroke:#fdfbf4;stroke-width:5px;stroke-linejoin:round">stdio</text>
+      <text class="lbl r" x="514" y="205" text-anchor="start" style="font-size:14px;paint-order:stroke;stroke:#fdfbf4;stroke-width:5px;stroke-linejoin:round">uses MCP internally</text>
+    </svg>
+    <figcaption>Fig 4: An MCP server + client, plus a two-agent A2A hand-off</figcaption>
+  </figure>
+  <h3>Steps</h3>
+  <ol style="list-style:none;padding-left:0">
+    <li>1. Notes server: SQLite-backed tools with clear JSON Schemas, a resource listing all notes, and a prompt template.</li>
+    <li>2. Turn your Ch 11 agent into an MCP client: at startup, <code>list_tools</code> and convert each MCP tool into the model's tool format; route tool calls to <code>call_tool</code>.</li>
+    <li>3. Add a second transport: run the same server over Streamable HTTP.</li>
+    <li>4. Write a research agent that serves an Agent Card and handles <code>message/send</code>, returning task states and a summary artifact (use the A2A SDK or a small FastAPI app following the spec).</li>
+    <li>5. The planner agent discovers it, delegates "summarize my notes about X", handles an <code>input-required</code> question, and saves the artifact as a new note via MCP.</li>
+  </ol>
+  <div class="box"><b>Done when:</b> the agent uses the notes server with no tool-specific code, and the planner completes a full A2A task lifecycle including one follow-up question.</div>
+  <h2>Open source</h2>
+  <ul>
+    <li><a href="https://github.com/modelcontextprotocol/python-sdk"><code>modelcontextprotocol/python-sdk</code></a> — official SDK (FastMCP server API, clients, stdio and Streamable HTTP transports); see also the spec at modelcontextprotocol.io and the <code>modelcontextprotocol/servers</code> reference servers.</li>
+    <li><a href="https://github.com/a2aproject/A2A"><code>a2aproject/A2A</code></a> — the A2A specification, samples, and SDKs.</li>
+  </ul>
+  <div class="pagebreak">~ page 3 ~</div>
+
+  <h2>Interview</h2>
+  <ol style="list-style:none;padding-left:0">
+    <li>1. <b>"What does MCP standardize?"</b>
+      <div class="box"><b>Answer</b> How AI applications (hosts, via clients) discover and use external capabilities provided by servers: a JSON-RPC 2.0 message format, a lifecycle with capability negotiation, stdio and Streamable HTTP transports, and three server primitives — tools (model-invoked functions with JSON Schema inputs), resources (context data addressed by URI), and prompts (reusable templates) — plus client features like sampling and elicitation, and OAuth for remote servers. Build a connector once and it works in every compliant host.</div></li>
+  </ol>
+  <ol style="list-style:none;padding-left:0">
+    <li>2. <b>"Why A2A over ad-hoc APIs?"</b>
+      <div class="box"><b>Answer</b> Agent-to-agent work isn't a single function call: tasks can be long-running, need clarifying questions, stream progress, and produce artifacts, and the peer is opaque (its own model and tools). A2A standardizes discovery (Agent Cards), the task lifecycle and states, messages with multi-part content, streaming and push notifications, and auth. That lets agents from different teams or vendors interoperate without bespoke integrations for each pair.</div></li>
+  </ol>
+  <h2>Checklist</h2>
+  <ul>
+    <li class="todo">expose tools via MCP</li>
+    <li class="todo">hand off tasks between agents</li>
+    <li class="todo">know when each protocol applies</li>
+  </ul>
+  <p class="black"><a href="index.md">Contents</a> · ← <a href="ch12-agent-memory.notes.html">Chapter 12 — Agent Memory</a> · Next → <a href="ch14-multi-agent-systems.notes.html">Chapter 14 — Multi-Agent Systems</a></p>
+  <nav class="nav"><a href="ch12-agent-memory.notes.html">← Ch 12 — Agent Memory</a><a href="index.notes.html">☰ Contents</a><a href="ch14-multi-agent-systems.notes.html">Ch 14 — Multi-Agent Systems →</a></nav>
+</main>
+</body>
+</html>

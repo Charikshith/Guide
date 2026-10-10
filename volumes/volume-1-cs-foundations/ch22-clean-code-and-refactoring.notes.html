@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ch 22 — Clean Code &amp; Refactoring — Notes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;700&family=Kalam:wght@400;700&family=Patrick+Hand&display=swap" rel="stylesheet">
+<style>
+/* ===== Page tokens ===== */
+:root{
+  --line:32px;                 /* ruled-line spacing; every vertical size is a multiple */
+  --paper:#fdfbf4; --rule:#c9dcef; --margin:#e8a0a0;
+  --ink:#1f3a93;               /* blue pen (body) */
+  --ink2:#222;                 /* black pen (headings) */
+  --red:#c0392b; --green:#1e8449;
+  --hl-yellow:rgba(255,235,59,.55); --hl-pink:rgba(255,128,171,.45);
+  --hl-green:rgba(118,255,3,.35); --hl-blue:rgba(64,196,255,.35);
+  --sticky:#fff59d; --desk:#e9e4d8;
+  --hand:'Kalam','Patrick Hand','Comic Sans MS','Segoe Print','Bradley Hand',cursive;
+  --title:'Caveat','Kalam','Segoe Print','Bradley Hand',cursive;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){ --desk:#2b2b2b; }
+}
+:root[data-theme="dark"]{ --desk:#2b2b2b; }
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--desk);font-family:var(--hand);color:var(--ink);}
+
+/* ===== Notebook sheet ===== */
+.page{
+  position:relative; max-width:860px; margin:24px auto; padding:var(--line) 28px calc(var(--line)*2) 84px;
+  background:
+    linear-gradient(90deg,transparent 64px,var(--margin) 64px,var(--margin) 66px,transparent 66px),
+    repeating-linear-gradient(var(--paper) 0,var(--paper) calc(var(--line) - 1px),var(--rule) calc(var(--line) - 1px),var(--rule) var(--line));
+  background-color:var(--paper);
+  box-shadow:0 2px 6px rgba(0,0,0,.15),0 12px 28px rgba(0,0,0,.12);
+  font-size:20px; line-height:var(--line);
+}
+.page::before{ /* punched holes */
+  content:""; position:absolute; left:22px; top:0; bottom:0; width:18px;
+  background:radial-gradient(circle,var(--desk) 7px,transparent 8px) 0 40px/18px 220px repeat-y;
+}
+@media (max-width:600px){
+  .page{margin:0;padding-left:52px;padding-right:16px;font-size:18px;
+    background:
+      linear-gradient(90deg,transparent 40px,var(--margin) 40px,var(--margin) 42px,transparent 42px),
+      repeating-linear-gradient(var(--paper) 0,var(--paper) calc(var(--line) - 1px),var(--rule) calc(var(--line) - 1px),var(--rule) var(--line));
+    background-color:var(--paper);}
+  .page::before{left:10px;width:16px}
+}
+
+/* ===== Text (all margins are multiples of --line so text sits on the rules) ===== */
+.date{position:absolute;top:0;right:24px;font-family:var(--title);font-size:22px;color:var(--ink2);line-height:var(--line)}
+h1{font-family:var(--title);font-weight:700;color:var(--ink2);font-size:46px;line-height:calc(var(--line)*2);margin:0;transform:rotate(-1deg)}
+h1 .u{background:linear-gradient(transparent 62%,var(--hl-yellow) 62%,var(--hl-yellow) 92%,transparent 92%)}
+h2{font-family:var(--title);font-weight:700;color:var(--red);font-size:32px;line-height:calc(var(--line)*1.5);margin:calc(var(--line)*.5) 0 0}
+h2::before{content:"➤ ";font-size:22px}
+p,li{margin:0}
+ul,ol{margin:0;padding-left:28px}
+ul{list-style:none}
+ul>li::before{content:"–";position:absolute;margin-left:-20px}
+ul>li.star::before{content:"★";color:var(--red)}
+ul>li.arrow::before{content:"→"}
+ul>li.check::before{content:"✓";color:var(--green)}
+.gap{height:var(--line)}
+
+/* ===== Pen effects ===== */
+.hl{background:var(--hl-yellow);padding:0 3px;border-radius:3px 6px 4px 7px}
+.hl.pink{background:var(--hl-pink)} .hl.green{background:var(--hl-green)} .hl.blue{background:var(--hl-blue)}
+.red{color:var(--red)} .green{color:var(--green)} .black{color:var(--ink2)}
+.ul{text-decoration:underline wavy var(--red);text-underline-offset:5px}
+.circ{border:2px solid var(--red);border-radius:50% 45% 55% 48%;padding:0 6px}
+.strike{text-decoration:line-through 2px var(--red)}
+.term{font-weight:700;color:var(--ink2)}
+.box{display:flow-root;border:2.5px solid var(--ink2);border-radius:4px 10px 6px 12px;padding:calc(var(--line)*.5 - 2.5px) 14px;margin:calc(var(--line)*.5) 0;transform:rotate(-.4deg);background:rgba(255,255,255,.35)}
+.box.red{border-color:var(--red)}
+.formula{font-family:var(--title);font-size:28px;text-align:center;color:var(--ink2)}
+
+/* sticky note */
+.sticky{float:right;width:min(250px,42%);margin:0 0 var(--line) 20px;padding:var(--line) 16px;background:var(--sticky);
+  color:#333;transform:rotate(2.2deg);box-shadow:2px 4px 8px rgba(0,0,0,.18);font-size:18px}
+.sticky b{font-family:var(--title);font-size:24px;color:var(--red)}
+@media (max-width:600px){.sticky{float:none;width:auto;margin:var(--line) 0}}
+
+/* margin annotation (lives in the red margin) */
+.side{position:absolute;left:4px;width:58px;text-align:center;font-family:var(--title);font-size:17px;line-height:18px;color:var(--red);transform:rotate(-8deg)}
+@media (max-width:600px){.side{display:none}}
+
+/* two-column notes */
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:0 28px}
+@media (max-width:600px){.cols{grid-template-columns:1fr}}
+
+/* diagrams */
+figure{margin:var(--line) 0;text-align:center}
+figure svg{width:100%;max-width:640px;height:auto;overflow:visible}
+figcaption{font-family:var(--title);font-size:20px;color:var(--ink2)}
+/* phones: keep labels readable — diagram scrolls inside its own box instead of shrinking */
+@media (max-width:600px){figure{overflow-x:auto}figure svg{min-width:520px}}
+.sk{fill:none;stroke:var(--ink2);stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round;filter:url(#rough)}
+.sk.blue{stroke:var(--ink)} .sk.red{stroke:var(--red)} .sk.green{stroke:var(--green)}
+.lbl{font-family:var(--hand);font-size:17px;fill:var(--ink)}
+.lbl.b{font-weight:700;fill:var(--ink2)} .lbl.r{fill:var(--red)} .lbl.g{fill:var(--green)}
+
+/* table */
+.wrap{overflow-x:auto}
+table{border-collapse:collapse;margin:calc(var(--line)*.5) 0;min-width:100%}
+th,td{border:2px solid var(--ink2);padding:0 10px;text-align:left;vertical-align:top}
+th{font-family:var(--title);font-size:24px;color:var(--ink2)}
+
+@media print{body{background:#fff}.page{box-shadow:none;margin:0}.page::before{display:none}}
+
+/* ===== Added for long chapter notes ===== */
+pre.code{font-family:Consolas,'Courier New',monospace;font-size:14px;line-height:var(--line);color:var(--ink);background:rgba(255,255,255,.45);
+  border-left:4px solid var(--red);margin:calc(var(--line)*.5) 0;padding:0 12px;overflow-x:auto;white-space:pre}
+pre.code.ascii{border-left-color:var(--green)}
+code{font-family:Consolas,'Courier New',monospace;font-size:.82em;background:rgba(0,0,0,.06);padding:0 3px;border-radius:3px}
+pre.code code{background:none;padding:0;font-size:inherit}
+.lang{font-family:var(--title);font-size:18px;color:var(--red)}
+h3{font-family:var(--title);font-weight:700;color:var(--ink2);font-size:26px;line-height:var(--line);margin:calc(var(--line)*.5) 0 0}
+h3::before{content:"✎ ";font-size:18px;color:var(--red)}
+.nav{display:flex;justify-content:space-between;gap:12px;font-family:var(--title);font-size:22px;line-height:var(--line)}
+.nav a{color:var(--red);text-decoration:none}
+.nav a:hover{text-decoration:underline wavy}
+.pagebreak{border-top:3px dashed var(--margin);margin:var(--line) 0;text-align:center;font-family:var(--title);color:var(--red);line-height:var(--line)}
+li.todo::before{content:"☐";color:var(--ink2)}
+a{color:var(--ink);text-decoration:underline dotted}
+</style>
+</head>
+<body>
+<!-- One shared hand-drawn wobble filter; give every diagram stroke class="sk" -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <!-- userSpaceOnUse region: a % region collapses to nothing on perfectly straight lines (zero-height bbox) -->
+  <filter id="rough" filterUnits="userSpaceOnUse" x="-500" y="-500" width="3000" height="3000">
+    <feTurbulence type="fractalNoise" baseFrequency="0.03" numOctaves="2" seed="3" result="n"/>
+    <feDisplacementMap in="SourceGraphic" in2="n" scale="3"/>
+  </filter>
+  <marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+    <path d="M1 1 L9 5 L1 9" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+  </marker>
+</defs></svg>
+
+<main class="page">
+  <nav class="nav"><a href="ch21-build-systems-and-package-management.notes.html">← Ch 21 — Build Systems &amp; Package Management</a><a href="index.notes.html">☰ Contents</a><a href="ch23-documentation-adrs-and-readmes.notes.html">Ch 23 — Documentation, ADRs &amp; READMEs →</a></nav>
+  <div class="date">2026-10-10</div>
+  <h1><span class="u">Ch 22 — Clean Code &amp; Refactoring</span></h1>
+    <p class="black">Volume 1 — Computer Science Foundations · <a href="index.md">Contents</a> · ← <a href="ch21-build-systems-and-package-management.notes.html">Chapter 21 — Build Systems &amp; Package Management</a> · Next → <a href="ch23-documentation-adrs-and-readmes.notes.html">Chapter 23 — Documentation, ADRs &amp; READMEs</a></p>
+
+  <p class="black">Chapter 22 — Clean Code &amp; Refactoring</p>
+
+  <h2>Concept</h2>
+  <p>Naming, small functions/classes, readability, and safe refactoring (red/green/refactor).</p>
+  <div class="box"><b>In one sentence:</b> code is read far more often than it is written, so clean code optimizes for the next reader, and refactoring is changing the structure of code without changing what it does — always under the protection of tests.</div>
+
+  <h3>Mental model — a tidy workshop</h3>
+  <p>Every tool has a labeled place (good names). Each drawer holds one kind of thing (single responsibility). You tidy a little every day rather than once a year (continuous refactoring). And you never rearrange the shop while a customer's order is half-built, unless you can check the order still works afterward (tests).</p>
+
+  <h3>Naming</h3>
+  <div class="wrap"><table>
+    <tr><th>Instead of</th><th>Write</th><th>Why</th></tr>
+    <tr><td><code>d</code>, <code>tmp</code>, <code>data2</code></td><td><code>elapsed_ms</code>, <code>pending_orders</code></td><td>say what it is, with units</td></tr>
+    <tr><td><code>process()</code>, <code>handle()</code></td><td><code>apply_discount()</code>, <code>send_invoice()</code></td><td>say what it does</td></tr>
+    <tr><td><code>flag</code>, <code>check</code></td><td><code>is_expired</code>, <code>has_access</code></td><td>booleans read as yes/no questions</td></tr>
+    <tr><td><code>UserManagerHelperUtil</code></td><td><code>UserRepository</code>, <code>PasswordHasher</code></td><td>a noun for one clear role</td></tr>
+    <tr><td><code>getData()</code> returning a total</td><td><code>total_revenue()</code></td><td>no surprises</td></tr>
+  </table></div>
+
+  <h3>Smells and their refactorings</h3>
+  <div class="wrap"><table>
+    <tr><th>Smell</th><th>Refactoring</th></tr>
+    <tr><td>Long function (does several things)</td><td><b>Extract Function</b> — one named step each</td></tr>
+    <tr><td>Mysterious name</td><td><b>Rename</b></td></tr>
+    <tr><td>Duplicated code</td><td>Extract and reuse (but see YAGNI/DRY in <a href="../volume-3-low-level-design/ch03-design-principles-cohesion-coupling-yagni-dry-kiss.notes.html">Vol 3 Ch 3</a>)</td></tr>
+    <tr><td>Deep nesting</td><td><b>Guard clauses</b> (return early)</td></tr>
+    <tr><td>Long parameter list</td><td><b>Introduce Parameter Object</b></td></tr>
+    <tr><td>Magic numbers</td><td><b>Named constant</b></td></tr>
+    <tr><td>A comment explaining a block</td><td>extract the block into a function named after the comment</td></tr>
+    <tr><td>Flag argument (<code>render(x, True)</code>)</td><td>split into two functions</td></tr>
+  </table></div>
+
+  <h3>One level of abstraction per function</h3>
+  <p>A function should read like a table of contents: either all high-level steps (<code>validate</code>, <code>price</code>, <code>save</code>) or all low-level detail (string slicing, arithmetic), not a mix.</p>
+
+  <aside class="sticky"><b>Mnemonic!</b><br>Red, green, refactor: fail first, pass simply, then tidy while it stays green.</aside>
+  <h3>Red → green → refactor</h3>
+  <ol style="list-style:none;padding-left:0">
+    <li>1. <span class="red"><b>Red</b></span> — write a failing test for the behavior.</li>
+    <li>2. <span class="green"><b>Green</b></span> — make it pass in the simplest way.</li>
+    <li>3. <b>Refactor</b> — clean up while the test stays green.</li>
+  </ol>
+  <p>To refactor untested legacy code, first write <i>characterization tests</i> that record what the code does today, including its bugs.</p>
+
+  <div class="pagebreak">~ page 2 ~</div>
+
+  <h2>Prereqs</h2>
+  <ul>
+    <li><a href="ch03-functions-parameters-return-values-scope-and-namespaces.notes.html">Chapter 3 — Functions, Parameters, Return Values, Scope &amp; Namespaces</a></li>
+  </ul>
+
+  <h2>Diagram</h2>
+  <h3>Before and after: one long function becomes named steps</h3>
+<pre class="code ascii"><code> BEFORE: handle(r)  — 60 lines                AFTER: handle_order(request)
+ ┌──────────────────────────────────┐        ┌───────────────────────────────┐
+ │ parse JSON, check 6 fields       │        │ order = parse_order(request)  │
+ │ if/else for discount rules …     │  ───►  │ validate(order)               │
+ │ loop to compute tax …            │        │ total = price(order)          │
+ │ build SQL string, execute …      │        │ save(order, total)            │
+ │ format email, send …             │        │ notify_customer(order)        │
+ └──────────────────────────────────┘        └───────────────────────────────┘
+                                               each step: small, named, testable</code></pre>
+
+  <h3>The refactoring loop</h3>
+  <figure>
+    <svg viewBox="0 0 640 350" role="img" aria-label="Red: write a failing test, then Green: simplest code to pass, then Refactor: rename, extract, simplify, then a check: tests still green? yes goes back to Red, no goes to undo the last step and back to Refactor">
+      <rect class="sk red" x="20" y="30" width="170" height="64" rx="12" style="fill:var(--hl-pink)"/>
+      <text class="lbl b" x="105" y="57" text-anchor="middle">Red</text>
+      <text class="lbl" x="105" y="80" text-anchor="middle" style="font-size:14px">write a failing test</text>
+      <rect class="sk green" x="235" y="30" width="170" height="64" rx="12" style="fill:var(--hl-green)"/>
+      <text class="lbl b" x="320" y="57" text-anchor="middle">Green</text>
+      <text class="lbl" x="320" y="80" text-anchor="middle" style="font-size:14px">simplest code to pass</text>
+      <rect class="sk" x="440" y="30" width="170" height="64" rx="12"/>
+      <text class="lbl b" x="525" y="57" text-anchor="middle">Refactor</text>
+      <text class="lbl" x="525" y="80" text-anchor="middle" style="font-size:14px">rename, extract, simplify</text>
+      <path class="sk blue" d="M190 62 L233 62" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M405 62 L438 62" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M525 94 L525 163" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <text class="lbl r" x="515" y="134" text-anchor="end">tests still green?</text>
+      <path class="sk" d="M525 165 L585 200 L525 235 L465 200 Z"/>
+      <path class="sk green" d="M465 200 C 300 262, 105 235, 105 98" style="color:var(--green)" marker-end="url(#arr)"/>
+      <text class="lbl g" x="290" y="256" text-anchor="middle">yes</text>
+      <path class="sk red" d="M525 235 L525 283" style="color:var(--red)" marker-end="url(#arr)"/>
+      <text class="lbl r" x="540" y="264">no</text>
+      <rect class="sk" x="420" y="285" width="190" height="44" rx="10"/>
+      <text class="lbl b" x="515" y="313" text-anchor="middle">undo the last step</text>
+      <path class="sk blue" d="M610 307 C 645 280, 645 130, 612 72" style="color:var(--ink)" marker-end="url(#arr)"/>
+    </svg>
+    <figcaption>Fig 1: the refactoring loop — if the tests go red, undo the last step and try again</figcaption>
+  </figure>
+
+  <h3>Guard clauses flatten nesting</h3>
+<pre class="code ascii"><code> if user:                                  if not user: return deny()
+     if user.active:                       if not user.active: return deny()
+         if user.has_role("admin"):   ─►   if not user.has_role("admin"): return deny()
+             return allow()                return allow()
+         else: return deny()
+     …</code></pre>
+
+  <div class="pagebreak">~ page 3 ~</div>
+
+  <h2>Example</h2>
+  <span class="lang">python</span>
+<pre class="code"><code># BEFORE
+def calc(d, t):
+    r = 0
+    for i in d:
+        if i["s"] == "paid":
+            if t == 1:
+                r += i["a"] * 0.9
+            else:
+                r += i["a"]
+    return r
+
+# AFTER — same behavior, readable
+MEMBER_DISCOUNT = 0.10
+
+def revenue(invoices, is_member: bool) -&gt; float:
+    paid = (inv for inv in invoices if inv["status"] == "paid")
+    return sum(discounted(inv["amount"], is_member) for inv in paid)
+
+def discounted(amount: float, is_member: bool) -&gt; float:
+    return amount * (1 - MEMBER_DISCOUNT) if is_member else amount</code></pre>
+
+  <span class="lang">python</span>
+<pre class="code"><code># Characterization test written BEFORE refactoring — locks in current behavior
+def test_revenue_matches_legacy():
+    data = [{"s": "paid", "a": 100}, {"s": "void", "a": 50}, {"s": "paid", "a": 20}]
+    legacy = calc(data, 1)
+    new = revenue([{"status": x["s"], "amount": x["a"]} for x in data], True)
+    assert new == legacy == 108.0</code></pre>
+
+  <h2>Exercises</h2>
+  <ol style="list-style:none;padding-left:0">
+    <li>1. Refactor a messy function without changing behavior (tests stay green).
+      <div class="box"><b>Solution</b> Write characterization tests first. Then take tiny steps, running the tests after each: rename variables → extract constants → extract the inner loop body into a function → replace the flag argument with a boolean → use guard clauses. Commit after each green step so any mistake is one <code>git restore</code> away.</div></li>
+    <li>2. Apply the "one level of abstraction per function" rule.
+      <div class="box"><b>Solution</b> If a function mixes <code>validate(order)</code> with <code>line.split(",")[3].strip()</code>, move the low-level parsing into a named helper (<code>parse_quantity(line)</code>) so the top-level function reads as steps only.</div></li>
+    <li>3. Is this comment a smell? <code># check if user can edit</code> above a 6-line <code>if</code> block.
+      <div class="box"><b>Solution</b> Yes — extract <code>def can_edit(user, doc) -&gt; bool</code>. The name replaces the comment and cannot go stale. Keep comments for <i>why</i> (a business reason, a workaround link), not for <i>what</i>.</div></li>
+  </ol>
+
+  <div class="pagebreak">~ page 4 ~</div>
+
+  <h2>Mini project</h2>
+  <p><b>Take a 200-line script and refactor it into small, tested functions.</b></p>
+  <figure>
+    <svg viewBox="0 0 640 540" role="img" aria-label="script.py with 200 lines, globals, no tests; then one characterization test (golden output file); then extract pure functions parse / transform / format; then unit tests per function; then isolate I/O at the edges (main reads and writes); then package with typed functions and tests">
+      <rect class="sk red" x="140" y="15" width="360" height="84" rx="12" style="fill:var(--hl-pink)"/>
+      <text class="lbl b" x="320" y="44" text-anchor="middle">script.py</text>
+      <text class="lbl" x="320" y="66" text-anchor="middle" style="font-size:15px">200 lines, globals,</text>
+      <text class="lbl" x="320" y="86" text-anchor="middle" style="font-size:15px">no tests</text>
+      <path class="sk blue" d="M320 99 L320 127" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <rect class="sk" x="140" y="129" width="360" height="54" rx="12"/>
+      <text class="lbl b" x="320" y="153" text-anchor="middle">1 characterization test</text>
+      <text class="lbl" x="320" y="174" text-anchor="middle" style="font-size:15px">(golden output file)</text>
+      <path class="sk blue" d="M320 183 L320 211" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <rect class="sk" x="140" y="213" width="360" height="54" rx="12"/>
+      <text class="lbl b" x="320" y="237" text-anchor="middle">extract pure functions</text>
+      <text class="lbl" x="320" y="258" text-anchor="middle" style="font-size:15px">parse / transform / format</text>
+      <path class="sk blue" d="M320 267 L320 295" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <rect class="sk" x="140" y="297" width="360" height="44" rx="12"/>
+      <text class="lbl b" x="320" y="325" text-anchor="middle">unit tests per function</text>
+      <path class="sk blue" d="M320 341 L320 369" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <rect class="sk" x="140" y="371" width="360" height="54" rx="12"/>
+      <text class="lbl b" x="320" y="395" text-anchor="middle">isolate I/O at the edges</text>
+      <text class="lbl" x="320" y="416" text-anchor="middle" style="font-size:15px">(main reads &amp; writes)</text>
+      <path class="sk blue" d="M320 425 L320 453" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <rect class="sk green" x="140" y="455" width="360" height="54" rx="12" style="fill:var(--hl-green)"/>
+      <text class="lbl b" x="320" y="479" text-anchor="middle">package with</text>
+      <text class="lbl" x="320" y="500" text-anchor="middle" style="font-size:15px">typed functions + tests</text>
+    </svg>
+    <figcaption>Fig 2: from untested script to packaged, typed, tested functions</figcaption>
+  </figure>
+
+  <h3>Steps</h3>
+  <ol style="list-style:none;padding-left:0">
+    <li>1. Pick a real messy script (or write one: read a CSV, compute stats, print a report).</li>
+    <li>2. Save its output for a fixed input as a golden file; a test compares output to it.</li>
+    <li>3. Refactor in commits of under 20 lines each: rename, extract, remove globals, add types.</li>
+    <li>4. Move I/O into <code>main()</code>; everything else becomes pure and unit-tested.</li>
+    <li>5. Record metrics before and after: longest function, max nesting depth, test count.</li>
+  </ol>
+  <div class="box"><b>Done when:</b> the golden test never broke, no function is over ~25 lines, and every pure function has a unit test.</div>
+
+  <h2>Open source</h2>
+  <ul>
+    <li><a href="https://github.com/psf/requests"><code>psf/requests</code></a> (clean Python) — <code>src/requests/sessions.py</code> and <code>api.py</code>: small public functions delegating to well-named methods.</li>
+    <li><a href="https://github.com/rust-lang/rust"><code>rust-lang/rust</code></a> std (naming conventions) — the Rust API Guidelines' "Naming" section (<code>as_</code>/<code>to_</code>/<code>into_</code>, <code>iter</code>/<code>iter_mut</code>/<code>into_iter</code>) shows how naming conventions carry meaning.</li>
+  </ul>
+
+  <h2>Interview</h2>
+  <ol style="list-style:none;padding-left:0">
+    <li>1. <b>"What makes a function 'too long'?"</b>
+      <div class="box"><b>Answer</b> Not a line count, but signals: it does more than one thing, mixes levels of abstraction, needs comments to separate sections, has deep nesting, or can't be named without "and". If you can extract a chunk and give it a name that explains it, you probably should.</div></li>
+    <li>2. <b>"How do you refactor safely?"</b>
+      <div class="box"><b>Answer</b> Get tests around the behavior first (characterization tests if needed). Change in tiny steps, running tests after each. Use automated IDE refactorings where possible. Separate refactoring commits from behavior changes. Keep each step revertible.</div></li>
+  </ol>
+
+  <h2>Checklist</h2>
+  <ul>
+    <li class="todo">write names that need no comment</li>
+    <li class="todo">keep functions small</li>
+    <li class="todo">refactor only under tests</li>
+  </ul>
+  <div class="gap"></div>
+  <p class="black"><a href="index.md">Contents</a> · ← <a href="ch21-build-systems-and-package-management.notes.html">Chapter 21 — Build Systems &amp; Package Management</a> · Next → <a href="ch23-documentation-adrs-and-readmes.notes.html">Chapter 23 — Documentation, ADRs &amp; READMEs</a></p>
+
+  <nav class="nav"><a href="ch21-build-systems-and-package-management.notes.html">← Ch 21 — Build Systems &amp; Package Management</a><a href="index.notes.html">☰ Contents</a><a href="ch23-documentation-adrs-and-readmes.notes.html">Ch 23 — Documentation, ADRs &amp; READMEs →</a></nav>
+</main>
+</body>
+</html>

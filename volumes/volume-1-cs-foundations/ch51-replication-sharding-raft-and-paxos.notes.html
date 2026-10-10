@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ch 51 — Replication, Sharding, Raft &amp; Paxos — Notes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;700&family=Kalam:wght@400;700&family=Patrick+Hand&display=swap" rel="stylesheet">
+<style>
+/* ===== Page tokens ===== */
+:root{
+  --line:32px;                 /* ruled-line spacing; every vertical size is a multiple */
+  --paper:#fdfbf4; --rule:#c9dcef; --margin:#e8a0a0;
+  --ink:#1f3a93;               /* blue pen (body) */
+  --ink2:#222;                 /* black pen (headings) */
+  --red:#c0392b; --green:#1e8449;
+  --hl-yellow:rgba(255,235,59,.55); --hl-pink:rgba(255,128,171,.45);
+  --hl-green:rgba(118,255,3,.35); --hl-blue:rgba(64,196,255,.35);
+  --sticky:#fff59d; --desk:#e9e4d8;
+  --hand:'Kalam','Patrick Hand','Comic Sans MS','Segoe Print','Bradley Hand',cursive;
+  --title:'Caveat','Kalam','Segoe Print','Bradley Hand',cursive;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){ --desk:#2b2b2b; }
+}
+:root[data-theme="dark"]{ --desk:#2b2b2b; }
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--desk);font-family:var(--hand);color:var(--ink);}
+
+/* ===== Notebook sheet ===== */
+.page{
+  position:relative; max-width:860px; margin:24px auto; padding:var(--line) 28px calc(var(--line)*2) 84px;
+  background:
+    linear-gradient(90deg,transparent 64px,var(--margin) 64px,var(--margin) 66px,transparent 66px),
+    repeating-linear-gradient(var(--paper) 0,var(--paper) calc(var(--line) - 1px),var(--rule) calc(var(--line) - 1px),var(--rule) var(--line));
+  background-color:var(--paper);
+  box-shadow:0 2px 6px rgba(0,0,0,.15),0 12px 28px rgba(0,0,0,.12);
+  font-size:20px; line-height:var(--line);
+}
+.page::before{ /* punched holes */
+  content:""; position:absolute; left:22px; top:0; bottom:0; width:18px;
+  background:radial-gradient(circle,var(--desk) 7px,transparent 8px) 0 40px/18px 220px repeat-y;
+}
+@media (max-width:600px){
+  .page{margin:0;padding-left:52px;padding-right:16px;font-size:18px;
+    background:
+      linear-gradient(90deg,transparent 40px,var(--margin) 40px,var(--margin) 42px,transparent 42px),
+      repeating-linear-gradient(var(--paper) 0,var(--paper) calc(var(--line) - 1px),var(--rule) calc(var(--line) - 1px),var(--rule) var(--line));
+    background-color:var(--paper);}
+  .page::before{left:10px;width:16px}
+}
+
+/* ===== Text (all margins are multiples of --line so text sits on the rules) ===== */
+.date{position:absolute;top:0;right:24px;font-family:var(--title);font-size:22px;color:var(--ink2);line-height:var(--line)}
+h1{font-family:var(--title);font-weight:700;color:var(--ink2);font-size:46px;line-height:calc(var(--line)*2);margin:0;transform:rotate(-1deg)}
+h1 .u{background:linear-gradient(transparent 62%,var(--hl-yellow) 62%,var(--hl-yellow) 92%,transparent 92%)}
+h2{font-family:var(--title);font-weight:700;color:var(--red);font-size:32px;line-height:calc(var(--line)*1.5);margin:calc(var(--line)*.5) 0 0}
+h2::before{content:"➤ ";font-size:22px}
+p,li{margin:0}
+ul,ol{margin:0;padding-left:28px}
+ul{list-style:none}
+ul>li::before{content:"–";position:absolute;margin-left:-20px}
+ul>li.star::before{content:"★";color:var(--red)}
+ul>li.arrow::before{content:"→"}
+ul>li.check::before{content:"✓";color:var(--green)}
+.gap{height:var(--line)}
+
+/* ===== Pen effects ===== */
+.hl{background:var(--hl-yellow);padding:0 3px;border-radius:3px 6px 4px 7px}
+.hl.pink{background:var(--hl-pink)} .hl.green{background:var(--hl-green)} .hl.blue{background:var(--hl-blue)}
+.red{color:var(--red)} .green{color:var(--green)} .black{color:var(--ink2)}
+.ul{text-decoration:underline wavy var(--red);text-underline-offset:5px}
+.circ{border:2px solid var(--red);border-radius:50% 45% 55% 48%;padding:0 6px}
+.strike{text-decoration:line-through 2px var(--red)}
+.term{font-weight:700;color:var(--ink2)}
+.box{display:flow-root;border:2.5px solid var(--ink2);border-radius:4px 10px 6px 12px;padding:calc(var(--line)*.5 - 2.5px) 14px;margin:calc(var(--line)*.5) 0;transform:rotate(-.4deg);background:rgba(255,255,255,.35)}
+.box.red{border-color:var(--red)}
+.formula{font-family:var(--title);font-size:28px;text-align:center;color:var(--ink2)}
+
+/* sticky note */
+.sticky{float:right;width:min(250px,42%);margin:0 0 var(--line) 20px;padding:var(--line) 16px;background:var(--sticky);
+  color:#333;transform:rotate(2.2deg);box-shadow:2px 4px 8px rgba(0,0,0,.18);font-size:18px}
+.sticky b{font-family:var(--title);font-size:24px;color:var(--red)}
+@media (max-width:600px){.sticky{float:none;width:auto;margin:var(--line) 0}}
+
+/* margin annotation (lives in the red margin) */
+.side{position:absolute;left:4px;width:58px;text-align:center;font-family:var(--title);font-size:17px;line-height:18px;color:var(--red);transform:rotate(-8deg)}
+@media (max-width:600px){.side{display:none}}
+
+/* two-column notes */
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:0 28px}
+@media (max-width:600px){.cols{grid-template-columns:1fr}}
+
+/* diagrams */
+figure{margin:var(--line) 0;text-align:center}
+figure svg{width:100%;max-width:640px;height:auto;overflow:visible}
+figcaption{font-family:var(--title);font-size:20px;color:var(--ink2)}
+/* phones: keep labels readable — diagram scrolls inside its own box instead of shrinking */
+@media (max-width:600px){figure{overflow-x:auto}figure svg{min-width:520px}}
+.sk{fill:none;stroke:var(--ink2);stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round;filter:url(#rough)}
+.sk.blue{stroke:var(--ink)} .sk.red{stroke:var(--red)} .sk.green{stroke:var(--green)}
+.lbl{font-family:var(--hand);font-size:17px;fill:var(--ink)}
+.lbl.b{font-weight:700;fill:var(--ink2)} .lbl.r{fill:var(--red)} .lbl.g{fill:var(--green)}
+
+/* table */
+.wrap{overflow-x:auto}
+table{border-collapse:collapse;margin:calc(var(--line)*.5) 0;min-width:100%}
+th,td{border:2px solid var(--ink2);padding:0 10px;text-align:left;vertical-align:top}
+th{font-family:var(--title);font-size:24px;color:var(--ink2)}
+
+@media print{body{background:#fff}.page{box-shadow:none;margin:0}.page::before{display:none}}
+
+/* ===== Added for long chapter notes ===== */
+pre.code{font-family:Consolas,'Courier New',monospace;font-size:14px;line-height:var(--line);color:var(--ink);background:rgba(255,255,255,.45);
+  border-left:4px solid var(--red);margin:calc(var(--line)*.5) 0;padding:0 12px;overflow-x:auto;white-space:pre}
+pre.code.ascii{border-left-color:var(--green)}
+code{font-family:Consolas,'Courier New',monospace;font-size:.82em;background:rgba(0,0,0,.06);padding:0 3px;border-radius:3px}
+pre.code code{background:none;padding:0;font-size:inherit}
+.lang{font-family:var(--title);font-size:18px;color:var(--red)}
+h3{font-family:var(--title);font-weight:700;color:var(--ink2);font-size:26px;line-height:var(--line);margin:calc(var(--line)*.5) 0 0}
+h3::before{content:"✎ ";font-size:18px;color:var(--red)}
+.nav{display:flex;justify-content:space-between;gap:12px;font-family:var(--title);font-size:22px;line-height:var(--line)}
+.nav a{color:var(--red);text-decoration:none}
+.nav a:hover{text-decoration:underline wavy}
+.pagebreak{border-top:3px dashed var(--margin);margin:var(--line) 0;text-align:center;font-family:var(--title);color:var(--red);line-height:var(--line)}
+li.todo::before{content:"☐";color:var(--ink2)}
+a{color:var(--ink);text-decoration:underline dotted}
+</style>
+</head>
+<body>
+<!-- One shared hand-drawn wobble filter; give every diagram stroke class="sk" -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <!-- userSpaceOnUse region: a % region collapses to nothing on perfectly straight lines (zero-height bbox) -->
+  <filter id="rough" filterUnits="userSpaceOnUse" x="-500" y="-500" width="3000" height="3000">
+    <feTurbulence type="fractalNoise" baseFrequency="0.03" numOctaves="2" seed="3" result="n"/>
+    <feDisplacementMap in="SourceGraphic" in2="n" scale="3"/>
+  </filter>
+  <marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+    <path d="M1 1 L9 5 L1 9" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+  </marker>
+</defs></svg>
+
+<main class="page">
+  <nav class="nav"><a href="ch50-cap-consistency-and-consensus.notes.html">← Ch 50 — CAP, Consistency &amp; Consensus</a><a href="index.notes.html">☰ Contents</a><a href="ch52-event-sourcing-and-cqrs-distributed-view.notes.html">Ch 52 — Event Sourcing &amp; CQRS (Distributed View) →</a></nav>
+  <div class="date">2026-10-10</div>
+  <h1><span class="u">Ch 51 — Replication, Sharding, Raft &amp; Paxos</span></h1>
+    <p class="black">Volume 1 — Computer Science Foundations · <a href="index.md">Contents</a> · ← <a href="ch50-cap-consistency-and-consensus.notes.html">Chapter 50 — CAP, Consistency &amp; Consensus</a> · Next → <a href="ch52-event-sourcing-and-cqrs-distributed-view.notes.html">Chapter 52 — Event Sourcing &amp; CQRS (Distributed View)</a></p>
+
+  <p class="black">Chapter 51 — Replication, Sharding, Raft &amp; Paxos</p>
+
+  <h2>Concept</h2>
+  <p>Replication strategies, sharding/partitioning, distributed locks, gossip, leader election, and the Raft/Paxos consensus families.</p>
+  <div class="box"><b>In one sentence:</b> <span class="hl">replication</span> keeps copies of the same data on several machines for safety and read scale, sharding splits different data across machines for write scale, and consensus algorithms like Raft make a group of machines agree on one ordered log so that they act like a single, reliable machine.</div>
+
+  <h3>Mental model — a class taking notes</h3>
+  <p><b>Replication:</b> several students copy the same lecture notes, so losing one notebook is fine. <b>Sharding:</b> each student is responsible for a different chapter, so the work spreads out. <b>Raft:</b> the class elects a note-taker (the leader) who reads each line aloud; a line counts as official once most of the class has written it down; if the note-taker falls asleep, the class elects a new one.</p>
+
+  <h3>Replication strategies</h3>
+  <div class="wrap"><table>
+    <tr><th>Strategy</th><th>Writes go to</th><th>Pros</th><th>Cons</th><th>Examples</th></tr>
+    <tr><td>Single leader (primary/replica)</td><td>the leader, which streams changes to followers</td><td>simple; no write conflicts</td><td>the leader is a bottleneck; failover is needed</td><td>Postgres, MySQL, MongoDB</td></tr>
+    <tr><td>Multi-leader</td><td>any of several leaders (often one per region)</td><td>local writes in each region</td><td>write conflicts to resolve</td><td>multi-region active-active, CouchDB</td></tr>
+    <tr><td>Leaderless</td><td>any replica; quorum reads and writes (R + W &gt; N)</td><td>highly available</td><td>conflicts, read repair, sloppy quorums</td><td>Cassandra, DynamoDB, Riak</td></tr>
+    <tr><td><b>Sync vs async</b></td><td>sync: wait for replicas before ACK</td><td>sync: no loss on failover / async: fast</td><td>sync: slow, blocked by one slow replica / async: data loss on failover</td><td>semi-sync: wait for one replica</td></tr>
+  </table></div>
+
+  <h3>Sharding (partitioning)</h3>
+  <div class="wrap"><table>
+    <tr><th>Scheme</th><th>How</th><th>Good</th><th>Bad</th></tr>
+    <tr><td>Range</td><td>shard by key ranges (A–F, G–M…)</td><td>range scans</td><td>hot spots (all new timestamps hit one shard)</td></tr>
+    <tr><td>Hash</td><td><code>hash(key) mod N</code></td><td>even spread</td><td>resharding moves almost everything</td></tr>
+    <tr><td><b>Consistent hashing</b></td><td>keys and nodes on a ring; a key goes to the next node clockwise; virtual nodes</td><td>adding a node moves only ~1/N of keys</td><td>uneven without virtual nodes</td></tr>
+    <tr><td>Directory / lookup</td><td>a service maps key → shard</td><td>flexible, supports moves</td><td>an extra hop; the directory must be highly available</td></tr>
+  </table></div>
+
+  <aside class="sticky"><b>Exam tip!</b><br>Quorum math: R + W &gt; N means every read overlaps the latest write. Majority consensus survives f failures with 2f + 1 nodes.</aside>
+  <h3>Leader election and distributed locks — use leases, not bare locks</h3>
+  <p>A process that holds a lock can pause (GC, VM freeze) past its expiry while another process takes the lock → two holders (<i>split-brain</i>). Fix: <span class="term">fencing tokens</span> — every lock grant carries a monotonically increasing number, and the storage rejects writes with an older token.</p>
+
+  <h3>Gossip</h3>
+  <p>Each node periodically tells a few random peers what it knows (membership, heartbeats, versions). Information spreads to all N nodes in O(log N) rounds with no central coordinator. Used for failure detection and membership (Cassandra, Consul/Serf SWIM).</p>
+
+  <div class="pagebreak">~ page 2 ~</div>
+
+  <h3>Raft in five facts</h3>
+  <ol style="list-style:none;padding-left:0">
+    <li>1. Nodes are <b>followers</b>, <b>candidates</b>, or the <b>leader</b>. Time is divided into numbered <b>terms</b>.</li>
+    <li>2. A follower that hears nothing for a randomized election timeout (150–300 ms) becomes a candidate, increments the term, votes for itself, and asks others for votes.</li>
+    <li>3. A node grants at most one vote per term, and only to a candidate whose log is at least as up to date as its own. A <b>majority</b> of votes makes a leader.</li>
+    <li>4. The leader appends client commands to its log and replicates them (<code>AppendEntries</code>). An entry is <b>committed</b> once stored on a majority; then it is applied to the state machine.</li>
+    <li>5. Safety: at most one leader per term, and a committed entry is never lost — any future leader must have it.</li>
+  </ol>
+
+  <h3>Paxos vs Raft</h3>
+  <p>Both reach consensus with majorities and survive f failures with 2f + 1 nodes. Paxos (Lamport, 1989) is minimal and general, but famously hard to understand and to turn into a full system (Multi-Paxos). Raft (2014) was designed for understandability, with a strong leader and a clearly specified log, elections, and membership changes. Most new systems use Raft (etcd, Consul, CockroachDB, TiKV); Google's Chubby and Spanner use Paxos.</p>
+
+  <h2>Prereqs</h2>
+  <ul>
+    <li><a href="ch50-cap-consistency-and-consensus.notes.html">Chapter 50 — CAP, Consistency &amp; Consensus</a></li>
+  </ul>
+
+  <h2>Diagram</h2>
+  <h3>Raft leader election</h3>
+  <figure>
+    <svg viewBox="0 0 660 330" role="img" aria-label="Raft state diagram: start to Follower; Follower to Candidate on election timeout; Candidate to Candidate on split vote; Candidate to Leader on majority; Candidate to Follower on seeing a leader; Leader to Follower on seeing a higher term">
+      <circle class="sk" cx="95" cy="40" r="9" style="fill:var(--ink2)"/>
+      <path class="sk blue" d="M95 50 L95 146" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <rect class="sk" x="30" y="150" width="130" height="50" rx="12"/>
+      <text class="lbl b" x="95" y="181" text-anchor="middle">Follower</text>
+      <rect class="sk" x="270" y="150" width="130" height="50" rx="12"/>
+      <text class="lbl b" x="335" y="181" text-anchor="middle">Candidate</text>
+      <rect class="sk green" x="510" y="150" width="130" height="50" rx="12"/>
+      <text class="lbl g" x="575" y="181" text-anchor="middle">Leader</text>
+      <path class="sk blue" d="M160 165 C 200 160, 230 160, 268 165" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <text class="lbl r" x="215" y="148" text-anchor="middle">① timeout</text>
+      <path class="sk blue" d="M268 190 C 230 196, 200 196, 162 190" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <text class="lbl r" x="215" y="222" text-anchor="middle">④ sees leader</text>
+      <path class="sk blue" d="M400 165 C 440 160, 470 160, 508 165" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <text class="lbl r" x="455" y="148" text-anchor="middle">③ majority</text>
+      <path class="sk blue" d="M305 150 C 280 90, 390 90, 365 148" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <text class="lbl r" x="335" y="78" text-anchor="middle">② split vote</text>
+      <path class="sk blue" d="M575 200 C 575 290, 95 290, 95 202" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <text class="lbl r" x="335" y="278" text-anchor="middle">⑤ sees higher term</text>
+    </svg>
+    <figcaption>Fig 1: Raft leader election (state diagram)</figcaption>
+  </figure>
+  <ol style="list-style:none;padding-left:0">
+    <li>① Follower → Candidate: election timeout (no heartbeat)</li>
+    <li>② Candidate → Candidate: split vote → new term, retry</li>
+    <li>③ Candidate → Leader: votes from a majority</li>
+    <li>④ Candidate → Follower: sees a leader with term ≥ own</li>
+    <li>⑤ Leader → Follower: sees a higher term</li>
+  </ol>
+
+  <h3>Raft log replication</h3>
+  <figure>
+    <svg viewBox="0 0 660 560" role="img" aria-label="Sequence diagram: client sends SET x = 5 to the leader; leader appends entry 7, sends AppendEntries to both followers; follower 1 replies ok; with 2 of 3 the entry is committed; leader applies and replies OK to client; follower 2 replies late but fine">
+      <rect class="sk" x="20" y="15" width="100" height="40" rx="8"/>
+      <text class="lbl b" x="70" y="41" text-anchor="middle">Client</text>
+      <rect class="sk" x="150" y="15" width="160" height="40" rx="8"/>
+      <text class="lbl b" x="230" y="41" text-anchor="middle">Leader (term 3)</text>
+      <rect class="sk" x="345" y="15" width="110" height="40" rx="8"/>
+      <text class="lbl b" x="400" y="41" text-anchor="middle">Follower 1</text>
+      <rect class="sk" x="515" y="15" width="110" height="40" rx="8"/>
+      <text class="lbl b" x="570" y="41" text-anchor="middle">Follower 2</text>
+      <path class="sk" d="M70 55 L70 545 M230 55 L230 545 M400 55 L400 545 M570 55 L570 545" style="stroke-dasharray:6 6;stroke-width:1.6"/>
+
+      <path class="sk blue" d="M72 105 L226 105" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <text class="lbl" x="150" y="94" text-anchor="middle">SET x = 5</text>
+
+      <path class="sk blue" d="M232 135 C 290 135, 290 175, 234 175" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <text class="lbl" x="268" y="150">append entry #7</text>
+      <text class="lbl" x="268" y="170">(term 3)</text>
+
+      <path class="sk blue" d="M232 215 L396 215" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <text class="lbl" x="314" y="204" text-anchor="middle">AppendEntries(#7)</text>
+
+      <path class="sk blue" d="M232 265 L566 265" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <text class="lbl" x="485" y="254" text-anchor="middle">AppendEntries(#7)</text>
+
+      <path class="sk green" d="M398 305 L234 305" style="color:var(--green);stroke-dasharray:7 6" marker-end="url(#arr)"/>
+      <text class="lbl g" x="316" y="294" text-anchor="middle">ok</text>
+
+      <rect class="sk red" x="105" y="330" width="250" height="40" rx="6" style="fill:var(--hl-yellow)"/>
+      <text class="lbl r" x="230" y="356" text-anchor="middle">2 of 3 have #7 → COMMITTED</text>
+
+      <path class="sk blue" d="M232 395 C 290 395, 290 430, 234 430" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <text class="lbl" x="268" y="418">apply x = 5</text>
+
+      <path class="sk green" d="M228 465 L72 465" style="color:var(--green);stroke-dasharray:7 6" marker-end="url(#arr)"/>
+      <text class="lbl g" x="150" y="454" text-anchor="middle">OK</text>
+
+      <path class="sk green" d="M566 520 L234 520" style="color:var(--green);stroke-dasharray:7 6" marker-end="url(#arr)"/>
+      <text class="lbl g" x="485" y="509" text-anchor="middle" style="font-size:15px">ok (late — still fine)</text>
+    </svg>
+    <figcaption>Fig 2: Raft log replication (sequence diagram); dashed arrows are replies</figcaption>
+  </figure>
+
+<pre class="code ascii"><code> logs (index: term command)
+ Leader  1:1 x=1  2:1 y=2  3:2 x=3  …  7:3 x=5   commitIndex = 7
+ F1      1:1 x=1  2:1 y=2  3:2 x=3  …  7:3 x=5
+ F2      1:1 x=1  2:1 y=2  3:2 x=3              (catching up)</code></pre>
+
+  <div class="pagebreak">~ page 3 ~</div>
+
+  <h3>A consistent-hash ring with virtual nodes</h3>
+<pre class="code ascii"><code>                 0°
+           A1 ●     ● B1          keys hash to a point; walk clockwise to the first node
+       C2 ●             ● A2      "user:42" → 47° → B1 (node B)
+      B2 ●               ● C1     add node D: it takes over only the arcs just before its
+           A3 ●     ● C3          virtual points (~1/4 of keys move, not all of them)
+                180°</code></pre>
+
+  <h3>Gossip spreading a membership change</h3>
+<pre class="code ascii"><code> round 0:  ● ○ ○ ○ ○ ○ ○ ○        ● = knows "node 9 joined"
+ round 1:  ● ● ○ ● ○ ○ ○ ○        each informed node tells 2 random peers
+ round 2:  ● ● ● ● ● ○ ● ●
+ round 3:  ● ● ● ● ● ● ● ●        ~log₂ N rounds</code></pre>
+
+  <h2>Example</h2>
+  <span class="lang">python</span>
+<pre class="code"><code>import bisect, hashlib
+
+class HashRing:
+    def __init__(self, nodes, vnodes=100):
+        self.ring = []                               # sorted list of (hash, node)
+        for n in nodes:
+            self.add(n, vnodes)
+
+    @staticmethod
+    def _h(key: str) -&gt; int:
+        return int.from_bytes(hashlib.md5(key.encode()).digest()[:8], "big")
+
+    def add(self, node, vnodes=100):
+        for i in range(vnodes):
+            bisect.insort(self.ring, (self._h(f"{node}#{i}"), node))
+
+    def get(self, key):
+        i = bisect.bisect(self.ring, (self._h(key), "")) % len(self.ring)
+        return self.ring[i][1]
+
+ring = HashRing(["A", "B", "C"])
+before = {k: ring.get(k) for k in (f"user:{i}" for i in range(10_000))}
+ring.add("D")
+moved = sum(before[k] != ring.get(k) for k in before)
+print(f"{moved / len(before):.0%} of keys moved")      # ≈ 25%, not ≈ 75% as with mod N</code></pre>
+
+  <span class="lang">python</span>
+<pre class="code"><code># Lease + fencing token (sketch). The store refuses stale tokens.
+class Store:
+    def __init__(self): self.max_token = 0; self.data = {}
+    def write(self, key, value, token):
+        if token &lt; self.max_token:
+            raise PermissionError(f"stale fencing token {token} &lt; {self.max_token}")
+        self.max_token = token; self.data[key] = value
+
+# lock service grants: client A → token 33, lease 10 s
+# A pauses 15 s (GC); the lease expires; client B → token 34, writes
+# A wakes up and writes with token 33 → rejected. No split-brain damage.</code></pre>
+
+  <span class="lang">go</span>
+<pre class="code"><code>// etcd election (Go client): campaign for leadership with a lease
+session, _ := concurrency.NewSession(cli, concurrency.WithTTL(10))
+e := concurrency.NewElection(session, "/service/leader")
+e.Campaign(ctx, "node-2")            // blocks until this node is the leader
+// the leader key disappears if the session's lease expires → someone else wins</code></pre>
+
+  <div class="pagebreak">~ page 4 ~</div>
+
+  <h2>Exercises</h2>
+  <ol style="list-style:none;padding-left:0">
+    <li>1. Explain a Raft leader election step by step.
+      <div class="box"><b>Solution</b> (1) Followers receive heartbeats from the term-4 leader, which then crashes. (2) Follower B's randomized timeout fires first; it becomes a candidate for term 5, votes for itself, and sends RequestVote to A and C. (3) A and C haven't voted in term 5, and B's log is at least as up to date, so they grant their votes. (4) B has 3/3 (a majority), becomes leader, and immediately sends heartbeats to stop other elections. If two candidates split the vote, both time out at random and retry in term 6.</div></li>
+    <li>2. Design a sharded store with a consistent-hash ring.
+      <div class="box"><b>Solution</b> A ring with ~100–256 virtual nodes per physical node; each key is stored on the next 3 distinct physical nodes clockwise (RF = 3); clients or a routing layer hold the ring map (from a config service like etcd). Adding a node: it takes ranges from its neighbors and streams data before taking traffic. Hot keys: add a random suffix or cache in front. Rebalance with background copy + a switch-over.</div></li>
+    <li>3. Why must Raft's election timeouts be randomized?
+      <div class="box"><b>Solution</b> With equal timeouts, all followers would become candidates at the same time, split the vote, and repeat forever. Random timeouts make it likely one node starts first and wins before the others time out.</div></li>
+  </ol>
+
+  <h2>Mini project</h2>
+  <p><b>A Raft leader-election + log-replication simulator (3 nodes).</b></p>
+  <figure>
+    <svg viewBox="0 0 660 380" role="img" aria-label="Flowchart: simulated clock feeds nodes 1, 2, 3 in a cluster; message bus connects to all nodes; client commands go to node 1; the cluster feeds a timeline printout and invariant checks">
+      <rect class="sk" x="15" y="20" width="180" height="50" rx="10"/>
+      <text class="lbl b" x="105" y="51" text-anchor="middle" style="font-size:15px">simulated clock (ticks)</text>
+      <rect class="sk" x="15" y="95" width="180" height="50" rx="10"/>
+      <text class="lbl b" x="105" y="126" text-anchor="middle">client commands</text>
+      <rect class="sk" x="15" y="190" width="180" height="90" rx="10"/>
+      <text class="lbl b" x="105" y="218" text-anchor="middle">message bus</text>
+      <text class="lbl" x="105" y="240" text-anchor="middle">(delay, drop,</text>
+      <text class="lbl" x="105" y="260" text-anchor="middle">partition)</text>
+      <rect class="sk" x="265" y="10" width="170" height="330" rx="14" style="stroke-dasharray:8 6"/>
+      <text class="lbl r" x="350" y="32" text-anchor="middle">Cluster</text>
+      <rect class="sk" x="280" y="50" width="140" height="90" rx="10"/>
+      <text class="lbl b" x="350" y="76" text-anchor="middle">node 1</text>
+      <text class="lbl" x="350" y="98" text-anchor="middle">state, term,</text>
+      <text class="lbl" x="350" y="118" text-anchor="middle">votedFor, log</text>
+      <rect class="sk" x="280" y="170" width="140" height="45" rx="10"/>
+      <text class="lbl b" x="350" y="199" text-anchor="middle">node 2</text>
+      <rect class="sk" x="280" y="250" width="140" height="45" rx="10"/>
+      <text class="lbl b" x="350" y="279" text-anchor="middle">node 3</text>
+      <path class="sk blue" d="M195 40 C 230 40, 250 55, 278 65" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M195 50 C 240 70, 240 150, 278 180" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M195 60 C 250 100, 220 230, 278 262" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M195 120 C 230 120, 250 112, 278 108" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk" d="M195 205 C 230 190, 250 150, 280 132" style="stroke-dasharray:6 5"/>
+      <path class="sk" d="M195 230 C 230 220, 250 205, 280 200" style="stroke-dasharray:6 5"/>
+      <path class="sk" d="M195 255 C 230 260, 250 268, 280 272" style="stroke-dasharray:6 5"/>
+      <rect class="sk green" x="480" y="60" width="165" height="90" rx="10"/>
+      <text class="lbl g" x="562" y="86" text-anchor="middle">timeline printout:</text>
+      <text class="lbl g" x="562" y="108" text-anchor="middle">terms, leaders,</text>
+      <text class="lbl g" x="562" y="130" text-anchor="middle">commit indexes</text>
+      <rect class="sk red" x="480" y="185" width="165" height="170" rx="10"/>
+      <text class="lbl r" x="562" y="212" text-anchor="middle">invariant checks</text>
+      <text class="lbl r" x="562" y="234" text-anchor="middle">each tick:</text>
+      <text class="lbl r" x="562" y="256" text-anchor="middle">≤ 1 leader per</text>
+      <text class="lbl r" x="562" y="278" text-anchor="middle">term; committed</text>
+      <text class="lbl r" x="562" y="300" text-anchor="middle">entries identical</text>
+      <text class="lbl r" x="562" y="322" text-anchor="middle">everywhere</text>
+      <path class="sk blue" d="M437 105 L476 105" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M437 270 C 455 270, 460 270, 476 270" style="color:var(--ink)" marker-end="url(#arr)"/>
+    </svg>
+    <figcaption>Fig 3: simulator design. Solid arrows = data flow; dashed lines = the message bus linking all three nodes</figcaption>
+  </figure>
+
+  <h3>Steps</h3>
+  <ol style="list-style:none;padding-left:0">
+    <li>1. Implement <code>RequestVote</code> and <code>AppendEntries</code> (including the log-consistency check on <code>prevLogIndex/prevLogTerm</code>) as messages on a bus.</li>
+    <li>2. Randomized election timeouts in ticks; the leader sends heartbeats every few ticks.</li>
+    <li>3. Client commands go to the leader; commit on majority; apply to a dict state machine.</li>
+    <li>4. Fault injection: crash the leader, partition one node, drop 20% of messages, heal.</li>
+    <li>5. Assert the Raft safety invariants on every tick; print a timeline.</li>
+  </ol>
+  <div class="box"><b>Done when:</b> under random crashes and partitions for 10,000 ticks, no invariant ever fails and the cluster keeps committing whenever a majority can talk.</div>
+
+  <h2>Open source</h2>
+  <ul>
+    <li><a href="https://github.com/etcd-io/etcd"><code>etcd-io/etcd</code></a> (Raft) — <code>etcd-io/raft</code> is a battle-tested Raft library (<code>raft.go</code>: <code>stepLeader</code>, <code>stepCandidate</code>, <code>stepFollower</code>).</li>
+    <li><a href="https://github.com/hashicorp/raft"><code>hashicorp/raft</code></a> — used by Consul, Nomad, and Vault; readable Go. Read the Raft paper ("In Search of an Understandable Consensus Algorithm") and try the visualization at raft.github.io.</li>
+  </ul>
+
+  <h2>Interview</h2>
+  <ol style="list-style:none;padding-left:0">
+    <li>1. <b>"Raft vs Paxos?"</b>
+      <div class="box"><b>Answer</b> Both solve consensus with majority quorums and the same fault tolerance (2f + 1 nodes for f failures). Classic Paxos agrees on single values; practical systems need Multi-Paxos plus many unspecified details. Raft specifies the whole replicated-log system — a strong leader, elections, log matching, membership changes — with understandability as a goal, so it is easier to implement correctly. Performance is similar.</div></li>
+    <li>2. <b>"How do distributed locks avoid split-brain?"</b>
+      <div class="box"><b>Answer</b> Use a consensus-backed lock service (etcd, ZooKeeper) with <i>leases</i> that expire, so a crashed holder doesn't block forever. Because a paused holder may still believe it holds the lock, also use <i>fencing tokens</i>: each grant gets a strictly increasing number, and every protected resource rejects writes carrying a lower token than it has seen. Redis-based locks without fencing are not safe for correctness.</div></li>
+  </ol>
+
+  <h2>Checklist</h2>
+  <ul>
+    <li class="todo">trace Raft election</li>
+    <li class="todo">choose a shard key</li>
+    <li class="todo">use leases, not bare locks</li>
+  </ul>
+  <div class="gap"></div>
+  <p class="black"><a href="index.md">Contents</a> · ← <a href="ch50-cap-consistency-and-consensus.notes.html">Chapter 50 — CAP, Consistency &amp; Consensus</a> · Next → <a href="ch52-event-sourcing-and-cqrs-distributed-view.notes.html">Chapter 52 — Event Sourcing &amp; CQRS (Distributed View)</a></p>
+
+  <nav class="nav"><a href="ch50-cap-consistency-and-consensus.notes.html">← Ch 50 — CAP, Consistency &amp; Consensus</a><a href="index.notes.html">☰ Contents</a><a href="ch52-event-sourcing-and-cqrs-distributed-view.notes.html">Ch 52 — Event Sourcing &amp; CQRS (Distributed View) →</a></nav>
+</main>
+</body>
+</html>

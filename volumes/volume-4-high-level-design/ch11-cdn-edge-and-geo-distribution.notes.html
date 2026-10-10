@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ch 11 — CDN, Edge &amp; Geo-Distribution — Notes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;700&family=Kalam:wght@400;700&family=Patrick+Hand&display=swap" rel="stylesheet">
+<style>
+/* ===== Page tokens ===== */
+:root{
+  --line:32px;                 /* ruled-line spacing; every vertical size is a multiple */
+  --paper:#fdfbf4; --rule:#c9dcef; --margin:#e8a0a0;
+  --ink:#1f3a93;               /* blue pen (body) */
+  --ink2:#222;                 /* black pen (headings) */
+  --red:#c0392b; --green:#1e8449;
+  --hl-yellow:rgba(255,235,59,.55); --hl-pink:rgba(255,128,171,.45);
+  --hl-green:rgba(118,255,3,.35); --hl-blue:rgba(64,196,255,.35);
+  --sticky:#fff59d; --desk:#e9e4d8;
+  --hand:'Kalam','Patrick Hand','Comic Sans MS','Segoe Print','Bradley Hand',cursive;
+  --title:'Caveat','Kalam','Segoe Print','Bradley Hand',cursive;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){ --desk:#2b2b2b; }
+}
+:root[data-theme="dark"]{ --desk:#2b2b2b; }
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--desk);font-family:var(--hand);color:var(--ink);}
+
+/* ===== Notebook sheet ===== */
+.page{
+  position:relative; max-width:860px; margin:24px auto; padding:var(--line) 28px calc(var(--line)*2) 84px;
+  background:
+    linear-gradient(90deg,transparent 64px,var(--margin) 64px,var(--margin) 66px,transparent 66px),
+    repeating-linear-gradient(var(--paper) 0,var(--paper) calc(var(--line) - 1px),var(--rule) calc(var(--line) - 1px),var(--rule) var(--line));
+  background-color:var(--paper);
+  box-shadow:0 2px 6px rgba(0,0,0,.15),0 12px 28px rgba(0,0,0,.12);
+  font-size:20px; line-height:var(--line);
+}
+.page::before{ /* punched holes */
+  content:""; position:absolute; left:22px; top:0; bottom:0; width:18px;
+  background:radial-gradient(circle,var(--desk) 7px,transparent 8px) 0 40px/18px 220px repeat-y;
+}
+@media (max-width:600px){
+  .page{margin:0;padding-left:52px;padding-right:16px;font-size:18px;
+    background:
+      linear-gradient(90deg,transparent 40px,var(--margin) 40px,var(--margin) 42px,transparent 42px),
+      repeating-linear-gradient(var(--paper) 0,var(--paper) calc(var(--line) - 1px),var(--rule) calc(var(--line) - 1px),var(--rule) var(--line));
+    background-color:var(--paper);}
+  .page::before{left:10px;width:16px}
+}
+
+/* ===== Text (all margins are multiples of --line so text sits on the rules) ===== */
+.date{position:absolute;top:0;right:24px;font-family:var(--title);font-size:22px;color:var(--ink2);line-height:var(--line)}
+h1{font-family:var(--title);font-weight:700;color:var(--ink2);font-size:46px;line-height:calc(var(--line)*2);margin:0;transform:rotate(-1deg)}
+h1 .u{background:linear-gradient(transparent 62%,var(--hl-yellow) 62%,var(--hl-yellow) 92%,transparent 92%)}
+h2{font-family:var(--title);font-weight:700;color:var(--red);font-size:32px;line-height:calc(var(--line)*1.5);margin:calc(var(--line)*.5) 0 0}
+h2::before{content:"➤ ";font-size:22px}
+p,li{margin:0}
+ul,ol{margin:0;padding-left:28px}
+ul{list-style:none}
+ul>li::before{content:"–";position:absolute;margin-left:-20px}
+ul>li.star::before{content:"★";color:var(--red)}
+ul>li.arrow::before{content:"→"}
+ul>li.check::before{content:"✓";color:var(--green)}
+.gap{height:var(--line)}
+
+/* ===== Pen effects ===== */
+.hl{background:var(--hl-yellow);padding:0 3px;border-radius:3px 6px 4px 7px}
+.hl.pink{background:var(--hl-pink)} .hl.green{background:var(--hl-green)} .hl.blue{background:var(--hl-blue)}
+.red{color:var(--red)} .green{color:var(--green)} .black{color:var(--ink2)}
+.ul{text-decoration:underline wavy var(--red);text-underline-offset:5px}
+.circ{border:2px solid var(--red);border-radius:50% 45% 55% 48%;padding:0 6px}
+.strike{text-decoration:line-through 2px var(--red)}
+.term{font-weight:700;color:var(--ink2)}
+.box{display:flow-root;border:2.5px solid var(--ink2);border-radius:4px 10px 6px 12px;padding:calc(var(--line)*.5 - 2.5px) 14px;margin:calc(var(--line)*.5) 0;transform:rotate(-.4deg);background:rgba(255,255,255,.35)}
+.box.red{border-color:var(--red)}
+.formula{font-family:var(--title);font-size:28px;text-align:center;color:var(--ink2)}
+
+/* sticky note */
+.sticky{float:right;width:min(250px,42%);margin:0 0 var(--line) 20px;padding:var(--line) 16px;background:var(--sticky);
+  color:#333;transform:rotate(2.2deg);box-shadow:2px 4px 8px rgba(0,0,0,.18);font-size:18px}
+.sticky b{font-family:var(--title);font-size:24px;color:var(--red)}
+@media (max-width:600px){.sticky{float:none;width:auto;margin:var(--line) 0}}
+
+/* margin annotation (lives in the red margin) */
+.side{position:absolute;left:4px;width:58px;text-align:center;font-family:var(--title);font-size:17px;line-height:18px;color:var(--red);transform:rotate(-8deg)}
+@media (max-width:600px){.side{display:none}}
+
+/* two-column notes */
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:0 28px}
+@media (max-width:600px){.cols{grid-template-columns:1fr}}
+
+/* diagrams */
+figure{margin:var(--line) 0;text-align:center}
+figure svg{width:100%;max-width:640px;height:auto;overflow:visible}
+figcaption{font-family:var(--title);font-size:20px;color:var(--ink2)}
+/* phones: keep labels readable — diagram scrolls inside its own box instead of shrinking */
+@media (max-width:600px){figure{overflow-x:auto}figure svg{min-width:520px}}
+.sk{fill:none;stroke:var(--ink2);stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round;filter:url(#rough)}
+.sk.blue{stroke:var(--ink)} .sk.red{stroke:var(--red)} .sk.green{stroke:var(--green)}
+.lbl{font-family:var(--hand);font-size:17px;fill:var(--ink)}
+.lbl.b{font-weight:700;fill:var(--ink2)} .lbl.r{fill:var(--red)} .lbl.g{fill:var(--green)}
+
+/* table */
+.wrap{overflow-x:auto}
+table{border-collapse:collapse;margin:calc(var(--line)*.5) 0;min-width:100%}
+th,td{border:2px solid var(--ink2);padding:0 10px;text-align:left;vertical-align:top}
+th{font-family:var(--title);font-size:24px;color:var(--ink2)}
+
+@media print{body{background:#fff}.page{box-shadow:none;margin:0}.page::before{display:none}}
+
+/* ===== Added for long chapter notes ===== */
+pre.code{font-family:Consolas,'Courier New',monospace;font-size:14px;line-height:var(--line);color:var(--ink);background:rgba(255,255,255,.45);
+  border-left:4px solid var(--red);margin:calc(var(--line)*.5) 0;padding:0 12px;overflow-x:auto;white-space:pre}
+pre.code.ascii{border-left-color:var(--green)}
+code{font-family:Consolas,'Courier New',monospace;font-size:.82em;background:rgba(0,0,0,.06);padding:0 3px;border-radius:3px}
+pre.code code{background:none;padding:0;font-size:inherit}
+.lang{font-family:var(--title);font-size:18px;color:var(--red)}
+h3{font-family:var(--title);font-weight:700;color:var(--ink2);font-size:26px;line-height:var(--line);margin:calc(var(--line)*.5) 0 0}
+h3::before{content:"✎ ";font-size:18px;color:var(--red)}
+.nav{display:flex;justify-content:space-between;gap:12px;font-family:var(--title);font-size:22px;line-height:var(--line)}
+.nav a{color:var(--red);text-decoration:none}
+.nav a:hover{text-decoration:underline wavy}
+.pagebreak{border-top:3px dashed var(--margin);margin:var(--line) 0;text-align:center;font-family:var(--title);color:var(--red);line-height:var(--line)}
+li.todo::before{content:"☐";color:var(--ink2)}
+a{color:var(--ink);text-decoration:underline dotted}
+
+details{margin:calc(var(--line)*.5) 0}
+summary{cursor:pointer;font-family:var(--title);font-size:22px;color:var(--red)}
+details>summary+*{margin-top:0}
+.fig{margin:var(--line) 0}
+ol.num{list-style:none;padding-left:38px}
+ol.num>li>.n{position:absolute;margin-left:-34px;font-weight:700;color:var(--red)}
+</style>
+</head>
+<body>
+<!-- One shared hand-drawn wobble filter; give every diagram stroke class="sk" -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <!-- userSpaceOnUse region: a % region collapses to nothing on perfectly straight lines (zero-height bbox) -->
+  <filter id="rough" filterUnits="userSpaceOnUse" x="-500" y="-500" width="3000" height="3000">
+    <feTurbulence type="fractalNoise" baseFrequency="0.03" numOctaves="2" seed="3" result="n"/>
+    <feDisplacementMap in="SourceGraphic" in2="n" scale="3"/>
+  </filter>
+  <marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+    <path d="M1 1 L9 5 L1 9" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+  </marker>
+</defs></svg>
+
+<main class="page">
+  <nav class="nav"><a href="ch10-event-driven-systems.notes.html">← Ch 10 — Event-Driven Systems</a><a href="index.notes.html">☰ Contents</a><a href="ch12-multi-tenancy.notes.html">Ch 12 — Multi-Tenancy →</a></nav>
+  <div class="date">2026-10-10</div>
+  <h1><span class="u">Ch 11 — CDN, Edge &amp; Geo-Distribution</span></h1>
+  <p class="black">Chapter 11 — CDN, Edge &amp; Geo-Distribution</p>
+<p class="black"><b>Volume 4 — High-Level Design</b> · <a href="index.md">Contents</a> · ← <a href="ch10-event-driven-systems.notes.html">Chapter 10 — Event-Driven Systems</a> · Next → <a href="ch12-multi-tenancy.notes.html">Chapter 12 — Multi-Tenancy</a></p>
+<h2>Concept</h2>
+<p>Caching at the edge, geo-routing, data residency, and multi-region consistency.</p>
+<div class="box"><b>In one sentence:</b> the speed of light is a hard limit, so global systems put copies of content and compute close to users (CDN edges, regional deployments), route each user to the nearest healthy place, keep data where the law says it must live, and choose carefully which data is shared across regions and how consistent it must be.</div>
+<p><b>Mental model — a coffee chain.</b> One roastery (the origin) supplies hundreds of cafés (edge PoPs). Each café keeps the popular beans on its shelf (cache) and orders from the regional warehouse (origin shield) when it runs out. Customers go to the nearest café (geo-routing). Some local laws say a city's customer loyalty records must stay in that country (data residency).</p>
+<h3>Why distance matters</h3>
+<div class="wrap"><table>
+<tr><th>Route</th><th>Distance</th><th>Light in fiber (~200,000 km/s), round trip</th></tr>
+<tr><td>Same city</td><td>50 km</td><td>0.5 ms</td></tr>
+<tr><td>Frankfurt ↔ London</td><td>640 km</td><td>~6 ms</td></tr>
+<tr><td>New York ↔ London</td><td>5,600 km</td><td>~56 ms (~70 ms in practice)</td></tr>
+<tr><td>New York ↔ Sydney</td><td>16,000 km</td><td>~160 ms (~200+ ms in practice)</td></tr>
+</table></div>
+<p>A page needing 5 sequential round trips (DNS, TCP, TLS, HTML, API) from Sydney to a US-only origin: ~1 s just in physics. From a local edge: ~50 ms.</p>
+<h3>CDN caching</h3>
+<div class="wrap"><table>
+<tr><th>Concept</th><th>Meaning</th></tr>
+<tr><td>PoP</td><td>point of presence: an edge data center near users</td></tr>
+<tr><td>Cache key</td><td>usually host + path + query (+ <code>Vary</code> headers); normalize it to raise hit rates</td></tr>
+<tr><td>TTL</td><td>from <code>Cache-Control: max-age / s-maxage</code> or edge rules</td></tr>
+<tr><td><b>Origin shield</b></td><td>a mid-tier cache in one region that all edges miss to, so the origin sees ~1 request per object instead of one per PoP</td></tr>
+<tr><td>Purge / invalidation</td><td>remove objects by URL, tag, or prefix (seconds to minutes)</td></tr>
+<tr><td><b>Cache busting</b></td><td>put a content hash in the file name (<code>app.3f9a1c.js</code>) → <code>max-age=31536000, immutable</code>; a new deploy means a new URL, no purge needed</td></tr>
+<tr><td><code>stale-while-revalidate</code> / <code>stale-if-error</code></td><td>serve slightly stale content while refreshing, or when the origin is down</td></tr>
+<tr><td>Edge compute</td><td>small functions at the PoP (Cloudflare Workers, Lambda@Edge): auth checks, redirects, A/B, personalization</td></tr>
+</table></div>
+<h3>Geo-routing options</h3>
+<div class="wrap"><table>
+<tr><th>Method</th><th>How</th><th>Notes</th></tr>
+<tr><td>GeoDNS / latency-based DNS</td><td>DNS answers with the nearest region's IP</td><td>depends on the resolver's location; TTL limits failover speed</td></tr>
+<tr><td><b>Anycast</b></td><td>the same IP announced from many PoPs; BGP delivers to the nearest</td><td>used by CDNs and DNS providers; fast failover</td></tr>
+<tr><td>Global load balancer</td><td>one anycast IP → proxies to the best healthy region</td><td>e.g. Google Cloud LB, AWS Global Accelerator</td></tr>
+<tr><td>Health-checked failover</td><td>remove unhealthy regions from answers</td><td>always pair routing with health checks</td></tr>
+</table></div>
+<h3>Multi-region data patterns</h3>
+<div class="wrap"><table>
+<tr><th>Pattern</th><th>Writes</th><th>Reads</th><th>Consistency</th><th>Fits</th></tr>
+<tr><td>Single primary region + read replicas</td><td>one region</td><td>local replicas</td><td>strong for writes, stale reads elsewhere</td><td>most apps; simple</td></tr>
+<tr><td>Active-passive (DR)</td><td>primary only; secondary on standby</td><td>primary</td><td>strong; failover loses the async lag</td><td>disaster recovery (<a href="ch13-disaster-recovery-backups-rto-rpo.notes.html">Ch 13</a>)</td></tr>
+<tr><td><b>Geo-partitioned (home region)</b></td><td>each user's data lives in their home region</td><td>local for local users</td><td>strong within a region</td><td>data residency, low latency for most traffic</td></tr>
+<tr><td>Active-active multi-leader</td><td>any region</td><td>local</td><td>eventual; conflicts (LWW, CRDTs)</td><td>carts, presence, likes, collaborative data</td></tr>
+<tr><td>Global consensus (Spanner, CockroachDB)</td><td>any region, via quorum</td><td>local (maybe stale) or quorum</td><td>strong</td><td>when correctness is non-negotiable; each write pays cross-region latency</td></tr>
+</table></div>
+<p><b>Data residency</b> — laws (GDPR, India's DPDP, China's PIPL, sector rules) may require that personal data is stored or processed in a region. Design: a user → home-region mapping at sign-up; region-local databases for PII; only non-personal or aggregated data in global services; encryption with region-held keys; logs and backups count too.</p>
+<div class="pagebreak">~ page 2 ~</div>
+<h2>Prereqs</h2>
+<ul>
+<li><a href="../volume-1-cs-foundations/ch44-delivery-load-balancing-reverse-proxies-and-cdn.notes.html">Vol 1 Ch 44 — Delivery: Load Balancing, Reverse Proxies &amp; CDN</a></li>
+</ul>
+<h2>Diagram</h2>
+<h3>A global CDN with edge PoPs and origin shielding</h3>
+<figure>
+<svg viewBox="0 0 618 372" role="img" aria-label="Diagram 1 (redrawn from Mermaid)"><path class="sk" style="color:var(--ink2)" d="M79 62 C79 84, 113 84, 113 105" marker-end="url(#arr)"/><path class="sk" style="color:var(--ink2)" d="M224 62 C224 84, 235 84, 235 105" marker-end="url(#arr)"/><path class="sk" style="color:var(--ink2)" d="M368 62 C368 84, 357 84, 357 105" marker-end="url(#arr)"/><path class="sk" style="color:var(--ink2)" d="M524 62 C524 84, 491 84, 491 105" marker-end="url(#arr)"/><path class="sk" style="color:var(--ink2)" d="M113 148 C113 174, 220 174, 220 200" marker-end="url(#arr)"/><path class="sk" style="color:var(--ink2)" d="M235 148 C235 174, 220 174, 220 200" marker-end="url(#arr)"/><path class="sk" style="color:var(--ink2)" d="M357 148 C357 174, 398 174, 398 200" marker-end="url(#arr)"/><path class="sk" style="color:var(--ink2)" d="M491 148 C491 174, 398 174, 398 200" marker-end="url(#arr)"/><path class="sk" style="color:var(--ink2)" d="M220 243 C220 269, 309 269, 309 295" marker-end="url(#arr)"/><path class="sk" style="color:var(--ink2)" d="M398 243 C398 269, 309 269, 309 295" marker-end="url(#arr)"/><rect x="148" y="164" width="36" height="20" rx="4" style="fill:#fdfbf4;stroke:none"/><text class="lbl g" style="font-size:14px" x="166" y="178" text-anchor="middle">miss</text><rect x="209" y="164" width="36" height="20" rx="4" style="fill:#fdfbf4;stroke:none"/><text class="lbl g" style="font-size:14px" x="228" y="178" text-anchor="middle">miss</text><rect x="359" y="164" width="36" height="20" rx="4" style="fill:#fdfbf4;stroke:none"/><text class="lbl g" style="font-size:14px" x="378" y="178" text-anchor="middle">miss</text><rect x="426" y="164" width="36" height="20" rx="4" style="fill:#fdfbf4;stroke:none"/><text class="lbl g" style="font-size:14px" x="444" y="178" text-anchor="middle">miss</text><rect x="223" y="259" width="83" height="20" rx="4" style="fill:#fdfbf4;stroke:none"/><text class="lbl g" style="font-size:14px" x="265" y="273" text-anchor="middle">miss (rare)</text><rect x="312" y="259" width="83" height="20" rx="4" style="fill:#fdfbf4;stroke:none"/><text class="lbl g" style="font-size:14px" x="354" y="273" text-anchor="middle">miss (rare)</text><rect class="sk" style="fill:#fdfbf4" x="22" y="22" width="115" height="40" rx="10"/><text class="lbl" style="font-size:15px" x="79" y="47" text-anchor="middle">users: Tokyo</text><rect class="sk" style="fill:#fdfbf4" x="66" y="108" width="93" height="40" rx="10"/><text class="lbl" style="font-size:15px" x="113" y="133" text-anchor="middle">PoP Tokyo</text><rect class="sk" style="fill:#fdfbf4" x="163" y="22" width="122" height="40" rx="10"/><text class="lbl" style="font-size:15px" x="224" y="47" text-anchor="middle">users: Sydney</text><rect class="sk" style="fill:#fdfbf4" x="185" y="108" width="100" height="40" rx="10"/><text class="lbl" style="font-size:15px" x="235" y="133" text-anchor="middle">PoP Sydney</text><rect class="sk" style="fill:#fdfbf4" x="311" y="22" width="115" height="40" rx="10"/><text class="lbl" style="font-size:15px" x="368" y="47" text-anchor="middle">users: Paris</text><rect class="sk" style="fill:#fdfbf4" x="311" y="108" width="93" height="40" rx="10"/><text class="lbl" style="font-size:15px" x="357" y="133" text-anchor="middle">PoP Paris</text><rect class="sk" style="fill:#fdfbf4" x="452" y="22" width="144" height="40" rx="10"/><text class="lbl" style="font-size:15px" x="524" y="47" text-anchor="middle">users: São Paulo</text><rect class="sk" style="fill:#fdfbf4" x="430" y="108" width="122" height="40" rx="10"/><text class="lbl" style="font-size:15px" x="491" y="133" text-anchor="middle">PoP São Paulo</text><rect class="sk" style="fill:#fdfbf4" x="144" y="203" width="152" height="40" rx="10"/><text class="lbl" style="font-size:15px" x="220" y="228" text-anchor="middle">shield: Singapore</text><rect class="sk" style="fill:#fdfbf4" x="322" y="203" width="152" height="40" rx="10"/><text class="lbl" style="font-size:15px" x="398" y="228" text-anchor="middle">shield: Frankfurt</text><rect class="sk" style="fill:#fdfbf4" x="222" y="298" width="174" height="52" rx="10"/><text class="lbl" style="font-size:15px" x="309" y="320" text-anchor="middle">origin: us-east-1</text><text class="lbl" style="font-size:15px" x="309" y="338" text-anchor="middle">object storage + app</text></svg>
+<figcaption>Fig 1: diagram redrawn by hand from the Mermaid source</figcaption>
+</figure>
+<h3>Cache hit ratio math</h3>
+<pre class="code ascii"><code> 1,000 PoPs, a hot object with TTL 60 s:
+   without a shield: up to 1,000 origin fetches per minute
+   with 2 shields:   ~2 origin fetches per minute
+ at a 95% edge hit rate and 1M req/s → 50k req/s reach the shields → a few hundred reach the origin</code></pre>
+<h3>Geo-DNS routing to the nearest region, with fallback</h3>
+<figure>
+<svg viewBox="0 0 595 394" role="img" aria-label="Diagram 2 (redrawn from Mermaid)"><path class="sk" style="color:var(--ink2)" d="M298 62 C298 84, 298 84, 298 105" marker-end="url(#arr)"/><path class="sk" style="color:var(--ink2)" d="M298 165 C298 195, 105 195, 105 226" marker-end="url(#arr)"/><path class="sk" style="color:var(--ink2)" d="M298 165 C298 191, 335 191, 335 217" marker-end="url(#arr)"/><path class="sk" style="color:var(--ink2)" d="M335 277 C335 303, 201 303, 201 329" marker-end="url(#arr)"/><path class="sk" style="color:var(--ink2)" d="M335 277 C335 303, 361 303, 361 329" marker-end="url(#arr)"/><path class="sk" style="color:var(--ink2)" d="M298 165 C298 195, 527 195, 527 226" marker-end="url(#arr)"/><rect x="177" y="185" width="50" height="20" rx="4" style="fill:#fdfbf4;stroke:none"/><text class="lbl g" style="font-size:14px" x="201" y="199" text-anchor="middle">Europe</text><rect x="298" y="181" width="36" height="20" rx="4" style="fill:#fdfbf4;stroke:none"/><text class="lbl g" style="font-size:14px" x="316" y="195" text-anchor="middle">Asia</text><rect x="253" y="293" width="30" height="20" rx="4" style="fill:#fdfbf4;stroke:none"/><text class="lbl g" style="font-size:14px" x="268" y="307" text-anchor="middle">yes</text><rect x="260" y="293" width="175" height="20" rx="4" style="fill:#fdfbf4;stroke:none"/><text class="lbl g" style="font-size:14px" x="348" y="307" text-anchor="middle">no (health check failing)</text><rect x="381" y="185" width="63" height="20" rx="4" style="fill:#fdfbf4;stroke:none"/><text class="lbl g" style="font-size:14px" x="412" y="199" text-anchor="middle">Americas</text><rect class="sk" style="fill:#fdfbf4" x="225" y="22" width="144" height="40" rx="10"/><text class="lbl" style="font-size:15px" x="298" y="47" text-anchor="middle">api.example.com?</text><path class="sk" style="fill:#fff3b0" d="M298 108 L407 136 L298 165 L188 136 Z"/><text class="lbl b" style="font-size:15px" x="298" y="142" text-anchor="middle">resolver location</text><rect class="sk" style="fill:#fdfbf4" x="22" y="228" width="167" height="40" rx="10"/><text class="lbl" style="font-size:15px" x="105" y="254" text-anchor="middle">eu-west-1 ✓ healthy</text><path class="sk" style="fill:#fff3b0" d="M335 220 L454 248 L335 277 L215 248 Z"/><text class="lbl b" style="font-size:15px" x="335" y="254" text-anchor="middle">ap-south-1 healthy?</text><rect class="sk" style="fill:#fdfbf4" x="151" y="332" width="100" height="40" rx="10"/><text class="lbl" style="font-size:15px" x="201" y="357" text-anchor="middle">ap-south-1</text><rect class="sk" style="fill:#fdfbf4" x="277" y="332" width="167" height="40" rx="10"/><text class="lbl" style="font-size:15px" x="361" y="357" text-anchor="middle">fallback: eu-west-1</text><rect class="sk" style="fill:#fdfbf4" x="480" y="228" width="93" height="40" rx="10"/><text class="lbl" style="font-size:15px" x="527" y="254" text-anchor="middle">us-east-1</text></svg>
+<figcaption>Fig 2: diagram redrawn by hand from the Mermaid source</figcaption>
+</figure>
+<h3>Geo-partitioned users (home region)</h3>
+<pre class="code ascii"><code> global directory (small, replicated everywhere):   user_id → home_region
+   u-1 → eu    u-2 → us    u-3 → in
+ eu-west (EU PII stays here)   us-east              ap-south (India PII)
+ [users, orders for eu users]  [… us users]         [… in users]
+ a request for u-1 arriving in us-east → proxied to eu-west (or the client is redirected)</code></pre>
+<div class="pagebreak">~ page 3 ~</div>
+<h2>Example</h2>
+<h3>A CDN cache rule and cache-busting headers</h3>
+<span class="lang">nginx</span>
+<pre class="code"><code># Origin (nginx) — send the right headers; the CDN honors them
+location ~* \.(js|css|woff2|png|jpg|svg)$ {
+    # file names contain a content hash, e.g. app.3f9a1c.js
+    add_header Cache-Control "public, max-age=31536000, immutable";
+}
+location = /index.html {
+    add_header Cache-Control "public, max-age=0, s-maxage=60, stale-while-revalidate=300";
+}
+location /api/ {
+    add_header Cache-Control "private, no-store";            # never cache personalized API responses at the edge
+}
+location /api/products/ {
+    add_header Cache-Control "public, s-maxage=30, stale-if-error=600";
+    add_header Surrogate-Key "products";                     # purge all products with one tag
+}</code></pre>
+<span class="lang">js</span>
+<pre class="code"><code>// Edge function (Cloudflare Workers style): normalize the cache key + geo redirect
+export default {
+  async fetch(req) {
+    const url = new URL(req.url);
+    ["utm_source", "utm_medium", "utm_campaign", "fbclid"].forEach(p =&gt; url.searchParams.delete(p));
+    if (url.pathname === "/" &amp;&amp; req.cf?.country === "DE") url.pathname = "/de/";
+    return fetch(new Request(url.toString(), req), { cf: { cacheEverything: true } });
+  },
+};</code></pre>
+<span class="lang">text</span>
+<pre class="code"><code>Geo-DNS (Route 53 style)
+  api.example.com  latency record → eu-west-1 ALB    health check /healthz
+  api.example.com  latency record → us-east-1 ALB    health check /healthz
+  api.example.com  latency record → ap-south-1 ALB   health check /healthz
+  TTL 60 s  → a failed region stops receiving new resolutions within ~1–2 minutes</code></pre>
+<h2>Exercises</h2>
+<ol class="num">
+<li><span class="n">1.</span>Explain cache-busting for static assets.
+<details open><summary>Solution</summary>Build tools put a content hash in each asset's file name (<code>app.3f9a1c.js</code>). The HTML references the hashed names. Assets are served with <code>max-age=1 year, immutable</code>, so browsers and CDNs never revalidate them. A new deploy produces new names, so users get new code immediately without purging. Only the small HTML entry point gets a short TTL.</details></li>
+<li><span class="n">2.</span>Design multi-region with a primary/secondary.
+<details open><summary>Solution</summary>Primary region: app + read-write DB. Secondary: app (scaled down or read-only) + an async DB replica + replicated object storage. Global routing sends all traffic to the primary; reads can be served locally in the secondary with stale-read tolerance. Failover: health checks fail → promote the replica → switch routing (DNS or global LB) → scale up the secondary. RPO = replication lag (seconds); RTO = detection + promotion + DNS (minutes). Rehearse it regularly.</details></li>
+<li><span class="n">3.</span>Why must personalized API responses never be cached with <code>public</code>?
+<details open><summary>Solution</summary>A shared cache would serve one user's data to the next user who requests the same URL — a data leak. Use <code>private, no-store</code> (or a cache key that includes the auth identity, only for data designed for it) and keep the CDN out of personalized paths.</details></li>
+</ol>
+<div class="pagebreak">~ page 4 ~</div>
+<h2>Mini project</h2>
+<h3>A simulated CDN with edge caches and origin fetch.</h3>
+<figure>
+<svg viewBox="0 0 462 444" role="img" aria-label="Diagram 3 (redrawn from Mermaid)"><path class="sk" style="color:var(--ink2)" d="M161 92 C161 114, 231 114, 231 135" marker-end="url(#arr)"/><path class="sk" style="color:var(--ink2)" d="M231 190 C231 220, 353 220, 353 251" marker-end="url(#arr)"/><path class="sk" style="color:var(--ink2)" d="M353 306 C353 336, 231 336, 231 367" marker-end="url(#arr)"/><path class="sk" style="color:var(--ink2)" d="M231 190 C231 216, 131 216, 131 242" marker-end="url(#arr)"/><path class="sk" style="color:var(--ink2)" d="M339 77 C339 106, 231 106, 231 135" marker-end="url(#arr)"/><path class="sk" style="color:var(--ink2)" d="M339 77 C339 164, 353 164, 353 251" marker-end="url(#arr)"/><rect x="274" y="210" width="36" height="20" rx="4" style="fill:#fdfbf4;stroke:none"/><text class="lbl g" style="font-size:14px" x="292" y="224" text-anchor="middle">miss</text><rect x="274" y="326" width="36" height="20" rx="4" style="fill:#fdfbf4;stroke:none"/><text class="lbl g" style="font-size:14px" x="292" y="340" text-anchor="middle">miss</text><rect class="sk" style="fill:#fdfbf4" x="66" y="22" width="189" height="70" rx="10"/><text class="lbl" style="font-size:15px" x="161" y="44" text-anchor="middle">load generator:</text><text class="lbl" style="font-size:15px" x="161" y="62" text-anchor="middle">Zipf-distributed URLs,</text><text class="lbl" style="font-size:15px" x="161" y="80" text-anchor="middle">users in 5 regions</text><rect class="sk" style="fill:#fdfbf4" x="122" y="138" width="218" height="52" rx="10"/><text class="lbl" style="font-size:15px" x="231" y="160" text-anchor="middle">5 edge caches</text><text class="lbl" style="font-size:15px" x="231" y="178" text-anchor="middle">(LRU, TTL, stale-if-error)</text><rect class="sk" style="fill:#fdfbf4" x="266" y="254" width="174" height="52" rx="10"/><text class="lbl" style="font-size:15px" x="353" y="276" text-anchor="middle">origin shield</text><text class="lbl" style="font-size:15px" x="353" y="294" text-anchor="middle">(request coalescing)</text><rect class="sk" style="fill:#fdfbf4" x="133" y="370" width="196" height="52" rx="10"/><text class="lbl" style="font-size:15px" x="231" y="392" text-anchor="middle">origin with</text><text class="lbl" style="font-size:15px" x="231" y="410" text-anchor="middle">80 ms simulated latency</text><rect class="sk" style="fill:#fdfbf4" x="22" y="245" width="218" height="70" rx="10"/><text class="lbl" style="font-size:15px" x="131" y="267" text-anchor="middle">stats: hit rate per edge,</text><text class="lbl" style="font-size:15px" x="131" y="285" text-anchor="middle">origin requests/s, p50/p99</text><text class="lbl" style="font-size:15px" x="131" y="303" text-anchor="middle">latency</text><rect class="sk" style="fill:#fdfbf4" x="281" y="37" width="115" height="40" rx="10"/><text class="lbl" style="font-size:15px" x="339" y="62" text-anchor="middle">purge by tag</text></svg>
+<figcaption>Fig 3: diagram redrawn by hand from the Mermaid source</figcaption>
+</figure>
+<h3>Steps</h3>
+<ol class="num">
+<li><span class="n">1.</span>Five edge caches (an LRU dict with TTL), each with a latency to users of 10 ms and to the shield of 60 ms.</li>
+<li><span class="n">2.</span>A shield with request coalescing: concurrent misses for one key share one origin fetch.</li>
+<li><span class="n">3.</span>Generate traffic with a Zipf distribution (a few hot objects, a long tail).</li>
+<li><span class="n">4.</span>Measure the hit rate, origin load, and latency percentiles with and without the shield, and with different TTLs.</li>
+<li><span class="n">5.</span>Add <code>stale-if-error</code>: take the origin down and show edges still serving.</li>
+<li><span class="n">6.</span>Add tag-based purge and measure how long until stale content disappears.</li>
+</ol>
+<div class="box"><b>Done when:</b> your numbers show the shield cutting origin load by an order of magnitude, and edges keep serving through an origin outage.</div>
+<h2>Design</h2>
+<h3>Design a globally distributed image-serving system.</h3>
+<p>Requirements: 500M images, 20k uploads/s peak, 2M image views/s globally, several sizes and formats per image (thumbnail, medium, WebP/AVIF); p95 view latency &lt; 100 ms worldwide; EU users' private images stay in the EU.</p>
+<figure>
+<svg viewBox="0 0 472 664" role="img" aria-label="Diagram 4 (redrawn from Mermaid)"><path class="sk" style="color:var(--ink2)" d="M76 75 C76 110, 128 110, 128 146" marker-end="url(#arr)"/><path class="sk" style="color:var(--ink2)" d="M128 189 C128 222, 128 222, 128 256" marker-end="url(#arr)"/><path class="sk" style="color:var(--ink2)" d="M128 325 C128 352, 114 352, 114 379" marker-end="url(#arr)"/><path class="sk" style="color:var(--ink2)" d="M114 430 C114 452, 236 452, 236 475" marker-end="url(#arr)"/><path class="sk" style="color:var(--ink2)" d="M236 548 C236 570, 236 570, 236 591" marker-end="url(#arr)"/><path class="sk" style="color:var(--ink2)" d="M404 75 C404 103, 351 103, 351 131" marker-end="url(#arr)"/><path class="sk" style="color:var(--ink2)" d="M351 204 C351 236, 355 236, 355 269" marker-end="url(#arr)"/><path class="sk" style="color:var(--ink2)" d="M355 312 C355 344, 284 344, 284 377" marker-end="url(#arr)"/><path class="sk" style="color:var(--ink2)" d="M284 432 C284 512, 236 512, 236 591" marker-end="url(#arr)"/><path class="sk" style="color:var(--ink2)" d="M243 88 C243 118, 128 118, 128 149"/><path class="sk" style="color:var(--ink2)" d="M243 88 C243 234, 284 234, 284 380"/><rect x="81" y="212" width="96" height="20" rx="4" style="fill:#fdfbf4;stroke:none"/><text class="lbl g" style="font-size:14px" x="128" y="226" text-anchor="middle">presigned PUT</text><rect x="100" y="342" width="43" height="20" rx="4" style="fill:#fdfbf4;stroke:none"/><text class="lbl g" style="font-size:14px" x="121" y="356" text-anchor="middle">event</text><rect x="335" y="226" width="36" height="20" rx="4" style="fill:#fdfbf4;stroke:none"/><text class="lbl g" style="font-size:14px" x="353" y="240" text-anchor="middle">miss</text><rect x="301" y="334" width="36" height="20" rx="4" style="fill:#fdfbf4;stroke:none"/><text class="lbl g" style="font-size:14px" x="320" y="348" text-anchor="middle">miss</text><rect class="sk" style="fill:#fdfbf4" x="33" y="35" width="85" height="40" rx="10"/><text class="lbl" style="font-size:15px" x="76" y="60" text-anchor="middle">uploader</text><rect class="sk" style="fill:#fdfbf4" x="27" y="149" width="204" height="40" rx="10"/><text class="lbl" style="font-size:15px" x="128" y="174" text-anchor="middle">Upload API (home region)</text><path class="sk" style="fill:#e3f1d8" d="M22 267 A106 8 0 0 1 235 267 L235 317 A106 8 0 0 1 22 317 Z"/><path class="sk" d="M22 267 A106 8 0 0 0 235 267"/><text class="lbl" style="font-size:15px" x="128" y="288" text-anchor="middle">object storage: originals</text><text class="lbl" style="font-size:15px" x="128" y="306" text-anchor="middle">EU bucket / US bucket</text><path class="sk" style="fill:#e3f1d8" d="M79 390 A35 8 0 0 1 149 390 L149 422 A35 8 0 0 1 79 422 Z"/><path class="sk" d="M79 390 A35 8 0 0 0 149 390"/><text class="lbl" style="font-size:15px" x="114" y="411" text-anchor="middle">queue</text><rect class="sk" style="fill:#fdfbf4" x="130" y="478" width="211" height="70" rx="10"/><text class="lbl" style="font-size:15px" x="236" y="500" text-anchor="middle">transform workers</text><text class="lbl" style="font-size:15px" x="236" y="518" text-anchor="middle">(resize, WebP/AVIF, strip</text><text class="lbl" style="font-size:15px" x="236" y="536" text-anchor="middle">EXIF)</text><path class="sk" style="fill:#e3f1d8" d="M166 602 A70 8 0 0 1 305 602 L305 634 A70 8 0 0 1 166 634 Z"/><path class="sk" d="M166 602 A70 8 0 0 0 305 602"/><text class="lbl" style="font-size:15px" x="236" y="623" text-anchor="middle">variants bucket</text><rect class="sk" style="fill:#fdfbf4" x="368" y="35" width="70" height="40" rx="10"/><text class="lbl" style="font-size:15px" x="404" y="60" text-anchor="middle">viewer</text><rect class="sk" style="fill:#fdfbf4" x="256" y="134" width="189" height="70" rx="10"/><text class="lbl" style="font-size:15px" x="351" y="156" text-anchor="middle">CDN (anycast)</text><text class="lbl" style="font-size:15px" x="351" y="174" text-anchor="middle">cache key: id + size +</text><text class="lbl" style="font-size:15px" x="351" y="192" text-anchor="middle">format</text><rect class="sk" style="fill:#fdfbf4" x="261" y="272" width="189" height="40" rx="10"/><text class="lbl" style="font-size:15px" x="355" y="297" text-anchor="middle">shield (per continent)</text><rect class="sk" style="fill:#fdfbf4" x="175" y="380" width="218" height="52" rx="10"/><text class="lbl" style="font-size:15px" x="284" y="402" text-anchor="middle">image service</text><text class="lbl" style="font-size:15px" x="284" y="420" text-anchor="middle">on-the-fly resize fallback</text><path class="sk" style="fill:#e3f1d8" d="M144 30 A99 8 0 0 1 342 30 L342 80 A99 8 0 0 1 144 80 Z"/><path class="sk" d="M144 30 A99 8 0 0 0 342 30"/><text class="lbl" style="font-size:15px" x="243" y="51" text-anchor="middle">metadata DB</text><text class="lbl" style="font-size:15px" x="243" y="69" text-anchor="middle">id → owner, region, ACL</text></svg>
+<figcaption>Fig 4: diagram redrawn by hand from the Mermaid source</figcaption>
+</figure>
+<h3>Decisions to justify</h3>
+<ul>
+<li><b>Upload directly to object storage</b> with presigned URLs; the API never proxies bytes.</li>
+<li><b>Pre-generate common variants</b> asynchronously; an on-the-fly resize service is the fallback for rare sizes, and results are cached.</li>
+<li><b>The CDN does nearly all the work.</b> Images are immutable (a new upload = a new ID), so TTL = 1 year. 2M views/s at a 98% edge hit rate leaves ~40k/s for shields and ~few thousand/s for origin.</li>
+<li><b>Format negotiation:</b> the <code>Accept</code> header → the cache key includes the format bucket (AVIF / WebP / JPEG), not the raw header, to keep the hit rate high.</li>
+<li><b>Private images:</b> signed URLs with short expiry (validated at the edge); EU-resident originals and variants live only in EU buckets, and the EU shield only fetches from them.</li>
+<li><b>Storage math:</b> 500M images × (2 MB original + ~500 KB of variants) ≈ 1.25 PB; use tiered storage for originals that are rarely accessed.</li>
+</ul>
+<div class="pagebreak">~ page 5 ~</div>
+<h2>Open source</h2>
+<ul>
+<li><a href="https://github.com/traefik/traefik"><code>traefik/traefik</code></a> — an edge router with automatic TLS, middlewares, and routing rules.</li>
+<li><a href="https://github.com/envoyproxy/envoy"><code>envoyproxy/envoy</code></a> (edge) — used as the edge proxy in many CDNs and meshes; see its HTTP cache filter and locality-aware load balancing. See also <code>varnishcache/varnish-cache</code> for a classic HTTP cache.</li>
+</ul>
+<h2>Interview</h2>
+<ol class="num">
+<li><span class="n">1.</span><b>"How does a CDN reduce origin load?"</b>
+<details open><summary>Answer</summary>Edges serve cached responses for repeated requests, so only misses reach the origin. Shields collapse misses from hundreds of edges into one fetch per object, and request coalescing merges concurrent misses for the same key. Long TTLs on immutable, hash-named assets, normalized cache keys, and <code>stale-while-revalidate</code> / <code>stale-if-error</code> raise the hit rate further. Typically 90–99% of traffic never reaches the origin.</details></li>
+<li><span class="n">2.</span><b>"Multi-region consistency — how?"</b>
+<details open><summary>Answer</summary>Pick per data type. Most data: a single write region (or a per-user home region) with async replicas — strong within the home region, stale reads elsewhere. Data that tolerates conflicts (carts, counters, presence): active-active with LWW or CRDTs. Data needing global strong consistency (money, inventory, uniqueness): a consensus-based database (Spanner, CockroachDB) paying cross-region write latency, or route those writes to one region. Always define the RPO for failover.</details></li>
+</ol>
+<div class="pagebreak">~ page 6 ~</div>
+<h2>Checklist</h2>
+<ul>
+<li class="todo">cache immutable assets forever</li>
+<li class="todo">route by geo with fallback</li>
+<li class="todo">design for data residency</li>
+</ul>
+  <nav class="nav"><a href="ch10-event-driven-systems.notes.html">← Ch 10 — Event-Driven Systems</a><a href="index.notes.html">☰ Contents</a><a href="ch12-multi-tenancy.notes.html">Ch 12 — Multi-Tenancy →</a></nav>
+</main>
+</body>
+</html>

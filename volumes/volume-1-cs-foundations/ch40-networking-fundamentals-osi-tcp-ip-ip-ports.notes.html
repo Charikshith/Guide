@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ch 40 — Networking Fundamentals: OSI, TCP/IP, IP, Ports, DNS &amp; NAT — Notes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;700&family=Kalam:wght@400;700&family=Patrick+Hand&display=swap" rel="stylesheet">
+<style>
+/* ===== Page tokens ===== */
+:root{
+  --line:32px;                 /* ruled-line spacing; every vertical size is a multiple */
+  --paper:#fdfbf4; --rule:#c9dcef; --margin:#e8a0a0;
+  --ink:#1f3a93;               /* blue pen (body) */
+  --ink2:#222;                 /* black pen (headings) */
+  --red:#c0392b; --green:#1e8449;
+  --hl-yellow:rgba(255,235,59,.55); --hl-pink:rgba(255,128,171,.45);
+  --hl-green:rgba(118,255,3,.35); --hl-blue:rgba(64,196,255,.35);
+  --sticky:#fff59d; --desk:#e9e4d8;
+  --hand:'Kalam','Patrick Hand','Comic Sans MS','Segoe Print','Bradley Hand',cursive;
+  --title:'Caveat','Kalam','Segoe Print','Bradley Hand',cursive;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){ --desk:#2b2b2b; }
+}
+:root[data-theme="dark"]{ --desk:#2b2b2b; }
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--desk);font-family:var(--hand);color:var(--ink);}
+
+/* ===== Notebook sheet ===== */
+.page{
+  position:relative; max-width:860px; margin:24px auto; padding:var(--line) 28px calc(var(--line)*2) 84px;
+  background:
+    linear-gradient(90deg,transparent 64px,var(--margin) 64px,var(--margin) 66px,transparent 66px),
+    repeating-linear-gradient(var(--paper) 0,var(--paper) calc(var(--line) - 1px),var(--rule) calc(var(--line) - 1px),var(--rule) var(--line));
+  background-color:var(--paper);
+  box-shadow:0 2px 6px rgba(0,0,0,.15),0 12px 28px rgba(0,0,0,.12);
+  font-size:20px; line-height:var(--line);
+}
+.page::before{ /* punched holes */
+  content:""; position:absolute; left:22px; top:0; bottom:0; width:18px;
+  background:radial-gradient(circle,var(--desk) 7px,transparent 8px) 0 40px/18px 220px repeat-y;
+}
+@media (max-width:600px){
+  .page{margin:0;padding-left:52px;padding-right:16px;font-size:18px;
+    background:
+      linear-gradient(90deg,transparent 40px,var(--margin) 40px,var(--margin) 42px,transparent 42px),
+      repeating-linear-gradient(var(--paper) 0,var(--paper) calc(var(--line) - 1px),var(--rule) calc(var(--line) - 1px),var(--rule) var(--line));
+    background-color:var(--paper);}
+  .page::before{left:10px;width:16px}
+}
+
+/* ===== Text (all margins are multiples of --line so text sits on the rules) ===== */
+.date{position:absolute;top:0;right:24px;font-family:var(--title);font-size:22px;color:var(--ink2);line-height:var(--line)}
+h1{font-family:var(--title);font-weight:700;color:var(--ink2);font-size:46px;line-height:calc(var(--line)*2);margin:0;transform:rotate(-1deg)}
+h1 .u{background:linear-gradient(transparent 62%,var(--hl-yellow) 62%,var(--hl-yellow) 92%,transparent 92%)}
+h2{font-family:var(--title);font-weight:700;color:var(--red);font-size:32px;line-height:calc(var(--line)*1.5);margin:calc(var(--line)*.5) 0 0}
+h2::before{content:"➤ ";font-size:22px}
+p,li{margin:0}
+ul,ol{margin:0;padding-left:28px}
+ul{list-style:none}
+ul>li::before{content:"–";position:absolute;margin-left:-20px}
+ul>li.star::before{content:"★";color:var(--red)}
+ul>li.arrow::before{content:"→"}
+ul>li.check::before{content:"✓";color:var(--green)}
+.gap{height:var(--line)}
+
+/* ===== Pen effects ===== */
+.hl{background:var(--hl-yellow);padding:0 3px;border-radius:3px 6px 4px 7px}
+.hl.pink{background:var(--hl-pink)} .hl.green{background:var(--hl-green)} .hl.blue{background:var(--hl-blue)}
+.red{color:var(--red)} .green{color:var(--green)} .black{color:var(--ink2)}
+.ul{text-decoration:underline wavy var(--red);text-underline-offset:5px}
+.circ{border:2px solid var(--red);border-radius:50% 45% 55% 48%;padding:0 6px}
+.strike{text-decoration:line-through 2px var(--red)}
+.term{font-weight:700;color:var(--ink2)}
+.box{display:flow-root;border:2.5px solid var(--ink2);border-radius:4px 10px 6px 12px;padding:calc(var(--line)*.5 - 2.5px) 14px;margin:calc(var(--line)*.5) 0;transform:rotate(-.4deg);background:rgba(255,255,255,.35)}
+.box.red{border-color:var(--red)}
+.formula{font-family:var(--title);font-size:28px;text-align:center;color:var(--ink2)}
+
+/* sticky note */
+.sticky{float:right;width:min(250px,42%);margin:0 0 var(--line) 20px;padding:var(--line) 16px;background:var(--sticky);
+  color:#333;transform:rotate(2.2deg);box-shadow:2px 4px 8px rgba(0,0,0,.18);font-size:18px}
+.sticky b{font-family:var(--title);font-size:24px;color:var(--red)}
+@media (max-width:600px){.sticky{float:none;width:auto;margin:var(--line) 0}}
+
+/* margin annotation (lives in the red margin) */
+.side{position:absolute;left:4px;width:58px;text-align:center;font-family:var(--title);font-size:17px;line-height:18px;color:var(--red);transform:rotate(-8deg)}
+@media (max-width:600px){.side{display:none}}
+
+/* two-column notes */
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:0 28px}
+@media (max-width:600px){.cols{grid-template-columns:1fr}}
+
+/* diagrams */
+figure{margin:var(--line) 0;text-align:center}
+figure svg{width:100%;max-width:640px;height:auto;overflow:visible}
+figcaption{font-family:var(--title);font-size:20px;color:var(--ink2)}
+/* phones: keep labels readable — diagram scrolls inside its own box instead of shrinking */
+@media (max-width:600px){figure{overflow-x:auto}figure svg{min-width:520px}}
+.sk{fill:none;stroke:var(--ink2);stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round;filter:url(#rough)}
+.sk.blue{stroke:var(--ink)} .sk.red{stroke:var(--red)} .sk.green{stroke:var(--green)}
+.lbl{font-family:var(--hand);font-size:17px;fill:var(--ink)}
+.lbl.b{font-weight:700;fill:var(--ink2)} .lbl.r{fill:var(--red)} .lbl.g{fill:var(--green)}
+
+/* table */
+.wrap{overflow-x:auto}
+table{border-collapse:collapse;margin:calc(var(--line)*.5) 0;min-width:100%}
+th,td{border:2px solid var(--ink2);padding:0 10px;text-align:left;vertical-align:top}
+th{font-family:var(--title);font-size:24px;color:var(--ink2)}
+
+@media print{body{background:#fff}.page{box-shadow:none;margin:0}.page::before{display:none}}
+
+/* ===== Added for long chapter notes ===== */
+pre.code{font-family:Consolas,'Courier New',monospace;font-size:14px;line-height:var(--line);color:var(--ink);background:rgba(255,255,255,.45);
+  border-left:4px solid var(--red);margin:calc(var(--line)*.5) 0;padding:0 12px;overflow-x:auto;white-space:pre}
+pre.code.ascii{border-left-color:var(--green)}
+code{font-family:Consolas,'Courier New',monospace;font-size:.82em;background:rgba(0,0,0,.06);padding:0 3px;border-radius:3px}
+pre.code code{background:none;padding:0;font-size:inherit}
+.lang{font-family:var(--title);font-size:18px;color:var(--red)}
+h3{font-family:var(--title);font-weight:700;color:var(--ink2);font-size:26px;line-height:var(--line);margin:calc(var(--line)*.5) 0 0}
+h3::before{content:"✎ ";font-size:18px;color:var(--red)}
+.nav{display:flex;justify-content:space-between;gap:12px;font-family:var(--title);font-size:22px;line-height:var(--line)}
+.nav a{color:var(--red);text-decoration:none}
+.nav a:hover{text-decoration:underline wavy}
+.pagebreak{border-top:3px dashed var(--margin);margin:var(--line) 0;text-align:center;font-family:var(--title);color:var(--red);line-height:var(--line)}
+li.todo::before{content:"☐";color:var(--ink2)}
+a{color:var(--ink);text-decoration:underline dotted}
+</style>
+</head>
+<body>
+<!-- One shared hand-drawn wobble filter; give every diagram stroke class="sk" -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <!-- userSpaceOnUse region: a % region collapses to nothing on perfectly straight lines (zero-height bbox) -->
+  <filter id="rough" filterUnits="userSpaceOnUse" x="-500" y="-500" width="3000" height="3000">
+    <feTurbulence type="fractalNoise" baseFrequency="0.03" numOctaves="2" seed="3" result="n"/>
+    <feDisplacementMap in="SourceGraphic" in2="n" scale="3"/>
+  </filter>
+  <marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+    <path d="M1 1 L9 5 L1 9" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+  </marker>
+</defs></svg>
+
+<main class="page">
+  <nav class="nav"><a href="ch39-os-memory-management-file-systems-system-calls.notes.html">← Ch 39 — OS: Memory Management, File Systems, System Calls &amp; IPC</a><a href="index.notes.html">☰ Contents</a><a href="ch41-transport-and-security-tcp-udp-quic-tls.notes.html">Ch 41 — Transport &amp; Security: TCP, UDP, QUIC, TLS &amp; HTTPS →</a></nav>
+  <div class="date">2026-10-10</div>
+  <h1><span class="u">Ch 40 — Networking Fundamentals: OSI, TCP/IP, IP, Ports, DNS &amp; NAT</span></h1>
+  <p class="black">Chapter 40 — Networking Fundamentals: OSI, TCP/IP, IP, Ports, DNS &amp; NAT</p>
+  <p class="black"><b>Volume 1 — Computer Science Foundations</b> · <a href="index.md">Contents</a> · ← <a href="ch39-os-memory-management-file-systems-system-calls.notes.html">Chapter 39 — OS: Memory Management, File Systems, System Calls &amp; IPC</a> · Next → <a href="ch41-transport-and-security-tcp-udp-quic-tls.notes.html">Chapter 41 — Transport &amp; Security: TCP, UDP, QUIC, TLS &amp; HTTPS</a></p>
+  <h2>Concept</h2>
+  <p>Layered models, IP addressing/subnets, ports, DNS resolution, and NAT.</p>
+  <div class="box"><b>In one sentence:</b> networks are built in layers — each layer wraps the one above it in its own envelope — IP addresses find the machine, ports find the program on it, DNS turns names into addresses, and NAT lets a whole house share one public address.</div>
+  <p><b>Mental model — sending a letter.</b> Your letter (data) goes in an envelope addressed to an apartment number (the port) in a building (the IP address). The post office (routers) reads only the building address and forwards it hop by hop. The phone book (DNS) turns "Alice's Bakery" into a street address. Your building's front desk (NAT) sends all residents' mail out under the building's single address and routes replies back to the right apartment.</p>
+  <h3>OSI vs TCP/IP</h3>
+  <div class="wrap"><table>
+<tr><th>OSI #</th><th>OSI layer</th><th>TCP/IP layer</th><th>Unit</th><th>Examples</th><th>Job</th></tr>
+<tr><td>:-:</td><td>-----------</td><td>--------------</td><td>------</td><td>----------</td><td>-----</td></tr>
+<tr><td>7</td><td>Application</td><td>Application</td><td>message</td><td>HTTP, DNS, SSH, SMTP</td><td>what the app says</td></tr>
+<tr><td>6</td><td>Presentation</td><td>↑</td><td></td><td>TLS, encoding</td><td>format, encryption</td></tr>
+<tr><td>5</td><td>Session</td><td>↑</td><td></td><td>(TLS sessions, RPC)</td><td>dialogue control</td></tr>
+<tr><td>4</td><td>Transport</td><td>Transport</td><td>segment / datagram</td><td>TCP, UDP, QUIC</td><td>process-to-process, ports, reliability</td></tr>
+<tr><td>3</td><td>Network</td><td>Internet</td><td>packet</td><td>IP, ICMP</td><td>host-to-host across networks (routing)</td></tr>
+<tr><td>2</td><td>Data link</td><td>Link</td><td>frame</td><td>Ethernet, Wi-Fi, ARP</td><td>to the next hop on the local network (MAC addresses)</td></tr>
+<tr><td>1</td><td>Physical</td><td>↓</td><td>bits</td><td>copper, fiber, radio</td><td>signals</td></tr>
+</table></div>
+  <p>"L4 load balancer" and "L7 firewall" refer to these OSI numbers.</p>
+  <h3>IP addressing</h3>
+  <div class="wrap"><table>
+<tr><th>Concept</th><th>Example</th><th>Meaning</th></tr>
+<tr><td>IPv4</td><td><code>192.168.1.10</code></td><td>32 bits, ~4.3 billion addresses</td></tr>
+<tr><td>IPv6</td><td><code>2001:db8::1</code></td><td>128 bits; <code>::</code> collapses runs of zeros</td></tr>
+<tr><td>CIDR</td><td><code>192.168.1.0/24</code></td><td>the first 24 bits are the network; 8 bits for hosts</td></tr>
+<tr><td>Hosts in a /24</td><td>256 − 2 = 254</td><td>minus the network address (.0) and broadcast (.255)</td></tr>
+<tr><td>Private ranges (RFC 1918)</td><td><code>10.0.0.0/8</code>, <code>172.16.0.0/12</code>, <code>192.168.0.0/16</code></td><td>not routed on the internet</td></tr>
+<tr><td>Loopback</td><td><code>127.0.0.1</code>, <code>::1</code></td><td>this machine</td></tr>
+<tr><td>Socket</td><td><code>192.168.1.10:443</code></td><td>IP + port = one endpoint</td></tr>
+</table></div>
+  <p><b>Ports:</b> 16-bit numbers (0–65535). Well-known: 22 SSH, 53 DNS, 80 HTTP, 443 HTTPS, 5432 Postgres, 6379 Redis. Clients use <i>ephemeral</i> ports (Linux default 32768–60999). A TCP connection is identified by the <b>4-tuple</b> (src IP, src port, dst IP, dst port).</p>
+  <p><b>Port exhaustion</b> — one client IP talking to one server IP:port has only ~28k ephemeral ports. Short-lived connections sit in <code>TIME_WAIT</code> for up to 60 s, so a busy proxy can run out and fail to connect. Fixes: connection pooling / keep-alive, more source IPs, widen <code>ip_local_port_range</code>, reuse <code>TIME_WAIT</code> sockets safely.</p>
+  <h3>DNS record types</h3>
+  <div class="wrap"><table>
+<tr><th>Type</th><th>Maps</th><th>Example</th></tr>
+<tr><td>A / AAAA</td><td>name → IPv4 / IPv6</td><td><code>example.com → 93.184.215.14</code></td></tr>
+<tr><td>CNAME</td><td>alias → canonical name</td><td><code>www → example.com</code></td></tr>
+<tr><td>MX</td><td>domain → mail server</td><td></td></tr>
+<tr><td>TXT</td><td>free text</td><td>SPF, domain verification</td></tr>
+<tr><td>NS</td><td>zone → authoritative servers</td><td></td></tr>
+<tr><td>TTL</td><td>how long resolvers may cache it</td><td>300 s</td></tr>
+</table></div>
+  <p><b>NAT</b> — a router rewrites private source addresses and ports to its public address and keeps a table to map replies back. It stretches IPv4 and blocks <i>unsolicited</i> inbound connections, but it is <b>not a firewall</b>, it breaks peer-to-peer (needing STUN/TURN), and it complicates logs and rate limiting (many users share one IP).</p>
+  <h2>Prereqs</h2>
+  <p>None.</p>
+  <h2>Diagram</h2>
+  <h3>OSI 7 layers next to TCP/IP 4 layers, with encapsulation</h3>
+  <pre class="code ascii"><code>  OSI                 TCP/IP             what gets wrapped (sending side)
+ ┌───────────────┐   ┌─────────────┐
+ │7 Application  │   │             │    [ HTTP data                         ]
+ │6 Presentation │   │ Application │
+ │5 Session      │   │             │
+ ├───────────────┤   ├─────────────┤
+ │4 Transport    │   │ Transport   │    [TCP hdr][ HTTP data               ]
+ ├───────────────┤   ├─────────────┤
+ │3 Network      │   │ Internet    │    [IP hdr][TCP hdr][ HTTP data       ]
+ ├───────────────┤   ├─────────────┤
+ │2 Data link    │   │ Link        │    [Eth][IP][TCP][ HTTP data ][Eth FCS]
+ │1 Physical     │   │             │    01101001 …
+ └───────────────┘   └─────────────┘
+</code></pre>
+  <h3>A DNS resolution chain for <code>www.example.com</code></h3>
+  <figure>
+<svg viewBox="0 0 660 712" style="max-width:660px" role="img" aria-label="A DNS resolution chain for `www.example.com`"><path class="sk" d="M70 112 L70 698" style="stroke-dasharray:6 7;stroke-width:1.6"/><path class="sk" d="M200 112 L200 698" style="stroke-dasharray:6 7;stroke-width:1.6"/><path class="sk" d="M330 112 L330 698" style="stroke-dasharray:6 7;stroke-width:1.6"/><path class="sk" d="M460 112 L460 698" style="stroke-dasharray:6 7;stroke-width:1.6"/><path class="sk" d="M590 112 L590 698" style="stroke-dasharray:6 7;stroke-width:1.6"/><rect class="sk" x="12" y="10" width="116" height="102" rx="8" style="fill:#fdfbf4"/><text class="lbl b" x="70" y="34" text-anchor="middle">Browser /</text><text class="lbl b" x="70" y="56" text-anchor="middle">OS stub</text><rect class="sk" x="142" y="10" width="116" height="102" rx="8" style="fill:#fdfbf4"/><text class="lbl b" x="200" y="34" text-anchor="middle">Recursive</text><text class="lbl b" x="200" y="56" text-anchor="middle">resolver</text><text class="lbl b" x="200" y="78" text-anchor="middle">(ISP /</text><text class="lbl b" x="200" y="100" text-anchor="middle">1.1.1.1)</text><rect class="sk" x="272" y="10" width="116" height="102" rx="8" style="fill:#fdfbf4"/><text class="lbl b" x="330" y="34" text-anchor="middle">Root server</text><rect class="sk" x="402" y="10" width="116" height="102" rx="8" style="fill:#fdfbf4"/><text class="lbl b" x="460" y="34" text-anchor="middle">.com TLD</text><text class="lbl b" x="460" y="56" text-anchor="middle">server</text><rect class="sk" x="532" y="10" width="116" height="102" rx="8" style="fill:#fdfbf4"/><text class="lbl b" x="590" y="34" text-anchor="middle">example.com</text><text class="lbl b" x="590" y="56" text-anchor="middle">authoritative</text><rect x="52" y="141" width="166" height="22" style="fill:var(--paper);stroke:none"/><text class="lbl" x="135" y="158" text-anchor="middle">A? www.example.com</text><path class="sk blue" d="M70 170 L196 170" style="color:var(--ink)" marker-end="url(#arr)"/><rect class="sk" x="105" y="196" width="190" height="34" rx="4" style="fill:#fff59d"/><text class="lbl" x="200" y="215" text-anchor="middle" style="fill:#333">cache miss</text><rect x="182" y="257" width="166" height="22" style="fill:var(--paper);stroke:none"/><text class="lbl" x="265" y="274" text-anchor="middle">A? www.example.com</text><path class="sk blue" d="M200 286 L326 286" style="color:var(--ink)" marker-end="url(#arr)"/><rect x="169" y="317" width="193" height="22" style="fill:var(--paper);stroke:none"/><text class="lbl" x="265" y="334" text-anchor="middle">ask .com servers (NS)</text><path class="sk blue" d="M330 346 L204 346" style="color:var(--ink);stroke-dasharray:7 6" marker-end="url(#arr)"/><rect x="247" y="377" width="166" height="22" style="fill:var(--paper);stroke:none"/><text class="lbl" x="330" y="394" text-anchor="middle">A? www.example.com</text><path class="sk blue" d="M200 406 L456 406" style="color:var(--ink)" marker-end="url(#arr)"/><rect x="220" y="437" width="219" height="22" style="fill:var(--paper);stroke:none"/><text class="lbl" x="330" y="454" text-anchor="middle">ask ns1.example.com (NS)</text><path class="sk blue" d="M460 466 L204 466" style="color:var(--ink);stroke-dasharray:7 6" marker-end="url(#arr)"/><rect x="312" y="497" width="166" height="22" style="fill:var(--paper);stroke:none"/><text class="lbl" x="395" y="514" text-anchor="middle">A? www.example.com</text><path class="sk blue" d="M200 526 L586 526" style="color:var(--ink)" marker-end="url(#arr)"/><rect x="294" y="557" width="202" height="22" style="fill:var(--paper);stroke:none"/><text class="lbl" x="395" y="574" text-anchor="middle">93.184.215.14, TTL 300</text><path class="sk blue" d="M590 586 L204 586" style="color:var(--ink);stroke-dasharray:7 6" marker-end="url(#arr)"/><rect x="21" y="617" width="228" height="22" style="fill:var(--paper);stroke:none"/><text class="lbl" x="135" y="634" text-anchor="middle">93.184.215.14 (cached for</text><rect x="105" y="639" width="61" height="22" style="fill:var(--paper);stroke:none"/><text class="lbl" x="135" y="656" text-anchor="middle">300 s)</text><path class="sk blue" d="M200 668 L74 668" style="color:var(--ink);stroke-dasharray:7 6" marker-end="url(#arr)"/></svg>
+<figcaption>Fig 1: A DNS resolution chain for `www.example.com` (redrawn from the chapter diagram)</figcaption>
+</figure>
+  <h3>A NAT table mapping private → public</h3>
+  <pre class="code ascii"><code> home network 192.168.1.0/24                 router public IP 203.0.113.7
+ laptop 192.168.1.10:51000 ──┐
+ phone  192.168.1.23:51000 ──┼──► NAT ──► internet
+                             │
+   NAT table:
+   inside                    outside                  remote
+   192.168.1.10:51000   ↔   203.0.113.7:40001   ↔   142.250.1.1:443
+   192.168.1.23:51000   ↔   203.0.113.7:40002   ↔   142.250.1.1:443
+</code></pre>
+  <div class="pagebreak">~ page 2 ~</div>
+  <h2>Example</h2>
+  <span class="lang">bash</span>
+<pre class="code"><code>dig example.com A +short                 # 93.184.215.14
+dig www.github.com +trace                # walk root → .com → github.com yourself
+dig example.com MX
+ip addr; ip route                        # your addresses; the default gateway
+ss -tn state established                 # live TCP 4-tuples
+curl -v https://example.com 2&gt;&amp;1 | head  # DNS → TCP connect → TLS → HTTP in one view
+</code></pre>
+  <span class="lang">python</span>
+<pre class="code"><code>import ipaddress
+net = ipaddress.ip_network("192.168.1.0/24")
+print(net.num_addresses, net.network_address, net.broadcast_address)   # 256 192.168.1.0 192.168.1.255
+hosts = list(net.hosts()); print(hosts[0], hosts[-1], len(hosts))      # 192.168.1.1 192.168.1.254 254
+for sub in net.subnets(new_prefix=26):                                  # four /26 subnets
+    print(sub, "hosts:", sub.num_addresses - 2)
+print(ipaddress.ip_address("10.3.4.5").is_private)                      # True
+
+import socket
+print(socket.getaddrinfo("example.com", 443, proto=socket.IPPROTO_TCP)[0][4])
+</code></pre>
+  <h2>Exercises</h2>
+  <ol style="list-style:none;padding-left:0">
+<li>1. Explain what happens between typing a URL and page load (DNS → TCP → TLS → HTTP).
+<div class="box"><b>Solution</b> (1) The browser parses the URL and checks its caches and HSTS. (2) DNS: browser/OS cache → recursive resolver → root → TLD → authoritative, returning an IP. (3) TCP 3-way handshake to IP:443 (or QUIC over UDP). (4) The TLS handshake verifies the certificate chain and agrees keys. (5) An HTTP request is sent, possibly through a CDN or load balancer. (6) The server responds; the browser parses HTML, discovers CSS/JS/images (more requests, often reusing the connection), builds DOM and CSSOM, lays out, and paints.</div></li>
+<li>2. Subnet a /24 and pick valid hosts.
+<div class="box"><b>Solution</b> <code>10.0.5.0/24</code> into four /26s: <code>.0/26</code> (hosts .1–.62), <code>.64/26</code> (.65–.126), <code>.128/26</code> (.129–.190), <code>.192/26</code> (.193–.254). Each has 62 usable hosts: 64 minus the network and broadcast addresses.</div></li>
+<li>3. Why does <code>ping</code> work but <code>curl</code> to port 443 time out?
+<div class="box"><b>Solution</b> ICMP reaches the host, but TCP 443 is blocked (firewall or security group), nothing listens (that would be "connection refused", not a timeout), or a middlebox drops it. Check with <code>nc -vz host 443</code> and <code>ss -tlnp</code> on the server.</div></li>
+</ol>
+  <h2>Mini project</h2>
+  <h3>A small DNS client that resolves A/AAAA records over UDP.</h3>
+  <figure>
+<svg viewBox="0 0 312 628" style="max-width:312px" role="img" aria-label="A small DNS client that resolves A/AAAA records over UDP"><g transform="translate(156,0)"><path class="sk blue" d="M0 134 C 0 167, 0 167, 0 200" style="color:var(--ink)" marker-end="url(#arr)"/><path class="sk blue" d="M0 236 C 0 269, 0 269, 0 302" style="color:var(--ink)" marker-end="url(#arr)"/><path class="sk blue" d="M0 338 C 0 371, 0 371, 0 404" style="color:var(--ink)" marker-end="url(#arr)"/><path class="sk blue" d="M0 506 C 0 539, 0 539, 0 572" style="color:var(--ink)" marker-end="url(#arr)"/><rect class="sk" x="-132" y="10" width="264" height="124" rx="10" style="fill:#fdfbf4"/><rect class="sk" x="-105" y="200" width="211" height="36" rx="10" style="fill:#fdfbf4"/><rect class="sk" x="-83" y="302" width="167" height="36" rx="10" style="fill:#fdfbf4"/><rect class="sk" x="-127" y="404" width="255" height="102" rx="10" style="fill:#fdfbf4"/><rect class="sk" x="-136" y="572" width="272" height="36" rx="10" style="fill:#fdfbf4"/><text class="lbl b" x="0" y="34" text-anchor="middle">build query:</text><text class="lbl b" x="0" y="56" text-anchor="middle">12-byte header (id, flags</text><text class="lbl b" x="0" y="78" text-anchor="middle">RD=1, qdcount=1)</text><text class="lbl b" x="0" y="100" text-anchor="middle">+ QNAME 3www7example3com0 +</text><text class="lbl b" x="0" y="122" text-anchor="middle">QTYPE + QCLASS</text><text class="lbl b" x="0" y="224" text-anchor="middle">UDP sendto 1.1.1.1:53</text><text class="lbl b" x="0" y="326" text-anchor="middle">recv ≤ 512 bytes</text><text class="lbl b" x="0" y="428" text-anchor="middle">parse header, skip the</text><text class="lbl b" x="0" y="450" text-anchor="middle">question,</text><text class="lbl b" x="0" y="472" text-anchor="middle">parse answers (handle name</text><text class="lbl b" x="0" y="494" text-anchor="middle">compression 0xC0 pointers)</text><text class="lbl b" x="0" y="596" text-anchor="middle">print: name TTL type address</text></g></svg>
+<figcaption>Fig 2: A small DNS client that resolves A/AAAA records over UDP (redrawn from the chapter diagram)</figcaption>
+</figure>
+  <h3>Steps</h3>
+  <ol style="list-style:none;padding-left:0">
+<li>1. Encode the query with <code>struct.pack("!HHHHHH", id, 0x0100, 1, 0, 0, 0)</code> plus labels.</li>
+<li>2. Send over UDP with a 2-second timeout; retry once.</li>
+<li>3. Parse answers: type, class, TTL, rdlength, rdata; decode A (4 bytes) and AAAA (16 bytes) with <code>ipaddress</code>.</li>
+<li>4. Handle compressed names (pointers starting with bits <code>11</code>) and CNAME chains.</li>
+<li>5. Compare the output with <code>dig +short</code> for 10 domains.</li>
+</ol>
+  <div class="box"><b>Done when:</b> your client matches <code>dig</code> for A, AAAA, and CNAME-chained names, and handles a timeout cleanly.</div>
+  <div class="pagebreak">~ page 3 ~</div>
+  <h2>Open source</h2>
+  <ul>
+<li>[<code>miekg/dns</code>](https://github.com/miekg/dns) — a complete DNS library in Go (used by CoreDNS); <code>msg.go</code> shows wire-format packing and name compression.</li>
+<li>[<code>curl/curl</code>](https://github.com/curl/curl) — <code>curl -v</code> and <code>--trace-time</code> show each phase of a connection; <code>lib/connect.c</code> implements Happy Eyeballs (racing IPv4 and IPv6).</li>
+</ul>
+  <h2>Interview</h2>
+  <ol style="list-style:none;padding-left:0">
+<li>1. <b>"Walk me through DNS resolution."</b>
+<div class="box"><b>Answer</b> The app asks the OS stub resolver, which checks its cache and <code>/etc/hosts</code>, then asks a recursive resolver. On a miss, the resolver asks a root server (which refers it to the TLD), the TLD server (which refers it to the domain's authoritative servers), and the authoritative server, which returns the record with a TTL. Each layer caches answers for the TTL, which is why DNS changes take time to propagate.</div></li>
+<li>2. <b>"What does NAT solve (and not solve)?"</b>
+<div class="box"><b>Answer</b> It solves IPv4 scarcity: many private hosts share one public IP. As a side effect it hides internal topology and drops unsolicited inbound packets. It does not provide real security (use a firewall), breaks end-to-end connectivity (peer-to-peer and inbound services need port forwarding or STUN/TURN), and makes per-user rate limiting and logging harder. IPv6 removes the need for it.</div></li>
+</ol>
+  <h2>Checklist</h2>
+  <ul>
+<li class="todo">name each layer's job</li>
+<li class="todo">resolve DNS by hand</li>
+<li class="todo">explain port exhaustion</li>
+</ul>
+  <p class="black"><a href="index.md">Contents</a> · ← <a href="ch39-os-memory-management-file-systems-system-calls.notes.html">Chapter 39 — OS: Memory Management, File Systems, System Calls &amp; IPC</a> · Next → <a href="ch41-transport-and-security-tcp-udp-quic-tls.notes.html">Chapter 41 — Transport &amp; Security: TCP, UDP, QUIC, TLS &amp; HTTPS</a></p>
+  <nav class="nav"><a href="ch39-os-memory-management-file-systems-system-calls.notes.html">← Ch 39 — OS: Memory Management, File Systems, System Calls &amp; IPC</a><a href="index.notes.html">☰ Contents</a><a href="ch41-transport-and-security-tcp-udp-quic-tls.notes.html">Ch 41 — Transport &amp; Security: TCP, UDP, QUIC, TLS &amp; HTTPS →</a></nav>
+</main>
+</body>
+</html>

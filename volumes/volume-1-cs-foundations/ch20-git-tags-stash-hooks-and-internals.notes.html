@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ch 20 — Git: Tags, Stash, Hooks &amp; Internals — Notes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;700&family=Kalam:wght@400;700&family=Patrick+Hand&display=swap" rel="stylesheet">
+<style>
+/* ===== Page tokens ===== */
+:root{
+  --line:32px;                 /* ruled-line spacing; every vertical size is a multiple */
+  --paper:#fdfbf4; --rule:#c9dcef; --margin:#e8a0a0;
+  --ink:#1f3a93;               /* blue pen (body) */
+  --ink2:#222;                 /* black pen (headings) */
+  --red:#c0392b; --green:#1e8449;
+  --hl-yellow:rgba(255,235,59,.55); --hl-pink:rgba(255,128,171,.45);
+  --hl-green:rgba(118,255,3,.35); --hl-blue:rgba(64,196,255,.35);
+  --sticky:#fff59d; --desk:#e9e4d8;
+  --hand:'Kalam','Patrick Hand','Comic Sans MS','Segoe Print','Bradley Hand',cursive;
+  --title:'Caveat','Kalam','Segoe Print','Bradley Hand',cursive;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){ --desk:#2b2b2b; }
+}
+:root[data-theme="dark"]{ --desk:#2b2b2b; }
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--desk);font-family:var(--hand);color:var(--ink);}
+
+/* ===== Notebook sheet ===== */
+.page{
+  position:relative; max-width:860px; margin:24px auto; padding:var(--line) 28px calc(var(--line)*2) 84px;
+  background:
+    linear-gradient(90deg,transparent 64px,var(--margin) 64px,var(--margin) 66px,transparent 66px),
+    repeating-linear-gradient(var(--paper) 0,var(--paper) calc(var(--line) - 1px),var(--rule) calc(var(--line) - 1px),var(--rule) var(--line));
+  background-color:var(--paper);
+  box-shadow:0 2px 6px rgba(0,0,0,.15),0 12px 28px rgba(0,0,0,.12);
+  font-size:20px; line-height:var(--line);
+}
+.page::before{ /* punched holes */
+  content:""; position:absolute; left:22px; top:0; bottom:0; width:18px;
+  background:radial-gradient(circle,var(--desk) 7px,transparent 8px) 0 40px/18px 220px repeat-y;
+}
+@media (max-width:600px){
+  .page{margin:0;padding-left:52px;padding-right:16px;font-size:18px;
+    background:
+      linear-gradient(90deg,transparent 40px,var(--margin) 40px,var(--margin) 42px,transparent 42px),
+      repeating-linear-gradient(var(--paper) 0,var(--paper) calc(var(--line) - 1px),var(--rule) calc(var(--line) - 1px),var(--rule) var(--line));
+    background-color:var(--paper);}
+  .page::before{left:10px;width:16px}
+}
+
+/* ===== Text (all margins are multiples of --line so text sits on the rules) ===== */
+.date{position:absolute;top:0;right:24px;font-family:var(--title);font-size:22px;color:var(--ink2);line-height:var(--line)}
+h1{font-family:var(--title);font-weight:700;color:var(--ink2);font-size:46px;line-height:calc(var(--line)*2);margin:0;transform:rotate(-1deg)}
+h1 .u{background:linear-gradient(transparent 62%,var(--hl-yellow) 62%,var(--hl-yellow) 92%,transparent 92%)}
+h2{font-family:var(--title);font-weight:700;color:var(--red);font-size:32px;line-height:calc(var(--line)*1.5);margin:calc(var(--line)*.5) 0 0}
+h2::before{content:"➤ ";font-size:22px}
+p,li{margin:0}
+ul,ol{margin:0;padding-left:28px}
+ul{list-style:none}
+ul>li::before{content:"–";position:absolute;margin-left:-20px}
+ul>li.star::before{content:"★";color:var(--red)}
+ul>li.arrow::before{content:"→"}
+ul>li.check::before{content:"✓";color:var(--green)}
+.gap{height:var(--line)}
+
+/* ===== Pen effects ===== */
+.hl{background:var(--hl-yellow);padding:0 3px;border-radius:3px 6px 4px 7px}
+.hl.pink{background:var(--hl-pink)} .hl.green{background:var(--hl-green)} .hl.blue{background:var(--hl-blue)}
+.red{color:var(--red)} .green{color:var(--green)} .black{color:var(--ink2)}
+.ul{text-decoration:underline wavy var(--red);text-underline-offset:5px}
+.circ{border:2px solid var(--red);border-radius:50% 45% 55% 48%;padding:0 6px}
+.strike{text-decoration:line-through 2px var(--red)}
+.term{font-weight:700;color:var(--ink2)}
+.box{display:flow-root;border:2.5px solid var(--ink2);border-radius:4px 10px 6px 12px;padding:calc(var(--line)*.5 - 2.5px) 14px;margin:calc(var(--line)*.5) 0;transform:rotate(-.4deg);background:rgba(255,255,255,.35)}
+.box.red{border-color:var(--red)}
+.formula{font-family:var(--title);font-size:28px;text-align:center;color:var(--ink2)}
+
+/* sticky note */
+.sticky{float:right;width:min(250px,42%);margin:0 0 var(--line) 20px;padding:var(--line) 16px;background:var(--sticky);
+  color:#333;transform:rotate(2.2deg);box-shadow:2px 4px 8px rgba(0,0,0,.18);font-size:18px}
+.sticky b{font-family:var(--title);font-size:24px;color:var(--red)}
+@media (max-width:600px){.sticky{float:none;width:auto;margin:var(--line) 0}}
+
+/* margin annotation (lives in the red margin) */
+.side{position:absolute;left:4px;width:58px;text-align:center;font-family:var(--title);font-size:17px;line-height:18px;color:var(--red);transform:rotate(-8deg)}
+@media (max-width:600px){.side{display:none}}
+
+/* two-column notes */
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:0 28px}
+@media (max-width:600px){.cols{grid-template-columns:1fr}}
+
+/* diagrams */
+figure{margin:var(--line) 0;text-align:center}
+figure svg{width:100%;max-width:640px;height:auto;overflow:visible}
+figcaption{font-family:var(--title);font-size:20px;color:var(--ink2)}
+/* phones: keep labels readable — diagram scrolls inside its own box instead of shrinking */
+@media (max-width:600px){figure{overflow-x:auto}figure svg{min-width:520px}}
+.sk{fill:none;stroke:var(--ink2);stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round;filter:url(#rough)}
+.sk.blue{stroke:var(--ink)} .sk.red{stroke:var(--red)} .sk.green{stroke:var(--green)}
+.lbl{font-family:var(--hand);font-size:17px;fill:var(--ink)}
+.lbl.b{font-weight:700;fill:var(--ink2)} .lbl.r{fill:var(--red)} .lbl.g{fill:var(--green)}
+
+/* table */
+.wrap{overflow-x:auto}
+table{border-collapse:collapse;margin:calc(var(--line)*.5) 0;min-width:100%}
+th,td{border:2px solid var(--ink2);padding:0 10px;text-align:left;vertical-align:top}
+th{font-family:var(--title);font-size:24px;color:var(--ink2)}
+
+@media print{body{background:#fff}.page{box-shadow:none;margin:0}.page::before{display:none}}
+
+/* ===== Added for long chapter notes ===== */
+pre.code{font-family:Consolas,'Courier New',monospace;font-size:14px;line-height:var(--line);color:var(--ink);background:rgba(255,255,255,.45);
+  border-left:4px solid var(--red);margin:calc(var(--line)*.5) 0;padding:0 12px;overflow-x:auto;white-space:pre}
+pre.code.ascii{border-left-color:var(--green)}
+code{font-family:Consolas,'Courier New',monospace;font-size:.82em;background:rgba(0,0,0,.06);padding:0 3px;border-radius:3px}
+pre.code code{background:none;padding:0;font-size:inherit}
+.lang{font-family:var(--title);font-size:18px;color:var(--red)}
+h3{font-family:var(--title);font-weight:700;color:var(--ink2);font-size:26px;line-height:var(--line);margin:calc(var(--line)*.5) 0 0}
+h3::before{content:"✎ ";font-size:18px;color:var(--red)}
+.nav{display:flex;justify-content:space-between;gap:12px;font-family:var(--title);font-size:22px;line-height:var(--line)}
+.nav a{color:var(--red);text-decoration:none}
+.nav a:hover{text-decoration:underline wavy}
+.pagebreak{border-top:3px dashed var(--margin);margin:var(--line) 0;text-align:center;font-family:var(--title);color:var(--red);line-height:var(--line)}
+li.todo::before{content:"☐";color:var(--ink2)}
+a{color:var(--ink);text-decoration:underline dotted}
+</style>
+</head>
+<body>
+<!-- One shared hand-drawn wobble filter; give every diagram stroke class="sk" -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <!-- userSpaceOnUse region: a % region collapses to nothing on perfectly straight lines (zero-height bbox) -->
+  <filter id="rough" filterUnits="userSpaceOnUse" x="-500" y="-500" width="3000" height="3000">
+    <feTurbulence type="fractalNoise" baseFrequency="0.03" numOctaves="2" seed="3" result="n"/>
+    <feDisplacementMap in="SourceGraphic" in2="n" scale="3"/>
+  </filter>
+  <marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+    <path d="M1 1 L9 5 L1 9" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+  </marker>
+</defs></svg>
+
+<main class="page">
+  <nav class="nav"><a href="ch19-git-branching-merge-rebase-and-cherry-pick.notes.html">← Ch 19 — Git: Branching, Merge, Rebase &amp; Cherry-Pick</a><a href="index.notes.html">☰ Contents</a><a href="ch21-build-systems-and-package-management.notes.html">Ch 21 — Build Systems &amp; Package Management →</a></nav>
+  <div class="date">2026-10-10</div>
+  <h1><span class="u">Ch 20 — Git: Tags, Stash, Hooks &amp; Internals</span></h1>
+  <p class="black"><b>Volume 1 — Computer Science Foundations</b> · <a href="index.md">Contents</a> · ← <a href="ch19-git-branching-merge-rebase-and-cherry-pick.notes.html">Chapter 19 — Git: Branching, Merge, Rebase &amp; Cherry-Pick</a> · Next → <a href="ch21-build-systems-and-package-management.notes.html">Chapter 21 — Build Systems &amp; Package Management</a></p>
+<p class="black">Chapter 20 — Git: Tags, Stash, Hooks &amp; Internals</p>
+<h2>Concept</h2>
+<p>Tags (releases), stash (temporary WIP), hooks (automation), and Git's object model (blobs/trees/commits, content addressing).</p>
+<div class="box"><b>In one sentence:</b> under the hood Git is a key–value store where the key is the hash of the content, and tags, stashes, branches, and hooks are small conveniences built on top of it.</div>
+<p><b>Mental model — a library of sealed envelopes.</b> Every file version, folder listing, and commit is sealed in an envelope labeled with the fingerprint (hash) of its contents. The same content always gets the same label, so it is stored once. Change one byte and you get a new envelope with a new label. Branches and tags are bookmarks pointing at envelopes.</p>
+<h3>The four object types</h3>
+<div class="wrap"><table>
+<tr><th>Object</th><th>Stores</th><th>Points to</th></tr>
+<tr><td><b>blob</b></td><td>the raw bytes of one file version (no name!)</td><td>nothing</td></tr>
+<tr><td><b>tree</b></td><td>a directory listing: mode, name, and hash per entry</td><td>blobs and sub-trees</td></tr>
+<tr><td><b>commit</b></td><td>author, committer, date, message</td><td>one tree (the snapshot) + parent commit(s)</td></tr>
+<tr><td><b>tag</b> (annotated)</td><td>tagger, date, message, optional signature</td><td>usually a commit</td></tr>
+</table></div>
+<p><b>Content addressing:</b> <code>id = SHA-1("blob &lt;size&gt;\0&lt;content&gt;")</code> (SHA-256 in newer repos). Consequences: identical files are stored once; any change to any file changes its tree, every parent tree, and the commit ID — so a commit ID fingerprints the <i>entire</i> history behind it.</p>
+<p><b>Refs</b> are just files holding a hash: <code>.git/refs/heads/main</code>, <code>.git/refs/tags/v1.0.0</code>. <code>HEAD</code> usually holds <code>ref: refs/heads/main</code>.</p>
+<h3>Tags</h3>
+<div class="wrap"><table>
+<tr><th></th><th>Lightweight</th><th>Annotated</th></tr>
+<tr><td>What</td><td>a ref pointing at a commit</td><td>a real tag object with tagger, date, message, and optional GPG/SSH signature</td></tr>
+<tr><td>Create</td><td><code>git tag v1.0.0</code></td><td><code>git tag -a v1.0.0 -m "…"</code> (<code>-s</code> to sign)</td></tr>
+<tr><td>Use for</td><td>private bookmarks</td><td><b>releases</b> (shown by <code>git describe</code>)</td></tr>
+<tr><td>Pushed by default?</td><td>no — <code>git push origin v1.0.0</code> or <code>--follow-tags</code></td><td>same</td></tr>
+</table></div>
+<p><b>Stash</b> — a stack of temporary commits for work-in-progress: <code>git stash push -m "wip"</code> saves and cleans the working tree; <code>git stash pop</code> re-applies it.</p>
+<p><b>Hooks</b> — scripts in <code>.git/hooks/</code> that Git runs at set moments. They aren't versioned by default, so teams share them with the <code>pre-commit</code> framework or <code>core.hooksPath</code>.</p>
+<div class="wrap"><table>
+<tr><th>Hook</th><th>When</th><th>Typical use</th></tr>
+<tr><td><code>pre-commit</code></td><td>before a commit is created</td><td>format, lint, block secrets</td></tr>
+<tr><td><code>commit-msg</code></td><td>after the message is written</td><td>enforce Conventional Commits</td></tr>
+<tr><td><code>pre-push</code></td><td>before pushing</td><td>run the fast test suite</td></tr>
+<tr><td><code>post-merge</code> / <code>post-checkout</code></td><td>after</td><td>reinstall dependencies</td></tr>
+<tr><td>server <code>pre-receive</code></td><td>on the server, before accepting a push</td><td>enforce policies</td></tr>
+</table></div>
+<h2>Prereqs</h2>
+<ul>
+<li><p><a href="ch19-git-branching-merge-rebase-and-cherry-pick.notes.html">Chapter 19 — Git: Branching, Merge, Rebase &amp; Cherry-Pick</a></p></li>
+</ul>
+<div class="pagebreak">~ page 2 ~</div>
+<h2>Diagram</h2>
+<h3>Git's object database</h3>
+<figure>
+  <svg viewBox="0 0 660 410" role="img" aria-label="Git object graph: tag v1.0.0 and refs/heads/main both point to commit 7a1c (Add parser); HEAD points to main; commit 7a1c has parent commit 3b9d (Initial) and tree e41f (root); commit 3b9d has tree a0c2; tree e41f contains blob 5d2a README.md and tree 8c77 src/; tree 8c77 contains blob 1f0e parser.py (new); tree a0c2 contains blob 5d2a README.md">
+    <rect class="sk" x="59" y="26" width="61" height="37" rx="10" style="fill:var(--hl-yellow)"/>
+    <rect class="sk" x="11" y="112" width="158" height="37" rx="10" style="fill:var(--paper)"/>
+    <rect class="sk" x="273" y="100" width="114" height="60" rx="10" style="fill:var(--hl-yellow)"/>
+    <rect class="sk" x="144" y="210" width="132" height="60" rx="10" style="fill:var(--hl-green)"/>
+    <rect class="sk" x="144" y="320" width="132" height="60" rx="10" style="fill:var(--hl-green)"/>
+    <rect class="sk" x="328" y="210" width="114" height="60" rx="10" style="fill:var(--paper)"/>
+    <rect class="sk" x="328" y="332" width="114" height="37" rx="10" style="fill:var(--paper)"/>
+    <rect class="sk" x="508" y="120" width="114" height="60" rx="10" style="fill:var(--paper)"/>
+    <rect class="sk" x="481" y="20" width="158" height="60" rx="10" style="fill:var(--hl-blue)"/>
+    <rect class="sk" x="508" y="300" width="114" height="60" rx="10" style="fill:var(--hl-blue)"/>
+    <path class="sk blue" d="M90 64 L90 112" style="color:var(--ink);stroke-dasharray:7 5" marker-end="url(#arr)"/>
+    <path class="sk blue" d="M90 160 C138 160 138 210 185 210" style="color:var(--ink)" marker-end="url(#arr)"/>
+    <path class="sk blue" d="M330 160 C285 160 285 210 240 210" style="color:var(--ink)" marker-end="url(#arr)"/>
+    <path class="sk blue" d="M210 270 L210 320" style="color:var(--ink)" marker-end="url(#arr)"/>
+    <path class="sk blue" d="M276 240 L328 240" style="color:var(--ink)" marker-end="url(#arr)"/>
+    <path class="sk blue" d="M276 350 L328 350" style="color:var(--ink)" marker-end="url(#arr)"/>
+    <path class="sk blue" d="M442 250 C491 250 491 300 540 300" style="color:var(--ink)" marker-end="url(#arr)"/>
+    <path class="sk blue" d="M442 232 C442 196 505 196 505 160" style="color:var(--ink)" marker-end="url(#arr)"/>
+    <path class="sk blue" d="M565 120 C565 100 560 100 560 80" style="color:var(--ink)" marker-end="url(#arr)"/>
+    <path class="sk blue" d="M442 350 C475 350 475 330 508 330" style="color:var(--ink)" marker-end="url(#arr)"/>
+    <text class="lbl b" x="90" y="50" text-anchor="middle">HEAD</text>
+    <text class="lbl b" x="90" y="135" text-anchor="middle">refs/heads/main</text>
+    <text class="lbl b" x="330" y="124" text-anchor="middle">tag v1.0.0</text>
+    <text class="lbl b" x="330" y="147" text-anchor="middle">9f3e…</text>
+    <text class="lbl b" x="210" y="234" text-anchor="middle">commit 7a1c…</text>
+    <text class="lbl b" x="210" y="257" text-anchor="middle">'Add parser'</text>
+    <text class="lbl b" x="210" y="344" text-anchor="middle">commit 3b9d…</text>
+    <text class="lbl b" x="210" y="367" text-anchor="middle">'Initial'</text>
+    <text class="lbl b" x="385" y="234" text-anchor="middle">tree e41f…</text>
+    <text class="lbl b" x="385" y="257" text-anchor="middle">(root)</text>
+    <text class="lbl b" x="385" y="355" text-anchor="middle">tree a0c2…</text>
+    <text class="lbl b" x="565" y="144" text-anchor="middle">tree 8c77…</text>
+    <text class="lbl b" x="565" y="167" text-anchor="middle">src/</text>
+    <text class="lbl b" x="560" y="44" text-anchor="middle">blob 1f0e…</text>
+    <text class="lbl b" x="560" y="67" text-anchor="middle">parser.py (new)</text>
+    <text class="lbl b" x="565" y="324" text-anchor="middle">blob 5d2a…</text>
+    <text class="lbl b" x="565" y="347" text-anchor="middle">README.md</text>
+    <text class="lbl r" x="222" y="300" text-anchor="start" style="font-size:15px">parent</text>
+    <text class="lbl r" x="297" y="230" text-anchor="middle" style="font-size:15px">tree</text>
+    <text class="lbl r" x="297" y="340" text-anchor="middle" style="font-size:15px">tree</text>
+  </svg>
+  <figcaption>Fig: refs point to commits; commits point to trees (and parents); trees point to blobs and sub-trees — blob 5d2a is shared, not copied</figcaption>
+</figure>
+<p><code>README.md</code> didn't change, so both trees point to the <b>same</b> blob — stored once.</p>
+<h3>How a change ripples up</h3>
+<pre class="code ascii"><code> edit src/parser.py
+   → new blob          (content changed)
+   → new tree src/     (its entry's hash changed)
+   → new root tree     (src/'s hash changed)
+   → new commit        (its tree hash changed)
+ Unchanged files and folders are reused as-is.</code></pre>
+<h3>Hook timeline for one commit and push</h3>
+<figure>
+  <svg viewBox="0 0 640 558" role="img" aria-label="Sequence: Dev runs git commit; Git runs pre-commit (lint, format; exit not 0 aborts) and commit-msg (check message), then reports commit created; Dev runs git push; Git runs pre-push (run tests; exit not 0 aborts) then reports pushed">
+    <rect class="sk" x="84" y="14" width="52" height="40" rx="10" style="fill:var(--paper)"/>
+    <path class="sk" d="M110 54 L110 538" style="stroke-dasharray:6 6"/>
+    <rect class="sk" x="264" y="14" width="52" height="40" rx="10" style="fill:var(--paper)"/>
+    <path class="sk" d="M290 54 L290 538" style="stroke-dasharray:6 6"/>
+    <path class="sk blue" d="M110 136 L284 136" style="color:var(--ink)" marker-end="url(#arr)"/>
+    <path class="sk blue" d="M290 182 C350 178 350 206 294 204" style="color:var(--ink)" marker-end="url(#arr)"/>
+    <path class="sk blue" d="M290 264 C350 260 350 288 294 286" style="color:var(--ink)" marker-end="url(#arr)"/>
+    <path class="sk blue" d="M290 334 L116 334" style="color:var(--ink);stroke-dasharray:7 5" marker-end="url(#arr)"/>
+    <path class="sk blue" d="M110 380 L284 380" style="color:var(--ink)" marker-end="url(#arr)"/>
+    <path class="sk blue" d="M290 426 C350 422 350 450 294 448" style="color:var(--ink)" marker-end="url(#arr)"/>
+    <path class="sk blue" d="M290 508 L116 508" style="color:var(--ink);stroke-dasharray:7 5" marker-end="url(#arr)"/>
+    <text class="lbl b" x="110" y="40" text-anchor="middle">Dev</text>
+    <text class="lbl b" x="290" y="40" text-anchor="middle">Git</text>
+    <text class="lbl" x="200" y="128" text-anchor="middle" style="font-size:15px">git commit</text>
+    <text class="lbl" x="358" y="186" text-anchor="start" style="font-size:15px">pre-commit (lint, format)</text>
+    <text class="lbl" x="358" y="203" text-anchor="start" style="font-size:15px">— exit ≠ 0 aborts</text>
+    <text class="lbl" x="358" y="276" text-anchor="start" style="font-size:15px">commit-msg (check message)</text>
+    <text class="lbl" x="200" y="326" text-anchor="middle" style="font-size:15px">commit created</text>
+    <text class="lbl" x="200" y="372" text-anchor="middle" style="font-size:15px">git push</text>
+    <text class="lbl" x="358" y="430" text-anchor="start" style="font-size:15px">pre-push (run tests)</text>
+    <text class="lbl" x="358" y="447" text-anchor="start" style="font-size:15px">— exit ≠ 0 aborts</text>
+    <text class="lbl" x="200" y="500" text-anchor="middle" style="font-size:15px">pushed</text>
+  </svg>
+  <figcaption>Fig: where the client-side hooks run during commit and push</figcaption>
+</figure>
+<div class="pagebreak">~ page 3 ~</div>
+<h2>Example</h2>
+<span class="lang">bash</span>
+<pre class="code"><code>echo "hello" | git hash-object --stdin          # ce013625030ba8dba906f756967f9e9ca394464a
+git cat-file -t HEAD                            # commit
+git cat-file -p HEAD                            # tree …, parent …, author …, message
+git cat-file -p 'HEAD^{tree}'                   # 100644 blob 5d2a…  README.md
+                                                # 040000 tree 8c77…  src
+git rev-parse HEAD
+cat .git/HEAD                                   # ref: refs/heads/main
+
+git tag -a v1.0.0 -m "First stable release"     # annotated
+git push origin v1.0.0
+git describe --tags                             # v1.0.0-3-g7a1c2e4 (3 commits after the tag)
+
+git stash push -m "wip: half-done refactor"
+git stash list                                  # stash@{0}: On main: wip: half-done refactor
+git stash pop</code></pre>
+<span class="lang">bash</span>
+<pre class="code"><code>#!/usr/bin/env bash
+# .git/hooks/pre-commit — block whitespace errors and debug prints (chmod +x it)
+set -euo pipefail
+if ! git diff --cached --check; then
+    echo "✗ whitespace errors (see above)"; exit 1
+fi
+if git diff --cached -U0 -- '*.py' | grep -E '^\+.*\bbreakpoint\(\)'; then
+    echo "✗ remove breakpoint() before committing"; exit 1
+fi</code></pre>
+<span class="lang">yaml</span>
+<pre class="code"><code># .pre-commit-config.yaml — versioned, shared hooks
+repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.6.9
+    hooks:
+      - id: ruff
+      - id: ruff-format
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+      - id: trailing-whitespace
+      - id: detect-private-key</code></pre>
+<h2>Exercises</h2>
+<ol style="list-style:none;padding-left:0">
+<li><p>1. Inspect a commit object with <code>git cat-file</code>.</p>
+<div class="box"><b>Solution</b>
+<p><code>git cat-file -p HEAD</code> shows <code>tree</code>, <code>parent</code>, <code>author</code>, <code>committer</code>, and the message. Follow the tree hash with <code>git cat-file -p &amp;lt;tree&amp;gt;</code> down to a blob. Compare with <code>git hash-object path/to/file</code>: the hashes match.</p>
+</div></li>
+<li><p>2. Write a pre-commit hook that blocks whitespace errors.</p>
+<div class="box"><b>Solution</b>
+<p>See the hook above: <code>git diff --cached --check</code> exits non-zero on trailing whitespace or conflict markers in staged changes. Make the file executable. Bypass it in an emergency with <code>git commit --no-verify</code> (and know that it's possible).</p>
+</div></li>
+<li><p>3. Why does renaming a file without changing it create no new blob?</p>
+<div class="box"><b>Solution</b>
+<p>A blob stores only content, not the name. The name lives in the tree. Renaming changes the tree entry, so there's a new tree and commit, but the blob hash is unchanged and reused.</p>
+</div></li>
+</ol>
+<div class="pagebreak">~ page 4 ~</div>
+<h2>Mini project</h2>
+<h3>A release script that tags, signs, and pushes — plus a pre-push hook running tests.</h3>
+<figure>
+  <svg viewBox="0 0 660 600" role="img" aria-label="Release script flowchart: ./release.sh 1.4.0; if the tree is not clean, on main and up to date abort; if 1.4.0 is not valid SemVer greater than the last tag abort; otherwise update CHANGELOG from git log v1.3.2..HEAD, git tag -s v1.4.0, git push --follow-tags, which triggers the pre-push hook pytest -q">
+    <rect class="sk" x="158" y="16" width="184" height="37" rx="10" style="fill:var(--paper)"/>
+    <path class="sk" d="M250 79 L390 130 L250 181 L110 130 Z" style="fill:var(--paper)"/>
+    <path class="sk" d="M250 219 L396 270 L250 321 L104 270 Z" style="fill:var(--paper)"/>
+    <rect class="sk red" x="525" y="182" width="70" height="37" rx="10" style="fill:var(--hl-pink)"/>
+    <rect class="sk" x="145" y="355" width="211" height="60" rx="10" style="fill:var(--paper)"/>
+    <rect class="sk" x="162" y="442" width="176" height="37" rx="10" style="fill:var(--paper)"/>
+    <rect class="sk" x="120" y="516" width="220" height="37" rx="10" style="fill:var(--paper)"/>
+    <rect class="sk" x="401" y="516" width="237" height="37" rx="10" style="fill:var(--hl-yellow)"/>
+    <path class="sk blue" d="M250 54 L250 79" style="color:var(--ink)" marker-end="url(#arr)"/>
+    <path class="sk blue" d="M390 130 C475 130 475 181 560 181" style="color:var(--ink)" marker-end="url(#arr)"/>
+    <path class="sk blue" d="M250 181 L250 219" style="color:var(--ink)" marker-end="url(#arr)"/>
+    <path class="sk blue" d="M396 270 C478 270 478 219 560 219" style="color:var(--ink)" marker-end="url(#arr)"/>
+    <path class="sk blue" d="M250 321 L250 355" style="color:var(--ink)" marker-end="url(#arr)"/>
+    <path class="sk blue" d="M250 415 L250 442" style="color:var(--ink)" marker-end="url(#arr)"/>
+    <path class="sk blue" d="M250 478 C250 498 230 498 230 516" style="color:var(--ink)" marker-end="url(#arr)"/>
+    <path class="sk blue" d="M340 535 L401 535" style="color:var(--ink)" marker-end="url(#arr)"/>
+    <text class="lbl b" x="250" y="40" text-anchor="middle">./release.sh 1.4.0</text>
+    <text class="lbl b" x="250" y="124" text-anchor="middle">clean tree, on main,</text>
+    <text class="lbl b" x="250" y="147" text-anchor="middle">up to date?</text>
+    <text class="lbl b" x="250" y="264" text-anchor="middle">1.4.0 is valid SemVer</text>
+    <text class="lbl b" x="250" y="287" text-anchor="middle">and &gt; last tag?</text>
+    <text class="lbl r" x="560" y="205" text-anchor="middle">abort</text>
+    <text class="lbl b" x="250" y="379" text-anchor="middle">update CHANGELOG from</text>
+    <text class="lbl b" x="250" y="402" text-anchor="middle">git log v1.3.2..HEAD</text>
+    <text class="lbl b" x="250" y="465" text-anchor="middle">git tag -s v1.4.0</text>
+    <text class="lbl b" x="230" y="540" text-anchor="middle">git push --follow-tags</text>
+    <text class="lbl b" x="520" y="540" text-anchor="middle">pre-push hook: pytest -q</text>
+    <text class="lbl r" x="480" y="122" text-anchor="middle" style="font-size:15px">no</text>
+    <text class="lbl r" x="262" y="207" text-anchor="start" style="font-size:15px">yes</text>
+    <text class="lbl r" x="480" y="272" text-anchor="middle" style="font-size:15px">no</text>
+    <text class="lbl r" x="262" y="340" text-anchor="start" style="font-size:15px">yes</text>
+  </svg>
+  <figcaption>Fig: release.sh guards, then changelog, signed tag, push (which triggers the pre-push hook)</figcaption>
+</figure>
+<h3>Steps</h3>
+<ol style="list-style:none;padding-left:0">
+<li><p>1. Refuse to run with uncommitted changes, off <code>main</code>, or behind <code>origin/main</code>.</p></li>
+<li><p>2. Validate the version (SemVer regex) and check it is greater than <code>git describe --tags --abbrev=0</code>.</p></li>
+<li><p>3. Generate changelog lines from <code>git log --pretty='- %s' LAST..HEAD</code>.</p></li>
+<li><p>4. Create a signed annotated tag (<code>-s</code>, using an SSH or GPG key); verify with <code>git tag -v</code>.</p></li>
+<li><p>5. Install a <code>pre-push</code> hook (via <code>core.hooksPath=.githooks</code>) that runs the fast tests.</p></li>
+</ol>
+<div class="box"><b>Done when:</b> a bad version or a failing test stops the release before anything is pushed, and <code>git tag -v v1.4.0</code> verifies.</div>
+<h2>Open source</h2>
+<ul>
+<li><p>[<code>git/git</code>](https://github.com/git/git) internals — <code>Documentation/gitformat-*.txt</code> and the "Git Internals" chapter of <i>Pro Git</i> (free online) walk through <code>.git/objects</code> by hand.</p></li>
+<li><p>[<code>pre-commit/pre-commit</code>](https://github.com/pre-commit/pre-commit) — the framework that installs versioned hooks in isolated environments.</p></li>
+</ul>
+<div class="pagebreak">~ page 5 ~</div>
+<h2>Interview</h2>
+<ol style="list-style:none;padding-left:0">
+<li>1. <h3>"What is Git's content model?"</h3>
+<div class="box"><b>Answer</b>
+<p>A content-addressed object store. Blobs hold file contents, trees hold directory listings, and commits point to one root tree plus parents. Each object's ID is the hash of its contents, so identical content is deduplicated and any change produces new IDs up to the commit — making history tamper-evident.</p>
+</div></li>
+<li>2. <h3>"What's a lightweight vs annotated tag?"</h3>
+<div class="box"><b>Answer</b>
+<p>A lightweight tag is just a ref naming a commit. An annotated tag is a full object with tagger, date, message, and optional signature. Use annotated (ideally signed) tags for releases; <code>git describe</code> uses them by default.</p>
+</div></li>
+</ol>
+<h2>Checklist</h2>
+<ul>
+<li class="todo"><p>explain content addressing</p></li>
+<li class="todo"><p>tag a release</p></li>
+<li class="todo"><p>automate with hooks</p></li>
+</ul>
+<p class="black"><a href="index.md">Contents</a> · ← <a href="ch19-git-branching-merge-rebase-and-cherry-pick.notes.html">Chapter 19 — Git: Branching, Merge, Rebase &amp; Cherry-Pick</a> · Next → <a href="ch21-build-systems-and-package-management.notes.html">Chapter 21 — Build Systems &amp; Package Management</a></p>
+  <nav class="nav"><a href="ch19-git-branching-merge-rebase-and-cherry-pick.notes.html">← Ch 19 — Git: Branching, Merge, Rebase &amp; Cherry-Pick</a><a href="index.notes.html">☰ Contents</a><a href="ch21-build-systems-and-package-management.notes.html">Ch 21 — Build Systems &amp; Package Management →</a></nav>
+</main>
+</body>
+</html>

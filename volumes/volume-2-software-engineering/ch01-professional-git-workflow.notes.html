@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ch 1 — Professional Git Workflow — Notes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;700&family=Kalam:wght@400;700&family=Patrick+Hand&display=swap" rel="stylesheet">
+<style>
+/* ===== Page tokens ===== */
+:root{
+  --line:32px;                 /* ruled-line spacing; every vertical size is a multiple */
+  --paper:#fdfbf4; --rule:#c9dcef; --margin:#e8a0a0;
+  --ink:#1f3a93;               /* blue pen (body) */
+  --ink2:#222;                 /* black pen (headings) */
+  --red:#c0392b; --green:#1e8449;
+  --hl-yellow:rgba(255,235,59,.55); --hl-pink:rgba(255,128,171,.45);
+  --hl-green:rgba(118,255,3,.35); --hl-blue:rgba(64,196,255,.35);
+  --sticky:#fff59d; --desk:#e9e4d8;
+  --hand:'Kalam','Patrick Hand','Comic Sans MS','Segoe Print','Bradley Hand',cursive;
+  --title:'Caveat','Kalam','Segoe Print','Bradley Hand',cursive;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){ --desk:#2b2b2b; }
+}
+:root[data-theme="dark"]{ --desk:#2b2b2b; }
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--desk);font-family:var(--hand);color:var(--ink);}
+
+/* ===== Notebook sheet ===== */
+.page{
+  position:relative; max-width:860px; margin:24px auto; padding:var(--line) 28px calc(var(--line)*2) 84px;
+  background:
+    linear-gradient(90deg,transparent 64px,var(--margin) 64px,var(--margin) 66px,transparent 66px),
+    repeating-linear-gradient(var(--paper) 0,var(--paper) calc(var(--line) - 1px),var(--rule) calc(var(--line) - 1px),var(--rule) var(--line));
+  background-color:var(--paper);
+  box-shadow:0 2px 6px rgba(0,0,0,.15),0 12px 28px rgba(0,0,0,.12);
+  font-size:20px; line-height:var(--line);
+}
+.page::before{ /* punched holes */
+  content:""; position:absolute; left:22px; top:0; bottom:0; width:18px;
+  background:radial-gradient(circle,var(--desk) 7px,transparent 8px) 0 40px/18px 220px repeat-y;
+}
+@media (max-width:600px){
+  .page{margin:0;padding-left:52px;padding-right:16px;font-size:18px;
+    background:
+      linear-gradient(90deg,transparent 40px,var(--margin) 40px,var(--margin) 42px,transparent 42px),
+      repeating-linear-gradient(var(--paper) 0,var(--paper) calc(var(--line) - 1px),var(--rule) calc(var(--line) - 1px),var(--rule) var(--line));
+    background-color:var(--paper);}
+  .page::before{left:10px;width:16px}
+}
+
+/* ===== Text (all margins are multiples of --line so text sits on the rules) ===== */
+.date{position:absolute;top:0;right:24px;font-family:var(--title);font-size:22px;color:var(--ink2);line-height:var(--line)}
+h1{font-family:var(--title);font-weight:700;color:var(--ink2);font-size:46px;line-height:calc(var(--line)*2);margin:0;transform:rotate(-1deg)}
+h1 .u{background:linear-gradient(transparent 62%,var(--hl-yellow) 62%,var(--hl-yellow) 92%,transparent 92%)}
+h2{font-family:var(--title);font-weight:700;color:var(--red);font-size:32px;line-height:calc(var(--line)*1.5);margin:calc(var(--line)*.5) 0 0}
+h2::before{content:"➤ ";font-size:22px}
+p,li{margin:0}
+ul,ol{margin:0;padding-left:28px}
+ul{list-style:none}
+ul>li::before{content:"–";position:absolute;margin-left:-20px}
+ul>li.star::before{content:"★";color:var(--red)}
+ul>li.arrow::before{content:"→"}
+ul>li.check::before{content:"✓";color:var(--green)}
+.gap{height:var(--line)}
+
+/* ===== Pen effects ===== */
+.hl{background:var(--hl-yellow);padding:0 3px;border-radius:3px 6px 4px 7px}
+.hl.pink{background:var(--hl-pink)} .hl.green{background:var(--hl-green)} .hl.blue{background:var(--hl-blue)}
+.red{color:var(--red)} .green{color:var(--green)} .black{color:var(--ink2)}
+.ul{text-decoration:underline wavy var(--red);text-underline-offset:5px}
+.circ{border:2px solid var(--red);border-radius:50% 45% 55% 48%;padding:0 6px}
+.strike{text-decoration:line-through 2px var(--red)}
+.term{font-weight:700;color:var(--ink2)}
+.box{display:flow-root;border:2.5px solid var(--ink2);border-radius:4px 10px 6px 12px;padding:calc(var(--line)*.5 - 2.5px) 14px;margin:calc(var(--line)*.5) 0;transform:rotate(-.4deg);background:rgba(255,255,255,.35)}
+.box.red{border-color:var(--red)}
+.formula{font-family:var(--title);font-size:28px;text-align:center;color:var(--ink2)}
+
+/* sticky note */
+.sticky{float:right;width:min(250px,42%);margin:0 0 var(--line) 20px;padding:var(--line) 16px;background:var(--sticky);
+  color:#333;transform:rotate(2.2deg);box-shadow:2px 4px 8px rgba(0,0,0,.18);font-size:18px}
+.sticky b{font-family:var(--title);font-size:24px;color:var(--red)}
+@media (max-width:600px){.sticky{float:none;width:auto;margin:var(--line) 0}}
+
+/* margin annotation (lives in the red margin) */
+.side{position:absolute;left:4px;width:58px;text-align:center;font-family:var(--title);font-size:17px;line-height:18px;color:var(--red);transform:rotate(-8deg)}
+@media (max-width:600px){.side{display:none}}
+
+/* two-column notes */
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:0 28px}
+@media (max-width:600px){.cols{grid-template-columns:1fr}}
+
+/* diagrams */
+figure{margin:var(--line) 0;text-align:center}
+figure svg{width:100%;max-width:640px;height:auto;overflow:visible}
+figcaption{font-family:var(--title);font-size:20px;color:var(--ink2)}
+/* phones: keep labels readable — diagram scrolls inside its own box instead of shrinking */
+@media (max-width:600px){figure{overflow-x:auto}figure svg{min-width:520px}}
+.sk{fill:none;stroke:var(--ink2);stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round;filter:url(#rough)}
+.sk.blue{stroke:var(--ink)} .sk.red{stroke:var(--red)} .sk.green{stroke:var(--green)}
+.lbl{font-family:var(--hand);font-size:17px;fill:var(--ink)}
+.lbl.b{font-weight:700;fill:var(--ink2)} .lbl.r{fill:var(--red)} .lbl.g{fill:var(--green)}
+
+/* table */
+.wrap{overflow-x:auto}
+table{border-collapse:collapse;margin:calc(var(--line)*.5) 0;min-width:100%}
+th,td{border:2px solid var(--ink2);padding:0 10px;text-align:left;vertical-align:top}
+th{font-family:var(--title);font-size:24px;color:var(--ink2)}
+
+@media print{body{background:#fff}.page{box-shadow:none;margin:0}.page::before{display:none}}
+
+/* ===== Added for long chapter notes ===== */
+pre.code{font-family:Consolas,'Courier New',monospace;font-size:14px;line-height:var(--line);color:var(--ink);background:rgba(255,255,255,.45);
+  border-left:4px solid var(--red);margin:calc(var(--line)*.5) 0;padding:0 12px;overflow-x:auto;white-space:pre}
+pre.code.ascii{border-left-color:var(--green)}
+code{font-family:Consolas,'Courier New',monospace;font-size:.82em;background:rgba(0,0,0,.06);padding:0 3px;border-radius:3px}
+pre.code code{background:none;padding:0;font-size:inherit}
+.lang{font-family:var(--title);font-size:18px;color:var(--red)}
+h3{font-family:var(--title);font-weight:700;color:var(--ink2);font-size:26px;line-height:var(--line);margin:calc(var(--line)*.5) 0 0}
+h3::before{content:"✎ ";font-size:18px;color:var(--red)}
+.nav{display:flex;justify-content:space-between;gap:12px;font-family:var(--title);font-size:22px;line-height:var(--line)}
+.nav a{color:var(--red);text-decoration:none}
+.nav a:hover{text-decoration:underline wavy}
+.pagebreak{border-top:3px dashed var(--margin);margin:var(--line) 0;text-align:center;font-family:var(--title);color:var(--red);line-height:var(--line)}
+li.todo::before{content:"☐";color:var(--ink2)}
+a{color:var(--ink);text-decoration:underline dotted}
+</style>
+</head>
+<body>
+<!-- One shared hand-drawn wobble filter; give every diagram stroke class="sk" -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <!-- userSpaceOnUse region: a % region collapses to nothing on perfectly straight lines (zero-height bbox) -->
+  <filter id="rough" filterUnits="userSpaceOnUse" x="-500" y="-500" width="3000" height="3000">
+    <feTurbulence type="fractalNoise" baseFrequency="0.03" numOctaves="2" seed="3" result="n"/>
+    <feDisplacementMap in="SourceGraphic" in2="n" scale="3"/>
+  </filter>
+  <marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+    <path d="M1 1 L9 5 L1 9" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+  </marker>
+</defs></svg>
+
+<main class="page">
+  <nav class="nav"><span></span><a href="index.notes.html">☰ Contents</a><a href="ch02-monorepos.notes.html">Ch 2 — Monorepos →</a></nav>
+  <div class="date">2026-10-10</div>
+  <h1><span class="u">Ch 1 — Professional Git Workflow</span></h1>
+  <p class="black"><b>Volume 2 — Software Engineering</b> · <a href="index.md">Contents</a> · Next → <a href="ch02-monorepos.notes.html">Chapter 2 — Monorepos</a></p>
+  <p class="black">Chapter 1 — Professional Git Workflow</p>
+  <h2>Concept</h2>
+  <p>Trunk-based vs GitFlow, PRs, code review flow, conventional commits, and recovering from mistakes (revert, reflog).</p>
+  <div class="box"><span class="hl">In one sentence:</span> a professional Git workflow is a team agreement about how changes travel from a laptop to production — small branches, reviewed pull requests, readable commit messages, and safe ways to undo mistakes without rewriting anyone else's history.</div>
+  <aside class="sticky"><b>Exam tip!</b><br>Pushed or shared? <code>git revert</code>. Local only? amend / reset. Lost a commit? <code>git reflog</code>.</aside>
+  <div class="box"><span class="hl blue">Mental model — a river and its streams.</span> Trunk-based development is one wide river (<code>main</code>) with short streams that flow back in within a day or two. GitFlow is a canal system with locks: <code>develop</code>, <code>release/*</code>, and <code>hotfix/*</code> branches, each with rules about what may enter. Rivers move fast; canals move carefully. Most modern teams that deploy often choose the river.</div>
+  <h3>Trunk-based vs GitFlow</h3>
+  <div class="wrap"><table>
+  <tr><th></th><th>Trunk-based</th><th>GitFlow</th></tr>
+  <tr><td>Long-lived branches</td><td>only <code>main</code></td><td><code>main</code> + <code>develop</code> (+ release/hotfix branches)</td></tr>
+  <tr><td>Feature branch life</td><td>hours to ~2 days</td><td>days to weeks</td></tr>
+  <tr><td>Unfinished work</td><td>hidden behind <b>feature flags</b></td><td>kept on the feature branch</td></tr>
+  <tr><td>Merge conflicts</td><td>small, frequent</td><td>big, painful at release time</td></tr>
+  <tr><td>Release cadence</td><td>continuous; any green commit</td><td>scheduled release trains</td></tr>
+  <tr><td>Fits</td><td>web services, SaaS, CD</td><td>versioned products, several supported versions, mobile apps with store review</td></tr>
+  </table></div>
+  <h3>The PR flow</h3>
+  <ol style="list-style:none;padding-left:0">
+    <li>1. <code>git switch -c feat/checkout-coupons</code> from an up-to-date <code>main</code>.
+  </li>
+    <li>2. Small, focused commits; push early; open a <i>draft</i> PR for feedback.
+  </li>
+    <li>3. CI runs; reviewers comment; you push fixups.
+  </li>
+    <li>4. Rebase on <code>main</code> (or merge <code>main</code> in) and resolve conflicts.
+  </li>
+    <li>5. <b>Squash-merge</b> (one clean commit on <code>main</code>) or rebase-merge (keep the curated commits).
+  </li>
+    <li>6. Delete the branch; deploy; tag if it's a release.
+  </li>
+  </ol>
+  <p><b>Conventional Commits</b> — <code>type(scope)!: summary</code></p>
+  <div class="wrap"><table>
+  <tr><th>Type</th><th>Meaning</th><th>SemVer effect (in release tooling)</th></tr>
+  <tr><td><code>feat</code></td><td>a new feature</td><td>MINOR</td></tr>
+  <tr><td><code>fix</code></td><td>a bug fix</td><td>PATCH</td></tr>
+  <tr><td><code>feat!</code> / <code>BREAKING CHANGE:</code> footer</td><td>a breaking change</td><td>MAJOR</td></tr>
+  <tr><td><code>docs</code>, <code>test</code>, <code>refactor</code>, <code>perf</code>, <code>build</code>, <code>ci</code>, <code>chore</code></td><td>no user-visible change</td><td>none</td></tr>
+  </table></div>
+  <p>A good message: summary ≤ 72 characters in the imperative ("add", not "added"); a body explaining <i>why</i>; footers such as <code>Refs: #123</code>.</p>
+  <h3>Undoing mistakes — pick the right tool</h3>
+  <div class="wrap"><table>
+  <tr><th>Situation</th><th>Tool</th><th>Rewrites history?</th></tr>
+  <tr><td>Undo a commit that's already pushed / shared</td><td><code>git revert &lt;sha&gt;</code> (a new commit that undoes it)</td><td>no ✓</td></tr>
+  <tr><td>Fix the last local commit</td><td><code>git commit --amend</code></td><td>yes (local only)</td></tr>
+  <tr><td>Throw away local commits</td><td><code>git reset --hard &lt;sha&gt;</code></td><td>yes</td></tr>
+  <tr><td>Lost a commit (bad reset or rebase, deleted branch)</td><td><code>git reflog</code> → <code>git branch rescue &lt;sha&gt;</code></td><td>no</td></tr>
+  <tr><td>Undo local file changes</td><td><code>git restore &lt;file&gt;</code></td><td>—</td></tr>
+  <tr><td>Update your own pushed PR branch after a rebase</td><td><code>git push --force-with-lease</code></td><td>yes, but only if no one else pushed</td></tr>
+  </table></div>
+  <p><b>Never force-push a shared branch</b> such as <code>main</code>: others' clones diverge and their work can be silently lost. Protect <code>main</code> with branch-protection rules.</p>
+  <h2>Prereqs</h2>
+  <ul>
+    <li><a href="../volume-1-cs-foundations/ch19-git-branching-merge-rebase-and-cherry-pick.notes.html">Vol 1 Ch 19 — Git: Branching, Merge, Rebase &amp; Cherry-Pick</a></li>
+    <li><a href="../volume-1-cs-foundations/ch20-git-tags-stash-hooks-and-internals.notes.html">Vol 1 Ch 20 — Git: Tags, Stash, Hooks &amp; Internals</a></li>
+  </ul>
+  <div class="pagebreak">~ page 2 ~</div>
+  <h2>Diagram</h2>
+  <h3>Trunk-based flow: short-lived branches → PR → review → squash-merge → tag</h3>
+  <figure>
+  <svg viewBox="0 0 660 330" role="img" aria-label="Git graph: main with tags v1.3.0 and v1.4.0; feat/coupons and fix/rounding branches squash-merged into main">
+  <path class="sk" d="M60 100 L585 100"/>
+  <path class="sk blue" d="M60 100 C60 210 135 200 135 280" style="color:var(--ink)"/>
+  <path class="sk blue" d="M135 280 L435 280" style="color:var(--ink)"/>
+  <path class="sk green" d="M255 100 C255 150 285 140 285 190" style="color:var(--green)"/>
+  <path class="sk green" d="M285 190 C285 140 360 150 360 100" style="color:var(--green)"/>
+  <path class="sk blue" d="M435 280 C435 190 510 200 510 100" style="color:var(--ink)"/>
+  <circle class="sk" cx="60" cy="100" r="9" style="fill:#fdfbf4"/>
+  <circle class="sk" cx="360" cy="100" r="11" style="fill:#fdfbf4"/><circle class="sk" cx="360" cy="100" r="4" style="fill:var(--ink2)"/>
+  <circle class="sk" cx="510" cy="100" r="11" style="fill:#fdfbf4"/><circle class="sk" cx="510" cy="100" r="4" style="fill:var(--ink2)"/>
+  <circle class="sk" cx="585" cy="100" r="9" style="fill:#fdfbf4"/>
+  <circle class="sk blue" cx="135" cy="280" r="9" style="fill:#fdfbf4"/>
+  <circle class="sk blue" cx="210" cy="280" r="9" style="fill:#fdfbf4"/>
+  <circle class="sk blue" cx="435" cy="280" r="9" style="fill:#fdfbf4"/>
+  <circle class="sk green" cx="285" cy="190" r="9" style="fill:#fdfbf4"/>
+  <rect class="sk red" x="29" y="22" width="62" height="24" rx="6" style="fill:#fff59d"/>
+  <text class="lbl r" x="60" y="40" text-anchor="middle">v1.3.0</text>
+  <path class="sk red" d="M60 46 L60 90"/>
+  <rect class="sk red" x="554" y="22" width="62" height="24" rx="6" style="fill:#fff59d"/>
+  <text class="lbl r" x="585" y="40" text-anchor="middle">v1.4.0</text>
+  <path class="sk red" d="M585 46 L585 90"/>
+  <text class="lbl b" x="360" y="60" text-anchor="middle">fix: round cents</text>
+  <text class="lbl b" x="360" y="81" text-anchor="middle">(squash)</text>
+  <text class="lbl b" x="510" y="60" text-anchor="middle">feat: coupons</text>
+  <text class="lbl b" x="510" y="81" text-anchor="middle">(squash)</text>
+  <text class="lbl" x="135" y="310" text-anchor="middle">wip form</text>
+  <text class="lbl" x="210" y="310" text-anchor="middle">tests</text>
+  <text class="lbl" x="435" y="310" text-anchor="middle">review fixes</text>
+  <text class="lbl" x="285" y="220" text-anchor="middle">fix</text>
+  <text class="lbl g" x="316" y="195" text-anchor="start">fix/rounding</text>
+  <text class="lbl" x="14" y="285" text-anchor="start">feat/coupons</text>
+  <text class="lbl b" x="610" y="105" text-anchor="start">main</text>
+  </svg>
+  <figcaption>Fig 1: Trunk-based flow: short-lived branches → PR → review → squash-merge → tag</figcaption>
+  </figure>
+  <h3>GitFlow, for comparison</h3>
+  <pre class="code ascii"><code> main     ●───────────────────────●──────────────●─────   (tags: releases only)
+             \                     / \            /
+   hotfix     \                   /   ●──────────●          hotfix/1.4.1
+               \                 /                \
+   release      \          ●───●  release/1.4      \
+                 \        /                         \
+   develop  ●─────●──●───●──────●──────●─────────────●──
+                 /    \        /
+   feature   ●──●      ●──●──●   (long-lived feature branches)</code></pre>
+  <h3>Choosing an undo</h3>
+  <figure>
+  <svg viewBox="0 0 564 520" style="width:564px" role="img" aria-label="Choosing an undo: has the commit been pushed / shared?; git revert SHA (safe: adds an undo commit); keep the changes?; git commit --amend or git reset --soft HEAD~1; git reset --hard SHA; 'I lost a commit!'; git reflog → find the sha → git branch rescue SHA">
+  <path class="sk blue" d="M83 99 Q103 99 103 244" style="color:var(--ink)" marker-end="url(#arr)"/>
+  <text class="lbl r" x="111" y="196" text-anchor="start" style="paint-order:stroke;stroke:#fdfbf4;stroke-width:5px;stroke-linejoin:round">yes</text>
+  <path class="sk blue" d="M339 99 Q291 99 291 230" style="color:var(--ink)" marker-end="url(#arr)"/>
+  <text class="lbl r" x="284" y="188" text-anchor="end" style="paint-order:stroke;stroke:#fdfbf4;stroke-width:5px;stroke-linejoin:round">no</text>
+  <path class="sk blue" d="M212 284 Q206 284 206 394" style="color:var(--ink)" marker-end="url(#arr)"/>
+  <text class="lbl r" x="198" y="359" text-anchor="end" style="paint-order:stroke;stroke:#fdfbf4;stroke-width:5px;stroke-linejoin:round">yes, edit them</text>
+  <path class="sk blue" d="M370 284 Q371 284 371 415" style="color:var(--ink)" marker-end="url(#arr)"/>
+  <text class="lbl r" x="380" y="373" text-anchor="start" style="paint-order:stroke;stroke:#fdfbf4;stroke-width:5px;stroke-linejoin:round">no, discard</text>
+  <path class="sk blue" d="M425 129 C425 181 470 181 470 233" style="color:var(--ink)" marker-end="url(#arr)"/>
+  <path class="sk" d="M211 24 L339 99 L211 174 L83 99 Z" style="fill:#fff3b0"/>
+  <text class="lbl b" x="211" y="83.5" text-anchor="middle">has the commit</text>
+  <text class="lbl b" x="211" y="104.5" text-anchor="middle">been pushed /</text>
+  <text class="lbl b" x="211" y="125.5" text-anchor="middle">shared?</text>
+  <rect class="sk" x="24" y="244" width="158" height="81" rx="10" style="fill:#fdfbf4"/>
+  <text class="lbl b" x="103" y="268.5" text-anchor="middle">git revert SHA</text>
+  <text class="lbl b" x="103" y="289.5" text-anchor="middle">(safe: adds an</text>
+  <text class="lbl b" x="103" y="310.5" text-anchor="middle">undo commit)</text>
+  <path class="sk" d="M291 230 L370 284 L291 338 L212 284 Z" style="fill:#fff3b0"/>
+  <text class="lbl b" x="291" y="279.0" text-anchor="middle">keep the</text>
+  <text class="lbl b" x="291" y="300.0" text-anchor="middle">changes?</text>
+  <rect class="sk" x="132" y="394" width="149" height="102" rx="10" style="fill:#fdfbf4"/>
+  <text class="lbl b" x="206" y="419.0" text-anchor="middle">git commit</text>
+  <text class="lbl b" x="206" y="440.0" text-anchor="middle">--amend</text>
+  <text class="lbl b" x="206" y="461.0" text-anchor="middle">or git reset</text>
+  <text class="lbl b" x="206" y="482.0" text-anchor="middle">--soft HEAD~1</text>
+  <rect class="sk" x="311" y="415" width="121" height="60" rx="10" style="fill:#fdfbf4"/>
+  <text class="lbl b" x="371" y="440.0" text-anchor="middle">git reset</text>
+  <text class="lbl b" x="371" y="461.0" text-anchor="middle">--hard SHA</text>
+  <rect class="sk" x="369" y="69" width="112" height="60" rx="10" style="fill:#fdfbf4"/>
+  <text class="lbl b" x="425" y="94.0" text-anchor="middle">'I lost a</text>
+  <text class="lbl b" x="425" y="115.0" text-anchor="middle">commit!'</text>
+  <rect class="sk" x="400" y="233" width="140" height="102" rx="10" style="fill:#fdfbf4"/>
+  <text class="lbl b" x="470" y="258.0" text-anchor="middle">git reflog →</text>
+  <text class="lbl b" x="470" y="279.0" text-anchor="middle">find the sha</text>
+  <text class="lbl b" x="470" y="300.0" text-anchor="middle">→ git branch</text>
+  <text class="lbl b" x="470" y="321.0" text-anchor="middle">rescue SHA</text>
+  </svg>
+  <figcaption>Fig 2: Choosing an undo</figcaption>
+  </figure>
+  <div class="pagebreak">~ page 3 ~</div>
+  <h2>Example</h2>
+  <span class="lang">bash</span>
+  <pre class="code"><code>git switch main &amp;&amp; git pull --ff-only
+  git switch -c feat/coupons
+  git commit -m "feat(checkout): accept percentage coupons
+  
+  Customers can enter a code at checkout. Discounts are capped at 50%
+  to limit abuse (see ADR 0012).
+  
+  Refs: #482"
+  git push -u origin feat/coupons                  # then open a PR
+  
+  # Undo a bad commit that is already on main
+  git revert 3f9a2c1                               # creates "Revert 'feat: …'"
+  git push
+  
+  # Recover from a bad rebase
+  git reflog
+  # 7d1e0b4 HEAD@{0}: rebase (finish): returning to refs/heads/feat/coupons
+  # 9c2f8aa HEAD@{5}: commit: tests for coupon cap      ← the commit that "disappeared"
+  git branch rescue 9c2f8aa
+  git cherry-pick 9c2f8aa                          # or reset the branch to it
+  
+  # Update your own PR branch after rebasing, safely
+  git fetch origin &amp;&amp; git rebase origin/main
+  git push --force-with-lease</code></pre>
+  <span class="lang">text</span>
+  <pre class="code"><code>Branch protection for main (repository settings):
+    ✓ Require a pull request before merging (1 approval, dismiss stale approvals)
+    ✓ Require status checks to pass (ci / lint, ci / test)
+    ✓ Require linear history (squash or rebase merges only)
+    ✓ Do not allow force pushes or deletions</code></pre>
+  <h2>Exercises</h2>
+  <ol style="list-style:none;padding-left:0">
+    <li>1. Recover a commit deleted by a bad rebase using reflog.
+  <div class="box"><b>Solution</b> Make 3 commits on a branch, then run <code>git rebase -i</code> and drop one. <code>git reflog</code> lists every position HEAD has been at; find the dropped commit's SHA (or <code>HEAD@{n}</code> from before the rebase) and <code>git cherry-pick</code> it, or <code>git reset --hard HEAD@{n}</code> to undo the whole rebase. Reflog entries live for about 90 days by default and are local only.</div></li>
+    <li>2. Write conventional commits for a multi-change PR.
+  <div class="box"><b>Solution</b> A PR that adds CSV export, fixes a timezone bug, and renames an internal module: <code>feat(reports): add CSV export for monthly statements</code>, <code>fix(reports): use the account timezone for month boundaries</code>, <code>refactor(reports): rename builder module to statement</code>. If squash-merging, the PR title becomes the commit: <code>feat(reports): add CSV export</code>, with the fix listed in the body — or split the fix into its own PR.</div></li>
+    <li>3. A teammate force-pushed <code>main</code> and your latest commits vanished from GitHub. How do you recover?
+  <div class="box"><b>Solution</b> Your local clone still has them: <code>git reflog</code> or <code>git log origin/main@{1}</code> shows the old tip. Push the recovered history to a branch, compare, and restore <code>main</code> together. Then enable branch protection so it can't happen again.</div></li>
+  </ol>
+  <div class="pagebreak">~ page 4 ~</div>
+  <h2>Mini project</h2>
+  <p><b>Script a release: bump version → changelog → tag → signed push.</b></p>
+  <figure>
+  <svg viewBox="0 0 439 861" style="width:439px" role="img" aria-label="Script a release: bump version → changelog → tag → signed push.: ./release.sh; checks: on main, clean, up to date, CI green; compute the next version from conventional commits since the last tag (feat → minor, fix → patch, ! → major); prepend CHANGELOG.md grouped: Features / Fixes / Breaking; commit 'chore(release): v1.4.0'; git tag -s v1.4.0; git push --follow-tags; gh release create v1.4.0 --notes-file">
+  <path class="sk blue" d="M219 68 C219 96 219 96 219 124" style="color:var(--ink)" marker-end="url(#arr)"/>
+  <path class="sk blue" d="M219 184 C219 212 219 212 219 240" style="color:var(--ink)" marker-end="url(#arr)"/>
+  <path class="sk blue" d="M219 321 C219 349 219 349 219 377" style="color:var(--ink)" marker-end="url(#arr)"/>
+  <path class="sk blue" d="M219 437 C219 465 219 465 219 493" style="color:var(--ink)" marker-end="url(#arr)"/>
+  <path class="sk blue" d="M219 537 C219 565 219 565 219 593" style="color:var(--ink)" marker-end="url(#arr)"/>
+  <path class="sk blue" d="M219 637 C219 665 219 665 219 693" style="color:var(--ink)" marker-end="url(#arr)"/>
+  <path class="sk blue" d="M219 737 C219 765 219 765 219 793" style="color:var(--ink)" marker-end="url(#arr)"/>
+  <rect class="sk" x="150" y="24" width="140" height="44" rx="10" style="fill:#fdfbf4"/>
+  <text class="lbl b" x="219" y="51.5" text-anchor="middle">./release.sh</text>
+  <rect class="sk" x="98" y="124" width="242" height="60" rx="10" style="fill:#fdfbf4"/>
+  <text class="lbl b" x="219" y="149.0" text-anchor="middle">checks: on main, clean,</text>
+  <text class="lbl b" x="219" y="170.0" text-anchor="middle">up to date, CI green</text>
+  <rect class="sk" x="24" y="240" width="391" height="81" rx="10" style="fill:#fdfbf4"/>
+  <text class="lbl b" x="219" y="265.0" text-anchor="middle">compute the next version from</text>
+  <text class="lbl b" x="219" y="286.0" text-anchor="middle">conventional commits since the last tag</text>
+  <text class="lbl b" x="219" y="307.0" text-anchor="middle">(feat → minor, fix → patch, ! → major)</text>
+  <rect class="sk" x="38" y="377" width="363" height="60" rx="10" style="fill:#fdfbf4"/>
+  <text class="lbl b" x="219" y="402.0" text-anchor="middle">prepend CHANGELOG.md</text>
+  <text class="lbl b" x="219" y="423.0" text-anchor="middle">grouped: Features / Fixes / Breaking</text>
+  <rect class="sk" x="61" y="493" width="316" height="44" rx="10" style="fill:#fdfbf4"/>
+  <text class="lbl b" x="219" y="520.5" text-anchor="middle">commit 'chore(release): v1.4.0'</text>
+  <rect class="sk" x="126" y="593" width="186" height="44" rx="10" style="fill:#fdfbf4"/>
+  <text class="lbl b" x="219" y="620.5" text-anchor="middle">git tag -s v1.4.0</text>
+  <rect class="sk" x="103" y="693" width="233" height="44" rx="10" style="fill:#fdfbf4"/>
+  <text class="lbl b" x="219" y="720.5" text-anchor="middle">git push --follow-tags</text>
+  <rect class="sk" x="33" y="793" width="372" height="44" rx="10" style="fill:#fdfbf4"/>
+  <text class="lbl b" x="219" y="820.5" text-anchor="middle">gh release create v1.4.0 --notes-file</text>
+  </svg>
+  <figcaption>Fig 3: Script a release: bump version → changelog → tag → signed push.</figcaption>
+  </figure>
+  <h3>Steps</h3>
+  <ol style="list-style:none;padding-left:0">
+    <li>1. Parse <code>git log $(git describe --tags --abbrev=0)..HEAD --pretty=%s</code> with a regex for conventional types.
+  </li>
+    <li>2. Pick the bump: any <code>!</code> or <code>BREAKING CHANGE</code> → major; any <code>feat</code> → minor; else patch.
+  </li>
+    <li>3. Write the new version into <code>pyproject.toml</code> / <code>Cargo.toml</code> / <code>package.json</code>.
+  </li>
+    <li>4. Generate a grouped changelog section with links to commits and PRs.
+  </li>
+    <li>5. Commit, create a signed annotated tag, push with <code>--follow-tags</code>, and create a GitHub release.
+  </li>
+    <li>6. Dry-run mode (<code>--dry-run</code>) prints everything without changing anything.
+  </li>
+  </ol>
+  <p><b>Done when:</b> running it after a mix of <code>feat</code> and <code>fix</code> commits produces the correct next version, a readable changelog, and a verified signed tag. (Compare with <code>release-please</code> or <code>semantic-release</code>.)</p>
+  <h2>Open source</h2>
+  <ul>
+    <li><a href="https://github.com/git/git"><code>git/git</code></a> — <code>Documentation/git-reflog.txt</code>, <code>git-revert.txt</code>, and <code>git-push.txt</code> (<code>--force-with-lease</code>).</li>
+    <li><a href="https://github.com/conventional-commits/conventionalcommits.org"><code>conventional-commits/conventionalcommits.org</code></a> — the specification; tools like <code>commitlint</code>, <code>release-please</code>, and <code>semantic-release</code> build on it.</li>
+  </ul>
+  <div class="pagebreak">~ page 5 ~</div>
+  <h2>Interview</h2>
+  <ol style="list-style:none;padding-left:0">
+    <li>1. <b>"Trunk-based vs GitFlow?"</b>
+  <div class="box"><b>Answer</b> Trunk-based keeps everyone integrating into <code>main</code> at least daily via short-lived branches, hides incomplete work behind feature flags, and relies on strong CI, so conflicts stay small and any green commit can ship. GitFlow uses long-lived <code>develop</code>, release, and hotfix branches — structured for scheduled releases and multiple supported versions, but it delays integration and makes merges painful. For continuously deployed services, trunk-based is the default.</div></li>
+    <li>2. <b>"How do you undo a pushed commit safely?"</b>
+  <div class="box"><b>Answer</b> <code>git revert SHA</code>: it creates a new commit that applies the inverse change, so history stays intact and everyone's clones stay valid. For a merge commit, <code>git revert -m 1 &lt;merge-sha&gt;</code>. Don't reset and force-push shared branches. If the change is behind a feature flag, turning the flag off is even faster.</div></li>
+  </ol>
+  <h2>Checklist</h2>
+  <ul>
+    <li class="todo">keep branches short-lived</li>
+    <li class="todo">write meaningful commit messages</li>
+    <li class="todo">never force-push shared branches</li>
+  </ul>
+  <p class="black"><a href="index.md">Contents</a> · Next → <a href="ch02-monorepos.notes.html">Chapter 2 — Monorepos</a></p>
+  <nav class="nav"><span></span><a href="index.notes.html">☰ Contents</a><a href="ch02-monorepos.notes.html">Ch 2 — Monorepos →</a></nav>
+</main>
+</body>
+</html>

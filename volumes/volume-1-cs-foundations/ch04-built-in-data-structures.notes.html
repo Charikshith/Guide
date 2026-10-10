@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ch 4 — Built-in Data Structures — Notes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;700&family=Kalam:wght@400;700&family=Patrick+Hand&display=swap" rel="stylesheet">
+<style>
+/* ===== Page tokens ===== */
+:root{
+  --line:32px;                 /* ruled-line spacing; every vertical size is a multiple */
+  --paper:#fdfbf4; --rule:#c9dcef; --margin:#e8a0a0;
+  --ink:#1f3a93;               /* blue pen (body) */
+  --ink2:#222;                 /* black pen (headings) */
+  --red:#c0392b; --green:#1e8449;
+  --hl-yellow:rgba(255,235,59,.55); --hl-pink:rgba(255,128,171,.45);
+  --hl-green:rgba(118,255,3,.35); --hl-blue:rgba(64,196,255,.35);
+  --sticky:#fff59d; --desk:#e9e4d8;
+  --hand:'Kalam','Patrick Hand','Comic Sans MS','Segoe Print','Bradley Hand',cursive;
+  --title:'Caveat','Kalam','Segoe Print','Bradley Hand',cursive;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){ --desk:#2b2b2b; }
+}
+:root[data-theme="dark"]{ --desk:#2b2b2b; }
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--desk);font-family:var(--hand);color:var(--ink);}
+
+/* ===== Notebook sheet ===== */
+.page{
+  position:relative; max-width:860px; margin:24px auto; padding:var(--line) 28px calc(var(--line)*2) 84px;
+  background:
+    linear-gradient(90deg,transparent 64px,var(--margin) 64px,var(--margin) 66px,transparent 66px),
+    repeating-linear-gradient(var(--paper) 0,var(--paper) calc(var(--line) - 1px),var(--rule) calc(var(--line) - 1px),var(--rule) var(--line));
+  background-color:var(--paper);
+  box-shadow:0 2px 6px rgba(0,0,0,.15),0 12px 28px rgba(0,0,0,.12);
+  font-size:20px; line-height:var(--line);
+}
+.page::before{ /* punched holes */
+  content:""; position:absolute; left:22px; top:0; bottom:0; width:18px;
+  background:radial-gradient(circle,var(--desk) 7px,transparent 8px) 0 40px/18px 220px repeat-y;
+}
+@media (max-width:600px){
+  .page{margin:0;padding-left:52px;padding-right:16px;font-size:18px;
+    background:
+      linear-gradient(90deg,transparent 40px,var(--margin) 40px,var(--margin) 42px,transparent 42px),
+      repeating-linear-gradient(var(--paper) 0,var(--paper) calc(var(--line) - 1px),var(--rule) calc(var(--line) - 1px),var(--rule) var(--line));
+    background-color:var(--paper);}
+  .page::before{left:10px;width:16px}
+}
+
+/* ===== Text (all margins are multiples of --line so text sits on the rules) ===== */
+.date{position:absolute;top:0;right:24px;font-family:var(--title);font-size:22px;color:var(--ink2);line-height:var(--line)}
+h1{font-family:var(--title);font-weight:700;color:var(--ink2);font-size:46px;line-height:calc(var(--line)*2);margin:0;transform:rotate(-1deg)}
+h1 .u{background:linear-gradient(transparent 62%,var(--hl-yellow) 62%,var(--hl-yellow) 92%,transparent 92%)}
+h2{font-family:var(--title);font-weight:700;color:var(--red);font-size:32px;line-height:calc(var(--line)*1.5);margin:calc(var(--line)*.5) 0 0}
+h2::before{content:"➤ ";font-size:22px}
+p,li{margin:0}
+ul,ol{margin:0;padding-left:28px}
+ul{list-style:none}
+ul>li::before{content:"–";position:absolute;margin-left:-20px}
+ul>li.star::before{content:"★";color:var(--red)}
+ul>li.arrow::before{content:"→"}
+ul>li.check::before{content:"✓";color:var(--green)}
+.gap{height:var(--line)}
+
+/* ===== Pen effects ===== */
+.hl{background:var(--hl-yellow);padding:0 3px;border-radius:3px 6px 4px 7px}
+.hl.pink{background:var(--hl-pink)} .hl.green{background:var(--hl-green)} .hl.blue{background:var(--hl-blue)}
+.red{color:var(--red)} .green{color:var(--green)} .black{color:var(--ink2)}
+.ul{text-decoration:underline wavy var(--red);text-underline-offset:5px}
+.circ{border:2px solid var(--red);border-radius:50% 45% 55% 48%;padding:0 6px}
+.strike{text-decoration:line-through 2px var(--red)}
+.term{font-weight:700;color:var(--ink2)}
+.box{display:flow-root;border:2.5px solid var(--ink2);border-radius:4px 10px 6px 12px;padding:calc(var(--line)*.5 - 2.5px) 14px;margin:calc(var(--line)*.5) 0;transform:rotate(-.4deg);background:rgba(255,255,255,.35)}
+.box.red{border-color:var(--red)}
+.formula{font-family:var(--title);font-size:28px;text-align:center;color:var(--ink2)}
+
+/* sticky note */
+.sticky{float:right;width:min(250px,42%);margin:0 0 var(--line) 20px;padding:var(--line) 16px;background:var(--sticky);
+  color:#333;transform:rotate(2.2deg);box-shadow:2px 4px 8px rgba(0,0,0,.18);font-size:18px}
+.sticky b{font-family:var(--title);font-size:24px;color:var(--red)}
+@media (max-width:600px){.sticky{float:none;width:auto;margin:var(--line) 0}}
+
+/* margin annotation (lives in the red margin) */
+.side{position:absolute;left:4px;width:58px;text-align:center;font-family:var(--title);font-size:17px;line-height:18px;color:var(--red);transform:rotate(-8deg)}
+@media (max-width:600px){.side{display:none}}
+
+/* two-column notes */
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:0 28px}
+@media (max-width:600px){.cols{grid-template-columns:1fr}}
+
+/* diagrams */
+figure{margin:var(--line) 0;text-align:center}
+figure svg{width:100%;max-width:640px;height:auto;overflow:visible}
+figcaption{font-family:var(--title);font-size:20px;color:var(--ink2)}
+/* phones: keep labels readable — diagram scrolls inside its own box instead of shrinking */
+@media (max-width:600px){figure{overflow-x:auto}figure svg{min-width:520px}}
+.sk{fill:none;stroke:var(--ink2);stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round;filter:url(#rough)}
+.sk.blue{stroke:var(--ink)} .sk.red{stroke:var(--red)} .sk.green{stroke:var(--green)}
+.lbl{font-family:var(--hand);font-size:17px;fill:var(--ink)}
+.lbl.b{font-weight:700;fill:var(--ink2)} .lbl.r{fill:var(--red)} .lbl.g{fill:var(--green)}
+
+/* table */
+.wrap{overflow-x:auto}
+table{border-collapse:collapse;margin:calc(var(--line)*.5) 0;min-width:100%}
+th,td{border:2px solid var(--ink2);padding:0 10px;text-align:left;vertical-align:top}
+th{font-family:var(--title);font-size:24px;color:var(--ink2)}
+
+@media print{body{background:#fff}.page{box-shadow:none;margin:0}.page::before{display:none}}
+
+/* ===== Added for long chapter notes ===== */
+pre.code{font-family:Consolas,'Courier New',monospace;font-size:14px;line-height:var(--line);color:var(--ink);background:rgba(255,255,255,.45);
+  border-left:4px solid var(--red);margin:calc(var(--line)*.5) 0;padding:0 12px;overflow-x:auto;white-space:pre}
+pre.code.ascii{border-left-color:var(--green)}
+code{font-family:Consolas,'Courier New',monospace;font-size:.82em;background:rgba(0,0,0,.06);padding:0 3px;border-radius:3px}
+pre.code code{background:none;padding:0;font-size:inherit}
+.lang{font-family:var(--title);font-size:18px;color:var(--red)}
+h3{font-family:var(--title);font-weight:700;color:var(--ink2);font-size:26px;line-height:var(--line);margin:calc(var(--line)*.5) 0 0}
+h3::before{content:"✎ ";font-size:18px;color:var(--red)}
+.nav{display:flex;justify-content:space-between;gap:12px;font-family:var(--title);font-size:22px;line-height:var(--line)}
+.nav a{color:var(--red);text-decoration:none}
+.nav a:hover{text-decoration:underline wavy}
+.pagebreak{border-top:3px dashed var(--margin);margin:var(--line) 0;text-align:center;font-family:var(--title);color:var(--red);line-height:var(--line)}
+li.todo::before{content:"☐";color:var(--ink2)}
+a{color:var(--ink);text-decoration:underline dotted}
+</style>
+</head>
+<body>
+<!-- One shared hand-drawn wobble filter; give every diagram stroke class="sk" -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <!-- userSpaceOnUse region: a % region collapses to nothing on perfectly straight lines (zero-height bbox) -->
+  <filter id="rough" filterUnits="userSpaceOnUse" x="-500" y="-500" width="3000" height="3000">
+    <feTurbulence type="fractalNoise" baseFrequency="0.03" numOctaves="2" seed="3" result="n"/>
+    <feDisplacementMap in="SourceGraphic" in2="n" scale="3"/>
+  </filter>
+  <marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+    <path d="M1 1 L9 5 L1 9" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+  </marker>
+</defs></svg>
+
+<main class="page">
+  <nav class="nav"><a href="ch03-functions-parameters-return-values-scope-and-namespaces.notes.html">← Ch 3 — Functions, Parameters, Return Values, Scope &amp; Namespaces</a><a href="index.notes.html">☰ Contents</a><a href="ch05-modules-packages-imports-and-dependency-management.notes.html">Ch 5 — Modules, Packages, Imports &amp; Dependency Management →</a></nav>
+  <div class="date">2026-10-10</div>
+  <h1><span class="u">Ch 4 — Built-in Data Structures</span></h1>
+  <p class="black">Chapter 4 — Built-in Data Structures</p>
+<p class="black"><b>Volume 1 — Computer Science Foundations</b> · <a href="index.md">Contents</a> · ← <a href="ch03-functions-parameters-return-values-scope-and-namespaces.notes.html">Chapter 3 — Functions, Parameters, Return Values, Scope &amp; Namespaces</a> · Next → <a href="ch05-modules-packages-imports-and-dependency-management.notes.html">Chapter 5 — Modules, Packages, Imports &amp; Dependency Management</a></p>
+<h2>Concept</h2>
+<p>Arrays, lists, tuples, dictionaries/hashmaps, sets, queues, stacks — operations and time complexity for each.</p>
+<div class="box"><b>In one sentence:</b> each data structure is a trade-off between how fast you can find, add, and remove things, and choosing the right one is often the whole optimization.</div>
+<p><b>Mental model — storage in a house.</b></p>
+<ul>
+<li><b>Array/list</b> — a row of numbered lockers. Jump to locker 57 at once; inserting in the middle means shifting everyone.</li>
+<li><b>Tuple</b> — a sealed, labeled box. You can read it, not change it.</li>
+<li><b>Dict/hashmap</b> — a coat check. Hand over a ticket (key), get your coat (value) at once.</li>
+<li><b>Set</b> — a guest list. Only "is this person on it?" matters.</li>
+<li><b>Stack</b> — a pile of plates. Last on, first off (LIFO).</li>
+<li><b>Queue</b> — a line at a shop. First in, first out (FIFO).</li>
+</ul>
+<h3>Big-O cheat sheet (Python, average case)</h3>
+<div class="wrap"><table>
+<tr><th>Structure</th><th>Index <code>x[i]</code></th><th>Search <code>in</code></th><th>Append / push</th><th>Insert at front</th><th>Delete by key</th><th>Ordered?</th></tr>
+<tr><td><code>list</code> (dynamic array)</td><td>O(1)</td><td>O(n)</td><td>O(1)*</td><td>O(n)</td><td>O(n)</td><td>yes</td></tr>
+<tr><td><code>tuple</code></td><td>O(1)</td><td>O(n)</td><td>— immutable</td><td>—</td><td>—</td><td>yes</td></tr>
+<tr><td><code>dict</code></td><td>—</td><td>O(1) key</td><td>O(1)</td><td>—</td><td>O(1)</td><td>insertion order (3.7+)</td></tr>
+<tr><td><code>set</code></td><td>—</td><td>O(1)</td><td>O(1)</td><td>—</td><td>O(1)</td><td>no</td></tr>
+<tr><td><code>collections.deque</code></td><td>O(n) middle</td><td>O(n)</td><td>O(1) both ends</td><td>O(1)</td><td>O(n)</td><td>yes</td></tr>
+<tr><td><code>heapq</code> on a list</td><td>—</td><td>O(n)</td><td>O(log n)</td><td>—</td><td>O(log n) min</td><td>heap order</td></tr>
+</table></div>
+<p>* amortized — see <a href="../volume-0-math/ch07-time-space-complexity-and-amortized-analysis.md">Vol 0 Ch 7</a>.</p>
+<h3>Which one should I use?</h3>
+<div class="wrap"><table>
+<tr><th>Need</th><th>Use</th></tr>
+<tr><td>ordered items, access by position</td><td><code>list</code></td></tr>
+<tr><td>fixed record, dict key, return several values</td><td><code>tuple</code></td></tr>
+<tr><td>look up by key</td><td><code>dict</code></td></tr>
+<tr><td>uniqueness, fast membership</td><td><code>set</code></td></tr>
+<tr><td>undo history, DFS, matching brackets</td><td>stack (<code>list</code>)</td></tr>
+<tr><td>BFS, job line, buffering</td><td>queue (<code>deque</code>)</td></tr>
+<tr><td>"always give me the smallest/most urgent"</td><td>priority queue (<code>heapq</code>)</td></tr>
+<tr><td>count things</td><td><code>collections.Counter</code></td></tr>
+</table></div>
+<h2>Prereqs</h2>
+<ul>
+<li><a href="ch01-variables-data-types-and-operators.notes.html">Chapter 1 — Variables, Data Types &amp; Operators</a></li>
+</ul>
+<div class="pagebreak">~ page 2 ~</div>
+<h2>Diagram</h2>
+<h3>A hashmap with buckets and chaining</h3>
+<pre class="code ascii"><code> key "apple" ──► hash("apple") = 9_817_223 ──► 9_817_223 % 8 = 7
+ key "grape" ──► hash("grape") = 4_441_017 ──► 4_441_017 % 8 = 1
+ key "melon" ──► hash("melon") = 2_003_191 ──► 2_003_191 % 8 = 7   ← collision
+
+  buckets
+  [0] ∅
+  [1] ─► ("grape", 3)
+  [2] ∅
+  [3] ∅
+  [4] ∅
+  [5] ∅
+  [6] ∅
+  [7] ─► ("apple", 5) ─► ("melon", 2)     chain: compare keys one by one</code></pre>
+<p>When the table gets too full (load factor above ~⅔), it doubles and every key is re-placed. Python actually uses <i>open addressing</i> (probe the next slot) rather than chains, but the idea is the same.</p>
+<h3>Stack (LIFO) vs queue (FIFO)</h3>
+<pre class="code ascii"><code> STACK                                 QUEUE
+ push 1, push 2, push 3                enqueue 1, 2, 3
+      ┌───┐ ◄── push / pop                   out ◄──┌───┬───┬───┐◄── in
+      │ 3 │     pop → 3                 dequeue → 1 │ 1 │ 2 │ 3 │
+      ├───┤                                         └───┴───┴───┘
+      │ 2 │
+      ├───┤
+      │ 1 │
+      └───┘</code></pre>
+<h3>Why inserting at the front of a list is O(n)</h3>
+<pre class="code ascii"><code> insert(0, 'X') into [A, B, C, D]
+   step 1: shift  [_, A, B, C, D]   ← every element moves right
+   step 2: place  [X, A, B, C, D]</code></pre>
+<h2>Example</h2>
+<span class="lang">python</span>
+<pre class="code"><code>from collections import deque, defaultdict, Counter
+import heapq
+
+d = {"a": 1}
+d["a"] += 1                                  # hashmap update: O(1)
+d.setdefault("b", 0)
+
+stack = []
+stack.append(1); stack.append(2)
+print(stack.pop())                           # 2 — LIFO
+
+q = deque()
+q.append("job1"); q.append("job2")
+print(q.popleft())                           # job1 — FIFO, O(1)
+# list.pop(0) would also work, but it is O(n)
+
+groups = defaultdict(list)
+for word in ["apple", "avocado", "banana"]:
+    groups[word[0]].append(word)
+print(dict(groups))                          # {'a': ['apple', 'avocado'], 'b': ['banana']}
+
+print(Counter("mississippi").most_common(2)) # [('i', 4), ('s', 4)]
+
+tasks = []
+heapq.heappush(tasks, (2, "write docs"))
+heapq.heappush(tasks, (1, "fix prod bug"))
+print(heapq.heappop(tasks))                  # (1, 'fix prod bug') — smallest first
+
+point = (3, 4)                               # tuple: immutable, hashable
+seen = {point}                               # can be a set member or dict key</code></pre>
+<div class="pagebreak">~ page 3 ~</div>
+<h2>Exercises</h2>
+<ol style="list-style:none;padding-left:0">
+<li>1. Implement a stack using only a list.
+<div class="box"><b>Solution</b>
+<span class="lang">python</span>
+<pre class="code"><code>class Stack:
+    def __init__(self): self._items = []
+    def push(self, x): self._items.append(x)          # O(1) amortized
+    def pop(self):
+        if not self._items: raise IndexError("pop from empty stack")
+        return self._items.pop()                      # O(1)
+    def peek(self): return self._items[-1]
+    def __len__(self): return len(self._items)</code></pre>
+<p>Push and pop at the <i>end</i> of the list. The front would make them O(n).</p>
+</div></li>
+<li>2. Explain when to use a tuple over a list.
+<div class="box"><b>Solution</b> Use a tuple for a fixed-size record whose fields mean different things (<code>(lat, lon)</code>), when you need a hashable value (dict key, set member), or to signal "this should not change". Use a list for a variable-length collection of similar items.</div></li>
+<li>3. Check whether a string of brackets like <code>"([]{})"</code> is balanced.
+<div class="box"><b>Solution</b> Push each opener on a stack. On a closer, pop and check it matches. The string is balanced if every pop matches and the stack is empty at the end. O(n).</div></li>
+</ol>
+<h2>Mini project</h2>
+<p><b>A task scheduler using a priority queue and a simple FIFO queue.</b></p>
+<figure>
+<svg viewBox="0 0 571 485" role="img" aria-label="Task scheduler: urgent tasks go to a priority queue, others to a FIFO queue; the worker takes from both, every 3rd pick from FIFO"><g><rect class="sk" x="276" y="24" width="102" height="39" rx="10"/>
+<text class="lbl b" x="327" y="50" text-anchor="middle" style="font-size:16px">New task</text>
+<path class="sk" d="M327 107 L387 140 L327 172 L267 140 Z"/>
+<text class="lbl b" x="327" y="146" text-anchor="middle" style="font-size:16px">urgent?</text>
+<rect class="sk" x="24" y="216" width="203" height="81" rx="10"/>
+<text class="lbl b" x="125" y="242" text-anchor="middle" style="font-size:16px">Priority queue</text>
+<text class="lbl b" x="125" y="262" text-anchor="middle" style="font-size:16px">(heapq) ordered</text>
+<text class="lbl b" x="125" y="284" text-anchor="middle" style="font-size:16px">by (priority, time)</text>
+<rect class="sk" x="427" y="226" width="120" height="60" rx="10"/>
+<text class="lbl b" x="487" y="252" text-anchor="middle" style="font-size:16px">FIFO queue</text>
+<text class="lbl b" x="487" y="273" text-anchor="middle" style="font-size:16px">(deque)</text>
+<rect class="sk" x="285" y="341" width="83" height="39" rx="10"/>
+<text class="lbl b" x="327" y="366" text-anchor="middle" style="font-size:16px">Worker</text>
+<path class="sk blue" d="M327 66 L327 104" style="color:var(--ink)" marker-end="url(#arr)"/>
+<path class="sk blue" d="M295 158 L198 214" style="color:var(--ink)" marker-end="url(#arr)"/>
+<text class="lbl r" x="246" y="181" text-anchor="middle" style="font-size:15px;paint-order:stroke;stroke:var(--paper);stroke-width:5px;stroke-linejoin:round">yes</text>
+<path class="sk blue" d="M355 160 L443 225" style="color:var(--ink)" marker-end="url(#arr)"/>
+<text class="lbl r" x="399" y="187" text-anchor="middle" style="font-size:15px;paint-order:stroke;stroke:var(--paper);stroke-width:5px;stroke-linejoin:round">no</text>
+<path class="sk blue" d="M206 298 L286 340" style="color:var(--ink)" marker-end="url(#arr)"/>
+<path class="sk blue" d="M438 288 L359 339" style="color:var(--ink)" marker-end="url(#arr)"/>
+<path class="sk blue" d="M309 380 C 287 422, 367 422, 345 382" style="color:var(--ink)" marker-end="url(#arr)"/>
+<text class="lbl r" x="327" y="446" text-anchor="middle" style="font-size:15px;paint-order:stroke;stroke:var(--paper);stroke-width:5px;stroke-linejoin:round">every 3rd pick comes from FIFO</text>
+<text class="lbl r" x="327" y="467" text-anchor="middle" style="font-size:15px;paint-order:stroke;stroke:var(--paper);stroke-width:5px;stroke-linejoin:round">so normal tasks never starve</text></g></svg>
+<figcaption>Fig 1: two-queue scheduler; every 3rd pick comes from the FIFO queue so normal tasks never starve</figcaption>
+</figure>
+<h3>Steps</h3>
+<ol style="list-style:none;padding-left:0">
+<li>1. <code>add(task, priority=None)</code>: urgent tasks go to a heap as <code>(priority, counter, task)</code>; the counter breaks ties in arrival order.</li>
+<li>2. Normal tasks go to a <code>deque</code>.</li>
+<li>3. <code>next()</code> usually takes from the heap, but every 3rd call takes from the FIFO queue to prevent starvation.</li>
+<li>4. Add <code>peek</code>, <code>len</code>, and a simulation of 1,000 random tasks showing the wait-time distribution per queue.</li>
+</ol>
+<p><b>Done when:</b> urgent tasks always run first among urgent tasks, and no normal task waits forever.</p>
+<div class="pagebreak">~ page 4 ~</div>
+<h2>Open source</h2>
+<ul>
+<li><a href="https://github.com/python/cpython"><code>python/cpython</code></a> <code>collections</code> (<code>deque</code>, <code>defaultdict</code>) — <code>Modules/_collectionsmodule.c</code> shows <code>deque</code> as a doubly linked list of 64-item blocks, which is why both ends are O(1). <code>Objects/dictobject.c</code> has a long comment explaining Python's compact dict design.</li>
+</ul>
+<h2>Interview</h2>
+<ol style="list-style:none;padding-left:0">
+<li>1. <h3>"Array vs linked list — when is each better?"</h3>
+<div class="box"><b>Answer</b> Arrays give O(1) indexing and are cache-friendly because elements are contiguous. Inserts in the middle are O(n). Linked lists give O(1) insert/delete at a known node but O(n) indexing and poor cache behavior. In practice, arrays win almost always; linked lists fit when you splice often and already hold node pointers (LRU caches, allocators).</div></li>
+<li>2. <h3>"How does a hashmap achieve O(1) lookup?"</h3>
+<div class="box"><b>Answer</b> It hashes the key to an integer and uses it (mod table size) as an array index, so it jumps straight to one slot. Collisions are handled by chaining or probing. Keeping the load factor bounded by resizing keeps the expected chain length constant. The worst case is O(n) if many keys collide.</div></li>
+</ol>
+<div class="pagebreak">~ page 5 ~</div>
+<h2>Checklist</h2>
+<ul>
+<li class="todo">know each structure's big-O</li>
+<li class="todo">pick the right structure for a task</li>
+<li class="todo">implement stack/queue by hand</li>
+</ul>
+<p class="black"><a href="index.md">Contents</a> · ← <a href="ch03-functions-parameters-return-values-scope-and-namespaces.notes.html">Chapter 3 — Functions, Parameters, Return Values, Scope &amp; Namespaces</a> · Next → <a href="ch05-modules-packages-imports-and-dependency-management.notes.html">Chapter 5 — Modules, Packages, Imports &amp; Dependency Management</a></p>
+  <nav class="nav"><a href="ch03-functions-parameters-return-values-scope-and-namespaces.notes.html">← Ch 3 — Functions, Parameters, Return Values, Scope &amp; Namespaces</a><a href="index.notes.html">☰ Contents</a><a href="ch05-modules-packages-imports-and-dependency-management.notes.html">Ch 5 — Modules, Packages, Imports &amp; Dependency Management →</a></nav>
+</main>
+</body>
+</html>

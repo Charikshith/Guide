@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ch 44 — Delivery: Load Balancing, Reverse Proxies &amp; CDN — Notes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;700&family=Kalam:wght@400;700&family=Patrick+Hand&display=swap" rel="stylesheet">
+<style>
+/* ===== Page tokens ===== */
+:root{
+  --line:32px;                 /* ruled-line spacing; every vertical size is a multiple */
+  --paper:#fdfbf4; --rule:#c9dcef; --margin:#e8a0a0;
+  --ink:#1f3a93;               /* blue pen (body) */
+  --ink2:#222;                 /* black pen (headings) */
+  --red:#c0392b; --green:#1e8449;
+  --hl-yellow:rgba(255,235,59,.55); --hl-pink:rgba(255,128,171,.45);
+  --hl-green:rgba(118,255,3,.35); --hl-blue:rgba(64,196,255,.35);
+  --sticky:#fff59d; --desk:#e9e4d8;
+  --hand:'Kalam','Patrick Hand','Comic Sans MS','Segoe Print','Bradley Hand',cursive;
+  --title:'Caveat','Kalam','Segoe Print','Bradley Hand',cursive;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){ --desk:#2b2b2b; }
+}
+:root[data-theme="dark"]{ --desk:#2b2b2b; }
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--desk);font-family:var(--hand);color:var(--ink);}
+
+/* ===== Notebook sheet ===== */
+.page{
+  position:relative; max-width:860px; margin:24px auto; padding:var(--line) 28px calc(var(--line)*2) 84px;
+  background:
+    linear-gradient(90deg,transparent 64px,var(--margin) 64px,var(--margin) 66px,transparent 66px),
+    repeating-linear-gradient(var(--paper) 0,var(--paper) calc(var(--line) - 1px),var(--rule) calc(var(--line) - 1px),var(--rule) var(--line));
+  background-color:var(--paper);
+  box-shadow:0 2px 6px rgba(0,0,0,.15),0 12px 28px rgba(0,0,0,.12);
+  font-size:20px; line-height:var(--line);
+}
+.page::before{ /* punched holes */
+  content:""; position:absolute; left:22px; top:0; bottom:0; width:18px;
+  background:radial-gradient(circle,var(--desk) 7px,transparent 8px) 0 40px/18px 220px repeat-y;
+}
+@media (max-width:600px){
+  .page{margin:0;padding-left:52px;padding-right:16px;font-size:18px;
+    background:
+      linear-gradient(90deg,transparent 40px,var(--margin) 40px,var(--margin) 42px,transparent 42px),
+      repeating-linear-gradient(var(--paper) 0,var(--paper) calc(var(--line) - 1px),var(--rule) calc(var(--line) - 1px),var(--rule) var(--line));
+    background-color:var(--paper);}
+  .page::before{left:10px;width:16px}
+}
+
+/* ===== Text (all margins are multiples of --line so text sits on the rules) ===== */
+.date{position:absolute;top:0;right:24px;font-family:var(--title);font-size:22px;color:var(--ink2);line-height:var(--line)}
+h1{font-family:var(--title);font-weight:700;color:var(--ink2);font-size:46px;line-height:calc(var(--line)*2);margin:0;transform:rotate(-1deg)}
+h1 .u{background:linear-gradient(transparent 62%,var(--hl-yellow) 62%,var(--hl-yellow) 92%,transparent 92%)}
+h2{font-family:var(--title);font-weight:700;color:var(--red);font-size:32px;line-height:calc(var(--line)*1.5);margin:calc(var(--line)*.5) 0 0}
+h2::before{content:"➤ ";font-size:22px}
+p,li{margin:0}
+ul,ol{margin:0;padding-left:28px}
+ul{list-style:none}
+ul>li::before{content:"–";position:absolute;margin-left:-20px}
+ul>li.star::before{content:"★";color:var(--red)}
+ul>li.arrow::before{content:"→"}
+ul>li.check::before{content:"✓";color:var(--green)}
+.gap{height:var(--line)}
+
+/* ===== Pen effects ===== */
+.hl{background:var(--hl-yellow);padding:0 3px;border-radius:3px 6px 4px 7px}
+.hl.pink{background:var(--hl-pink)} .hl.green{background:var(--hl-green)} .hl.blue{background:var(--hl-blue)}
+.red{color:var(--red)} .green{color:var(--green)} .black{color:var(--ink2)}
+.ul{text-decoration:underline wavy var(--red);text-underline-offset:5px}
+.circ{border:2px solid var(--red);border-radius:50% 45% 55% 48%;padding:0 6px}
+.strike{text-decoration:line-through 2px var(--red)}
+.term{font-weight:700;color:var(--ink2)}
+.box{display:flow-root;border:2.5px solid var(--ink2);border-radius:4px 10px 6px 12px;padding:calc(var(--line)*.5 - 2.5px) 14px;margin:calc(var(--line)*.5) 0;transform:rotate(-.4deg);background:rgba(255,255,255,.35)}
+.box.red{border-color:var(--red)}
+.formula{font-family:var(--title);font-size:28px;text-align:center;color:var(--ink2)}
+
+/* sticky note */
+.sticky{float:right;width:min(250px,42%);margin:0 0 var(--line) 20px;padding:var(--line) 16px;background:var(--sticky);
+  color:#333;transform:rotate(2.2deg);box-shadow:2px 4px 8px rgba(0,0,0,.18);font-size:18px}
+.sticky b{font-family:var(--title);font-size:24px;color:var(--red)}
+@media (max-width:600px){.sticky{float:none;width:auto;margin:var(--line) 0}}
+
+/* margin annotation (lives in the red margin) */
+.side{position:absolute;left:4px;width:58px;text-align:center;font-family:var(--title);font-size:17px;line-height:18px;color:var(--red);transform:rotate(-8deg)}
+@media (max-width:600px){.side{display:none}}
+
+/* two-column notes */
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:0 28px}
+@media (max-width:600px){.cols{grid-template-columns:1fr}}
+
+/* diagrams */
+figure{margin:var(--line) 0;text-align:center}
+figure svg{width:100%;max-width:640px;height:auto;overflow:visible}
+figcaption{font-family:var(--title);font-size:20px;color:var(--ink2)}
+/* phones: keep labels readable — diagram scrolls inside its own box instead of shrinking */
+@media (max-width:600px){figure{overflow-x:auto}figure svg{min-width:520px}}
+.sk{fill:none;stroke:var(--ink2);stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round;filter:url(#rough)}
+.sk.blue{stroke:var(--ink)} .sk.red{stroke:var(--red)} .sk.green{stroke:var(--green)}
+.lbl{font-family:var(--hand);font-size:17px;fill:var(--ink)}
+.lbl.b{font-weight:700;fill:var(--ink2)} .lbl.r{fill:var(--red)} .lbl.g{fill:var(--green)}
+
+/* table */
+.wrap{overflow-x:auto}
+table{border-collapse:collapse;margin:calc(var(--line)*.5) 0;min-width:100%}
+th,td{border:2px solid var(--ink2);padding:0 10px;text-align:left;vertical-align:top}
+th{font-family:var(--title);font-size:24px;color:var(--ink2)}
+
+@media print{body{background:#fff}.page{box-shadow:none;margin:0}.page::before{display:none}}
+
+/* ===== Added for long chapter notes ===== */
+pre.code{font-family:Consolas,'Courier New',monospace;font-size:14px;line-height:var(--line);color:var(--ink);background:rgba(255,255,255,.45);
+  border-left:4px solid var(--red);margin:calc(var(--line)*.5) 0;padding:0 12px;overflow-x:auto;white-space:pre}
+pre.code.ascii{border-left-color:var(--green)}
+code{font-family:Consolas,'Courier New',monospace;font-size:.82em;background:rgba(0,0,0,.06);padding:0 3px;border-radius:3px}
+pre.code code{background:none;padding:0;font-size:inherit}
+.lang{font-family:var(--title);font-size:18px;color:var(--red)}
+h3{font-family:var(--title);font-weight:700;color:var(--ink2);font-size:26px;line-height:var(--line);margin:calc(var(--line)*.5) 0 0}
+h3::before{content:"✎ ";font-size:18px;color:var(--red)}
+.nav{display:flex;justify-content:space-between;gap:12px;font-family:var(--title);font-size:22px;line-height:var(--line)}
+.nav a{color:var(--red);text-decoration:none}
+.nav a:hover{text-decoration:underline wavy}
+.pagebreak{border-top:3px dashed var(--margin);margin:var(--line) 0;text-align:center;font-family:var(--title);color:var(--red);line-height:var(--line)}
+li.todo::before{content:"☐";color:var(--ink2)}
+a{color:var(--ink);text-decoration:underline dotted}
+</style>
+</head>
+<body>
+<!-- One shared hand-drawn wobble filter; give every diagram stroke class="sk" -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <!-- userSpaceOnUse region: a % region collapses to nothing on perfectly straight lines (zero-height bbox) -->
+  <filter id="rough" filterUnits="userSpaceOnUse" x="-500" y="-500" width="3000" height="3000">
+    <feTurbulence type="fractalNoise" baseFrequency="0.03" numOctaves="2" seed="3" result="n"/>
+    <feDisplacementMap in="SourceGraphic" in2="n" scale="3"/>
+  </filter>
+  <marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+    <path d="M1 1 L9 5 L1 9" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+  </marker>
+</defs></svg>
+
+<main class="page">
+  <nav class="nav"><a href="ch43-websockets-grpc-mqtt-and-sse.notes.html">← Ch 43 — WebSockets, gRPC, MQTT &amp; SSE</a><a href="index.notes.html">☰ Contents</a><a href="ch45-sql-and-the-relational-model.notes.html">Ch 45 — SQL &amp; the Relational Model →</a></nav>
+  <div class="date">2026-10-10</div>
+  <h1><span class="u">Ch 44 — Delivery: Load Balancing, Reverse Proxies &amp; CDN</span></h1>
+  <p class="black">Volume 1 — Computer Science Foundations · <a href="index.md">Contents</a> · ← <a href="ch43-websockets-grpc-mqtt-and-sse.notes.html">Chapter 43 — WebSockets, gRPC, MQTT &amp; SSE</a> · Next → <a href="ch45-sql-and-the-relational-model.notes.html">Chapter 45 — SQL &amp; the Relational Model</a></p>
+  <h2>Concept</h2>
+  <p>L4 vs L7 load balancing, reverse proxies (nginx), and CDN/edge caching.</p>
+  <div class="box"><b>In one sentence:</b> a reverse proxy stands in front of your servers and accepts every request for them; a load balancer is a reverse proxy that spreads requests across many healthy servers; and a CDN is thousands of caching reverse proxies placed near users around the world.</div>
+  <div class="box red"><b>Mental model — a restaurant host.</b> Guests never walk straight into the kitchen. The host (reverse proxy) greets them at the door, checks the reservation (TLS, auth), and seats them at whichever waiter has the fewest tables (load balancing). A waiter who is sick gets skipped (health checks). A CDN is a chain of take-away counters across the city that hold the most popular dishes ready, so most people never reach the main kitchen at all.</div>
+  <h3>L4 vs L7</h3>
+  <div class="wrap"><table>
+<tr><th></th><th>L4 (transport)</th><th>L7 (application)</th></tr>
+<tr><td>Sees</td><td>IPs, ports, TCP/UDP</td><td>HTTP method, path, headers, cookies, gRPC service</td></tr>
+<tr><td>Routes by</td><td>the 4-tuple (a hash)</td><td><code>/api/*</code> → service A, <code>Host: admin.*</code> → service B, header or cookie rules</td></tr>
+<tr><td>TLS</td><td>passes through (or terminates)</td><td>usually terminates</td></tr>
+<tr><td>Features</td><td>very fast, protocol-agnostic, millions of connections</td><td>retries, rewrites, auth, rate limits, caching, compression, canary splits</td></tr>
+<tr><td>Examples</td><td>AWS NLB, LVS/IPVS, Maglev, Katran</td><td>nginx, Envoy, HAProxy (both modes), AWS ALB, Traefik</td></tr>
+</table></div>
+  <h3>Load-balancing algorithms</h3>
+  <div class="wrap"><table>
+<tr><th>Algorithm</th><th>Picks</th><th>Good for</th></tr>
+<tr><td>Round robin</td><td>next server in turn</td><td>identical servers, similar requests</td></tr>
+<tr><td>Weighted round robin</td><td>in proportion to weights</td><td>mixed server sizes, canaries (5%)</td></tr>
+<tr><td>Least connections</td><td>the server with the fewest active connections</td><td>long or uneven requests</td></tr>
+<tr><td>Least response time / EWMA</td><td>the fastest recently</td><td>latency-sensitive traffic</td></tr>
+<tr><td>Power of two choices</td><td>2 random servers, then the less loaded</td><td>near-optimal and cheap at scale</td></tr>
+<tr><td>IP / consistent hash</td><td>the same client or key → the same server</td><td>sticky sessions, cache affinity</td></tr>
+</table></div>
+  <p><b>Health checks</b> — <i>active</i>: the LB polls <code>GET /healthz</code> every few seconds, and a server is marked down after N failures and back up after M successes. <i>Passive</i> (outlier detection): eject servers that return errors to real traffic. Separate <b>liveness</b> ("the process is alive") from <b>readiness</b> ("it can serve now").</p>
+  <p><b>What a reverse proxy gives you:</b> TLS termination, one public entry point, compression, static-file serving, buffering slow clients, request IDs, rate limiting, caching, and hiding backend topology.</p>
+  <p><b>CDN</b> — edge PoPs (points of presence) cache responses by URL plus the <code>Vary</code> headers. A <b>hit</b> is served from a nearby edge (~10–30 ms); a <b>miss</b> goes to the origin, and the edge caches the result per <code>Cache-Control</code>. <b>Origin shielding</b> adds a regional mid-tier so a thousand edges don't all miss to the origin at once.</p>
+  <h2>Prereqs</h2>
+  <ul>
+<li><a href="ch42-http-rest-graphql-and-json-rpc.notes.html">Chapter 42 — HTTP, REST, GraphQL &amp; JSON-RPC</a></li>
+</ul>
+  <div class="pagebreak">~ page 2 ~</div>
+  <h2>Diagram</h2>
+  <h3>Client → CDN → LB → backend pool, with the L4/L7 split</h3>
+  <figure>
+<svg viewBox="0 0 660 635" role="img" aria-label="users reach a CDN edge; on a cache miss or dynamic request an L4 load balancer sends TCP :443 to L7 proxies that terminate TLS and route /api/* to the API pool (api-1 ok, api-2 ok, api-3 down) and /admin/* to the admin pool; health checks GET /readyz every 5 s watch the API pool">
+
+<path class="sk blue" d="M290 58 L290 103" style="color:var(--ink);" marker-end="url(#arr)"/>
+<path class="sk blue" d="M290 157 L290 208" style="color:var(--ink);" marker-end="url(#arr)"/>
+<path class="sk blue" d="M251 262 L179 313" style="color:var(--ink);" marker-end="url(#arr)"/>
+<path class="sk blue" d="M329 262 L415 322" style="color:var(--ink);" marker-end="url(#arr)"/>
+<path class="sk blue" d="M160 367 L220 453" style="color:var(--ink);" marker-end="url(#arr)"/>
+<path class="sk blue" d="M415 358 L279 453" style="color:var(--ink);" marker-end="url(#arr)"/>
+<path class="sk blue" d="M222 367 L507 462" style="color:var(--ink);" marker-end="url(#arr)"/>
+<path class="sk blue" d="M455 358 L545 462" style="color:var(--ink);" marker-end="url(#arr)"/>
+<path class="sk red" d="M240 563 L240 507" style="color:var(--red);stroke-dasharray:7 5;" marker-end="url(#arr)"/>
+<rect class="sk" x="217" y="22" width="146" height="35" rx="10"/>
+<text class="lbl b" x="290" y="47" text-anchor="middle" style="font-size:14px">users worldwide</text>
+<rect class="sk green" x="153" y="103" width="273" height="55" rx="10"/>
+<text class="lbl g" x="290" y="127" text-anchor="middle" style="font-size:14px">CDN edge PoP</text>
+<text class="lbl g" x="290" y="146" text-anchor="middle" style="font-size:14px">(static assets, cacheable GETs)</text>
+<rect class="sk" x="221" y="208" width="138" height="55" rx="10"/>
+<text class="lbl b" x="290" y="232" text-anchor="middle" style="font-size:14px">L4 LB (NLB)</text>
+<text class="lbl b" x="290" y="251" text-anchor="middle" style="font-size:14px">TCP :443, hash</text>
+<rect class="sk" x="31" y="313" width="218" height="55" rx="10"/>
+<text class="lbl b" x="140" y="337" text-anchor="middle" style="font-size:14px">L7 proxy (Envoy/nginx)</text>
+<text class="lbl b" x="140" y="356" text-anchor="middle" style="font-size:14px">TLS termination, routing</text>
+<rect class="sk" x="395" y="322" width="90" height="35" rx="10"/>
+<text class="lbl b" x="440" y="347" text-anchor="middle" style="font-size:14px">L7 proxy</text>
+<rect class="sk" x="127" y="453" width="226" height="55" rx="10"/>
+<text class="lbl b" x="240" y="477" text-anchor="middle" style="font-size:14px">API pool</text>
+<text class="lbl b" x="240" y="496" text-anchor="middle" style="font-size:14px">api-1 ✓  api-2 ✓  api-3 ✗</text>
+<rect class="sk" x="507" y="462" width="106" height="35" rx="10"/>
+<text class="lbl b" x="560" y="487" text-anchor="middle" style="font-size:14px">admin pool</text>
+<rect class="sk red" x="143" y="563" width="194" height="55" rx="10"/>
+<text class="lbl r" x="240" y="587" text-anchor="middle" style="font-size:14px">health checks</text>
+<text class="lbl r" x="240" y="606" text-anchor="middle" style="font-size:14px">GET /readyz every 5 s</text>
+<rect x="330" y="164" width="111" height="42" rx="4" style="fill:#fdfbf4;opacity:.92;stroke:none"/>
+<text class="lbl r" x="385" y="180" text-anchor="middle" style="font-size:15px">cache miss /</text>
+<text class="lbl r" x="385" y="199" text-anchor="middle" style="font-size:15px">dynamic</text>
+<rect x="146" y="407" width="59" height="22" rx="4" style="fill:#fdfbf4;opacity:.92;stroke:none"/>
+<text class="lbl r" x="176" y="422" text-anchor="middle" style="font-size:15px">/api/*</text>
+<rect x="342" y="381" width="59" height="22" rx="4" style="fill:#fdfbf4;opacity:.92;stroke:none"/>
+<text class="lbl r" x="372" y="396" text-anchor="middle" style="font-size:15px">/api/*</text>
+<rect x="440" y="441" width="76" height="22" rx="4" style="fill:#fdfbf4;opacity:.92;stroke:none"/>
+<text class="lbl r" x="478" y="456" text-anchor="middle" style="font-size:15px">/admin/*</text>
+<rect x="479" y="391" width="76" height="22" rx="4" style="fill:#fdfbf4;opacity:.92;stroke:none"/>
+<text class="lbl r" x="517" y="406" text-anchor="middle" style="font-size:15px">/admin/*</text>
+
+</svg>
+<figcaption>Fig 1: the delivery path: CDN, L4 LB, L7 proxies, pools, health checks</figcaption>
+</figure>
+  <h3>Round robin skipping an unhealthy backend</h3>
+  <pre class="code ascii"><code> requests:  r1   r2   r3   r4   r5   r6
+ backend:   api1 api2 api1 api2 api1 api2      api3 is ejected (3 failed checks)
+ after api3 passes 2 checks → rejoins:  r7 api3, r8 api1, …</code></pre>
+  <h3>CDN hit vs origin fetch</h3>
+  <figure>
+<svg viewBox="0 0 640 614" role="img" aria-label="sequence diagram: User (Tokyo), Edge (Tokyo), Shield (Singapore), Origin (Virginia)">
+<path class="sk" d="M95 50 L95 606" style="stroke-dasharray:6 6;opacity:.7"/>
+<path class="sk" d="M245 50 L245 606" style="stroke-dasharray:6 6;opacity:.7"/>
+<path class="sk" d="M395 50 L395 606" style="stroke-dasharray:6 6;opacity:.7"/>
+<path class="sk" d="M545 50 L545 606" style="stroke-dasharray:6 6;opacity:.7"/>
+<rect class="sk" x="52" y="8" width="86" height="57" rx="10" style="fill:#fdfbf4;"/>
+<text class="lbl b" x="95" y="33" text-anchor="middle" style="font-size:15px">User</text>
+<text class="lbl b" x="95" y="54" text-anchor="middle" style="font-size:15px">(Tokyo)</text>
+<rect class="sk" x="202" y="8" width="86" height="57" rx="10" style="fill:#fdfbf4;"/>
+<text class="lbl b" x="245" y="33" text-anchor="middle" style="font-size:15px">Edge</text>
+<text class="lbl b" x="245" y="54" text-anchor="middle" style="font-size:15px">(Tokyo)</text>
+<rect class="sk" x="335" y="8" width="120" height="57" rx="10" style="fill:#fdfbf4;"/>
+<text class="lbl b" x="395" y="33" text-anchor="middle" style="font-size:15px">Shield</text>
+<text class="lbl b" x="395" y="54" text-anchor="middle" style="font-size:15px">(Singapore)</text>
+<rect class="sk" x="489" y="8" width="111" height="57" rx="10" style="fill:#fdfbf4;"/>
+<text class="lbl b" x="545" y="33" text-anchor="middle" style="font-size:15px">Origin</text>
+<text class="lbl b" x="545" y="54" text-anchor="middle" style="font-size:15px">(Virginia)</text>
+<text class="lbl" x="170" y="95" text-anchor="middle" style="font-size:15px">GET</text>
+<text class="lbl" x="170" y="115" text-anchor="middle" style="font-size:15px">/img/logo.v3.png</text>
+<path class="sk blue" d="M98 130 L242 130" style="color:var(--ink);" marker-end="url(#arr)"/>
+<text class="lbl" x="170" y="191" text-anchor="middle" style="font-size:15px">200 (12 ms) Age:</text>
+<text class="lbl" x="170" y="211" text-anchor="middle" style="font-size:15px">3600</text>
+<path class="sk blue" d="M242 226 L98 226" style="color:var(--ink);stroke-dasharray:7 5;" marker-end="url(#arr)"/>
+<text class="lbl" x="320" y="285" text-anchor="middle" style="font-size:15px">GET</text>
+<path class="sk blue" d="M248 300 L392 300" style="color:var(--ink);" marker-end="url(#arr)"/>
+<text class="lbl" x="470" y="337" text-anchor="middle" style="font-size:15px">GET (only if the</text>
+<text class="lbl" x="470" y="357" text-anchor="middle" style="font-size:15px">shield also misses)</text>
+<path class="sk blue" d="M398 372 L542 372" style="color:var(--ink);" marker-end="url(#arr)"/>
+<text class="lbl" x="470" y="409" text-anchor="middle" style="font-size:15px">200 Cache-Control:</text>
+<text class="lbl" x="470" y="429" text-anchor="middle" style="font-size:15px">max-age=31536000,</text>
+<text class="lbl" x="470" y="449" text-anchor="middle" style="font-size:15px">immutable</text>
+<path class="sk blue" d="M542 464 L398 464" style="color:var(--ink);stroke-dasharray:7 5;" marker-end="url(#arr)"/>
+<text class="lbl" x="320" y="501" text-anchor="middle" style="font-size:15px">200</text>
+<path class="sk blue" d="M392 516 L248 516" style="color:var(--ink);stroke-dasharray:7 5;" marker-end="url(#arr)"/>
+<text class="lbl" x="170" y="553" text-anchor="middle" style="font-size:15px">200 (220 ms), now</text>
+<text class="lbl" x="170" y="573" text-anchor="middle" style="font-size:15px">cached at the edge</text>
+<path class="sk blue" d="M242 588 L98 588" style="color:var(--ink);stroke-dasharray:7 5;" marker-end="url(#arr)"/>
+<rect class="sk red" x="40" y="144" width="560" height="460" rx="4" style="stroke-dasharray:3 4"/>
+<text class="lbl r" x="46" y="160" style="font-size:15px">alt HIT</text>
+<path class="sk red" d="M40 238 L600 238" style="stroke-dasharray:8 5"/>
+<text class="lbl r" x="46" y="254" style="font-size:15px">else MISS</text>
+</svg>
+<figcaption>Fig 2: CDN cache hit versus miss through the shield to the origin</figcaption>
+</figure>
+  <div class="pagebreak">~ page 3 ~</div>
+  <h2>Example</h2>
+  <span class="lang">nginx</span>
+<pre class="code"><code># /etc/nginx/conf.d/app.conf
+upstream api {
+    least_conn;
+    server 10.0.1.11:8080 max_fails=3 fail_timeout=10s;
+    server 10.0.1.12:8080 max_fails=3 fail_timeout=10s;
+    server 10.0.1.13:8080 weight=2;
+    keepalive 64;                                  # reuse upstream connections
+}
+
+server {
+    listen 443 ssl http2;
+    server_name api.example.com;
+    ssl_certificate     /etc/ssl/api.crt;
+    ssl_certificate_key /etc/ssl/api.key;
+
+    location /static/ {
+        root /srv/app;
+        add_header Cache-Control "public, max-age=31536000, immutable";
+    }
+
+    location /api/ {
+        proxy_pass http://api;
+        proxy_http_version 1.1;
+        proxy_set_header Connection "";
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Request-ID $request_id;
+        proxy_next_upstream error timeout http_502 http_503;   # retry idempotent failures elsewhere
+        proxy_read_timeout 30s;
+    }
+}</code></pre>
+  <span class="lang">yaml</span>
+<pre class="code"><code># Envoy: active health checking on a cluster (excerpt)
+clusters:
+  - name: api
+    lb_policy: LEAST_REQUEST
+    health_checks:
+      - timeout: 1s
+        interval: 5s
+        unhealthy_threshold: 3
+        healthy_threshold: 2
+        http_health_check: { path: /readyz }</code></pre>
+  <span class="lang">text</span>
+<pre class="code"><code>Cloudflare cache rule (conceptual)
+  If: hostname eq "static.example.com" and URI path starts with "/assets/"
+  Then: Cache eligible · Edge TTL 1 year · Respect origin Cache-Control: off</code></pre>
+  <h2>Exercises</h2>
+  <ol style="list-style:none;padding-left:0">
+<li>1. Configure an L7 LB with health checks.
+<div class="box"><b>Solution</b>
+<p>Use the nginx upstream above (passive checks via <code>max_fails</code>) or Envoy/HAProxy for active checks against <code>/readyz</code>. Test: stop one backend and confirm no errors reach clients after the detection window; restart it and confirm it rejoins after N good checks. Make <code>/readyz</code> fail during shutdown so draining works.</p></div></li>
+<li>2. Explain a CDN cache hit vs origin fetch.
+<div class="box"><b>Solution</b>
+<p>Hit: the edge has a fresh copy for the cache key and serves it locally, so latency is RTT to the nearby PoP and the origin sees nothing. Miss or expired: the edge (through the shield) requests from the origin, stores the response if cacheable, and serves it. Revalidation with <code>If-None-Match</code> can return 304 without resending the body. Fingerprinted file names (<code>app.3f9a.js</code>) allow "cache forever" without stale content.</p></div></li>
+<li>3. Why is round robin a poor choice when some requests take 10 ms and others 10 s?
+<div class="box"><b>Solution</b>
+<p>It ignores load, so slow requests pile up on some servers while others sit idle. Least connections, least outstanding requests, or power-of-two-choices adapt to actual load.</p></div></li>
+</ol>
+  <div class="pagebreak">~ page 4 ~</div>
+  <h2>Mini project</h2>
+  <h3>A load balancer simulator that round-robins and removes unhealthy backends.</h3>
+  <figure>
+<svg viewBox="0 0 660 415" role="img" aria-label="a client load generator drives your load balancer, which spreads requests across three backends and records per-backend metrics; a health checker probes /healthz every 2 s">
+
+<path class="sk blue" d="M192 72 L288 123" style="color:var(--ink);" marker-end="url(#arr)"/>
+<path class="sk red" d="M488 72 L392 123" style="color:var(--red);" marker-end="url(#arr)"/>
+<path class="sk blue" d="M283 177 L147 242" style="color:var(--ink);" marker-end="url(#arr)"/>
+<path class="sk blue" d="M323 177 L281 242" style="color:var(--ink);" marker-end="url(#arr)"/>
+<path class="sk blue" d="M390 177 L490 233" style="color:var(--ink);" marker-end="url(#arr)"/>
+<path class="sk blue" d="M345 177 L378 338" style="color:var(--ink);" marker-end="url(#arr)"/>
+<rect class="sk" x="43" y="18" width="194" height="55" rx="10"/>
+<text class="lbl b" x="140" y="42" text-anchor="middle" style="font-size:14px">client load generator</text>
+<text class="lbl b" x="140" y="61" text-anchor="middle" style="font-size:14px">(asyncio, 200 rps)</text>
+<rect class="sk red" x="435" y="18" width="210" height="55" rx="10"/>
+<text class="lbl r" x="540" y="42" text-anchor="middle" style="font-size:14px">health checker</text>
+<text class="lbl r" x="540" y="61" text-anchor="middle" style="font-size:14px">every 2 s: GET /healthz</text>
+<rect class="sk green" x="203" y="123" width="273" height="55" rx="10"/>
+<text class="lbl g" x="340" y="147" text-anchor="middle" style="font-size:14px">your LB (aiohttp proxy)</text>
+<text class="lbl g" x="340" y="166" text-anchor="middle" style="font-size:14px">strategy: rr ∣ least_conn ∣ p2c</text>
+<rect class="sk" x="45" y="242" width="130" height="35" rx="10"/>
+<text class="lbl b" x="110" y="267" text-anchor="middle" style="font-size:14px">backend :9001</text>
+<rect class="sk" x="205" y="242" width="130" height="35" rx="10"/>
+<text class="lbl b" x="270" y="267" text-anchor="middle" style="font-size:14px">backend :9002</text>
+<rect class="sk" x="451" y="233" width="178" height="55" rx="10"/>
+<text class="lbl b" x="540" y="257" text-anchor="middle" style="font-size:14px">backend :9003</text>
+<text class="lbl b" x="540" y="276" text-anchor="middle" style="font-size:14px">(flaky / slow mode)</text>
+<rect class="sk" x="262" y="338" width="241" height="55" rx="10"/>
+<text class="lbl b" x="383" y="362" text-anchor="middle" style="font-size:14px">metrics: per-backend count,</text>
+<text class="lbl b" x="383" y="381" text-anchor="middle" style="font-size:14px">error rate, p50/p99 latency</text>
+
+</svg>
+<figcaption>Fig 3: mini project: load balancer with pluggable strategies and a health checker</figcaption>
+</figure>
+  <h3>Steps</h3>
+  <ol style="list-style:none;padding-left:0">
+<li>1. Three tiny backends with switches for "healthy", "slow" (adds 500 ms), and "broken" (returns 500).</li>
+<li>2. A proxy with a pluggable picker: round robin, least connections, power of two choices.</li>
+<li>3. Active health checks with rise/fall thresholds; passive ejection after 5 consecutive 5xx.</li>
+<li>4. Retry once on another backend for idempotent requests only (GET).</li>
+<li>5. Break one backend mid-test and chart error rate and p99 per strategy.</li>
+</ol>
+  <div class="box"><b>Done when:</b> with a broken backend, client-visible errors stop within one check interval, and least_conn/p2c beat round robin on p99 when one backend is slow.</div>
+  <h2>Open source</h2>
+  <ul>
+<li><a href="https://github.com/nginx/nginx"><code>nginx/nginx</code></a> — <code>src/http/ngx_http_upstream_round_robin.c</code> implements smooth weighted round robin.</li>
+<li><a href="https://github.com/envoyproxy/envoy"><code>envoyproxy/envoy</code></a> — <code>source/common/upstream/</code> has load balancers (including least-request with P2C), health checking, and outlier detection.</li>
+</ul>
+  <h2>Interview</h2>
+  <ol style="list-style:none;padding-left:0">
+<li>1. <h3>"L4 vs L7 load balancing?"</h3>
+<div class="box"><b>Answer</b>
+<p>L4 balances TCP/UDP connections using only addresses and ports. It is extremely fast, protocol-agnostic, and can't see requests (HTTP/2 multiplexes many requests on one connection, so balancing is coarse). L7 parses HTTP/gRPC, so it can route by path, header, or cookie, balance per request, retry, rewrite, cache, and apply auth and rate limits — at more CPU cost, and it usually terminates TLS. Common setup: L4 in front of a fleet of L7 proxies.</p></div></li>
+<li>2. <h3>"How does a CDN reduce latency?"</h3>
+<div class="box"><b>Answer</b>
+<p>It serves cached content from a PoP close to the user (short RTT), terminates TCP/TLS near the user (so handshakes are fast), keeps warm, optimized connections back to the origin, and offloads the origin so it isn't overloaded. Even uncacheable requests benefit from edge termination and the CDN's private backbone.</p></div></li>
+</ol>
+  <h2>Checklist</h2>
+  <ul>
+<li class="todo">set up health checks</li>
+<li class="todo">choose LB algorithm per workload</li>
+<li class="todo">cache at the edge</li>
+</ul>
+  <p class="black"><a href="index.md">Contents</a> · ← <a href="ch43-websockets-grpc-mqtt-and-sse.notes.html">Chapter 43 — WebSockets, gRPC, MQTT &amp; SSE</a> · Next → <a href="ch45-sql-and-the-relational-model.notes.html">Chapter 45 — SQL &amp; the Relational Model</a></p>
+  <nav class="nav"><a href="ch43-websockets-grpc-mqtt-and-sse.notes.html">← Ch 43 — WebSockets, gRPC, MQTT &amp; SSE</a><a href="index.notes.html">☰ Contents</a><a href="ch45-sql-and-the-relational-model.notes.html">Ch 45 — SQL &amp; the Relational Model →</a></nav>
+</main>
+</body>
+</html>

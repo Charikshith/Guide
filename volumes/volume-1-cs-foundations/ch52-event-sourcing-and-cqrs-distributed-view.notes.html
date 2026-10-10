@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ch 52 — Event Sourcing &amp; CQRS (Distributed View) — Notes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;700&family=Kalam:wght@400;700&family=Patrick+Hand&display=swap" rel="stylesheet">
+<style>
+/* ===== Page tokens ===== */
+:root{
+  --line:32px;                 /* ruled-line spacing; every vertical size is a multiple */
+  --paper:#fdfbf4; --rule:#c9dcef; --margin:#e8a0a0;
+  --ink:#1f3a93;               /* blue pen (body) */
+  --ink2:#222;                 /* black pen (headings) */
+  --red:#c0392b; --green:#1e8449;
+  --hl-yellow:rgba(255,235,59,.55); --hl-pink:rgba(255,128,171,.45);
+  --hl-green:rgba(118,255,3,.35); --hl-blue:rgba(64,196,255,.35);
+  --sticky:#fff59d; --desk:#e9e4d8;
+  --hand:'Kalam','Patrick Hand','Comic Sans MS','Segoe Print','Bradley Hand',cursive;
+  --title:'Caveat','Kalam','Segoe Print','Bradley Hand',cursive;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){ --desk:#2b2b2b; }
+}
+:root[data-theme="dark"]{ --desk:#2b2b2b; }
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--desk);font-family:var(--hand);color:var(--ink);}
+
+/* ===== Notebook sheet ===== */
+.page{
+  position:relative; max-width:860px; margin:24px auto; padding:var(--line) 28px calc(var(--line)*2) 84px;
+  background:
+    linear-gradient(90deg,transparent 64px,var(--margin) 64px,var(--margin) 66px,transparent 66px),
+    repeating-linear-gradient(var(--paper) 0,var(--paper) calc(var(--line) - 1px),var(--rule) calc(var(--line) - 1px),var(--rule) var(--line));
+  background-color:var(--paper);
+  box-shadow:0 2px 6px rgba(0,0,0,.15),0 12px 28px rgba(0,0,0,.12);
+  font-size:20px; line-height:var(--line);
+}
+.page::before{ /* punched holes */
+  content:""; position:absolute; left:22px; top:0; bottom:0; width:18px;
+  background:radial-gradient(circle,var(--desk) 7px,transparent 8px) 0 40px/18px 220px repeat-y;
+}
+@media (max-width:600px){
+  .page{margin:0;padding-left:52px;padding-right:16px;font-size:18px;
+    background:
+      linear-gradient(90deg,transparent 40px,var(--margin) 40px,var(--margin) 42px,transparent 42px),
+      repeating-linear-gradient(var(--paper) 0,var(--paper) calc(var(--line) - 1px),var(--rule) calc(var(--line) - 1px),var(--rule) var(--line));
+    background-color:var(--paper);}
+  .page::before{left:10px;width:16px}
+}
+
+/* ===== Text (all margins are multiples of --line so text sits on the rules) ===== */
+.date{position:absolute;top:0;right:24px;font-family:var(--title);font-size:22px;color:var(--ink2);line-height:var(--line)}
+h1{font-family:var(--title);font-weight:700;color:var(--ink2);font-size:46px;line-height:calc(var(--line)*2);margin:0;transform:rotate(-1deg)}
+h1 .u{background:linear-gradient(transparent 62%,var(--hl-yellow) 62%,var(--hl-yellow) 92%,transparent 92%)}
+h2{font-family:var(--title);font-weight:700;color:var(--red);font-size:32px;line-height:calc(var(--line)*1.5);margin:calc(var(--line)*.5) 0 0}
+h2::before{content:"➤ ";font-size:22px}
+p,li{margin:0}
+ul,ol{margin:0;padding-left:28px}
+ul{list-style:none}
+ul>li::before{content:"–";position:absolute;margin-left:-20px}
+ul>li.star::before{content:"★";color:var(--red)}
+ul>li.arrow::before{content:"→"}
+ul>li.check::before{content:"✓";color:var(--green)}
+.gap{height:var(--line)}
+
+/* ===== Pen effects ===== */
+.hl{background:var(--hl-yellow);padding:0 3px;border-radius:3px 6px 4px 7px}
+.hl.pink{background:var(--hl-pink)} .hl.green{background:var(--hl-green)} .hl.blue{background:var(--hl-blue)}
+.red{color:var(--red)} .green{color:var(--green)} .black{color:var(--ink2)}
+.ul{text-decoration:underline wavy var(--red);text-underline-offset:5px}
+.circ{border:2px solid var(--red);border-radius:50% 45% 55% 48%;padding:0 6px}
+.strike{text-decoration:line-through 2px var(--red)}
+.term{font-weight:700;color:var(--ink2)}
+.box{display:flow-root;border:2.5px solid var(--ink2);border-radius:4px 10px 6px 12px;padding:calc(var(--line)*.5 - 2.5px) 14px;margin:calc(var(--line)*.5) 0;transform:rotate(-.4deg);background:rgba(255,255,255,.35)}
+.box.red{border-color:var(--red)}
+.formula{font-family:var(--title);font-size:28px;text-align:center;color:var(--ink2)}
+
+/* sticky note */
+.sticky{float:right;width:min(250px,42%);margin:0 0 var(--line) 20px;padding:var(--line) 16px;background:var(--sticky);
+  color:#333;transform:rotate(2.2deg);box-shadow:2px 4px 8px rgba(0,0,0,.18);font-size:18px}
+.sticky b{font-family:var(--title);font-size:24px;color:var(--red)}
+@media (max-width:600px){.sticky{float:none;width:auto;margin:var(--line) 0}}
+
+/* margin annotation (lives in the red margin) */
+.side{position:absolute;left:4px;width:58px;text-align:center;font-family:var(--title);font-size:17px;line-height:18px;color:var(--red);transform:rotate(-8deg)}
+@media (max-width:600px){.side{display:none}}
+
+/* two-column notes */
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:0 28px}
+@media (max-width:600px){.cols{grid-template-columns:1fr}}
+
+/* diagrams */
+figure{margin:var(--line) 0;text-align:center}
+figure svg{width:100%;max-width:640px;height:auto;overflow:visible}
+figcaption{font-family:var(--title);font-size:20px;color:var(--ink2)}
+/* phones: keep labels readable — diagram scrolls inside its own box instead of shrinking */
+@media (max-width:600px){figure{overflow-x:auto}figure svg{min-width:520px}}
+.sk{fill:none;stroke:var(--ink2);stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round;filter:url(#rough)}
+.sk.blue{stroke:var(--ink)} .sk.red{stroke:var(--red)} .sk.green{stroke:var(--green)}
+.lbl{font-family:var(--hand);font-size:17px;fill:var(--ink)}
+.lbl.b{font-weight:700;fill:var(--ink2)} .lbl.r{fill:var(--red)} .lbl.g{fill:var(--green)}
+
+/* table */
+.wrap{overflow-x:auto}
+table{border-collapse:collapse;margin:calc(var(--line)*.5) 0;min-width:100%}
+th,td{border:2px solid var(--ink2);padding:0 10px;text-align:left;vertical-align:top}
+th{font-family:var(--title);font-size:24px;color:var(--ink2)}
+
+@media print{body{background:#fff}.page{box-shadow:none;margin:0}.page::before{display:none}}
+
+/* ===== Added for long chapter notes ===== */
+pre.code{font-family:Consolas,'Courier New',monospace;font-size:14px;line-height:var(--line);color:var(--ink);background:rgba(255,255,255,.45);
+  border-left:4px solid var(--red);margin:calc(var(--line)*.5) 0;padding:0 12px;overflow-x:auto;white-space:pre}
+pre.code.ascii{border-left-color:var(--green)}
+code{font-family:Consolas,'Courier New',monospace;font-size:.82em;background:rgba(0,0,0,.06);padding:0 3px;border-radius:3px}
+pre.code code{background:none;padding:0;font-size:inherit}
+.lang{font-family:var(--title);font-size:18px;color:var(--red)}
+h3{font-family:var(--title);font-weight:700;color:var(--ink2);font-size:26px;line-height:var(--line);margin:calc(var(--line)*.5) 0 0}
+h3::before{content:"✎ ";font-size:18px;color:var(--red)}
+.nav{display:flex;justify-content:space-between;gap:12px;font-family:var(--title);font-size:22px;line-height:var(--line)}
+.nav a{color:var(--red);text-decoration:none}
+.nav a:hover{text-decoration:underline wavy}
+.pagebreak{border-top:3px dashed var(--margin);margin:var(--line) 0;text-align:center;font-family:var(--title);color:var(--red);line-height:var(--line)}
+li.todo::before{content:"☐";color:var(--ink2)}
+a{color:var(--ink);text-decoration:underline dotted}
+</style>
+</head>
+<body>
+<!-- One shared hand-drawn wobble filter; give every diagram stroke class="sk" -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <!-- userSpaceOnUse region: a % region collapses to nothing on perfectly straight lines (zero-height bbox) -->
+  <filter id="rough" filterUnits="userSpaceOnUse" x="-500" y="-500" width="3000" height="3000">
+    <feTurbulence type="fractalNoise" baseFrequency="0.03" numOctaves="2" seed="3" result="n"/>
+    <feDisplacementMap in="SourceGraphic" in2="n" scale="3"/>
+  </filter>
+  <marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+    <path d="M1 1 L9 5 L1 9" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+  </marker>
+</defs></svg>
+
+<main class="page">
+  <nav class="nav"><a href="ch51-replication-sharding-raft-and-paxos.notes.html">← Ch 51 — Replication, Sharding, Raft &amp; Paxos</a><a href="index.notes.html">☰ Contents</a><a href="ch53-etl-elt-batch-and-stream-processing.notes.html">Ch 53 — ETL/ELT, Batch &amp; Stream Processing →</a></nav>
+  <div class="date">2026-10-10</div>
+  <h1><span class="u">Ch 52 — Event Sourcing &amp; CQRS (Distributed View)</span></h1>
+    <p class="black">Volume 1 — Computer Science Foundations · <a href="index.md">Contents</a> · ← <a href="ch51-replication-sharding-raft-and-paxos.notes.html">Chapter 51 — Replication, Sharding, Raft &amp; Paxos</a> · Next → <a href="ch53-etl-elt-batch-and-stream-processing.notes.html">Chapter 53 — ETL/ELT, Batch &amp; Stream Processing</a></p>
+
+  <p class="black">Chapter 52 — Event Sourcing &amp; CQRS (Distributed View)</p>
+
+  <h2>Concept</h2>
+  <p>Event sourcing and CQRS at the system level — event logs, projections, and replay.</p>
+  <div class="box"><b>In one sentence:</b> instead of storing only the current state, you store every change as an immutable <span class="hl">event</span> in an ordered log, and many independent "projections" read that log to build whatever query-friendly views each part of the system needs — and can rebuild them at any time by replaying it.</div>
+
+  <h3>Mental model — a bank statement</h3>
+  <p>Your balance isn't the source of truth; the list of transactions is. The balance is just the sum of the list. Anyone can recompute it, and different people can build different summaries from the same list (monthly spending, tax report) without touching the original.</p>
+
+  <h3>Terms</h3>
+  <div class="wrap"><table>
+    <tr><th>Term</th><th>Meaning</th></tr>
+    <tr><td>Event</td><td>an immutable fact in past tense: <code>OrderPlaced</code>, <code>PaymentCaptured</code></td></tr>
+    <tr><td>Event log / store</td><td>an append-only, ordered sequence of events (per aggregate, and/or per topic)</td></tr>
+    <tr><td>Aggregate / stream</td><td>the entity whose events are ordered together (<code>order-123</code>)</td></tr>
+    <tr><td><b>Command</b></td><td>a request to change something (<code>PlaceOrder</code>); may be rejected</td></tr>
+    <tr><td><b>Projection</b> (read model)</td><td>a view built by folding events: <code>orders_by_customer</code>, a search index, a dashboard</td></tr>
+    <tr><td><b>CQRS</b></td><td>Command Query Responsibility Segregation: separate write model (commands → events) from read models (queries)</td></tr>
+    <tr><td>Replay</td><td>rebuild a projection from event 0</td></tr>
+    <tr><td>Snapshot</td><td>saved state at event N, so rebuilding starts from N instead of 0</td></tr>
+    <tr><td>Upcasting</td><td>converting old event versions to new ones while reading</td></tr>
+  </table></div>
+
+  <aside class="sticky"><b>Mnemonic!</b><br>Command = "please do X" (may fail). Event = "X happened" (never changes). Projection = fold(events).</aside>
+  <h3>Why distribute it?</h3>
+  <p>At system scale, the event log (Kafka, Pulsar, EventStoreDB) becomes the integration backbone: the order service writes events, and billing, shipping, search, analytics, and notifications each maintain their own projections — decoupled, independently scalable, each able to replay.</p>
+
+  <h3>Keeping projections consistent</h3>
+  <div class="wrap"><table>
+    <tr><th>Problem</th><th>Solution</th></tr>
+    <tr><td>At-least-once delivery → duplicates</td><td><b>idempotent</b> handlers: track <code>last_processed_offset</code> per partition, or dedup by event ID, <i>in the same transaction</i> as the projection update</td></tr>
+    <tr><td>Ordering</td><td>order per aggregate by using the aggregate ID as the partition key; don't assume a global order</td></tr>
+    <tr><td>Read-after-write lag</td><td>return the new version/offset to the client; the UI polls until the projection catches up, or reads from the write model</td></tr>
+    <tr><td>Schema changes</td><td>version events (<code>OrderPlaced.v2</code>); only add optional fields; upcasters for old versions</td></tr>
+    <tr><td>Bugs in a projection</td><td>fix the code, reset the offset, <b>replay</b> into a fresh table, swap</td></tr>
+    <tr><td>Writing state + publishing events atomically</td><td>the <b>transactional outbox</b> pattern (see <a href="../volume-4-high-level-design/ch10-event-driven-systems.notes.html">Vol 4 Ch 10</a>), or make the event store the only write</td></tr>
+  </table></div>
+
+  <div class="box red"><b>Costs</b> — more moving parts; eventual consistency everywhere; event schemas become a long-lived public contract; GDPR deletion needs crypto-shredding or tombstones; "current state" queries need projections. Use it where the history <i>is</i> the product: finance, orders, audits, workflows, collaboration.</div>
+
+  <div class="pagebreak">~ page 2 ~</div>
+
+  <h2>Prereqs</h2>
+  <ul>
+    <li><a href="ch51-replication-sharding-raft-and-paxos.notes.html">Chapter 51 — Replication, Sharding, Raft &amp; Paxos</a></li>
+  </ul>
+
+  <h2>Diagram</h2>
+  <h3>A distributed event log → multiple projections → read models</h3>
+  <figure>
+    <svg viewBox="0 0 660 420" role="img" aria-label="Flowchart: PlaceOrder command to Order service, which appends to the event log (Kafka topic orders, partitioned by order_id); the log feeds four projectors: order status to Postgres orders_view, search to OpenSearch index, analytics to warehouse daily_revenue, billing service to invoices; orders_view serves GET /orders/123">
+      <rect class="sk" x="10" y="110" width="120" height="50" rx="10"/>
+      <text class="lbl b" x="70" y="132" text-anchor="middle">PlaceOrder</text>
+      <text class="lbl b" x="70" y="152" text-anchor="middle">command</text>
+      <path class="sk blue" d="M70 160 L70 208" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <rect class="sk" x="10" y="210" width="120" height="90" rx="10"/>
+      <text class="lbl b" x="70" y="238" text-anchor="middle">Order service</text>
+      <text class="lbl" x="70" y="261" text-anchor="middle">(validate →</text>
+      <text class="lbl" x="70" y="281" text-anchor="middle">emit events)</text>
+      <path class="sk blue" d="M130 255 L188 255" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <text class="lbl r" x="159" y="243" text-anchor="middle" style="font-size:14px">append</text>
+      <rect class="sk red" x="190" y="190" width="125" height="130" rx="22"/>
+      <text class="lbl r" x="252" y="216" text-anchor="middle">event log</text>
+      <text class="lbl" x="252" y="238" text-anchor="middle" style="font-size:15px">(Kafka topic</text>
+      <text class="lbl" x="252" y="258" text-anchor="middle" style="font-size:15px">'orders')</text>
+      <text class="lbl" x="252" y="280" text-anchor="middle" style="font-size:15px">partitioned by</text>
+      <text class="lbl" x="252" y="300" text-anchor="middle" style="font-size:15px">order_id</text>
+
+      <rect class="sk" x="355" y="80" width="125" height="60" rx="10"/>
+      <text class="lbl b" x="417" y="105" text-anchor="middle">projector:</text>
+      <text class="lbl b" x="417" y="127" text-anchor="middle">order status</text>
+      <rect class="sk" x="355" y="165" width="125" height="60" rx="10"/>
+      <text class="lbl b" x="417" y="190" text-anchor="middle">projector:</text>
+      <text class="lbl b" x="417" y="212" text-anchor="middle">search</text>
+      <rect class="sk" x="355" y="250" width="125" height="60" rx="10"/>
+      <text class="lbl b" x="417" y="275" text-anchor="middle">projector:</text>
+      <text class="lbl b" x="417" y="297" text-anchor="middle">analytics</text>
+      <rect class="sk" x="355" y="335" width="125" height="60" rx="10"/>
+      <text class="lbl b" x="417" y="360" text-anchor="middle">billing</text>
+      <text class="lbl b" x="417" y="382" text-anchor="middle">service</text>
+      <path class="sk blue" d="M315 215 C 335 190, 335 130, 353 112" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M315 238 C 335 225, 335 205, 353 197" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M315 268 C 335 275, 335 280, 353 282" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M315 292 C 335 320, 335 350, 353 367" style="color:var(--ink)" marker-end="url(#arr)"/>
+
+      <rect class="sk green" x="515" y="80" width="130" height="60" rx="22"/>
+      <text class="lbl g" x="580" y="105" text-anchor="middle">Postgres:</text>
+      <text class="lbl g" x="580" y="127" text-anchor="middle">orders_view</text>
+      <rect class="sk green" x="515" y="165" width="130" height="60" rx="22"/>
+      <text class="lbl g" x="580" y="190" text-anchor="middle">OpenSearch</text>
+      <text class="lbl g" x="580" y="212" text-anchor="middle">index</text>
+      <rect class="sk green" x="515" y="250" width="130" height="60" rx="22"/>
+      <text class="lbl g" x="580" y="275" text-anchor="middle">warehouse:</text>
+      <text class="lbl g" x="580" y="297" text-anchor="middle">daily_revenue</text>
+      <rect class="sk green" x="515" y="335" width="130" height="60" rx="22"/>
+      <text class="lbl g" x="580" y="370" text-anchor="middle">invoices</text>
+      <path class="sk blue" d="M480 110 L513 110" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M480 195 L513 195" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M480 280 L513 280" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M480 365 L513 365" style="color:var(--ink)" marker-end="url(#arr)"/>
+
+      <rect class="sk" x="515" y="12" width="130" height="38" rx="8"/>
+      <text class="lbl b" x="580" y="37" text-anchor="middle" style="font-size:15px">GET /orders/123</text>
+      <path class="sk blue" d="M580 80 L580 52" style="color:var(--ink)" marker-end="url(#arr)"/>
+    </svg>
+    <figcaption>Fig 1: one event log feeds many projections; reads go to the read models</figcaption>
+  </figure>
+
+  <h3>Folding events into state</h3>
+<pre class="code ascii"><code> order-123 stream
+ #1 OrderPlaced      {items: 2, total: 5000}   → status=placed   total=5000
+ #2 ItemRemoved      {sku: X, price: 1500}     → status=placed   total=3500
+ #3 PaymentCaptured  {amount: 3500}            → status=paid
+ #4 OrderShipped     {carrier: DHL}            → status=shipped
+ state = fold(apply, events, initial={})</code></pre>
+
+  <h3>Rebuilding a projection by replay</h3>
+  <figure>
+    <svg viewBox="0 0 660 450" role="img" aria-label="Sequence diagram: Ops deploys Projector v2 with offset 0; in a loop until caught up the projector reads a batch from the event log and upserts rows plus the offset into orders_view_v2 in one transaction; finally Ops switches reads to orders_view_v2 and drops v1">
+      <rect class="sk" x="15" y="12" width="90" height="40" rx="8"/>
+      <text class="lbl b" x="60" y="38" text-anchor="middle">Ops</text>
+      <rect class="sk" x="135" y="12" width="130" height="40" rx="8"/>
+      <text class="lbl b" x="200" y="38" text-anchor="middle">Projector v2</text>
+      <rect class="sk" x="320" y="12" width="120" height="40" rx="8"/>
+      <text class="lbl b" x="380" y="38" text-anchor="middle">Event log</text>
+      <rect class="sk" x="495" y="6" width="150" height="52" rx="8"/>
+      <text class="lbl b" x="570" y="28" text-anchor="middle" style="font-size:15px">orders_view_v2</text>
+      <text class="lbl b" x="570" y="48" text-anchor="middle" style="font-size:15px">(new table)</text>
+      <path class="sk" d="M60 52 L60 440 M200 52 L200 440 M380 52 L380 440 M570 58 L570 440" style="stroke-dasharray:6 6;stroke-width:1.6"/>
+
+      <text class="lbl" x="130" y="94" text-anchor="middle">deploy with</text>
+      <text class="lbl" x="130" y="114" text-anchor="middle">offset = 0</text>
+      <path class="sk blue" d="M62 128 L196 128" style="color:var(--ink)" marker-end="url(#arr)"/>
+
+      <rect class="sk red" x="110" y="160" width="520" height="200" rx="8" style="stroke-dasharray:8 5;stroke-width:1.8"/>
+      <text class="lbl r" x="125" y="182">loop until caught up</text>
+
+      <text class="lbl" x="290" y="208" text-anchor="middle">read batch</text>
+      <text class="lbl" x="290" y="228" text-anchor="middle">from offset</text>
+      <path class="sk blue" d="M202 242 L376 242" style="color:var(--ink)" marker-end="url(#arr)"/>
+
+      <text class="lbl" x="475" y="262" text-anchor="middle" style="font-size:15px">upsert rows +</text>
+      <text class="lbl" x="475" y="282" text-anchor="middle" style="font-size:15px">store offset</text>
+      <text class="lbl" x="475" y="302" text-anchor="middle" style="font-size:15px">(one transaction)</text>
+      <path class="sk blue" d="M202 330 L566 330" style="color:var(--ink)" marker-end="url(#arr)"/>
+
+      <path class="sk blue" d="M62 395 C 110 395, 110 425, 64 425" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <rect x="122" y="396" width="290" height="28" style="fill:var(--paper)"/>
+      <text class="lbl g" x="128" y="417" style="font-size:15px">switch reads to orders_view_v2, drop v1</text>
+    </svg>
+    <figcaption>Fig 2: replay into a new table, then swap reads over</figcaption>
+  </figure>
+
+  <div class="pagebreak">~ page 3 ~</div>
+
+  <h2>Example</h2>
+  <span class="lang">python</span>
+<pre class="code"><code>from dataclasses import dataclass, field
+
+# Events: immutable, past tense, versioned
+@dataclass(frozen=True)
+class Event:
+    stream: str
+    seq: int
+    type: str
+    data: dict
+    version: int = 1
+
+def apply(state: dict, e: Event) -&gt; dict:
+    match e.type:
+        case "OrderPlaced":
+            return {"status": "placed", "total": e.data["total"], "customer": e.data["customer"]}
+        case "ItemRemoved":
+            return {**state, "total": state["total"] - e.data["price"]}
+        case "PaymentCaptured":
+            return {**state, "status": "paid"}
+        case "OrderShipped":
+            return {**state, "status": "shipped"}
+    return state                                       # ignore unknown events (forward compatible)
+
+events = [
+    Event("order-123", 1, "OrderPlaced", {"total": 5000, "customer": "c7"}),
+    Event("order-123", 2, "ItemRemoved", {"price": 1500}),
+    Event("order-123", 3, "PaymentCaptured", {"amount": 3500}),
+]
+state = {}
+for e in events:
+    state = apply(state, e)
+print(state)       # {'status': 'paid', 'total': 3500, 'customer': 'c7'}</code></pre>
+
+  <span class="lang">python</span>
+<pre class="code"><code># An idempotent projector: offset and view updated in ONE transaction
+def project(conn, batch, partition):
+    with conn.transaction():
+        last = conn.execute("SELECT last_offset FROM projector_offsets WHERE p = %s FOR UPDATE",
+                            (partition,)).fetchone()[0]
+        for offset, e in batch:
+            if offset &lt;= last:
+                continue                                  # already applied (redelivery)
+            if e.type == "OrderPlaced":
+                conn.execute("INSERT INTO orders_by_customer (customer, order_id, total) "
+                             "VALUES (%s, %s, %s) ON CONFLICT DO NOTHING",
+                             (e.data["customer"], e.stream, e.data["total"]))
+            last = offset
+        conn.execute("UPDATE projector_offsets SET last_offset = %s WHERE p = %s", (last, partition))</code></pre>
+
+  <h2>Exercises</h2>
+  <ol style="list-style:none;padding-left:0">
+    <li>1. Design an event schema for a distributed order flow.
+      <div class="box"><b>Solution</b> Envelope: <code>{event_id (UUID), type, version, stream_id, seq, occurred_at, causation_id, correlation_id, producer, data}</code>. Types: <code>OrderPlaced</code>, <code>OrderLineAdded</code>, <code>PaymentAuthorized</code>, <code>PaymentCaptured</code>, <code>PaymentFailed</code>, <code>OrderShipped</code>, <code>OrderCancelled</code>. Rules: past tense; include what consumers need (avoid "go call the API"); money in minor units with currency; only add optional fields; register schemas (Avro/Protobuf) with compatibility checks.</div></li>
+    <li>2. Rebuild a projection by replaying an event log.
+      <div class="box"><b>Solution</b> Create a new table, start a projector with offset 0 for all partitions, apply events idempotently with offsets stored in the same transaction, wait until lag reaches ~0, then switch reads with a view rename or feature flag and delete the old table. For long histories, start from a snapshot or use a compacted topic.</div></li>
+    <li>3. A consumer crashes after updating its projection but before committing its Kafka offset. What happens, and how do you make it safe?
+      <div class="box"><b>Solution</b> On restart it re-reads and re-applies the same events (at-least-once). Make it safe by storing the offset (or processed event IDs) in the projection database in the same transaction as the update, and skip anything already applied. Upserts and <code>ON CONFLICT DO NOTHING</code> help too.</div></li>
+  </ol>
+
+  <div class="pagebreak">~ page 4 ~</div>
+
+  <h2>Mini project</h2>
+  <p><b>A two-service event-sourced flow with a shared log and projections.</b></p>
+  <figure>
+    <svg viewBox="0 0 660 490" role="img" aria-label="Flowchart: POST /orders to order service (Postgres events table with unique stream_id, seq) to outbox relay to Kafka topic orders; payment service consumes OrderPlaced and emits PaymentCaptured back to Kafka; Kafka feeds the projector to orders_view, which serves GET /orders/:id; the replay CLI rebuilds orders_view from offset 0 into the projector">
+      <rect class="sk" x="15" y="45" width="150" height="45" rx="10"/>
+      <text class="lbl b" x="90" y="73" text-anchor="middle">POST /orders</text>
+      <path class="sk blue" d="M165 67 L193 67" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <rect class="sk" x="195" y="10" width="230" height="115" rx="10"/>
+      <text class="lbl b" x="310" y="36" text-anchor="middle">order service</text>
+      <text class="lbl" x="310" y="60" text-anchor="middle">event store: Postgres</text>
+      <text class="lbl" x="310" y="80" text-anchor="middle">events table</text>
+      <text class="lbl" x="310" y="102" text-anchor="middle">(stream_id, seq UNIQUE)</text>
+      <path class="sk blue" d="M310 125 L310 168" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <rect class="sk" x="215" y="170" width="190" height="45" rx="10"/>
+      <text class="lbl b" x="310" y="198" text-anchor="middle">outbox relay</text>
+      <path class="sk blue" d="M310 215 L310 253" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <rect class="sk red" x="230" y="255" width="160" height="85" rx="22"/>
+      <text class="lbl r" x="310" y="282" text-anchor="middle">Redpanda /</text>
+      <text class="lbl r" x="310" y="304" text-anchor="middle">Kafka</text>
+      <text class="lbl r" x="310" y="326" text-anchor="middle">'orders'</text>
+      <rect class="sk" x="450" y="245" width="195" height="105" rx="10"/>
+      <text class="lbl b" x="547" y="271" text-anchor="middle">payment service</text>
+      <text class="lbl" x="547" y="294" text-anchor="middle" style="font-size:15px">consumes</text>
+      <text class="lbl" x="547" y="314" text-anchor="middle" style="font-size:15px">OrderPlaced →</text>
+      <text class="lbl" x="547" y="334" text-anchor="middle" style="font-size:15px">emits PaymentCaptured</text>
+      <path class="sk blue" d="M392 285 L448 285" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M448 322 L392 322" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M310 340 C 310 365, 325 375, 330 393" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <rect class="sk" x="235" y="395" width="190" height="60" rx="10"/>
+      <text class="lbl b" x="330" y="420" text-anchor="middle">projector →</text>
+      <text class="lbl b" x="330" y="442" text-anchor="middle">orders_view</text>
+      <path class="sk blue" d="M425 425 L478 425" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <rect class="sk green" x="480" y="405" width="160" height="42" rx="8"/>
+      <text class="lbl g" x="560" y="432" text-anchor="middle">GET /orders/:id</text>
+      <rect class="sk" x="10" y="385" width="175" height="85" rx="10"/>
+      <text class="lbl b" x="97" y="410" text-anchor="middle">replay CLI:</text>
+      <text class="lbl" x="97" y="432" text-anchor="middle" style="font-size:15px">rebuild orders_view</text>
+      <text class="lbl" x="97" y="452" text-anchor="middle" style="font-size:15px">from offset 0</text>
+      <path class="sk blue" d="M185 427 L233 427" style="color:var(--ink)" marker-end="url(#arr)"/>
+    </svg>
+    <figcaption>Fig 3: two services sharing one log; the replay CLI can rebuild the view at any time</figcaption>
+  </figure>
+
+  <h3>Steps</h3>
+  <ol style="list-style:none;padding-left:0">
+    <li>1. The order service stores events in a Postgres <code>events</code> table with a unique <code>(stream_id, seq)</code> constraint (optimistic concurrency).</li>
+    <li>2. An outbox relay publishes new events to Kafka/Redpanda, keyed by <code>order_id</code>.</li>
+    <li>3. The payment service reacts to <code>OrderPlaced</code> and emits <code>PaymentCaptured</code> or <code>PaymentFailed</code> (idempotently, by event ID).</li>
+    <li>4. A projector builds <code>orders_view</code>; the query API reads it and returns the projection's version.</li>
+    <li>5. A replay tool rebuilds the view from zero into a new table; compare row-by-row with the old one.</li>
+    <li>6. Chaos: kill the projector mid-batch and redeliver duplicates; the view must stay correct.</li>
+  </ol>
+  <div class="box"><b>Done when:</b> replaying from zero produces an identical view, and duplicates or crashes never double-count.</div>
+
+  <h2>Open source</h2>
+  <ul>
+    <li><a href="https://github.com/apache/kafka"><code>apache/kafka</code></a> — partitioned, replicated logs with consumer groups and compaction; the backbone for event-driven projections.</li>
+    <li><a href="https://github.com/EventStore/EventStore"><code>EventStore/EventStore</code></a> — a database built for event sourcing: streams per aggregate, optimistic concurrency, subscriptions, and projections.</li>
+  </ul>
+
+  <h2>Interview</h2>
+  <ol style="list-style:none;padding-left:0">
+    <li>1. <b>"Event sourcing vs state persistence?"</b>
+      <div class="box"><b>Answer</b> State persistence stores the current row and overwrites it, so history is lost unless you add audit tables. Event sourcing stores every change as an immutable event and derives state by folding them, which gives a full audit trail, time travel, replays, and many independent read models. The cost: eventual consistency for reads, event versioning forever, more infrastructure, and harder ad-hoc queries on current state.</div></li>
+    <li>2. <b>"How do projections stay consistent?"</b>
+      <div class="box"><b>Answer</b> They're eventually consistent by design. For correctness: order events per aggregate (partition by aggregate ID), make handlers idempotent by storing the processed offset or event ID atomically with the update, handle unknown or old versions, and monitor lag. For users: return the write's version and let reads wait for the projection to reach it, or read critical data from the write side. Recover from bugs by replaying into a fresh projection.</div></li>
+  </ol>
+
+  <h2>Checklist</h2>
+  <ul>
+    <li class="todo">design versioned events</li>
+    <li class="todo">rebuild state by replay</li>
+    <li class="todo">keep projections idempotent</li>
+  </ul>
+  <div class="gap"></div>
+  <p class="black"><a href="index.md">Contents</a> · ← <a href="ch51-replication-sharding-raft-and-paxos.notes.html">Chapter 51 — Replication, Sharding, Raft &amp; Paxos</a> · Next → <a href="ch53-etl-elt-batch-and-stream-processing.notes.html">Chapter 53 — ETL/ELT, Batch &amp; Stream Processing</a></p>
+
+  <nav class="nav"><a href="ch51-replication-sharding-raft-and-paxos.notes.html">← Ch 51 — Replication, Sharding, Raft &amp; Paxos</a><a href="index.notes.html">☰ Contents</a><a href="ch53-etl-elt-batch-and-stream-processing.notes.html">Ch 53 — ETL/ELT, Batch &amp; Stream Processing →</a></nav>
+</main>
+</body>
+</html>

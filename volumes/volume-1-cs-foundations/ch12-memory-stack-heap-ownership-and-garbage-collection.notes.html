@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ch 12 — Memory: Stack, Heap, Ownership &amp; Garbage Collection — Notes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;700&family=Kalam:wght@400;700&family=Patrick+Hand&display=swap" rel="stylesheet">
+<style>
+/* ===== Page tokens ===== */
+:root{
+  --line:32px;                 /* ruled-line spacing; every vertical size is a multiple */
+  --paper:#fdfbf4; --rule:#c9dcef; --margin:#e8a0a0;
+  --ink:#1f3a93;               /* blue pen (body) */
+  --ink2:#222;                 /* black pen (headings) */
+  --red:#c0392b; --green:#1e8449;
+  --hl-yellow:rgba(255,235,59,.55); --hl-pink:rgba(255,128,171,.45);
+  --hl-green:rgba(118,255,3,.35); --hl-blue:rgba(64,196,255,.35);
+  --sticky:#fff59d; --desk:#e9e4d8;
+  --hand:'Kalam','Patrick Hand','Comic Sans MS','Segoe Print','Bradley Hand',cursive;
+  --title:'Caveat','Kalam','Segoe Print','Bradley Hand',cursive;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){ --desk:#2b2b2b; }
+}
+:root[data-theme="dark"]{ --desk:#2b2b2b; }
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--desk);font-family:var(--hand);color:var(--ink);}
+
+/* ===== Notebook sheet ===== */
+.page{
+  position:relative; max-width:860px; margin:24px auto; padding:var(--line) 28px calc(var(--line)*2) 84px;
+  background:
+    linear-gradient(90deg,transparent 64px,var(--margin) 64px,var(--margin) 66px,transparent 66px),
+    repeating-linear-gradient(var(--paper) 0,var(--paper) calc(var(--line) - 1px),var(--rule) calc(var(--line) - 1px),var(--rule) var(--line));
+  background-color:var(--paper);
+  box-shadow:0 2px 6px rgba(0,0,0,.15),0 12px 28px rgba(0,0,0,.12);
+  font-size:20px; line-height:var(--line);
+}
+.page::before{ /* punched holes */
+  content:""; position:absolute; left:22px; top:0; bottom:0; width:18px;
+  background:radial-gradient(circle,var(--desk) 7px,transparent 8px) 0 40px/18px 220px repeat-y;
+}
+@media (max-width:600px){
+  .page{margin:0;padding-left:52px;padding-right:16px;font-size:18px;
+    background:
+      linear-gradient(90deg,transparent 40px,var(--margin) 40px,var(--margin) 42px,transparent 42px),
+      repeating-linear-gradient(var(--paper) 0,var(--paper) calc(var(--line) - 1px),var(--rule) calc(var(--line) - 1px),var(--rule) var(--line));
+    background-color:var(--paper);}
+  .page::before{left:10px;width:16px}
+}
+
+/* ===== Text (all margins are multiples of --line so text sits on the rules) ===== */
+.date{position:absolute;top:0;right:24px;font-family:var(--title);font-size:22px;color:var(--ink2);line-height:var(--line)}
+h1{font-family:var(--title);font-weight:700;color:var(--ink2);font-size:46px;line-height:calc(var(--line)*2);margin:0;transform:rotate(-1deg)}
+h1 .u{background:linear-gradient(transparent 62%,var(--hl-yellow) 62%,var(--hl-yellow) 92%,transparent 92%)}
+h2{font-family:var(--title);font-weight:700;color:var(--red);font-size:32px;line-height:calc(var(--line)*1.5);margin:calc(var(--line)*.5) 0 0}
+h2::before{content:"➤ ";font-size:22px}
+p,li{margin:0}
+ul,ol{margin:0;padding-left:28px}
+ul{list-style:none}
+ul>li::before{content:"–";position:absolute;margin-left:-20px}
+ul>li.star::before{content:"★";color:var(--red)}
+ul>li.arrow::before{content:"→"}
+ul>li.check::before{content:"✓";color:var(--green)}
+.gap{height:var(--line)}
+
+/* ===== Pen effects ===== */
+.hl{background:var(--hl-yellow);padding:0 3px;border-radius:3px 6px 4px 7px}
+.hl.pink{background:var(--hl-pink)} .hl.green{background:var(--hl-green)} .hl.blue{background:var(--hl-blue)}
+.red{color:var(--red)} .green{color:var(--green)} .black{color:var(--ink2)}
+.ul{text-decoration:underline wavy var(--red);text-underline-offset:5px}
+.circ{border:2px solid var(--red);border-radius:50% 45% 55% 48%;padding:0 6px}
+.strike{text-decoration:line-through 2px var(--red)}
+.term{font-weight:700;color:var(--ink2)}
+.box{display:flow-root;border:2.5px solid var(--ink2);border-radius:4px 10px 6px 12px;padding:calc(var(--line)*.5 - 2.5px) 14px;margin:calc(var(--line)*.5) 0;transform:rotate(-.4deg);background:rgba(255,255,255,.35)}
+.box.red{border-color:var(--red)}
+.formula{font-family:var(--title);font-size:28px;text-align:center;color:var(--ink2)}
+
+/* sticky note */
+.sticky{float:right;width:min(250px,42%);margin:0 0 var(--line) 20px;padding:var(--line) 16px;background:var(--sticky);
+  color:#333;transform:rotate(2.2deg);box-shadow:2px 4px 8px rgba(0,0,0,.18);font-size:18px}
+.sticky b{font-family:var(--title);font-size:24px;color:var(--red)}
+@media (max-width:600px){.sticky{float:none;width:auto;margin:var(--line) 0}}
+
+/* margin annotation (lives in the red margin) */
+.side{position:absolute;left:4px;width:58px;text-align:center;font-family:var(--title);font-size:17px;line-height:18px;color:var(--red);transform:rotate(-8deg)}
+@media (max-width:600px){.side{display:none}}
+
+/* two-column notes */
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:0 28px}
+@media (max-width:600px){.cols{grid-template-columns:1fr}}
+
+/* diagrams */
+figure{margin:var(--line) 0;text-align:center}
+figure svg{width:100%;max-width:640px;height:auto;overflow:visible}
+figcaption{font-family:var(--title);font-size:20px;color:var(--ink2)}
+/* phones: keep labels readable — diagram scrolls inside its own box instead of shrinking */
+@media (max-width:600px){figure{overflow-x:auto}figure svg{min-width:520px}}
+.sk{fill:none;stroke:var(--ink2);stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round;filter:url(#rough)}
+.sk.blue{stroke:var(--ink)} .sk.red{stroke:var(--red)} .sk.green{stroke:var(--green)}
+.lbl{font-family:var(--hand);font-size:17px;fill:var(--ink)}
+.lbl.b{font-weight:700;fill:var(--ink2)} .lbl.r{fill:var(--red)} .lbl.g{fill:var(--green)}
+
+/* table */
+.wrap{overflow-x:auto}
+table{border-collapse:collapse;margin:calc(var(--line)*.5) 0;min-width:100%}
+th,td{border:2px solid var(--ink2);padding:0 10px;text-align:left;vertical-align:top}
+th{font-family:var(--title);font-size:24px;color:var(--ink2)}
+
+@media print{body{background:#fff}.page{box-shadow:none;margin:0}.page::before{display:none}}
+
+/* ===== Added for long chapter notes ===== */
+pre.code{font-family:Consolas,'Courier New',monospace;font-size:14px;line-height:var(--line);color:var(--ink);background:rgba(255,255,255,.45);
+  border-left:4px solid var(--red);margin:calc(var(--line)*.5) 0;padding:0 12px;overflow-x:auto;white-space:pre}
+pre.code.ascii{border-left-color:var(--green)}
+code{font-family:Consolas,'Courier New',monospace;font-size:.82em;background:rgba(0,0,0,.06);padding:0 3px;border-radius:3px}
+pre.code code{background:none;padding:0;font-size:inherit}
+.lang{font-family:var(--title);font-size:18px;color:var(--red)}
+h3{font-family:var(--title);font-weight:700;color:var(--ink2);font-size:26px;line-height:var(--line);margin:calc(var(--line)*.5) 0 0}
+h3::before{content:"✎ ";font-size:18px;color:var(--red)}
+.nav{display:flex;justify-content:space-between;gap:12px;font-family:var(--title);font-size:22px;line-height:var(--line)}
+.nav a{color:var(--red);text-decoration:none}
+.nav a:hover{text-decoration:underline wavy}
+.pagebreak{border-top:3px dashed var(--margin);margin:var(--line) 0;text-align:center;font-family:var(--title);color:var(--red);line-height:var(--line)}
+li.todo::before{content:"☐";color:var(--ink2)}
+a{color:var(--ink);text-decoration:underline dotted}
+</style>
+</head>
+<body>
+<!-- One shared hand-drawn wobble filter; give every diagram stroke class="sk" -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <!-- userSpaceOnUse region: a % region collapses to nothing on perfectly straight lines (zero-height bbox) -->
+  <filter id="rough" filterUnits="userSpaceOnUse" x="-500" y="-500" width="3000" height="3000">
+    <feTurbulence type="fractalNoise" baseFrequency="0.03" numOctaves="2" seed="3" result="n"/>
+    <feDisplacementMap in="SourceGraphic" in2="n" scale="3"/>
+  </filter>
+  <marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+    <path d="M1 1 L9 5 L1 9" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+  </marker>
+</defs></svg>
+
+<main class="page">
+  <nav class="nav"><a href="ch11-advanced-language-features.notes.html">← Ch 11 — Advanced Language Features</a><a href="index.notes.html">☰ Contents</a><a href="ch13-concurrency-threads-processes-async-futures-and-coroutines.notes.html">Ch 13 — Concurrency: Threads, Processes, Async, Futures &amp; Coroutines →</a></nav>
+  <div class="date">2026-10-10</div>
+  <h1><span class="u">Ch 12 — Memory: Stack, Heap, Ownership &amp; Garbage Collection</span></h1>
+  <p class="black"><b>Volume 1 — Computer Science Foundations</b> · <a href="index.md">Contents</a> · ← <a href="ch11-advanced-language-features.notes.html">Chapter 11 — Advanced Language Features</a> · Next → <a href="ch13-concurrency-threads-processes-async-futures-and-coroutines.notes.html">Chapter 13 — Concurrency: Threads, Processes, Async, Futures &amp; Coroutines</a></p>
+<p class="black">Chapter 12 — Memory: Stack, Heap, Ownership &amp; Garbage Collection</p>
+<h2>Concept</h2>
+<p>Stack vs heap allocation; references; Rust ownership/borrowing/lifetimes; tracing GC vs reference counting.</p>
+<div class="box"><b>In one sentence:</b> the stack is fast, automatic, short-lived memory tied to function calls; the heap is flexible memory that someone must eventually free — by hand (C), by ownership rules checked at compile time (Rust), or by a garbage collector (Python, Java, Go).</div>
+<p><b>Mental model — hotel rooms vs a warehouse.</b> The stack is a stack of hotel trays: each function call takes the next tray, and trays are cleared automatically when the call ends. The heap is a warehouse: you can rent any size of space for any length of time, but somebody must return the key. Forgetting is a <i>leak</i>. Using the space after returning the key is <i>use-after-free</i>.</p>
+<h3>Stack vs heap</h3>
+<div class="wrap"><table>
+<tr><th></th><th>Stack</th><th>Heap</th></tr>
+<tr><td>Allocation</td><td>move a pointer (nanoseconds)</td><td>allocator search (slower)</td></tr>
+<tr><td>Freed</td><td>automatically when the function returns</td><td>manually, by ownership, or by the GC</td></tr>
+<tr><td>Size</td><td>small (1–8 MB per thread), fixed at compile time per frame</td><td>large, dynamic</td></tr>
+<tr><td>Holds</td><td>locals, parameters, return addresses</td><td>objects that outlive a call or have dynamic size</td></tr>
+<tr><td>Failure</td><td>stack overflow (deep recursion)</td><td>out of memory, fragmentation, leaks</td></tr>
+</table></div>
+<h3>Three memory-management strategies</h3>
+<div class="wrap"><table>
+<tr><th>Strategy</th><th>Languages</th><th>How it frees</th><th>Cost</th></tr>
+<tr><td>Manual</td><td>C, C++ (<code>malloc</code>/<code>free</code>, <code>new</code>/<code>delete</code>)</td><td>the programmer calls free</td><td>bugs: leaks, double free, use-after-free</td></tr>
+<tr><td>Ownership + borrowing</td><td>Rust (and C++ RAII)</td><td>the compiler inserts the free when the owner goes out of scope</td><td>learning curve; compile-time checks</td></tr>
+<tr><td>Reference counting</td><td>Python (plus a cycle collector), Swift, <code>Rc</code>/<code>Arc</code></td><td>free when the count hits 0</td><td>a count update on every copy; cycles leak without help</td></tr>
+<tr><td>Tracing GC</td><td>Java, Go, JS, C#, Python's cycle collector</td><td>periodically mark everything reachable from roots, sweep the rest</td><td>pauses, extra memory headroom</td></tr>
+</table></div>
+<h3>Rust ownership rules</h3>
+<ol style="list-style:none;padding-left:0">
+<li><p>1. Each value has exactly one <i>owner</i>.</p></li>
+<li><p>2. When the owner goes out of scope, the value is dropped (freed).</p></li>
+<li><p>3. You may <i>borrow</i>: either **any number of shared <code>&amp;T</code><b> or </b>exactly one mutable <code>&amp;mut T</code>** — never both at the same time.</p></li>
+<li><p>4. A reference can never outlive the value it points to. <i>Lifetimes</i> are how the compiler checks this.</p></li>
+</ol>
+<h2>Prereqs</h2>
+<ul>
+<li><p><a href="ch03-functions-parameters-return-values-scope-and-namespaces.notes.html">Chapter 3 — Functions, Parameters, Return Values, Scope &amp; Namespaces</a></p></li>
+</ul>
+<div class="pagebreak">~ page 2 ~</div>
+<h2>Diagram</h2>
+<h3>Memory layout: stack frames and a heap with GC roots</h3>
+<pre class="code ascii"><code> STACK (grows down)                         HEAP
+ ┌───────────────────────────┐
+ │ main                      │           ┌───────────────┐
+ │   users ──────────────────┼─────────► │ list [ •, • ] │── root-reachable
+ │   count = 2  (int, inline)│           └──┬─────┬──────┘
+ ├───────────────────────────┤              ▼     ▼
+ │ load_user                 │        ┌────────┐ ┌────────┐
+ │   u ──────────────────────┼──────► │ User A │ │ User B │
+ │   buf = [u8; 64] (inline) │        └────────┘ └────────┘
+ └───────────────────────────┘
+                                       ┌────────┐     ┌────────┐
+                                       │ Node X │ ◄──►│ Node Y │  unreachable cycle:
+                                       └────────┘     └────────┘  refcounts stay 1,
+                                                                   only a tracing GC frees it</code></pre>
+<h3>Tracing GC: mark and sweep</h3>
+<figure>
+  <svg viewBox="0 0 640 290" role="img" aria-label="Garbage collection reachability: roots reach obj A, obj B and obj C; obj D and obj E point to each other but no root reaches them, so they are garbage">
+    <rect class="sk" x="28" y="50" width="193" height="60" rx="10" style="fill:var(--hl-green)"/>
+    <rect class="sk" x="305" y="22" width="70" height="37" rx="10" style="fill:var(--paper)"/>
+    <rect class="sk" x="465" y="22" width="70" height="37" rx="10" style="fill:var(--paper)"/>
+    <rect class="sk" x="305" y="102" width="70" height="37" rx="10" style="fill:var(--paper)"/>
+    <rect class="sk red" x="155" y="206" width="70" height="37" rx="10" style="fill:var(--hl-pink)"/>
+    <rect class="sk red" x="385" y="206" width="70" height="37" rx="10" style="fill:var(--hl-pink)"/>
+    <path class="sk blue" d="M222 80 C263 80 263 40 305 40" style="color:var(--ink)" marker-end="url(#arr)"/>
+    <path class="sk blue" d="M375 40 L465 40" style="color:var(--ink)" marker-end="url(#arr)"/>
+    <path class="sk blue" d="M222 80 C263 80 263 120 305 120" style="color:var(--ink)" marker-end="url(#arr)"/>
+    <path class="sk red" d="M222 218 L388 218" style="color:var(--red)" marker-end="url(#arr)"/>
+    <path class="sk red" d="M388 234 L222 234" style="color:var(--red)" marker-end="url(#arr)"/>
+    <text class="lbl b" x="125" y="74" text-anchor="middle">Roots:</text>
+    <text class="lbl b" x="125" y="97" text-anchor="middle">stack vars, globals</text>
+    <text class="lbl b" x="340" y="45" text-anchor="middle">obj A</text>
+    <text class="lbl b" x="500" y="45" text-anchor="middle">obj B</text>
+    <text class="lbl b" x="340" y="125" text-anchor="middle">obj C</text>
+    <text class="lbl r" x="190" y="230" text-anchor="middle">obj D</text>
+    <text class="lbl r" x="420" y="230" text-anchor="middle">obj E</text>
+    <text class="lbl r" x="305" y="275" text-anchor="middle" style="font-size:15px">unreachable cycle: garbage</text>
+  </svg>
+  <figcaption>Fig: roots reach A, B, C; D and E form a cycle that no root reaches (red)</figcaption>
+</figure>
+<p>Mark everything reachable from the roots (A, B, C). Sweep the rest (D, E — red).</p>
+<h3>Rust move and borrow</h3>
+<pre class="code ascii"><code> let a = String::from("hi");     a ──► [heap "hi"]
+ let b = a;                      a ✗   b ──► [heap "hi"]    ownership MOVED; using a is a compile error
+ let r1 = &amp;b; let r2 = &amp;b;       two shared borrows: fine
+ let m = &amp;mut b;                 ✗ error while r1/r2 are still used later</code></pre>
+<div class="pagebreak">~ page 3 ~</div>
+<h2>Example</h2>
+<span class="lang">rust</span>
+<pre class="code"><code>fn longest&lt;'a&gt;(x: &amp;'a str, y: &amp;'a str) -&gt; &amp;'a str {   // result lives as long as both inputs
+    if x.len() &gt; y.len() { x } else { y }
+}
+
+fn main() {
+    let mut v = vec![1, 2, 3];
+    let first = &amp;v[0];            // shared borrow of v
+    // v.push(4);                 // ❌ error[E0502]: cannot borrow `v` as mutable
+    //                            //    because it is also borrowed as immutable
+    println!("{first}");          // last use of `first` — borrow ends here
+    v.push(4);                    // ✅ fine now
+
+    let s = String::from("hello");
+    let t = s;                    // move
+    // println!("{s}");           // ❌ error[E0382]: borrow of moved value: `s`
+    println!("{}", longest(&amp;t, "hi"));
+}</code></pre>
+<p>Why <code>v.push(4)</code> must be rejected: <code>push</code> may reallocate the vector's buffer to a new address, leaving <code>first</code> pointing at freed memory. The borrow checker turns that runtime bug into a compile error.</p>
+<span class="lang">python</span>
+<pre class="code"><code>import sys, gc
+
+x = []
+print(sys.getrefcount(x))        # 2: `x` + the temporary argument
+y = x
+print(sys.getrefcount(x))        # 3
+
+class Node:
+    def __init__(self): self.other = None
+
+a, b = Node(), Node()
+a.other, b.other = b, a          # a reference cycle
+del a, b                         # refcounts never reach 0...
+print(gc.collect())              # ...the cycle collector finds and frees them (prints &gt; 0)</code></pre>
+<h2>Exercises</h2>
+<ol style="list-style:none;padding-left:0">
+<li><p>1. Explain why a returned reference to a stack local is invalid.</p>
+<div class="box"><b>Solution</b>
+<p>The local lives in the function's stack frame, which is reclaimed when the function returns. The next call reuses that memory, so the reference would point at garbage (a dangling pointer). C compilers warn; Rust refuses: "returns a reference to data owned by the current function". Return the value itself (moved or copied) instead.</p>
+</div></li>
+<li><p>2. Write a Rust program and fix a borrow-checker error.</p>
+<div class="box"><b>Solution</b>
+<p>The <code>v.push</code> example above: shorten the shared borrow's life (use it before mutating), clone the value (<code>let first = v[0];</code> copies an <code>i32</code>), or restructure so the mutation happens first.</p>
+</div></li>
+<li><p>3. Why can't reference counting alone free a doubly linked list?</p>
+<div class="box"><b>Solution</b>
+<p>Each node is referenced by its neighbors, so counts never reach 0 even after the list is unreachable. Fixes: a tracing cycle collector (Python), or weak back-pointers that don't count (<code>Weak&amp;lt;T&amp;gt;</code> in Rust, <code>weakref</code> in Python).</p>
+</div></li>
+</ol>
+<div class="pagebreak">~ page 4 ~</div>
+<h2>Mini project</h2>
+<h3>A cycle-producing data structure in Python and how the GC collects it.</h3>
+<figure>
+  <svg viewBox="0 0 660 280" role="img" aria-label="Experiment flow: build 100k parent-child node pairs, del root, measure memory with tracemalloc, gc.collect(), measure again; variant with child.parent = weakref.ref(parent) frees memory at once on del root">
+    <rect class="sk" x="26" y="20" width="158" height="83" rx="10" style="fill:var(--paper)"/>
+    <rect class="sk" x="237" y="44" width="96" height="37" rx="10" style="fill:var(--paper)"/>
+    <rect class="sk" x="395" y="32" width="149" height="60" rx="10" style="fill:var(--paper)"/>
+    <rect class="sk" x="414" y="130" width="132" height="37" rx="10" style="fill:var(--paper)"/>
+    <rect class="sk" x="220" y="130" width="140" height="37" rx="10" style="fill:var(--paper)"/>
+    <rect class="sk" x="8" y="184" width="193" height="83" rx="10" style="fill:var(--hl-blue)"/>
+    <rect class="sk" x="330" y="195" width="140" height="60" rx="10" style="fill:var(--hl-green)"/>
+    <path class="sk blue" d="M184 62 L237 62" style="color:var(--ink)" marker-end="url(#arr)"/>
+    <path class="sk blue" d="M333 62 L395 62" style="color:var(--ink)" marker-end="url(#arr)"/>
+    <path class="sk blue" d="M480 94 L480 130" style="color:var(--ink)" marker-end="url(#arr)"/>
+    <path class="sk blue" d="M414 148 L360 148" style="color:var(--ink)" marker-end="url(#arr)"/>
+    <path class="sk blue" d="M105 104 L105 184" style="color:var(--ink)" marker-end="url(#arr)"/>
+    <path class="sk blue" d="M202 225 L330 225" style="color:var(--ink)" marker-end="url(#arr)"/>
+    <text class="lbl b" x="105" y="44" text-anchor="middle">build 100k</text>
+    <text class="lbl b" x="105" y="67" text-anchor="middle">parent↔child</text>
+    <text class="lbl b" x="105" y="90" text-anchor="middle">node pairs</text>
+    <text class="lbl b" x="285" y="67" text-anchor="middle">del root</text>
+    <text class="lbl b" x="470" y="56" text-anchor="middle">measure memory</text>
+    <text class="lbl b" x="470" y="79" text-anchor="middle">(tracemalloc)</text>
+    <text class="lbl b" x="480" y="153" text-anchor="middle">gc.collect()</text>
+    <text class="lbl b" x="290" y="153" text-anchor="middle">measure again</text>
+    <text class="lbl b" x="105" y="207" text-anchor="middle">variant:</text>
+    <text class="lbl b" x="105" y="230" text-anchor="middle">child.parent =</text>
+    <text class="lbl b" x="105" y="253" text-anchor="middle">weakref.ref(parent)</text>
+    <text class="lbl b" x="400" y="219" text-anchor="middle">del root →</text>
+    <text class="lbl b" x="400" y="242" text-anchor="middle">freed at once</text>
+  </svg>
+  <figcaption>Fig: the experiment — main run (top) and the weakref variant (bottom)</figcaption>
+</figure>
+<h3>Steps</h3>
+<ol style="list-style:none;padding-left:0">
+<li><p>1. Build a tree where each child has a strong reference to its parent (cycles everywhere).</p></li>
+<li><p>2. Disable automatic GC (<code>gc.disable()</code>), delete the root, and show with <code>tracemalloc</code> that memory is <i>not</i> released.</p></li>
+<li><p>3. Call <code>gc.collect()</code>; show the count of collected objects and the memory drop.</p></li>
+<li><p>4. Rewrite with <code>weakref.ref</code> for the parent pointer; show memory is released immediately with GC still disabled.</p></li>
+<li><p>5. Use <code>gc.get_referrers</code> to explain <i>who</i> keeps an object alive.</p></li>
+</ol>
+<div class="box"><b>Done when:</b> you can show three memory numbers (built, after del, after collect) for both versions and explain each.</div>
+<h2>Open source</h2>
+<ul>
+<li><p>[<code>python/cpython</code>](https://github.com/python/cpython) GC — <code>Python/gc.c</code>, and the "Garbage collector design" doc in <code>InternalDocs/</code>, explain generational cycle detection on top of refcounting.</p></li>
+<li><p>[<code>rust-lang/rust</code>](https://github.com/rust-lang/rust) borrow checker — <code>compiler/rustc_borrowck/</code>; the Rust Book chapter 4, "Understanding Ownership", is the friendlier entry point.</p></li>
+</ul>
+<div class="pagebreak">~ page 5 ~</div>
+<h2>Interview</h2>
+<ol style="list-style:none;padding-left:0">
+<li>1. <h3>"Stack vs heap allocation?"</h3>
+<div class="box"><b>Answer</b>
+<p>Stack allocation is a pointer bump. It is freed automatically on return and is very fast and cache-friendly, but sizes must be known and lifetimes end with the call. Heap allocation supports dynamic sizes and lifetimes beyond the call, but costs more, can fragment, and needs a freeing strategy.</p>
+</div></li>
+<li>2. <h3>"How does Rust prevent use-after-free?"</h3>
+<div class="box"><b>Answer</b>
+<p>At compile time, not runtime. Each value has one owner that frees it when it goes out of scope. References are checked by lifetimes so they cannot outlive the owner. The aliasing-XOR-mutation rule prevents one path from freeing or reallocating memory while another still reads it. No GC and no runtime cost.</p>
+</div></li>
+</ol>
+<h2>Checklist</h2>
+<ul>
+<li class="todo"><p>explain stack/heap</p></li>
+<li class="todo"><p>read a borrow error</p></li>
+<li class="todo"><p>know GC vs refcounting trade-offs</p></li>
+</ul>
+<p class="black"><a href="index.md">Contents</a> · ← <a href="ch11-advanced-language-features.notes.html">Chapter 11 — Advanced Language Features</a> · Next → <a href="ch13-concurrency-threads-processes-async-futures-and-coroutines.notes.html">Chapter 13 — Concurrency: Threads, Processes, Async, Futures &amp; Coroutines</a></p>
+  <nav class="nav"><a href="ch11-advanced-language-features.notes.html">← Ch 11 — Advanced Language Features</a><a href="index.notes.html">☰ Contents</a><a href="ch13-concurrency-threads-processes-async-futures-and-coroutines.notes.html">Ch 13 — Concurrency: Threads, Processes, Async, Futures &amp; Coroutines →</a></nav>
+</main>
+</body>
+</html>

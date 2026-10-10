@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ch 55 — Containers: Docker, Kubernetes &amp; Helm — Notes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;700&family=Kalam:wght@400;700&family=Patrick+Hand&display=swap" rel="stylesheet">
+<style>
+/* ===== Page tokens ===== */
+:root{
+  --line:32px;                 /* ruled-line spacing; every vertical size is a multiple */
+  --paper:#fdfbf4; --rule:#c9dcef; --margin:#e8a0a0;
+  --ink:#1f3a93;               /* blue pen (body) */
+  --ink2:#222;                 /* black pen (headings) */
+  --red:#c0392b; --green:#1e8449;
+  --hl-yellow:rgba(255,235,59,.55); --hl-pink:rgba(255,128,171,.45);
+  --hl-green:rgba(118,255,3,.35); --hl-blue:rgba(64,196,255,.35);
+  --sticky:#fff59d; --desk:#e9e4d8;
+  --hand:'Kalam','Patrick Hand','Comic Sans MS','Segoe Print','Bradley Hand',cursive;
+  --title:'Caveat','Kalam','Segoe Print','Bradley Hand',cursive;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){ --desk:#2b2b2b; }
+}
+:root[data-theme="dark"]{ --desk:#2b2b2b; }
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--desk);font-family:var(--hand);color:var(--ink);}
+
+/* ===== Notebook sheet ===== */
+.page{
+  position:relative; max-width:860px; margin:24px auto; padding:var(--line) 28px calc(var(--line)*2) 84px;
+  background:
+    linear-gradient(90deg,transparent 64px,var(--margin) 64px,var(--margin) 66px,transparent 66px),
+    repeating-linear-gradient(var(--paper) 0,var(--paper) calc(var(--line) - 1px),var(--rule) calc(var(--line) - 1px),var(--rule) var(--line));
+  background-color:var(--paper);
+  box-shadow:0 2px 6px rgba(0,0,0,.15),0 12px 28px rgba(0,0,0,.12);
+  font-size:20px; line-height:var(--line);
+}
+.page::before{ /* punched holes */
+  content:""; position:absolute; left:22px; top:0; bottom:0; width:18px;
+  background:radial-gradient(circle,var(--desk) 7px,transparent 8px) 0 40px/18px 220px repeat-y;
+}
+@media (max-width:600px){
+  .page{margin:0;padding-left:52px;padding-right:16px;font-size:18px;
+    background:
+      linear-gradient(90deg,transparent 40px,var(--margin) 40px,var(--margin) 42px,transparent 42px),
+      repeating-linear-gradient(var(--paper) 0,var(--paper) calc(var(--line) - 1px),var(--rule) calc(var(--line) - 1px),var(--rule) var(--line));
+    background-color:var(--paper);}
+  .page::before{left:10px;width:16px}
+}
+
+/* ===== Text (all margins are multiples of --line so text sits on the rules) ===== */
+.date{position:absolute;top:0;right:24px;font-family:var(--title);font-size:22px;color:var(--ink2);line-height:var(--line)}
+h1{font-family:var(--title);font-weight:700;color:var(--ink2);font-size:46px;line-height:calc(var(--line)*2);margin:0;transform:rotate(-1deg)}
+h1 .u{background:linear-gradient(transparent 62%,var(--hl-yellow) 62%,var(--hl-yellow) 92%,transparent 92%)}
+h2{font-family:var(--title);font-weight:700;color:var(--red);font-size:32px;line-height:calc(var(--line)*1.5);margin:calc(var(--line)*.5) 0 0}
+h2::before{content:"➤ ";font-size:22px}
+p,li{margin:0}
+ul,ol{margin:0;padding-left:28px}
+ul{list-style:none}
+ul>li::before{content:"–";position:absolute;margin-left:-20px}
+ul>li.star::before{content:"★";color:var(--red)}
+ul>li.arrow::before{content:"→"}
+ul>li.check::before{content:"✓";color:var(--green)}
+.gap{height:var(--line)}
+
+/* ===== Pen effects ===== */
+.hl{background:var(--hl-yellow);padding:0 3px;border-radius:3px 6px 4px 7px}
+.hl.pink{background:var(--hl-pink)} .hl.green{background:var(--hl-green)} .hl.blue{background:var(--hl-blue)}
+.red{color:var(--red)} .green{color:var(--green)} .black{color:var(--ink2)}
+.ul{text-decoration:underline wavy var(--red);text-underline-offset:5px}
+.circ{border:2px solid var(--red);border-radius:50% 45% 55% 48%;padding:0 6px}
+.strike{text-decoration:line-through 2px var(--red)}
+.term{font-weight:700;color:var(--ink2)}
+.box{display:flow-root;border:2.5px solid var(--ink2);border-radius:4px 10px 6px 12px;padding:calc(var(--line)*.5 - 2.5px) 14px;margin:calc(var(--line)*.5) 0;transform:rotate(-.4deg);background:rgba(255,255,255,.35)}
+.box.red{border-color:var(--red)}
+.formula{font-family:var(--title);font-size:28px;text-align:center;color:var(--ink2)}
+
+/* sticky note */
+.sticky{float:right;width:min(250px,42%);margin:0 0 var(--line) 20px;padding:var(--line) 16px;background:var(--sticky);
+  color:#333;transform:rotate(2.2deg);box-shadow:2px 4px 8px rgba(0,0,0,.18);font-size:18px}
+.sticky b{font-family:var(--title);font-size:24px;color:var(--red)}
+@media (max-width:600px){.sticky{float:none;width:auto;margin:var(--line) 0}}
+
+/* margin annotation (lives in the red margin) */
+.side{position:absolute;left:4px;width:58px;text-align:center;font-family:var(--title);font-size:17px;line-height:18px;color:var(--red);transform:rotate(-8deg)}
+@media (max-width:600px){.side{display:none}}
+
+/* two-column notes */
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:0 28px}
+@media (max-width:600px){.cols{grid-template-columns:1fr}}
+
+/* diagrams */
+figure{margin:var(--line) 0;text-align:center}
+figure svg{width:100%;max-width:640px;height:auto;overflow:visible}
+figcaption{font-family:var(--title);font-size:20px;color:var(--ink2)}
+/* phones: keep labels readable — diagram scrolls inside its own box instead of shrinking */
+@media (max-width:600px){figure{overflow-x:auto}figure svg{min-width:520px}}
+.sk{fill:none;stroke:var(--ink2);stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round;filter:url(#rough)}
+.sk.blue{stroke:var(--ink)} .sk.red{stroke:var(--red)} .sk.green{stroke:var(--green)}
+.lbl{font-family:var(--hand);font-size:17px;fill:var(--ink)}
+.lbl.b{font-weight:700;fill:var(--ink2)} .lbl.r{fill:var(--red)} .lbl.g{fill:var(--green)}
+
+/* table */
+.wrap{overflow-x:auto}
+table{border-collapse:collapse;margin:calc(var(--line)*.5) 0;min-width:100%}
+th,td{border:2px solid var(--ink2);padding:0 10px;text-align:left;vertical-align:top}
+th{font-family:var(--title);font-size:24px;color:var(--ink2)}
+
+@media print{body{background:#fff}.page{box-shadow:none;margin:0}.page::before{display:none}}
+
+/* ===== Added for long chapter notes ===== */
+pre.code{font-family:Consolas,'Courier New',monospace;font-size:14px;line-height:var(--line);color:var(--ink);background:rgba(255,255,255,.45);
+  border-left:4px solid var(--red);margin:calc(var(--line)*.5) 0;padding:0 12px;overflow-x:auto;white-space:pre}
+pre.code.ascii{border-left-color:var(--green)}
+code{font-family:Consolas,'Courier New',monospace;font-size:.82em;background:rgba(0,0,0,.06);padding:0 3px;border-radius:3px}
+pre.code code{background:none;padding:0;font-size:inherit}
+.lang{font-family:var(--title);font-size:18px;color:var(--red)}
+h3{font-family:var(--title);font-weight:700;color:var(--ink2);font-size:26px;line-height:var(--line);margin:calc(var(--line)*.5) 0 0}
+h3::before{content:"✎ ";font-size:18px;color:var(--red)}
+.nav{display:flex;justify-content:space-between;gap:12px;font-family:var(--title);font-size:22px;line-height:var(--line)}
+.nav a{color:var(--red);text-decoration:none}
+.nav a:hover{text-decoration:underline wavy}
+.pagebreak{border-top:3px dashed var(--margin);margin:var(--line) 0;text-align:center;font-family:var(--title);color:var(--red);line-height:var(--line)}
+li.todo::before{content:"☐";color:var(--ink2)}
+a{color:var(--ink);text-decoration:underline dotted}
+</style>
+</head>
+<body>
+<!-- One shared hand-drawn wobble filter; give every diagram stroke class="sk" -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <!-- userSpaceOnUse region: a % region collapses to nothing on perfectly straight lines (zero-height bbox) -->
+  <filter id="rough" filterUnits="userSpaceOnUse" x="-500" y="-500" width="3000" height="3000">
+    <feTurbulence type="fractalNoise" baseFrequency="0.03" numOctaves="2" seed="3" result="n"/>
+    <feDisplacementMap in="SourceGraphic" in2="n" scale="3"/>
+  </filter>
+  <marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+    <path d="M1 1 L9 5 L1 9" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+  </marker>
+</defs></svg>
+
+<main class="page">
+  <nav class="nav"><a href="ch54-data-lakes-warehouses-and-orchestration.notes.html">← Ch 54 — Data Lakes, Warehouses &amp; Orchestration</a><a href="index.notes.html">☰ Contents</a><a href="ch56-iac-terraform-state-and-config-drift.notes.html">Ch 56 — IaC: Terraform, State &amp; Config Drift →</a></nav>
+  <div class="date">2026-10-10</div>
+  <h1><span class="u">Ch 55 — Containers: Docker, Kubernetes &amp; Helm</span></h1>
+    <p class="black">Volume 1 — Computer Science Foundations · <a href="index.md">Contents</a> · ← <a href="ch54-data-lakes-warehouses-and-orchestration.notes.html">Chapter 54 — Data Lakes, Warehouses &amp; Orchestration</a> · Next → <a href="ch56-iac-terraform-state-and-config-drift.notes.html">Chapter 56 — IaC: Terraform, State &amp; Config Drift</a></p>
+
+  <p class="black">Chapter 55 — Containers: Docker, Kubernetes &amp; Helm</p>
+
+  <h2>Concept</h2>
+  <p>Images and containers, Kubernetes orchestration (pods, deployments, services), and Helm charts.</p>
+  <div class="box"><b>In one sentence:</b> a container <span class="hl">image</span> packages your app with everything it needs so it runs the same everywhere; Kubernetes runs many containers across many machines and keeps them in the state you declared; and Helm packages the Kubernetes files so you can install and configure an app with one command.</div>
+
+  <h3>Mental model — shipping containers and a port</h3>
+  <p>Before standard shipping containers, every cargo was loaded differently. A Docker image is a standard box: the crane doesn't care what's inside. Kubernetes is the port authority: you say "keep 5 boxes of type X running, reachable at this address", and it places them on ships (nodes), replaces broken ones, and redirects traffic. Helm is the shipping manifest template you fill in per customer.</p>
+
+  <h3>Container vs VM</h3>
+  <div class="wrap"><table>
+    <tr><th></th><th>Container</th><th>Virtual machine</th></tr>
+    <tr><td>Isolation</td><td>process-level: Linux <b>namespaces</b> (pid, net, mount, user…) + <b>cgroups</b> (CPU/memory limits)</td><td>hardware-level: its own kernel on a hypervisor</td></tr>
+    <tr><td>Kernel</td><td>shared with the host</td><td>its own</td></tr>
+    <tr><td>Start time</td><td>milliseconds</td><td>seconds to minutes</td></tr>
+    <tr><td>Size</td><td>MBs</td><td>GBs</td></tr>
+    <tr><td>Security boundary</td><td>weaker (kernel shared); harden with seccomp, rootless, gVisor, Kata</td><td>stronger</td></tr>
+  </table></div>
+
+  <h3>Docker vocabulary</h3>
+  <div class="wrap"><table>
+    <tr><th>Term</th><th>Meaning</th></tr>
+    <tr><td>Image</td><td>a read-only stack of layers + metadata (entrypoint, env), identified by a digest</td></tr>
+    <tr><td>Layer</td><td>the filesystem diff from one Dockerfile instruction; cached and shared</td></tr>
+    <tr><td>Container</td><td>a running (or stopped) instance of an image with a thin writable layer</td></tr>
+    <tr><td>Registry</td><td>stores images: Docker Hub, GHCR, ECR</td></tr>
+    <tr><td>Tag vs digest</td><td><code>app:1.4</code> (movable) vs <code>app@sha256:…</code> (immutable) — deploy by digest</td></tr>
+  </table></div>
+
+  <div class="pagebreak">~ page 2 ~</div>
+
+  <aside class="sticky"><b>Exam tip!</b><br>Readiness = "send traffic?", liveness = "restart?", startup = "still booting?". Exceeding the memory limit → OOMKilled.</aside>
+  <h3>Kubernetes objects you'll use daily</h3>
+  <div class="wrap"><table>
+    <tr><th>Object</th><th>Purpose</th></tr>
+    <tr><td><b>Pod</b></td><td>1+ containers sharing a network namespace and volumes; the unit of scheduling</td></tr>
+    <tr><td><b>Deployment</b></td><td>declares N replicas of a pod template; handles rolling updates and rollbacks</td></tr>
+    <tr><td>ReplicaSet</td><td>created by a Deployment; keeps exactly N pods</td></tr>
+    <tr><td><b>Service</b></td><td>a stable virtual IP + DNS name that load-balances to healthy pods selected by labels</td></tr>
+    <tr><td>Ingress / Gateway</td><td>HTTP routing from outside into Services</td></tr>
+    <tr><td>ConfigMap / Secret</td><td>configuration and secrets as env vars or files</td></tr>
+    <tr><td><b>Probes</b></td><td><code>startupProbe</code> (still booting?), <code>readinessProbe</code> (send traffic?), <code>livenessProbe</code> (restart?)</td></tr>
+    <tr><td>HPA</td><td>HorizontalPodAutoscaler: scale replicas on CPU or custom metrics</td></tr>
+    <tr><td>Requests / limits</td><td>the resources the scheduler reserves / the ceiling (exceeding memory → OOMKilled)</td></tr>
+    <tr><td>StatefulSet, DaemonSet, Job, CronJob</td><td>stable identity + storage / one pod per node / run to completion / scheduled</td></tr>
+  </table></div>
+
+  <h3>Rolling updates</h3>
+  <p>A Deployment creates new pods (<code>maxSurge</code>), waits until they are <i>ready</i>, then removes old ones (<code>maxUnavailable</code>), step by step. Bad readiness → the rollout stalls instead of taking the service down; <code>kubectl rollout undo</code> reverts.</p>
+
+  <h3>The declarative loop</h3>
+  <p>You declare <i>desired state</i> (YAML); controllers keep comparing it with <i>actual state</i> and act to close the gap. You never "start a container on node 7".</p>
+
+  <h2>Prereqs</h2>
+  <ul>
+    <li><a href="ch17-linux-processes-signals-services-systemd-ssh-cron.notes.html">Chapter 17 — Linux: Processes, Signals, Services, systemd, SSH, Cron &amp; Networking</a></li>
+  </ul>
+
+  <h2>Diagram</h2>
+  <h3>Docker image → container</h3>
+<pre class="code ascii"><code> Dockerfile                     image layers (cached, shared)          container
+ FROM python:3.12-slim   ───►   [ base OS + python      ] 45 MB   ┐
+ COPY pyproject.toml, lock ─►   [ dependency manifest   ] 4 KB    │   read-only
+ RUN pip install …        ───►  [ installed packages    ] 80 MB   │
+ COPY src/ /app           ───►  [ your code             ] 2 MB    ┘
+                                [ writable layer        ]  ◄── per container, discarded on removal
+ change only src/ → only the last layer rebuilds (seconds, not minutes)</code></pre>
+
+  <h3>A K8s cluster with pods behind a service</h3>
+  <figure>
+    <svg viewBox="0 0 660 570" role="img" aria-label="Flowchart top to bottom: users to Ingress/Gateway api.example.com to Service api (ClusterIP 10.96.12.7, selector app=api); Service sends traffic to pods api-7d9f-abc and api-7d9f-def (ready) on Node1, and no traffic to pod api-7d9f-ghi (not ready) on Node2, which also holds pod redis-0; the control plane (API server, scheduler, controllers, etcd) is linked by dotted lines to both nodes">
+      <rect class="sk" x="250" y="8" width="160" height="40" rx="10"/>
+      <text class="lbl b" x="330" y="34" text-anchor="middle">users</text>
+      <path class="sk blue" d="M330 48 L330 78" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <rect class="sk" x="220" y="80" width="220" height="58" rx="10"/>
+      <text class="lbl b" x="330" y="106" text-anchor="middle">Ingress / Gateway</text>
+      <text class="lbl" x="330" y="128" text-anchor="middle" style="font-size:15px">api.example.com</text>
+      <path class="sk blue" d="M330 138 L330 168" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <rect class="sk" x="205" y="170" width="250" height="80" rx="10"/>
+      <text class="lbl b" x="330" y="195" text-anchor="middle">Service 'api'</text>
+      <text class="lbl" x="330" y="217" text-anchor="middle" style="font-size:15px">ClusterIP 10.96.12.7</text>
+      <text class="lbl" x="330" y="237" text-anchor="middle" style="font-size:15px">selector app=api</text>
+
+      <rect class="sk" x="10" y="295" width="305" height="150" rx="14" style="stroke-dasharray:8 6"/>
+      <text class="lbl r" x="25" y="318">Node1</text>
+      <rect class="sk green" x="25" y="335" width="132" height="90" rx="10"/>
+      <text class="lbl" x="91" y="360" text-anchor="middle" style="font-size:15px">pod</text>
+      <text class="lbl" x="91" y="380" text-anchor="middle" style="font-size:15px">api-7d9f-abc</text>
+      <text class="lbl g" x="91" y="405" text-anchor="middle" style="font-size:15px">✓ ready</text>
+      <rect class="sk green" x="170" y="335" width="132" height="90" rx="10"/>
+      <text class="lbl" x="236" y="360" text-anchor="middle" style="font-size:15px">pod</text>
+      <text class="lbl" x="236" y="380" text-anchor="middle" style="font-size:15px">api-7d9f-def</text>
+      <text class="lbl g" x="236" y="405" text-anchor="middle" style="font-size:15px">✓ ready</text>
+
+      <rect class="sk" x="335" y="295" width="315" height="150" rx="14" style="stroke-dasharray:8 6"/>
+      <text class="lbl r" x="350" y="318">Node2</text>
+      <rect class="sk red" x="348" y="335" width="200" height="95" rx="10"/>
+      <text class="lbl" x="448" y="357" text-anchor="middle" style="font-size:15px">pod api-7d9f-ghi</text>
+      <text class="lbl r" x="448" y="377" text-anchor="middle" style="font-size:15px">✗ not ready</text>
+      <text class="lbl" x="448" y="397" text-anchor="middle" style="font-size:14px">(readiness failing →</text>
+      <text class="lbl" x="448" y="416" text-anchor="middle" style="font-size:14px">no traffic)</text>
+      <rect class="sk" x="560" y="335" width="80" height="95" rx="10"/>
+      <text class="lbl" x="600" y="378" text-anchor="middle" style="font-size:15px">pod</text>
+      <text class="lbl" x="600" y="398" text-anchor="middle" style="font-size:15px">redis-0</text>
+
+      <path class="sk blue" d="M255 250 C 200 280, 120 300, 95 333" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M285 250 C 270 285, 250 300, 240 333" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk red" d="M400 250 C 420 280, 440 300, 445 333" style="color:var(--red);stroke-dasharray:7 6" marker-end="url(#arr)"/>
+      <text class="lbl r" x="520" y="285" text-anchor="middle" style="font-size:15px">no traffic</text>
+
+      <rect class="sk" x="170" y="500" width="320" height="58" rx="10"/>
+      <text class="lbl b" x="330" y="525" text-anchor="middle" style="font-size:15px">control plane: API server, scheduler,</text>
+      <text class="lbl b" x="330" y="546" text-anchor="middle" style="font-size:15px">controllers, etcd</text>
+      <path class="sk" d="M250 500 C 230 480, 200 465, 170 447" style="stroke-dasharray:6 6"/>
+      <path class="sk" d="M410 500 C 440 480, 480 465, 500 447" style="stroke-dasharray:6 6"/>
+    </svg>
+    <figcaption>Fig 1: pods behind a Service; the not-ready pod gets no traffic (dashed red)</figcaption>
+  </figure>
+
+  <h3>A rolling update (replicas 3, maxSurge 1, maxUnavailable 0)</h3>
+<pre class="code ascii"><code> step 0:  v1 v1 v1
+ step 1:  v1 v1 v1 v2(starting)
+ step 2:  v1 v1 v2✓            ← one v1 removed only after v2 is ready
+ step 3:  v1 v2✓ v2✓
+ step 4:  v2✓ v2✓ v2✓          if v2 never becomes ready, the rollout stops at step 1</code></pre>
+
+  <div class="pagebreak">~ page 3 ~</div>
+
+  <h2>Example</h2>
+  <span class="lang">dockerfile</span>
+<pre class="code"><code># Multi-stage build: small, non-root, cache-friendly
+FROM python:3.12-slim AS build
+WORKDIR /app
+RUN pip install --no-cache-dir uv
+COPY pyproject.toml uv.lock ./
+RUN uv sync --frozen --no-dev --no-install-project
+COPY src/ ./src/
+
+FROM python:3.12-slim
+RUN useradd --create-home --uid 10001 app
+WORKDIR /app
+COPY --from=build /app /app
+ENV PATH="/app/.venv/bin:$PATH" PYTHONUNBUFFERED=1
+USER app
+EXPOSE 8080
+CMD ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8080"]</code></pre>
+
+  <span class="lang">yaml</span>
+<pre class="code"><code>apiVersion: apps/v1
+kind: Deployment
+metadata: { name: api }
+spec:
+  replicas: 3
+  selector: { matchLabels: { app: api } }
+  strategy: { rollingUpdate: { maxSurge: 1, maxUnavailable: 0 } }
+  template:
+    metadata: { labels: { app: api } }
+    spec:
+      containers:
+        - name: api
+          image: ghcr.io/acme/api@sha256:3f9a…     # pin by digest
+          ports: [{ containerPort: 8080 }]
+          resources:
+            requests: { cpu: 250m, memory: 256Mi }
+            limits:   { memory: 512Mi }
+          readinessProbe: { httpGet: { path: /readyz, port: 8080 }, periodSeconds: 5 }
+          livenessProbe:  { httpGet: { path: /healthz, port: 8080 }, periodSeconds: 10, failureThreshold: 3 }
+          envFrom: [{ configMapRef: { name: api-config } }, { secretRef: { name: api-secrets } }]
+---
+apiVersion: v1
+kind: Service
+metadata: { name: api }
+spec:
+  selector: { app: api }
+  ports: [{ port: 80, targetPort: 8080 }]</code></pre>
+
+  <span class="lang">bash</span>
+<pre class="code"><code>docker build -t api:dev . &amp;&amp; docker run --rm -p 8080:8080 api:dev
+kubectl apply -f k8s/
+kubectl rollout status deploy/api
+kubectl get pods -l app=api -o wide
+kubectl logs -l app=api -f --max-log-requests 10
+kubectl rollout undo deploy/api
+helm install api ./chart -f values-prod.yaml --set image.tag=1.4.2
+helm upgrade api ./chart -f values-prod.yaml --atomic   # rolls back automatically if it fails</code></pre>
+
+  <h2>Exercises</h2>
+  <ol style="list-style:none;padding-left:0">
+    <li>1. Containerize a service and run it.
+      <div class="box"><b>Solution</b> Use the multi-stage Dockerfile above. Check: the image size (<code>docker images</code>), that it runs as non-root (<code>docker run … id</code>), that editing only source code rebuilds only the last layers, and that it handles SIGTERM (<code>docker stop</code> finishes in under 10 s — use exec-form <code>CMD</code> so your process is PID 1 and receives the signal).</div></li>
+    <li>2. Deploy it to K8s with a service + health probes.
+      <div class="box"><b>Solution</b> Apply the Deployment and Service above on kind or minikube. Test readiness: make <code>/readyz</code> return 503 on one pod and watch it leave the Service's endpoints (<code>kubectl get endpointslices</code>). Test liveness: make <code>/healthz</code> hang and watch the restart count rise.</div></li>
+    <li>3. A pod is <code>OOMKilled</code> every few hours. What do you check?
+      <div class="box"><b>Solution</b> The memory limit vs actual usage (<code>kubectl top pod</code>, metrics over time); a memory leak (a growing heap profile); whether the runtime respects cgroup limits (JVM <code>-XX:MaxRAMPercentage</code>, Node <code>--max-old-space-size</code>); request spikes. Fix the leak, or set requests and limits from observed p99 usage plus headroom.</div></li>
+  </ol>
+
+  <div class="pagebreak">~ page 4 ~</div>
+
+  <h2>Mini project</h2>
+  <p><b>A Helm chart deploying a stateless service with probes and autoscaling.</b></p>
+  <figure>
+    <svg viewBox="0 0 660 470" role="img" aria-label="Flowchart: the chart folder (Chart.yaml, values.yaml, templates deployment, service, hpa, pdb), values-dev.yaml (replicas 1, no HPA) and values-prod.yaml (HPA 3 to 20 at 70% CPU, PDB minAvailable 2) all feed helm upgrade --install, which deploys to a kind cluster, then a load test with k6 or hey to watch the HPA scale">
+      <rect class="sk" x="10" y="10" width="240" height="175" rx="10"/>
+      <text class="lbl b" x="130" y="36" text-anchor="middle">chart/</text>
+      <text class="lbl" x="130" y="58" text-anchor="middle" style="font-size:15px">Chart.yaml</text>
+      <text class="lbl" x="130" y="78" text-anchor="middle" style="font-size:15px">values.yaml</text>
+      <text class="lbl" x="130" y="98" text-anchor="middle" style="font-size:15px">templates/deployment.yaml</text>
+      <text class="lbl" x="130" y="118" text-anchor="middle" style="font-size:15px">templates/service.yaml</text>
+      <text class="lbl" x="130" y="138" text-anchor="middle" style="font-size:15px">templates/hpa.yaml</text>
+      <text class="lbl" x="130" y="158" text-anchor="middle" style="font-size:15px">templates/pdb.yaml</text>
+      <rect class="sk" x="10" y="215" width="240" height="60" rx="10"/>
+      <text class="lbl b" x="130" y="240" text-anchor="middle" style="font-size:15px">values-dev.yaml</text>
+      <text class="lbl" x="130" y="262" text-anchor="middle" style="font-size:15px">replicas 1, no HPA</text>
+      <rect class="sk" x="10" y="300" width="240" height="85" rx="10"/>
+      <text class="lbl b" x="130" y="326" text-anchor="middle" style="font-size:15px">values-prod.yaml</text>
+      <text class="lbl" x="130" y="348" text-anchor="middle" style="font-size:15px">HPA 3–20 at 70% CPU,</text>
+      <text class="lbl" x="130" y="370" text-anchor="middle" style="font-size:15px">PDB minAvailable 2</text>
+      <rect class="sk red" x="310" y="175" width="215" height="55" rx="10"/>
+      <text class="lbl r" x="417" y="209" text-anchor="middle" style="font-size:15px">helm upgrade --install</text>
+      <path class="sk blue" d="M250 100 C 280 130, 285 170, 308 190" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M250 245 C 280 240, 285 225, 308 215" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M250 340 C 285 320, 290 260, 312 228" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M417 230 L417 288" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <rect class="sk" x="340" y="290" width="155" height="50" rx="10"/>
+      <text class="lbl b" x="417" y="321" text-anchor="middle">kind cluster</text>
+      <path class="sk blue" d="M417 340 L417 388" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <rect class="sk green" x="300" y="390" width="235" height="60" rx="10"/>
+      <text class="lbl g" x="417" y="415" text-anchor="middle" style="font-size:15px">load test (k6/hey)</text>
+      <text class="lbl g" x="417" y="437" text-anchor="middle" style="font-size:15px">→ watch the HPA scale</text>
+    </svg>
+    <figcaption>Fig 2: one chart, two values files, one install command</figcaption>
+  </figure>
+
+  <h3>Steps</h3>
+  <ol style="list-style:none;padding-left:0">
+    <li>1. <code>helm create</code>, then trim: a Deployment, Service, HPA, PodDisruptionBudget, and ConfigMap, driven by <code>values.yaml</code>.</li>
+    <li>2. Templated probes, resources, image digest, and env; <code>helm lint</code> and <code>helm template</code> in CI.</li>
+    <li>3. <code>values-dev.yaml</code> and <code>values-prod.yaml</code> show the same chart with different settings.</li>
+    <li>4. Install on kind with metrics-server; load test; watch <code>kubectl get hpa -w</code> scale up and back down.</li>
+    <li>5. Roll out a broken image with <code>--atomic</code> and show the automatic rollback.</li>
+  </ol>
+  <div class="box"><b>Done when:</b> one command installs dev or prod, autoscaling reacts to load, and a bad release rolls itself back.</div>
+
+  <h2>Open source</h2>
+  <ul>
+    <li><a href="https://github.com/kubernetes/kubernetes"><code>kubernetes/kubernetes</code></a> — <code>pkg/controller/deployment/</code> holds the rolling-update logic; the "Concepts" docs are the best entry point.</li>
+    <li><a href="https://github.com/helm/helm"><code>helm/helm</code></a> — the package manager for Kubernetes; Bitnami's charts are good real-world examples to read.</li>
+  </ul>
+
+  <h2>Interview</h2>
+  <ol style="list-style:none;padding-left:0">
+    <li>1. <b>"Container vs VM?"</b>
+      <div class="box"><b>Answer</b> A VM virtualizes hardware and runs its own full kernel — strong isolation, heavier, slower to start. A container is an isolated process group on the host kernel using namespaces and cgroups — lightweight, starts in milliseconds, dense packing, identical artifacts from laptop to production, but a weaker security boundary. They are often combined: containers inside VMs.</div></li>
+    <li>2. <b>"How does K8s do rolling updates?"</b>
+      <div class="box"><b>Answer</b> Changing a Deployment's pod template creates a new ReplicaSet. The controller scales it up and the old one down step by step within <code>maxSurge</code> and <code>maxUnavailable</code>, and only counts new pods once their readiness probes pass. The Service routes only to ready pods, so traffic shifts gradually. If new pods never become ready, the rollout stalls (and <code>progressDeadlineSeconds</code> marks it failed); <code>kubectl rollout undo</code> returns to the previous ReplicaSet.</div></li>
+  </ol>
+
+  <h2>Checklist</h2>
+  <ul>
+    <li class="todo">write a clean Dockerfile</li>
+    <li class="todo">deploy to K8s</li>
+    <li class="todo">template with Helm</li>
+  </ul>
+  <div class="gap"></div>
+  <p class="black"><a href="index.md">Contents</a> · ← <a href="ch54-data-lakes-warehouses-and-orchestration.notes.html">Chapter 54 — Data Lakes, Warehouses &amp; Orchestration</a> · Next → <a href="ch56-iac-terraform-state-and-config-drift.notes.html">Chapter 56 — IaC: Terraform, State &amp; Config Drift</a></p>
+
+  <nav class="nav"><a href="ch54-data-lakes-warehouses-and-orchestration.notes.html">← Ch 54 — Data Lakes, Warehouses &amp; Orchestration</a><a href="index.notes.html">☰ Contents</a><a href="ch56-iac-terraform-state-and-config-drift.notes.html">Ch 56 — IaC: Terraform, State &amp; Config Drift →</a></nav>
+</main>
+</body>
+</html>

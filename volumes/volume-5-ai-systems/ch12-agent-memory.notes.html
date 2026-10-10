@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ch 12 — Agent Memory — Notes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;700&family=Kalam:wght@400;700&family=Patrick+Hand&display=swap" rel="stylesheet">
+<style>
+/* ===== Page tokens ===== */
+:root{
+  --line:32px;                 /* ruled-line spacing; every vertical size is a multiple */
+  --paper:#fdfbf4; --rule:#c9dcef; --margin:#e8a0a0;
+  --ink:#1f3a93;               /* blue pen (body) */
+  --ink2:#222;                 /* black pen (headings) */
+  --red:#c0392b; --green:#1e8449;
+  --hl-yellow:rgba(255,235,59,.55); --hl-pink:rgba(255,128,171,.45);
+  --hl-green:rgba(118,255,3,.35); --hl-blue:rgba(64,196,255,.35);
+  --sticky:#fff59d; --desk:#e9e4d8;
+  --hand:'Kalam','Patrick Hand','Comic Sans MS','Segoe Print','Bradley Hand',cursive;
+  --title:'Caveat','Kalam','Segoe Print','Bradley Hand',cursive;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){ --desk:#2b2b2b; }
+}
+:root[data-theme="dark"]{ --desk:#2b2b2b; }
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--desk);font-family:var(--hand);color:var(--ink);}
+
+/* ===== Notebook sheet ===== */
+.page{
+  position:relative; max-width:860px; margin:24px auto; padding:var(--line) 28px calc(var(--line)*2) 84px;
+  background:
+    linear-gradient(90deg,transparent 64px,var(--margin) 64px,var(--margin) 66px,transparent 66px),
+    repeating-linear-gradient(var(--paper) 0,var(--paper) calc(var(--line) - 1px),var(--rule) calc(var(--line) - 1px),var(--rule) var(--line));
+  background-color:var(--paper);
+  box-shadow:0 2px 6px rgba(0,0,0,.15),0 12px 28px rgba(0,0,0,.12);
+  font-size:20px; line-height:var(--line);
+}
+.page::before{ /* punched holes */
+  content:""; position:absolute; left:22px; top:0; bottom:0; width:18px;
+  background:radial-gradient(circle,var(--desk) 7px,transparent 8px) 0 40px/18px 220px repeat-y;
+}
+@media (max-width:600px){
+  .page{margin:0;padding-left:52px;padding-right:16px;font-size:18px;
+    background:
+      linear-gradient(90deg,transparent 40px,var(--margin) 40px,var(--margin) 42px,transparent 42px),
+      repeating-linear-gradient(var(--paper) 0,var(--paper) calc(var(--line) - 1px),var(--rule) calc(var(--line) - 1px),var(--rule) var(--line));
+    background-color:var(--paper);}
+  .page::before{left:10px;width:16px}
+}
+
+/* ===== Text (all margins are multiples of --line so text sits on the rules) ===== */
+.date{position:absolute;top:0;right:24px;font-family:var(--title);font-size:22px;color:var(--ink2);line-height:var(--line)}
+h1{font-family:var(--title);font-weight:700;color:var(--ink2);font-size:46px;line-height:calc(var(--line)*2);margin:0;transform:rotate(-1deg)}
+h1 .u{background:linear-gradient(transparent 62%,var(--hl-yellow) 62%,var(--hl-yellow) 92%,transparent 92%)}
+h2{font-family:var(--title);font-weight:700;color:var(--red);font-size:32px;line-height:calc(var(--line)*1.5);margin:calc(var(--line)*.5) 0 0}
+h2::before{content:"➤ ";font-size:22px}
+p,li{margin:0}
+ul,ol{margin:0;padding-left:28px}
+ul{list-style:none}
+ul>li::before{content:"–";position:absolute;margin-left:-20px}
+ul>li.star::before{content:"★";color:var(--red)}
+ul>li.arrow::before{content:"→"}
+ul>li.check::before{content:"✓";color:var(--green)}
+.gap{height:var(--line)}
+
+/* ===== Pen effects ===== */
+.hl{background:var(--hl-yellow);padding:0 3px;border-radius:3px 6px 4px 7px}
+.hl.pink{background:var(--hl-pink)} .hl.green{background:var(--hl-green)} .hl.blue{background:var(--hl-blue)}
+.red{color:var(--red)} .green{color:var(--green)} .black{color:var(--ink2)}
+.ul{text-decoration:underline wavy var(--red);text-underline-offset:5px}
+.circ{border:2px solid var(--red);border-radius:50% 45% 55% 48%;padding:0 6px}
+.strike{text-decoration:line-through 2px var(--red)}
+.term{font-weight:700;color:var(--ink2)}
+.box{display:flow-root;border:2.5px solid var(--ink2);border-radius:4px 10px 6px 12px;padding:calc(var(--line)*.5 - 2.5px) 14px;margin:calc(var(--line)*.5) 0;transform:rotate(-.4deg);background:rgba(255,255,255,.35)}
+.box.red{border-color:var(--red)}
+.formula{font-family:var(--title);font-size:28px;text-align:center;color:var(--ink2)}
+
+/* sticky note */
+.sticky{float:right;width:min(250px,42%);margin:0 0 var(--line) 20px;padding:var(--line) 16px;background:var(--sticky);
+  color:#333;transform:rotate(2.2deg);box-shadow:2px 4px 8px rgba(0,0,0,.18);font-size:18px}
+.sticky b{font-family:var(--title);font-size:24px;color:var(--red)}
+@media (max-width:600px){.sticky{float:none;width:auto;margin:var(--line) 0}}
+
+/* margin annotation (lives in the red margin) */
+.side{position:absolute;left:4px;width:58px;text-align:center;font-family:var(--title);font-size:17px;line-height:18px;color:var(--red);transform:rotate(-8deg)}
+@media (max-width:600px){.side{display:none}}
+
+/* two-column notes */
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:0 28px}
+@media (max-width:600px){.cols{grid-template-columns:1fr}}
+
+/* diagrams */
+figure{margin:var(--line) 0;text-align:center}
+figure svg{width:100%;max-width:640px;height:auto;overflow:visible}
+figcaption{font-family:var(--title);font-size:20px;color:var(--ink2)}
+/* phones: keep labels readable — diagram scrolls inside its own box instead of shrinking */
+@media (max-width:600px){figure{overflow-x:auto}figure svg{min-width:520px}}
+.sk{fill:none;stroke:var(--ink2);stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round;filter:url(#rough)}
+.sk.blue{stroke:var(--ink)} .sk.red{stroke:var(--red)} .sk.green{stroke:var(--green)}
+.lbl{font-family:var(--hand);font-size:17px;fill:var(--ink)}
+.lbl.b{font-weight:700;fill:var(--ink2)} .lbl.r{fill:var(--red)} .lbl.g{fill:var(--green)}
+
+/* table */
+.wrap{overflow-x:auto}
+table{border-collapse:collapse;margin:calc(var(--line)*.5) 0;min-width:100%}
+th,td{border:2px solid var(--ink2);padding:0 10px;text-align:left;vertical-align:top}
+th{font-family:var(--title);font-size:24px;color:var(--ink2)}
+
+@media print{body{background:#fff}.page{box-shadow:none;margin:0}.page::before{display:none}}
+
+/* ===== Added for long chapter notes ===== */
+pre.code{font-family:Consolas,'Courier New',monospace;font-size:14px;line-height:var(--line);color:var(--ink);background:rgba(255,255,255,.45);
+  border-left:4px solid var(--red);margin:calc(var(--line)*.5) 0;padding:0 12px;overflow-x:auto;white-space:pre}
+pre.code.ascii{border-left-color:var(--green)}
+code{font-family:Consolas,'Courier New',monospace;font-size:.82em;background:rgba(0,0,0,.06);padding:0 3px;border-radius:3px}
+pre.code code{background:none;padding:0;font-size:inherit}
+.lang{font-family:var(--title);font-size:18px;color:var(--red)}
+h3{font-family:var(--title);font-weight:700;color:var(--ink2);font-size:26px;line-height:var(--line);margin:calc(var(--line)*.5) 0 0}
+h3::before{content:"✎ ";font-size:18px;color:var(--red)}
+.nav{display:flex;justify-content:space-between;gap:12px;font-family:var(--title);font-size:22px;line-height:var(--line)}
+.nav a{color:var(--red);text-decoration:none}
+.nav a:hover{text-decoration:underline wavy}
+.pagebreak{border-top:3px dashed var(--margin);margin:var(--line) 0;text-align:center;font-family:var(--title);color:var(--red);line-height:var(--line)}
+li.todo::before{content:"☐";color:var(--ink2)}
+a{color:var(--ink);text-decoration:underline dotted}
+</style>
+</head>
+<body>
+<!-- One shared hand-drawn wobble filter; give every diagram stroke class="sk" -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <!-- userSpaceOnUse region: a % region collapses to nothing on perfectly straight lines (zero-height bbox) -->
+  <filter id="rough" filterUnits="userSpaceOnUse" x="-500" y="-500" width="3000" height="3000">
+    <feTurbulence type="fractalNoise" baseFrequency="0.03" numOctaves="2" seed="3" result="n"/>
+    <feDisplacementMap in="SourceGraphic" in2="n" scale="3"/>
+  </filter>
+  <marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+    <path d="M1 1 L9 5 L1 9" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+  </marker>
+</defs></svg>
+
+<main class="page">
+  <nav class="nav"><a href="ch11-agent-frameworks-and-tool-use.notes.html">← Ch 11 — Agent Frameworks &amp; Tool Use</a><a href="index.notes.html">☰ Contents</a><a href="ch13-mcp-and-a2a.notes.html">Ch 13 — MCP &amp; A2A →</a></nav>
+  <div class="date">2026-10-10</div>
+  <h1><span class="u">Ch 12 — Agent Memory</span></h1>
+  <p class="black">Chapter 12 — Agent Memory</p>
+
+  <p class="black"><b>Volume 5 — AI Systems Engineering</b> · <a href="index.md">Contents</a> · ← <a href="ch11-agent-frameworks-and-tool-use.notes.html">Chapter 11 — Agent Frameworks &amp; Tool Use</a> · Next → <a href="ch13-mcp-and-a2a.notes.html">Chapter 13 — MCP &amp; A2A</a></p>
+  <h2>Concept</h2>
+  <p>Short-term (context) vs long-term memory, summarization, and retrieval-backed memory.</p>
+  <div class="box"><b><span class="hl">In one sentence:</span></b> an LLM remembers nothing between calls — "memory" is whatever your code chooses to put back into the context window, so you keep recent turns verbatim, compress older ones into summaries, and store durable facts outside the model to retrieve when they become relevant.</div>
+  <p><b>Mental model — a person with a notebook.</b> Working memory is what you're holding in your head right now (the context window: limited, perfect recall). Your notebook's summary page is "what happened so far" (summarized history). The filing cabinet is everything you ever learned, searchable by topic (a vector store of long-term memories). You don't read the whole cabinet before every sentence — you look up what's relevant.</p>
+  <h3>Kinds of memory</h3>
+  <div class="wrap"><table>
+    <tr><th>Kind</th><th>Holds</th><th>Where it lives</th><th>Example</th></tr>
+    <tr><td><b>Working (short-term)</b></td><td>the current conversation and tool results</td><td>the context window</td><td>the last 10 turns</td></tr>
+    <tr><td><b>Summarized history</b></td><td>a compressed story of older turns</td><td>a string in the prompt</td><td>"User is planning a Lisbon trip in May; budget €1,500"</td></tr>
+    <tr><td><b>Episodic (long-term)</b></td><td>specific past events and sessions</td><td>a database / vector store</td><td>"On 3 March we fixed the CSV import bug"</td></tr>
+    <tr><td><b>Semantic (long-term)</b></td><td>stable facts and preferences</td><td>key–value or vector store</td><td>"Prefers Python; timezone Europe/Berlin"</td></tr>
+    <tr><td><b>Procedural</b></td><td>how to do things</td><td>system prompt, skills, files</td><td>"Always run tests before committing"</td></tr>
+  </table></div>
+  <p><b>Why not just use a huge context?</b> Long contexts cost more per call (you pay for every token every turn), are slower, and models use information in the middle of very long prompts less reliably. A curated context usually beats a stuffed one.</p>
+  <p><b>The context budget</b> — decide how the window is spent, for example for a 200k-token model limited to 30k per call:</p>
+  <div class="wrap"><table>
+    <tr><th>Slot</th><th>Budget</th></tr>
+    <tr><td>System prompt + tool definitions</td><td>3k</td></tr>
+    <tr><td>Retrieved long-term memories</td><td>2k</td></tr>
+    <tr><td>Summary of older history</td><td>1k</td></tr>
+    <tr><td>Recent turns (verbatim)</td><td>16k</td></tr>
+    <tr><td>Current tool results</td><td>6k</td></tr>
+    <tr><td>Space for the answer</td><td>2k</td></tr>
+  </table></div>
+  <h3>Writing memories (the hard part)</h3>
+  <div class="wrap"><table>
+    <tr><th>Question</th><th>Good practice</th></tr>
+    <tr><td><i>What</i> to store?</td><td>durable facts, preferences, decisions, and outcomes — not every message</td></tr>
+    <tr><td><i>When</i>?</td><td>after each turn (in the background), or at session end</td></tr>
+    <tr><td>How to avoid duplicates and contradictions?</td><td>before inserting, search for similar memories; update or replace instead of appending ("moved to Munich" replaces "lives in Berlin")</td></tr>
+    <tr><td>How to forget?</td><td>TTLs, decay by age and use, user-driven deletion ("forget that"), privacy rules</td></tr>
+    <tr><td>Whose memory?</td><td>scope by user and tenant; never retrieve across users</td></tr>
+  </table></div>
+  <h2>Prereqs</h2>
+  <ul>
+    <li><a href="ch09-embeddings-and-rag.notes.html">Chapter 9 — Embeddings &amp; RAG</a></li>
+    <li><a href="ch11-agent-frameworks-and-tool-use.notes.html">Chapter 11 — Agent Frameworks &amp; Tool Use</a></li>
+  </ul>
+  <h2>Diagram</h2>
+  <h3>The memory hierarchy</h3>
+  <figure>
+    <svg viewBox="6 16 630 520" role="img" aria-label="The memory hierarchy">
+      <rect class="sk" x="20" y="130" width="602" height="130" rx="14" style="stroke-dasharray:8 6"/>
+      <text class="lbl r" x="32" y="150" style="font-size:15px">Context window (what the model sees this call)</text>
+      <path class="sk blue" d="M382.6 432 C382.6 389, 325.2 389, 325.2 346 C325.2 296, 252.8 296, 252.8 246" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M397.6 70 C397.6 125.5, 397.6 125.5, 397.6 181" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M542.4 237 C542.4 281.5, 470 281.5, 470 326" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M470 366 C470 399, 412.6 399, 412.6 432" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <rect class="sk green" x="34" y="181" width="131.2" height="56" rx="8" style="fill:#fdfbf4"/>
+      <text class="lbl b" x="99.6" y="205" text-anchor="middle" style="font-size:15px">system prompt</text>
+      <text class="lbl b" x="99.6" y="223" text-anchor="middle" style="font-size:15px">+ tools</text>
+      <rect class="sk green" x="187.2" y="172" width="131.2" height="74" rx="8" style="fill:#fdfbf4"/>
+      <text class="lbl b" x="252.8" y="196" text-anchor="middle" style="font-size:15px">retrieved</text>
+      <text class="lbl b" x="252.8" y="214" text-anchor="middle" style="font-size:15px">memories (top</text>
+      <text class="lbl b" x="252.8" y="232" text-anchor="middle" style="font-size:15px">5)</text>
+      <rect class="sk green" x="340.4" y="181" width="114.4" height="56" rx="8" style="fill:#fdfbf4"/>
+      <text class="lbl b" x="397.6" y="205" text-anchor="middle" style="font-size:15px">summary of</text>
+      <text class="lbl b" x="397.6" y="223" text-anchor="middle" style="font-size:15px">older turns</text>
+      <rect class="sk" x="476.8" y="181" width="131.2" height="56" rx="8" style="fill:#fdfbf4"/>
+      <text class="lbl b" x="542.4" y="205" text-anchor="middle" style="font-size:15px">recent turns,</text>
+      <text class="lbl b" x="542.4" y="223" text-anchor="middle" style="font-size:15px">verbatim</text>
+      <path class="sk" d="M269.2 440 v74 a128.4 8 0 0 0 256.8 0 v-74" style="fill:#fdfbf4"/>
+      <ellipse class="sk" cx="397.6" cy="440" rx="128.4" ry="8" style="fill:#fdfbf4"/>
+      <text class="lbl b" x="397.6" y="468" text-anchor="middle" style="font-size:15px">long-term store</text>
+      <text class="lbl b" x="397.6" y="486" text-anchor="middle" style="font-size:15px">vector DB + metadata</text>
+      <text class="lbl b" x="397.6" y="504" text-anchor="middle" style="font-size:15px">(user_id, type, created_at)</text>
+      <rect class="sk" x="256.4" y="30" width="282.4" height="40" rx="8" style="fill:#fdfbf4"/>
+      <text class="lbl b" x="397.6" y="55" text-anchor="middle" style="font-size:15px">turns that fell out of 'recent'</text>
+      <rect class="sk" x="379.2" y="326" width="181.6" height="40" rx="8" style="fill:#fdfbf4"/>
+      <text class="lbl b" x="470" y="351" text-anchor="middle" style="font-size:15px">memory writer (LLM)</text>
+      <text class="lbl r" x="347.9" y="385" text-anchor="end" style="font-size:14px;paint-order:stroke;stroke:#fdfbf4;stroke-width:5px;stroke-linejoin:round">search by the</text>
+      <text class="lbl r" x="347.9" y="401" text-anchor="end" style="font-size:14px;paint-order:stroke;stroke:#fdfbf4;stroke-width:5px;stroke-linejoin:round">current message</text>
+      <text class="lbl r" x="405.6" y="129.5" text-anchor="start" style="font-size:14px;paint-order:stroke;stroke:#fdfbf4;stroke-width:5px;stroke-linejoin:round">summarize</text>
+      <text class="lbl r" x="500.2" y="277.5" text-anchor="end" style="font-size:14px;paint-order:stroke;stroke:#fdfbf4;stroke-width:5px;stroke-linejoin:round">after each turn:</text>
+      <text class="lbl r" x="500.2" y="293.5" text-anchor="end" style="font-size:14px;paint-order:stroke;stroke:#fdfbf4;stroke-width:5px;stroke-linejoin:round">extract facts</text>
+      <text class="lbl r" x="435.3" y="395" text-anchor="end" style="font-size:14px;paint-order:stroke;stroke:#fdfbf4;stroke-width:5px;stroke-linejoin:round">add / update /</text>
+      <text class="lbl r" x="435.3" y="411" text-anchor="end" style="font-size:14px;paint-order:stroke;stroke:#fdfbf4;stroke-width:5px;stroke-linejoin:round">delete</text>
+    </svg>
+    <figcaption>Fig 1: The memory hierarchy</figcaption>
+  </figure>
+  <h3>Sliding window + rolling summary</h3>
+  <pre class="code ascii"><code> turn:     1  2  3  4  5  6  7  8  9  10 11 12
+ verbatim:                   [7  8  9  10 11 12]   ← last 6 turns kept exactly
+ summary:  [1..6 compressed into ~200 tokens]      ← updated when turns leave the window
+ tokens:   without memory design ~24k and growing; with it ~6k and flat</code></pre>
+  <h3>Writing a memory without duplicates</h3>
+  <figure>
+    <svg viewBox="0 0 640 370" role="img" aria-label="Writing a memory without duplicates">
+      <path class="sk" d="M120 58 L120 355" style="stroke-dasharray:3 7;stroke-width:1.8"/>
+      <path class="sk" d="M320 58 L320 355" style="stroke-dasharray:3 7;stroke-width:1.8"/>
+      <path class="sk" d="M520 58 L520 355" style="stroke-dasharray:3 7;stroke-width:1.8"/>
+      <rect class="sk" x="35" y="20" width="170" height="38" rx="8" style="fill:#fdfbf4"/>
+      <text class="lbl b" x="120" y="40" text-anchor="middle" style="font-size:15px">Agent</text>
+      <rect class="sk" x="235" y="20" width="170" height="38" rx="8" style="fill:#fdfbf4"/>
+      <text class="lbl b" x="320" y="40" text-anchor="middle" style="font-size:15px">Memory writer</text>
+      <rect class="sk" x="435" y="20" width="170" height="38" rx="8" style="fill:#fdfbf4"/>
+      <text class="lbl b" x="520" y="40" text-anchor="middle" style="font-size:15px">Store</text>
+      <text class="lbl" x="220" y="91" text-anchor="middle" style="font-size:14px;paint-order:stroke;stroke:#fdfbf4;stroke-width:5px">turn: "I moved to Munich last</text>
+      <text class="lbl" x="220" y="108" text-anchor="middle" style="font-size:14px;paint-order:stroke;stroke:#fdfbf4;stroke-width:5px">month"</text>
+      <path class="sk blue" d="M124 116 C181.9 114, 259.1 118, 317 116" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <text class="lbl" x="420" y="151" text-anchor="middle" style="font-size:14px;paint-order:stroke;stroke:#fdfbf4;stroke-width:5px">search similar memories for</text>
+      <text class="lbl" x="420" y="168" text-anchor="middle" style="font-size:14px;paint-order:stroke;stroke:#fdfbf4;stroke-width:5px">this user</text>
+      <path class="sk blue" d="M324 176 C381.9 174, 459.1 178, 517 176" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <text class="lbl" x="420" y="211" text-anchor="middle" style="font-size:14px;paint-order:stroke;stroke:#fdfbf4;stroke-width:5px">"lives in Berlin" (score 0.91)</text>
+      <path class="sk blue" d="M516 219 C458.1 217, 380.9 221, 323 219" style="color:var(--ink);stroke-dasharray:6 5" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M320 245 C362 243, 362 271, 322 271" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <text class="lbl" x="370" y="257" style="font-size:14px;paint-order:stroke;stroke:#fdfbf4;stroke-width:5px">decide: UPDATE (contradiction)</text>
+      <text class="lbl" x="420" y="308" text-anchor="middle" style="font-size:14px;paint-order:stroke;stroke:#fdfbf4;stroke-width:5px">update → "lives in Munich</text>
+      <text class="lbl" x="420" y="325" text-anchor="middle" style="font-size:14px;paint-order:stroke;stroke:#fdfbf4;stroke-width:5px">(since 2026-08)"</text>
+      <path class="sk blue" d="M324 333 C381.9 331, 459.1 335, 517 333" style="color:var(--ink)" marker-end="url(#arr)"/>
+    </svg>
+    <figcaption>Fig 2: Writing a memory without duplicates</figcaption>
+  </figure>
+  <div class="pagebreak">~ page 2 ~</div>
+
+  <h2>Example</h2>
+  <span class="lang">python</span>
+<pre class="code"><code>import anthropic
+client = anthropic.Anthropic()
+KEEP_RECENT = 6
+
+def summarize(old_summary: str, turns: list[dict]) -&gt; str:
+    text = "\n".join(f"{t['role']}: {t['content']}" for t in turns)
+    resp = client.messages.create(
+        model="claude-haiku-4-5-20251001", max_tokens=300,
+        messages=[{"role": "user", "content":
+            "Update the running summary of this conversation. Keep facts, decisions, open "
+            "questions, and user preferences. Drop small talk. Max 150 words.\n\n"
+            f"Current summary:\n{old_summary or '(none)'}\n\nNew turns:\n{text}"}])
+    return resp.content[0].text
+
+class Conversation:
+    def __init__(self):
+        self.summary, self.turns = "", []
+
+    def add(self, role, content):
+        self.turns.append({"role": role, "content": content})
+        if len(self.turns) &gt; KEEP_RECENT + 2:                 # compress in chunks, not every turn
+            old, self.turns = self.turns[:-KEEP_RECENT], self.turns[-KEEP_RECENT:]
+            self.summary = summarize(self.summary, old)
+
+    def context(self, memories: list[str]) -&gt; tuple[str, list[dict]]:
+        system = "You are a helpful travel assistant."
+        if memories:
+            system += "\n\nKnown about this user:\n" + "\n".join(f"- {m}" for m in memories)
+        if self.summary:
+            system += f"\n\nEarlier in this conversation:\n{self.summary}"
+        return system, self.turns</code></pre>
+  <span class="lang">python</span>
+<pre class="code"><code># Long-term memory with embeddings (any embedding model + a vector store; here Chroma)
+import chromadb, uuid
+store = chromadb.PersistentClient("memdb").get_or_create_collection("memories")
+
+def remember(user_id: str, fact: str):
+    hits = store.query(query_texts=[fact], n_results=1, where={"user_id": user_id})
+    if hits["ids"][0] and hits["distances"][0][0] &lt; 0.15:      # near-duplicate → update
+        store.update(ids=[hits["ids"][0][0]], documents=[fact])
+    else:
+        store.add(ids=[str(uuid.uuid4())], documents=[fact], metadatas=[{"user_id": user_id}])
+
+def recall(user_id: str, query: str, k: int = 5) -&gt; list[str]:
+    res = store.query(query_texts=[query], n_results=k, where={"user_id": user_id})
+    return res["documents"][0]
+
+remember("u1", "Prefers window seats and vegetarian meals")
+print(recall("u1", "book me a flight to Lisbon"))</code></pre>
+  <h2>Exercises</h2>
+  <ol style="list-style:none;padding-left:0">
+    <li>1. Implement conversation summarization.
+      <div class="box"><b>Solution</b> See <code>Conversation</code>: keep the last N turns verbatim, and fold older turns into a rolling summary with a cheap model when the buffer overflows. Test it with a 40-turn conversation where a key fact appears in turn 3 and is needed in turn 38: the fact must survive in the summary. Compare token counts per call with and without summarization.</div></li>
+  </ol>
+  <ol style="list-style:none;padding-left:0">
+    <li>2. Store and retrieve long-term memory via embeddings.
+      <div class="box"><b>Solution</b> See <code>remember</code>/<code>recall</code>. Add an LLM "memory extractor" that turns each turn into zero or more short facts (most turns produce none), scope everything by <code>user_id</code>, update near-duplicates instead of adding them, and inject the top-k recalled facts into the system prompt. Test across two sessions: a preference stated on Monday is used on Friday.</div></li>
+  </ol>
+  <ol style="list-style:none;padding-left:0">
+    <li>3. Why is "store every message in the vector DB and retrieve the top 5" a weak memory design?
+      <div class="box"><b>Solution</b> Raw messages are noisy ("ok thanks!"), redundant, and contradictory over time, so retrieval returns chit-chat or outdated facts. Extracting durable facts, updating them on change, and attaching metadata (type, date) gives far better recall per token.</div></li>
+  </ol>
+  <h2>Mini project</h2>
+  <p><b>An agent with persistent memory across sessions.</b></p>
+  <figure>
+    <svg viewBox="6 16 627.2 366" role="img" aria-label="An agent with persistent memory across sessions">
+      <path class="sk blue" d="M308.6 140 C308.6 165, 279.6 165, 279.6 190" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M279.6 246 C279.6 271, 336.8 271, 336.8 296" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M155.6 140 C155.6 165, 126.6 165, 126.6 190" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M141.6 246 C141.6 271, 306.8 271, 306.8 296" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M111.6 246 C111.6 275, 115 275, 115 304" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M446.8 122 C446.8 156, 432.6 156, 432.6 190" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M432.6 246 C432.6 271, 366.8 271, 366.8 296" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M566.2 131 C566.2 174.5, 522.4 174.5, 522.4 218 C522.4 257, 396.8 257, 396.8 296" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <rect class="sk" x="251.4" y="30" width="114.4" height="110" rx="8" style="fill:#fdfbf4"/>
+      <text class="lbl b" x="308.6" y="54" text-anchor="middle" style="font-size:15px">session 1</text>
+      <text class="lbl b" x="308.6" y="72" text-anchor="middle" style="font-size:15px">'I'm</text>
+      <text class="lbl b" x="308.6" y="90" text-anchor="middle" style="font-size:15px">vegetarian,</text>
+      <text class="lbl b" x="308.6" y="108" text-anchor="middle" style="font-size:15px">I live in</text>
+      <text class="lbl b" x="308.6" y="126" text-anchor="middle" style="font-size:15px">Munich'</text>
+      <rect class="sk" x="222.4" y="190" width="114.4" height="56" rx="8" style="fill:#fdfbf4"/>
+      <text class="lbl b" x="279.6" y="214" text-anchor="middle" style="font-size:15px">extractor →</text>
+      <text class="lbl b" x="279.6" y="232" text-anchor="middle" style="font-size:15px">facts</text>
+      <path class="sk green" d="M236 304 v56 a115.8 8 0 0 0 231.6 0 v-56" style="fill:#fdfbf4"/>
+      <ellipse class="sk green" cx="351.8" cy="304" rx="115.8" ry="8" style="fill:#fdfbf4"/>
+      <text class="lbl b" x="351.8" y="332" text-anchor="middle" style="font-size:15px">SQLite (facts, per user)</text>
+      <text class="lbl b" x="351.8" y="350" text-anchor="middle" style="font-size:15px">+ vector index</text>
+      <rect class="sk" x="102.6" y="30" width="106" height="110" rx="8" style="fill:#fdfbf4"/>
+      <text class="lbl b" x="155.6" y="54" text-anchor="middle" style="font-size:15px">session 2</text>
+      <text class="lbl b" x="155.6" y="72" text-anchor="middle" style="font-size:15px">(next day)</text>
+      <text class="lbl b" x="155.6" y="90" text-anchor="middle" style="font-size:15px">'find me a</text>
+      <text class="lbl b" x="155.6" y="108" text-anchor="middle" style="font-size:15px">dinner</text>
+      <text class="lbl b" x="155.6" y="126" text-anchor="middle" style="font-size:15px">place'</text>
+      <rect class="sk" x="56.8" y="190" width="139.6" height="56" rx="8" style="fill:#fdfbf4"/>
+      <text class="lbl b" x="126.6" y="214" text-anchor="middle" style="font-size:15px">retrieve</text>
+      <text class="lbl b" x="126.6" y="232" text-anchor="middle" style="font-size:15px">relevant facts</text>
+      <rect class="sk green" x="20" y="304" width="190" height="56" rx="8" style="fill:#fdfbf4"/>
+      <text class="lbl b" x="115" y="328" text-anchor="middle" style="font-size:15px">agent answers using:</text>
+      <text class="lbl b" x="115" y="346" text-anchor="middle" style="font-size:15px">vegetarian + Munich</text>
+      <rect class="sk" x="406.4" y="48" width="80.8" height="74" rx="8" style="fill:#fdfbf4"/>
+      <text class="lbl b" x="446.8" y="72" text-anchor="middle" style="font-size:15px">'forget</text>
+      <text class="lbl b" x="446.8" y="90" text-anchor="middle" style="font-size:15px">where I</text>
+      <text class="lbl b" x="446.8" y="108" text-anchor="middle" style="font-size:15px">live'</text>
+      <rect class="sk" x="362.8" y="190" width="139.6" height="56" rx="8" style="fill:#fdfbf4"/>
+      <text class="lbl b" x="432.6" y="214" text-anchor="middle" style="font-size:15px">delete</text>
+      <text class="lbl b" x="432.6" y="232" text-anchor="middle" style="font-size:15px">matching facts</text>
+      <rect class="sk" x="513.2" y="39" width="106" height="92" rx="8" style="fill:#fdfbf4"/>
+      <text class="lbl b" x="566.2" y="63" text-anchor="middle" style="font-size:15px">/memories:</text>
+      <text class="lbl b" x="566.2" y="81" text-anchor="middle" style="font-size:15px">list,</text>
+      <text class="lbl b" x="566.2" y="99" text-anchor="middle" style="font-size:15px">edit,</text>
+      <text class="lbl b" x="566.2" y="117" text-anchor="middle" style="font-size:15px">delete</text>
+    </svg>
+    <figcaption>Fig 3: An agent with persistent memory across sessions</figcaption>
+  </figure>
+  <h3>Steps</h3>
+  <ol style="list-style:none;padding-left:0">
+    <li>1. A chat agent with a rolling summary for the current session.</li>
+    <li>2. After each turn, a background extractor returns <code>add</code> / <code>update</code> / <code>delete</code> operations as JSON.</li>
+    <li>3. Store facts with <code>user_id</code>, <code>type</code> (preference, profile, event), <code>created_at</code>, and <code>last_used_at</code>.</li>
+    <li>4. Retrieve the top 5 facts for each new message and show which ones were used.</li>
+    <li>5. Support "forget X" and a <code>/memories</code> view so users control their data.</li>
+    <li>6. Test with 3 scripted multi-session scenarios, including a contradiction and a deletion.</li>
+  </ol>
+  <div class="box"><b>Done when:</b> facts carry across restarts, contradictions are updated rather than duplicated, deletions really remove data, and per-call context stays under your token budget.</div>
+  <h2>Open source</h2>
+  <ul>
+    <li><a href="https://github.com/mem0ai/mem0"><code>mem0ai/mem0</code></a> — a memory layer that extracts facts and decides add/update/delete with an LLM, backed by vector and graph stores.</li>
+    <li><a href="https://github.com/letta-ai/letta"><code>letta-ai/letta</code></a> — formerly MemGPT: the agent manages its own memory tiers (core memory blocks, recall, archival) with tools, like an OS paging memory.</li>
+  </ul>
+  <h2>Interview</h2>
+  <ol style="list-style:none;padding-left:0">
+    <li>1. <b>"Short vs long-term memory in agents?"</b>
+      <div class="box"><b>Answer</b> Short-term memory is the context window: recent turns and tool results, with perfect recall but a limited and expensive budget, lost when the session ends. Long-term memory lives outside the model (databases, vector stores, files) and persists across sessions; the application writes selected facts to it and retrieves relevant ones into the context when needed. Good systems combine a verbatim recent window, a rolling summary, and retrieved long-term facts.</div></li>
+  </ol>
+  <ol style="list-style:none;padding-left:0">
+    <li>2. <b>"How do you prevent context overflow?"</b>
+      <div class="box"><b>Answer</b> Set an explicit token budget per slot. Keep only the last N turns verbatim; summarize older ones. Truncate or summarize large tool outputs (keep the head and tail, or extract the relevant part). Retrieve only the top-k relevant memories instead of injecting everything. Count tokens before each call and trim by priority. For long tasks, have the agent write notes to files and re-read them.</div></li>
+  </ol>
+  <div class="pagebreak">~ page 3 ~</div>
+
+  <h2>Checklist</h2>
+  <ul>
+    <li class="todo">summarize history</li>
+    <li class="todo">retrieve relevant memories</li>
+    <li class="todo">cap context budget</li>
+  </ul>
+  <p class="black"><a href="index.md">Contents</a> · ← <a href="ch11-agent-frameworks-and-tool-use.notes.html">Chapter 11 — Agent Frameworks &amp; Tool Use</a> · Next → <a href="ch13-mcp-and-a2a.notes.html">Chapter 13 — MCP &amp; A2A</a></p>
+  <nav class="nav"><a href="ch11-agent-frameworks-and-tool-use.notes.html">← Ch 11 — Agent Frameworks &amp; Tool Use</a><a href="index.notes.html">☰ Contents</a><a href="ch13-mcp-and-a2a.notes.html">Ch 13 — MCP &amp; A2A →</a></nav>
+</main>
+</body>
+</html>

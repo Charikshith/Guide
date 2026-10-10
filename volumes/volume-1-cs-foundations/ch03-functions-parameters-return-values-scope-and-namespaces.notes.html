@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ch 3 — Functions, Parameters, Return Values, Scope &amp; Namespaces — Notes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;700&family=Kalam:wght@400;700&family=Patrick+Hand&display=swap" rel="stylesheet">
+<style>
+/* ===== Page tokens ===== */
+:root{
+  --line:32px;                 /* ruled-line spacing; every vertical size is a multiple */
+  --paper:#fdfbf4; --rule:#c9dcef; --margin:#e8a0a0;
+  --ink:#1f3a93;               /* blue pen (body) */
+  --ink2:#222;                 /* black pen (headings) */
+  --red:#c0392b; --green:#1e8449;
+  --hl-yellow:rgba(255,235,59,.55); --hl-pink:rgba(255,128,171,.45);
+  --hl-green:rgba(118,255,3,.35); --hl-blue:rgba(64,196,255,.35);
+  --sticky:#fff59d; --desk:#e9e4d8;
+  --hand:'Kalam','Patrick Hand','Comic Sans MS','Segoe Print','Bradley Hand',cursive;
+  --title:'Caveat','Kalam','Segoe Print','Bradley Hand',cursive;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){ --desk:#2b2b2b; }
+}
+:root[data-theme="dark"]{ --desk:#2b2b2b; }
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--desk);font-family:var(--hand);color:var(--ink);}
+
+/* ===== Notebook sheet ===== */
+.page{
+  position:relative; max-width:860px; margin:24px auto; padding:var(--line) 28px calc(var(--line)*2) 84px;
+  background:
+    linear-gradient(90deg,transparent 64px,var(--margin) 64px,var(--margin) 66px,transparent 66px),
+    repeating-linear-gradient(var(--paper) 0,var(--paper) calc(var(--line) - 1px),var(--rule) calc(var(--line) - 1px),var(--rule) var(--line));
+  background-color:var(--paper);
+  box-shadow:0 2px 6px rgba(0,0,0,.15),0 12px 28px rgba(0,0,0,.12);
+  font-size:20px; line-height:var(--line);
+}
+.page::before{ /* punched holes */
+  content:""; position:absolute; left:22px; top:0; bottom:0; width:18px;
+  background:radial-gradient(circle,var(--desk) 7px,transparent 8px) 0 40px/18px 220px repeat-y;
+}
+@media (max-width:600px){
+  .page{margin:0;padding-left:52px;padding-right:16px;font-size:18px;
+    background:
+      linear-gradient(90deg,transparent 40px,var(--margin) 40px,var(--margin) 42px,transparent 42px),
+      repeating-linear-gradient(var(--paper) 0,var(--paper) calc(var(--line) - 1px),var(--rule) calc(var(--line) - 1px),var(--rule) var(--line));
+    background-color:var(--paper);}
+  .page::before{left:10px;width:16px}
+}
+
+/* ===== Text (all margins are multiples of --line so text sits on the rules) ===== */
+.date{position:absolute;top:0;right:24px;font-family:var(--title);font-size:22px;color:var(--ink2);line-height:var(--line)}
+h1{font-family:var(--title);font-weight:700;color:var(--ink2);font-size:46px;line-height:calc(var(--line)*2);margin:0;transform:rotate(-1deg)}
+h1 .u{background:linear-gradient(transparent 62%,var(--hl-yellow) 62%,var(--hl-yellow) 92%,transparent 92%)}
+h2{font-family:var(--title);font-weight:700;color:var(--red);font-size:32px;line-height:calc(var(--line)*1.5);margin:calc(var(--line)*.5) 0 0}
+h2::before{content:"➤ ";font-size:22px}
+p,li{margin:0}
+ul,ol{margin:0;padding-left:28px}
+ul{list-style:none}
+ul>li::before{content:"–";position:absolute;margin-left:-20px}
+ul>li.star::before{content:"★";color:var(--red)}
+ul>li.arrow::before{content:"→"}
+ul>li.check::before{content:"✓";color:var(--green)}
+.gap{height:var(--line)}
+
+/* ===== Pen effects ===== */
+.hl{background:var(--hl-yellow);padding:0 3px;border-radius:3px 6px 4px 7px}
+.hl.pink{background:var(--hl-pink)} .hl.green{background:var(--hl-green)} .hl.blue{background:var(--hl-blue)}
+.red{color:var(--red)} .green{color:var(--green)} .black{color:var(--ink2)}
+.ul{text-decoration:underline wavy var(--red);text-underline-offset:5px}
+.circ{border:2px solid var(--red);border-radius:50% 45% 55% 48%;padding:0 6px}
+.strike{text-decoration:line-through 2px var(--red)}
+.term{font-weight:700;color:var(--ink2)}
+.box{display:flow-root;border:2.5px solid var(--ink2);border-radius:4px 10px 6px 12px;padding:calc(var(--line)*.5 - 2.5px) 14px;margin:calc(var(--line)*.5) 0;transform:rotate(-.4deg);background:rgba(255,255,255,.35)}
+.box.red{border-color:var(--red)}
+.formula{font-family:var(--title);font-size:28px;text-align:center;color:var(--ink2)}
+
+/* sticky note */
+.sticky{float:right;width:min(250px,42%);margin:0 0 var(--line) 20px;padding:var(--line) 16px;background:var(--sticky);
+  color:#333;transform:rotate(2.2deg);box-shadow:2px 4px 8px rgba(0,0,0,.18);font-size:18px}
+.sticky b{font-family:var(--title);font-size:24px;color:var(--red)}
+@media (max-width:600px){.sticky{float:none;width:auto;margin:var(--line) 0}}
+
+/* margin annotation (lives in the red margin) */
+.side{position:absolute;left:4px;width:58px;text-align:center;font-family:var(--title);font-size:17px;line-height:18px;color:var(--red);transform:rotate(-8deg)}
+@media (max-width:600px){.side{display:none}}
+
+/* two-column notes */
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:0 28px}
+@media (max-width:600px){.cols{grid-template-columns:1fr}}
+
+/* diagrams */
+figure{margin:var(--line) 0;text-align:center}
+figure svg{width:100%;max-width:640px;height:auto;overflow:visible}
+figcaption{font-family:var(--title);font-size:20px;color:var(--ink2)}
+/* phones: keep labels readable — diagram scrolls inside its own box instead of shrinking */
+@media (max-width:600px){figure{overflow-x:auto}figure svg{min-width:520px}}
+.sk{fill:none;stroke:var(--ink2);stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round;filter:url(#rough)}
+.sk.blue{stroke:var(--ink)} .sk.red{stroke:var(--red)} .sk.green{stroke:var(--green)}
+.lbl{font-family:var(--hand);font-size:17px;fill:var(--ink)}
+.lbl.b{font-weight:700;fill:var(--ink2)} .lbl.r{fill:var(--red)} .lbl.g{fill:var(--green)}
+
+/* table */
+.wrap{overflow-x:auto}
+table{border-collapse:collapse;margin:calc(var(--line)*.5) 0;min-width:100%}
+th,td{border:2px solid var(--ink2);padding:0 10px;text-align:left;vertical-align:top}
+th{font-family:var(--title);font-size:24px;color:var(--ink2)}
+
+@media print{body{background:#fff}.page{box-shadow:none;margin:0}.page::before{display:none}}
+
+/* ===== Added for long chapter notes ===== */
+pre.code{font-family:Consolas,'Courier New',monospace;font-size:14px;line-height:var(--line);color:var(--ink);background:rgba(255,255,255,.45);
+  border-left:4px solid var(--red);margin:calc(var(--line)*.5) 0;padding:0 12px;overflow-x:auto;white-space:pre}
+pre.code.ascii{border-left-color:var(--green)}
+code{font-family:Consolas,'Courier New',monospace;font-size:.82em;background:rgba(0,0,0,.06);padding:0 3px;border-radius:3px}
+pre.code code{background:none;padding:0;font-size:inherit}
+.lang{font-family:var(--title);font-size:18px;color:var(--red)}
+h3{font-family:var(--title);font-weight:700;color:var(--ink2);font-size:26px;line-height:var(--line);margin:calc(var(--line)*.5) 0 0}
+h3::before{content:"✎ ";font-size:18px;color:var(--red)}
+.nav{display:flex;justify-content:space-between;gap:12px;font-family:var(--title);font-size:22px;line-height:var(--line)}
+.nav a{color:var(--red);text-decoration:none}
+.nav a:hover{text-decoration:underline wavy}
+.pagebreak{border-top:3px dashed var(--margin);margin:var(--line) 0;text-align:center;font-family:var(--title);color:var(--red);line-height:var(--line)}
+li.todo::before{content:"☐";color:var(--ink2)}
+a{color:var(--ink);text-decoration:underline dotted}
+</style>
+</head>
+<body>
+<!-- One shared hand-drawn wobble filter; give every diagram stroke class="sk" -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <!-- userSpaceOnUse region: a % region collapses to nothing on perfectly straight lines (zero-height bbox) -->
+  <filter id="rough" filterUnits="userSpaceOnUse" x="-500" y="-500" width="3000" height="3000">
+    <feTurbulence type="fractalNoise" baseFrequency="0.03" numOctaves="2" seed="3" result="n"/>
+    <feDisplacementMap in="SourceGraphic" in2="n" scale="3"/>
+  </filter>
+  <marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+    <path d="M1 1 L9 5 L1 9" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+  </marker>
+</defs></svg>
+
+<main class="page">
+  <nav class="nav"><a href="ch02-control-flow.notes.html">← Ch 2 — Control Flow</a><a href="index.notes.html">☰ Contents</a><a href="ch04-built-in-data-structures.notes.html">Ch 4 — Built-in Data Structures →</a></nav>
+  <div class="date">2026-10-10</div>
+  <h1><span class="u">Ch 3 — Functions, Parameters, Return Values, Scope &amp; Namespaces</span></h1>
+  <p class="black">Chapter 3 — Functions, Parameters, Return Values, Scope &amp; Namespaces</p>
+<p class="black"><b>Volume 1 — Computer Science Foundations</b> · <a href="index.md">Contents</a> · ← <a href="ch02-control-flow.notes.html">Chapter 2 — Control Flow</a> · Next → <a href="ch04-built-in-data-structures.notes.html">Chapter 4 — Built-in Data Structures</a></p>
+<h2>Concept</h2>
+<p>Defining and calling functions; parameters vs arguments; pass-by-value vs pass-by-reference; return values (incl. multiple); lexical scope, closures over scope, and namespaces.</p>
+<div class="box"><b>In one sentence:</b> a function is a named, reusable recipe; parameters are its ingredients; scope decides which names the recipe can see; and a closure is a recipe that remembers the kitchen it was written in.</div>
+<p><b>Mental model — a stack of sticky notes.</b> Each call puts a new sticky note on top of a pile. The note holds that call's parameters and local variables. When the function returns, its note is thrown away and control goes back to the note underneath. That pile is the <i>call stack</i>.</p>
+<h3>Terms</h3>
+<div class="wrap"><table>
+<tr><th>Term</th><th>Meaning</th><th>Example</th></tr>
+<tr><td>Parameter</td><td>the name in the definition</td><td><code>a</code>, <code>b</code> in <code>def add(a, b)</code></td></tr>
+<tr><td>Argument</td><td>the value passed at the call</td><td><code>2</code>, <code>3</code> in <code>add(2, 3)</code></td></tr>
+<tr><td>Positional / keyword</td><td>matched by order / by name</td><td><code>add(2, b=3)</code></td></tr>
+<tr><td>Default value</td><td>used when the argument is omitted</td><td><code>def greet(name="world")</code></td></tr>
+<tr><td>Return value</td><td>what the call evaluates to</td><td><code>return a + b</code></td></tr>
+<tr><td>Multiple returns</td><td>usually a tuple</td><td><code>return q, r</code> → <code>q, r = divmod(7, 2)</code></td></tr>
+</table></div>
+<h3>Passing arguments — three models</h3>
+<div class="wrap"><table>
+<tr><th>Model</th><th>What the callee gets</th><th>Can it change the caller's variable?</th><th>Languages</th></tr>
+<tr><td>Pass by value</td><td>a copy of the value</td><td>no</td><td>C, Rust (for <code>Copy</code> types), Go</td></tr>
+<tr><td>Pass by reference</td><td>an alias to the caller's variable</td><td>yes</td><td>C++ <code>int&amp;</code>, Rust <code>&amp;mut</code>, C# <code>ref</code></td></tr>
+<tr><td>Pass by object reference ("sharing")</td><td>a copy of the <i>pointer</i></td><td>can mutate the object, cannot rebind the caller's name</td><td>Python, Java, JS</td></tr>
+</table></div>
+<p><b>Scope: the LEGB rule (Python)</b> — names are looked up in this order:</p>
+<ol style="list-style:none;padding-left:0">
+<li>1. <b>L</b>ocal — inside the current function.</li>
+<li>2. <b>E</b>nclosing — inside any outer function.</li>
+<li>3. <b>G</b>lobal — the module's top level.</li>
+<li>4. <b>B</b>uilt-in — <code>len</code>, <code>print</code>, …</li>
+</ol>
+<p><b>Lexical scope</b> means what a function can see is fixed by <i>where it is written</i>, not by where it is called from.</p>
+<p><b>Closure</b> — a function plus the variables from its enclosing scope that it uses. Those variables stay alive as long as the function does.</p>
+<p><b>Namespace</b> — a mapping from names to objects. Every module, class, and function call has its own, which is why two modules can each define <code>load()</code> without clashing.</p>
+<h2>Prereqs</h2>
+<ul>
+<li><a href="ch02-control-flow.notes.html">Chapter 2 — Control Flow</a></li>
+</ul>
+<div class="pagebreak">~ page 2 ~</div>
+<h2>Diagram</h2>
+<h3>The call stack for <code>main() → total(xs) → add(a, b)</code></h3>
+<pre class="code ascii"><code>                     ┌───────────────────────────┐  ← top (running now)
+                     │ add                       │
+                     │   a = 3, b = 4            │
+                     │   return address → total  │
+                     ├───────────────────────────┤
+                     │ total                     │
+                     │   xs = [3, 4], acc = 3    │
+                     │   return address → main   │
+                     ├───────────────────────────┤
+                     │ main                      │
+                     │   result = ?              │
+                     └───────────────────────────┘  ← bottom
+   add returns 7 → its frame is popped → total resumes with acc = 7</code></pre>
+<figure>
+<svg viewBox="0 0 530 314" role="img" aria-label="Sequence: main calls total([3,4]), total calls add(3,4), add returns 7, total returns 7"><rect class="sk" x="65" y="20" width="100" height="36" rx="8"/>
+<text class="lbl b" x="115" y="44" text-anchor="middle">main</text>
+<path class="sk" d="M115 56 L115 306" style="stroke-dasharray:6 6;stroke-width:1.8"/>
+<rect class="sk" x="215" y="20" width="100" height="36" rx="8"/>
+<text class="lbl b" x="265" y="44" text-anchor="middle">total</text>
+<path class="sk" d="M265 56 L265 306" style="stroke-dasharray:6 6;stroke-width:1.8"/>
+<rect class="sk" x="365" y="20" width="100" height="36" rx="8"/>
+<text class="lbl b" x="415" y="44" text-anchor="middle">add</text>
+<path class="sk" d="M415 56 L415 306" style="stroke-dasharray:6 6;stroke-width:1.8"/>
+<path class="sk blue" d="M119 86 L259 86" style="color:var(--ink)" marker-end="url(#arr)"/>
+<text class="lbl r" x="190" y="77" text-anchor="middle" style="font-size:15px">total([3, 4])</text>
+<path class="sk blue" d="M269 138 L409 138" style="color:var(--ink)" marker-end="url(#arr)"/>
+<text class="lbl r" x="340" y="129" text-anchor="middle" style="font-size:15px">add(3, 4)</text>
+<path class="sk blue" d="M411 190 L271 190" style="color:var(--ink);stroke-dasharray:7 5" marker-end="url(#arr)"/>
+<text class="lbl r" x="340" y="181" text-anchor="middle" style="font-size:15px">7</text>
+<path class="sk blue" d="M261 242 L121 242" style="color:var(--ink);stroke-dasharray:7 5" marker-end="url(#arr)"/>
+<text class="lbl r" x="190" y="233" text-anchor="middle" style="font-size:15px">7</text></svg>
+<figcaption>Fig 1: call stack as a sequence: each call returns to its caller</figcaption>
+</figure>
+<h3>A closure keeps its enclosing variable alive</h3>
+<pre class="code ascii"><code> make_counter() returns ──► ┌────────────────────┐
+                            │ function increment │
+                            │  __closure__ ──────┼──► cell: count = 2
+                            └────────────────────┘
+ make_counter's frame is gone, but `count` lives on in the cell.</code></pre>
+<h2>Example</h2>
+<span class="lang">python</span>
+<pre class="code"><code>def add(a, b):
+    return a + b
+
+def divmod_(a, b):
+    return a // b, a % b          # multiple return values = a tuple
+
+q, r = divmod_(17, 5)             # 3, 2
+
+# Pass by object reference
+def mutate(xs):
+    xs.append(99)                 # changes the caller's list
+
+def rebind(xs):
+    xs = [0]                      # only changes the local name
+
+data = [1]
+mutate(data); rebind(data)
+print(data)                       # [1, 99]
+
+# A closure capturing a counter
+def make_counter():
+    count = 0
+    def increment():
+        nonlocal count            # write to the enclosing variable
+        count += 1
+        return count
+    return increment
+
+c = make_counter()
+print(c(), c(), c())              # 1 2 3
+
+# Trap: mutable default arguments are created ONCE
+def bad(x, acc=[]):
+    acc.append(x); return acc
+print(bad(1), bad(2))             # [1, 2] [1, 2] — shared list!
+
+def good(x, acc=None):
+    acc = [] if acc is None else acc
+    acc.append(x); return acc</code></pre>
+<div class="pagebreak">~ page 3 ~</div>
+<h2>Exercises</h2>
+<ol style="list-style:none;padding-left:0">
+<li>1. Predict the output of a function with shadowed vs captured variables.
+<span class="lang">python</span>
+<pre class="code"><code>x = "global"
+def outer():
+    x = "enclosing"
+    def inner():
+        return x
+    x = "changed"
+    return inner
+print(outer()())</code></pre>
+<div class="box"><b>Solution</b> <code>changed</code>. The closure captures the <i>variable</i>, not its value at definition time, so it sees the last assignment before <code>inner()</code> runs.</div></li>
+<li>2. Write a function that returns another function.
+<div class="box"><b>Solution</b>
+<span class="lang">python</span>
+<pre class="code"><code>def multiplier(n):
+    return lambda x: x * n
+
+double = multiplier(2)
+print(double(21))   # 42</code></pre>
+</div></li>
+<li>3. What does this print, and why? <code>fs = [lambda: i for i in range(3)]; print([f() for f in fs])</code>
+<div class="box"><b>Solution</b> <code>[2, 2, 2]</code>. All three lambdas share the same <code>i</code>, which ends at 2. Fix it by binding at definition: <code>lambda i=i: i</code>.</div></li>
+</ol>
+<h2>Mini project</h2>
+<p><b>A memoizing <code>fib(n)</code> that demonstrates parameter passing and closure state.</b></p>
+<figure>
+<svg viewBox="0 0 613 202" role="img" aria-label="Memoized fib(5): check cache; hit returns cached value; miss computes fib(4)+fib(3), stores, returns"><g><rect class="sk" x="24" y="37" width="83" height="39" rx="10"/>
+<text class="lbl b" x="66" y="62" text-anchor="middle" style="font-size:16px">fib(5)</text>
+<path class="sk" d="M256 24 L344 56 L256 89 L167 56 Z"/>
+<text class="lbl b" x="256" y="62" text-anchor="middle" style="font-size:16px">5 in cache?</text>
+<rect class="sk green" x="413" y="37" width="166" height="39" rx="10"/>
+<text class="lbl g" x="496" y="62" text-anchor="middle" style="font-size:16px">return cache[5]</text>
+<rect class="sk" x="173" y="139" width="166" height="39" rx="10"/>
+<text class="lbl b" x="256" y="164" text-anchor="middle" style="font-size:16px">fib(4) + fib(3)</text>
+<rect class="sk" x="404" y="139" width="184" height="39" rx="10"/>
+<text class="lbl b" x="496" y="164" text-anchor="middle" style="font-size:16px">cache[5] = result</text>
+<path class="sk blue" d="M110 56 L164 56" style="color:var(--ink)" marker-end="url(#arr)"/>
+<path class="sk blue" d="M347 56 L410 56" style="color:var(--ink)" marker-end="url(#arr)"/>
+<text class="lbl r" x="379" y="52" text-anchor="middle" style="font-size:15px;paint-order:stroke;stroke:var(--paper);stroke-width:5px;stroke-linejoin:round">yes</text>
+<path class="sk blue" d="M256 92 L256 136" style="color:var(--ink)" marker-end="url(#arr)"/>
+<text class="lbl r" x="265" y="118" text-anchor="start" style="font-size:15px;paint-order:stroke;stroke:var(--paper);stroke-width:5px;stroke-linejoin:round">no</text>
+<path class="sk blue" d="M342 158 L401 158" style="color:var(--ink)" marker-end="url(#arr)"/>
+<path class="sk blue" d="M496 136 L496 79" style="color:var(--ink)" marker-end="url(#arr)"/></g></svg>
+<figcaption>Fig 2: memoization: cache hit returns at once; a miss computes, stores, then returns</figcaption>
+</figure>
+<h3>Steps</h3>
+<ol style="list-style:none;padding-left:0">
+<li>1. Write <code>make_memo(f)</code> that returns a wrapper holding a private <code>cache</code> dict in its closure.</li>
+<li>2. Apply it to a naive recursive <code>fib</code>, and count calls with and without memoization.</li>
+<li>3. Show that two memoized functions have <i>separate</i> caches (separate closures).</li>
+<li>4. Compare with <code>functools.lru_cache</code> and inspect <code>fib.__wrapped__</code> and <code>cache_info()</code>.</li>
+</ol>
+<p><b>Done when:</b> <code>fib(80)</code> returns instantly, and the call count drops from exponential to 81.</p>
+<div class="pagebreak">~ page 4 ~</div>
+<h2>Open source</h2>
+<ul>
+<li><a href="https://github.com/rust-lang/rust"><code>rust-lang/rust</code></a> (explicit lifetimes and scoping) — The Rust Book, chapter 13 "Closures", shows <code>Fn</code>, <code>FnMut</code>, and <code>FnOnce</code>: the three ways a closure can capture its scope.</li>
+</ul>
+<h2>Interview</h2>
+<ol style="list-style:none;padding-left:0">
+<li>1. <h3>"Pass-by-value vs pass-by-reference — what does Python do?"</h3>
+<div class="box"><b>Answer</b> Neither, strictly. Python passes object references by value ("call by sharing"). The function gets its own name bound to the same object. Mutating the object is visible to the caller; rebinding the name is not.</div></li>
+<li>2. <h3>"What is a closure?"</h3>
+<div class="box"><b>Answer</b> A function bundled with references to variables from the scope where it was defined. Those variables outlive the outer call. Closures power callbacks, decorators, factories, and private state.</div></li>
+</ol>
+<div class="pagebreak">~ page 5 ~</div>
+<h2>Checklist</h2>
+<ul>
+<li class="todo">trace a call stack</li>
+<li class="todo">explain lexical scope</li>
+<li class="todo">write a closure from scratch</li>
+</ul>
+<p class="black"><a href="index.md">Contents</a> · ← <a href="ch02-control-flow.notes.html">Chapter 2 — Control Flow</a> · Next → <a href="ch04-built-in-data-structures.notes.html">Chapter 4 — Built-in Data Structures</a></p>
+  <nav class="nav"><a href="ch02-control-flow.notes.html">← Ch 2 — Control Flow</a><a href="index.notes.html">☰ Contents</a><a href="ch04-built-in-data-structures.notes.html">Ch 4 — Built-in Data Structures →</a></nav>
+</main>
+</body>
+</html>

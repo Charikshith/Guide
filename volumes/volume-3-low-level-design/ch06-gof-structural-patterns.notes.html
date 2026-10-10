@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ch 6 — GoF Structural Patterns — Notes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;700&family=Kalam:wght@400;700&family=Patrick+Hand&display=swap" rel="stylesheet">
+<style>
+/* ===== Page tokens ===== */
+:root{
+  --line:32px;                 /* ruled-line spacing; every vertical size is a multiple */
+  --paper:#fdfbf4; --rule:#c9dcef; --margin:#e8a0a0;
+  --ink:#1f3a93;               /* blue pen (body) */
+  --ink2:#222;                 /* black pen (headings) */
+  --red:#c0392b; --green:#1e8449;
+  --hl-yellow:rgba(255,235,59,.55); --hl-pink:rgba(255,128,171,.45);
+  --hl-green:rgba(118,255,3,.35); --hl-blue:rgba(64,196,255,.35);
+  --sticky:#fff59d; --desk:#e9e4d8;
+  --hand:'Kalam','Patrick Hand','Comic Sans MS','Segoe Print','Bradley Hand',cursive;
+  --title:'Caveat','Kalam','Segoe Print','Bradley Hand',cursive;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){ --desk:#2b2b2b; }
+}
+:root[data-theme="dark"]{ --desk:#2b2b2b; }
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--desk);font-family:var(--hand);color:var(--ink);}
+
+/* ===== Notebook sheet ===== */
+.page{
+  position:relative; max-width:860px; margin:24px auto; padding:var(--line) 28px calc(var(--line)*2) 84px;
+  background:
+    linear-gradient(90deg,transparent 64px,var(--margin) 64px,var(--margin) 66px,transparent 66px),
+    repeating-linear-gradient(var(--paper) 0,var(--paper) calc(var(--line) - 1px),var(--rule) calc(var(--line) - 1px),var(--rule) var(--line));
+  background-color:var(--paper);
+  box-shadow:0 2px 6px rgba(0,0,0,.15),0 12px 28px rgba(0,0,0,.12);
+  font-size:20px; line-height:var(--line);
+}
+.page::before{ /* punched holes */
+  content:""; position:absolute; left:22px; top:0; bottom:0; width:18px;
+  background:radial-gradient(circle,var(--desk) 7px,transparent 8px) 0 40px/18px 220px repeat-y;
+}
+@media (max-width:600px){
+  .page{margin:0;padding-left:52px;padding-right:16px;font-size:18px;
+    background:
+      linear-gradient(90deg,transparent 40px,var(--margin) 40px,var(--margin) 42px,transparent 42px),
+      repeating-linear-gradient(var(--paper) 0,var(--paper) calc(var(--line) - 1px),var(--rule) calc(var(--line) - 1px),var(--rule) var(--line));
+    background-color:var(--paper);}
+  .page::before{left:10px;width:16px}
+}
+
+/* ===== Text (all margins are multiples of --line so text sits on the rules) ===== */
+.date{position:absolute;top:0;right:24px;font-family:var(--title);font-size:22px;color:var(--ink2);line-height:var(--line)}
+h1{font-family:var(--title);font-weight:700;color:var(--ink2);font-size:46px;line-height:calc(var(--line)*2);margin:0;transform:rotate(-1deg)}
+h1 .u{background:linear-gradient(transparent 62%,var(--hl-yellow) 62%,var(--hl-yellow) 92%,transparent 92%)}
+h2{font-family:var(--title);font-weight:700;color:var(--red);font-size:32px;line-height:calc(var(--line)*1.5);margin:calc(var(--line)*.5) 0 0}
+h2::before{content:"➤ ";font-size:22px}
+p,li{margin:0}
+ul,ol{margin:0;padding-left:28px}
+ul{list-style:none}
+ul>li::before{content:"–";position:absolute;margin-left:-20px}
+ul>li.star::before{content:"★";color:var(--red)}
+ul>li.arrow::before{content:"→"}
+ul>li.check::before{content:"✓";color:var(--green)}
+.gap{height:var(--line)}
+
+/* ===== Pen effects ===== */
+.hl{background:var(--hl-yellow);padding:0 3px;border-radius:3px 6px 4px 7px}
+.hl.pink{background:var(--hl-pink)} .hl.green{background:var(--hl-green)} .hl.blue{background:var(--hl-blue)}
+.red{color:var(--red)} .green{color:var(--green)} .black{color:var(--ink2)}
+.ul{text-decoration:underline wavy var(--red);text-underline-offset:5px}
+.circ{border:2px solid var(--red);border-radius:50% 45% 55% 48%;padding:0 6px}
+.strike{text-decoration:line-through 2px var(--red)}
+.term{font-weight:700;color:var(--ink2)}
+.box{display:flow-root;border:2.5px solid var(--ink2);border-radius:4px 10px 6px 12px;padding:calc(var(--line)*.5 - 2.5px) 14px;margin:calc(var(--line)*.5) 0;transform:rotate(-.4deg);background:rgba(255,255,255,.35)}
+.box.red{border-color:var(--red)}
+.formula{font-family:var(--title);font-size:28px;text-align:center;color:var(--ink2)}
+
+/* sticky note */
+.sticky{float:right;width:min(250px,42%);margin:0 0 var(--line) 20px;padding:var(--line) 16px;background:var(--sticky);
+  color:#333;transform:rotate(2.2deg);box-shadow:2px 4px 8px rgba(0,0,0,.18);font-size:18px}
+.sticky b{font-family:var(--title);font-size:24px;color:var(--red)}
+@media (max-width:600px){.sticky{float:none;width:auto;margin:var(--line) 0}}
+
+/* margin annotation (lives in the red margin) */
+.side{position:absolute;left:4px;width:58px;text-align:center;font-family:var(--title);font-size:17px;line-height:18px;color:var(--red);transform:rotate(-8deg)}
+@media (max-width:600px){.side{display:none}}
+
+/* two-column notes */
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:0 28px}
+@media (max-width:600px){.cols{grid-template-columns:1fr}}
+
+/* diagrams */
+figure{margin:var(--line) 0;text-align:center}
+figure svg{width:100%;max-width:640px;height:auto;overflow:visible}
+figcaption{font-family:var(--title);font-size:20px;color:var(--ink2)}
+/* phones: keep labels readable — diagram scrolls inside its own box instead of shrinking */
+@media (max-width:600px){figure{overflow-x:auto}figure svg{min-width:520px}}
+.sk{fill:none;stroke:var(--ink2);stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round;filter:url(#rough)}
+.sk.blue{stroke:var(--ink)} .sk.red{stroke:var(--red)} .sk.green{stroke:var(--green)}
+.lbl{font-family:var(--hand);font-size:17px;fill:var(--ink)}
+.lbl.b{font-weight:700;fill:var(--ink2)} .lbl.r{fill:var(--red)} .lbl.g{fill:var(--green)}
+
+/* table */
+.wrap{overflow-x:auto}
+table{border-collapse:collapse;margin:calc(var(--line)*.5) 0;min-width:100%}
+th,td{border:2px solid var(--ink2);padding:0 10px;text-align:left;vertical-align:top}
+th{font-family:var(--title);font-size:24px;color:var(--ink2)}
+
+@media print{body{background:#fff}.page{box-shadow:none;margin:0}.page::before{display:none}}
+
+/* ===== Added for long chapter notes ===== */
+pre.code{font-family:Consolas,'Courier New',monospace;font-size:14px;line-height:var(--line);color:var(--ink);background:rgba(255,255,255,.45);
+  border-left:4px solid var(--red);margin:calc(var(--line)*.5) 0;padding:0 12px;overflow-x:auto;white-space:pre}
+pre.code.ascii{border-left-color:var(--green)}
+code{font-family:Consolas,'Courier New',monospace;font-size:.82em;background:rgba(0,0,0,.06);padding:0 3px;border-radius:3px}
+pre.code code{background:none;padding:0;font-size:inherit}
+.lang{font-family:var(--title);font-size:18px;color:var(--red)}
+h3{font-family:var(--title);font-weight:700;color:var(--ink2);font-size:26px;line-height:var(--line);margin:calc(var(--line)*.5) 0 0}
+h3::before{content:"✎ ";font-size:18px;color:var(--red)}
+.nav{display:flex;justify-content:space-between;gap:12px;font-family:var(--title);font-size:22px;line-height:var(--line)}
+.nav a{color:var(--red);text-decoration:none}
+.nav a:hover{text-decoration:underline wavy}
+.pagebreak{border-top:3px dashed var(--margin);margin:var(--line) 0;text-align:center;font-family:var(--title);color:var(--red);line-height:var(--line)}
+li.todo::before{content:"☐";color:var(--ink2)}
+a{color:var(--ink);text-decoration:underline dotted}
+</style>
+</head>
+<body>
+<!-- One shared hand-drawn wobble filter; give every diagram stroke class="sk" -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <!-- userSpaceOnUse region: a % region collapses to nothing on perfectly straight lines (zero-height bbox) -->
+  <filter id="rough" filterUnits="userSpaceOnUse" x="-500" y="-500" width="3000" height="3000">
+    <feTurbulence type="fractalNoise" baseFrequency="0.03" numOctaves="2" seed="3" result="n"/>
+    <feDisplacementMap in="SourceGraphic" in2="n" scale="3"/>
+  </filter>
+  <marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+    <path d="M1 1 L9 5 L1 9" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+  </marker>
+</defs></svg>
+
+<main class="page">
+  <nav class="nav"><a href="ch05-gof-creational-patterns.notes.html">← Ch 5 — GoF Creational Patterns</a><a href="index.notes.html">☰ Contents</a><a href="ch07-gof-behavioral-patterns.notes.html">Ch 7 — GoF Behavioral Patterns →</a></nav>
+  <div class="date">2026-10-10</div>
+  <h1><span class="u">Ch 6 — GoF Structural Patterns</span></h1>
+    <p class="black">Volume 3 — Low-Level Design · <a href="index.md">Contents</a> · ← <a href="ch05-gof-creational-patterns.notes.html">Chapter 5 — GoF Creational Patterns</a> · Next → <a href="ch07-gof-behavioral-patterns.notes.html">Chapter 7 — GoF Behavioral Patterns</a></p>
+
+  <p class="black">Chapter 6 — GoF Structural Patterns</p>
+
+  <h2>Concept</h2>
+  <p>Adapter, Decorator, Facade, Proxy, Bridge, Composite, Flyweight.</p>
+  <div class="box"><b>In one sentence:</b> structural patterns are ways of <i>wrapping and combining</i> objects — to make an interface fit (Adapter), add behavior without editing (Decorator), hide a mess (Facade), control access (Proxy), split an abstraction from its implementation (Bridge), treat a tree like one object (Composite), or share the heavy parts (Flyweight).</div>
+
+  <h3>Mental model — travel gear</h3>
+  <p>An Adapter is a plug adapter: your laptop plug stays the same; the adapter makes it fit a foreign socket. A Decorator is a phone case: the phone is unchanged, the case adds grip or a wallet, and you can stack cases. A Facade is a hotel concierge: one person who deals with taxis, restaurants, and tickets for you. A Proxy is a receptionist who decides whether you may see the manager.</p>
+
+  <h3>The seven patterns</h3>
+  <div class="wrap"><table>
+    <tr><th>Pattern</th><th>Intent</th><th>Same interface as the wrapped object?</th><th>Typical use</th></tr>
+    <tr><td><b>Adapter</b></td><td>convert one interface into the one clients expect</td><td>no — it <i>changes</i> the interface</td><td>wrapping a third-party SDK behind your own port</td></tr>
+    <tr><td><b>Decorator</b></td><td>add responsibilities dynamically, by wrapping</td><td><b>yes</b> — so decorators stack</td><td>caching, logging, retries, metrics, auth around a service</td></tr>
+    <tr><td><b>Facade</b></td><td>one simple entry point to a complex subsystem</td><td>no — a <i>new, smaller</i> interface</td><td><code>send_invoice()</code> over PDF + storage + email + audit</td></tr>
+    <tr><td><b>Proxy</b></td><td>a stand-in that controls access to the real object</td><td>yes</td><td>lazy loading, remote proxies (RPC stubs), access control, rate limiting</td></tr>
+    <tr><td><b>Bridge</b></td><td>separate an abstraction from its implementation so both vary independently</td><td>—</td><td><code>Notification × Channel</code> (Email/SMS/Push) without N×M subclasses</td></tr>
+    <tr><td><b>Composite</b></td><td>treat single objects and groups the same way (tree)</td><td>yes</td><td>file systems, UI widget trees, org charts, pricing bundles</td></tr>
+    <tr><td><b>Flyweight</b></td><td>share immutable intrinsic state among many objects</td><td>yes</td><td>glyphs in an editor, map tiles, game sprites, interned strings</td></tr>
+  </table></div>
+
+  <aside class="sticky"><b>Exam tip!</b><br>All three wrap an object — ask <i>why</i>. Adapter = change the shape. Decorator = add behavior. Proxy = control access.</aside>
+  <h3>Decorator vs Proxy vs Adapter</h3>
+  <p>All three wrap an object. Ask <i>why</i>: Adapter changes the shape to fit; Decorator adds behavior and is chosen by the client; Proxy controls access and usually pretends to be the real object (the client may not know).</p>
+
+  <h3>Decorator vs inheritance</h3>
+  <p>Inheritance fixes behavior at compile time and multiplies subclasses (<code>CachedLoggedRetryingClient</code>). Decorators compose at runtime: <code>Retry(Logging(Cache(client)))</code>, in any order and combination, following <i>composition over inheritance</i> and the open–closed principle (<a href="ch02-solid-principles.notes.html">Ch 2</a>).</p>
+
+  <h3>Python note</h3>
+  <p>Python's <code>@decorator</code> syntax is a <i>function</i> decorator. It is the same idea (wrap, keep the signature), applied to functions instead of objects.</p>
+
+  <div class="pagebreak">~ page 2 ~</div>
+
+  <h2>Prereqs</h2>
+  <ul>
+    <li><a href="ch05-gof-creational-patterns.notes.html">Chapter 5 — GoF Creational Patterns</a></li>
+  </ul>
+
+  <h2>Diagram</h2>
+  <h3>Adapter (wraps an interface) vs Decorator (adds behavior) vs Facade (simplifies)</h3>
+  <figure>
+    <svg viewBox="0 0 660 590" role="img" aria-label="Top: PaymentGateway interface implemented by StripeAdapter, which translates calls to StripeSDK. Bottom: PriceService interface implemented by DbPriceService and CachingPriceService, and CachingPriceService wraps a PriceService">
+      <!-- Adapter group -->
+      <rect class="sk" x="10" y="15" width="250" height="88" rx="6"/>
+      <text class="lbl" x="135" y="36" text-anchor="middle" style="font-size:13px">&lt;&lt;interface&gt;&gt;</text>
+      <text class="lbl b" x="135" y="57" text-anchor="middle">PaymentGateway</text>
+      <path class="sk" d="M10 67 L260 67"/>
+      <text class="lbl" x="18" y="91" style="font-size:13px">+charge(cents, token) ChargeId</text>
+      <rect class="sk" x="10" y="160" width="250" height="106" rx="6"/>
+      <text class="lbl b" x="135" y="184" text-anchor="middle">StripeAdapter</text>
+      <path class="sk" d="M10 194 L260 194"/>
+      <text class="lbl" x="18" y="216" style="font-size:13px">-stripe_sdk</text>
+      <path class="sk" d="M10 226 L260 226"/>
+      <text class="lbl" x="18" y="250" style="font-size:13px">+charge(cents, token) ChargeId</text>
+      <rect class="sk" x="360" y="160" width="290" height="106" rx="6"/>
+      <text class="lbl b" x="505" y="184" text-anchor="middle">StripeSDK</text>
+      <path class="sk" d="M360 194 L650 194"/>
+      <text class="lbl" x="368" y="218" style="font-size:13px">+PaymentIntent.create(amount,</text>
+      <text class="lbl" x="368" y="240" style="font-size:13px">currency, payment_method, confirm)</text>
+      <path class="sk blue" d="M135 160 L135 107" style="color:var(--ink);stroke-dasharray:6 5" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M262 213 L356 213" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <text class="lbl r" x="309" y="203" text-anchor="middle" style="font-size:14px">translates calls</text>
+      <!-- Decorator group -->
+      <rect class="sk" x="235" y="310" width="190" height="88" rx="6"/>
+      <text class="lbl" x="330" y="331" text-anchor="middle" style="font-size:13px">&lt;&lt;interface&gt;&gt;</text>
+      <text class="lbl b" x="330" y="352" text-anchor="middle">PriceService</text>
+      <path class="sk" d="M235 362 L425 362"/>
+      <text class="lbl" x="243" y="386" style="font-size:13px">+price(sku) int</text>
+      <rect class="sk" x="20" y="450" width="180" height="44" rx="6"/>
+      <text class="lbl b" x="110" y="478" text-anchor="middle" style="font-size:15px">DbPriceService</text>
+      <rect class="sk" x="440" y="440" width="210" height="142" rx="6"/>
+      <text class="lbl b" x="545" y="464" text-anchor="middle" style="font-size:15px">CachingPriceService</text>
+      <path class="sk" d="M440 474 L650 474"/>
+      <text class="lbl" x="448" y="496" style="font-size:13px">-inner: PriceService</text>
+      <text class="lbl" x="448" y="518" style="font-size:13px">-cache</text>
+      <path class="sk" d="M440 528 L650 528"/>
+      <text class="lbl" x="448" y="552" style="font-size:13px">+price(sku) int</text>
+      <path class="sk blue" d="M110 450 C 130 420, 220 405, 270 402" style="color:var(--ink);stroke-dasharray:6 5" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M500 440 C 480 420, 450 408, 408 402" style="color:var(--ink);stroke-dasharray:6 5" marker-end="url(#arr)"/>
+      <path class="sk" d="M440 570 L428 562 L416 570 L428 578 Z" style="fill:var(--hl-blue)"/>
+      <path class="sk blue" d="M416 570 C 320 575, 300 400, 427 380" style="color:var(--ink)"/>
+      <text class="lbl r" x="330" y="500" style="font-size:15px">wraps</text>
+    </svg>
+    <figcaption>Fig 1: top = Adapter (StripeAdapter implements the port and translates calls to the SDK); bottom = Decorator (CachingPriceService implements PriceService <i>and</i> wraps one — hollow diamond = <code>o--</code> "wraps")</figcaption>
+  </figure>
+
+  <h3>Facade — one call hides many subsystems</h3>
+<pre class="code ascii"><code> FACADE: one call hides many subsystems
+            InvoiceFacade.send_invoice(order_id)
+                       │
+     ┌─────────┬───────┴────┬──────────┬──────────┐
+     ▼         ▼            ▼          ▼          ▼
+  Pricing   PdfRenderer   S3Store   EmailApi   AuditLog
+ (the client knows ONE method; the subsystems stay available for power users)</code></pre>
+
+  <h3>Stacking decorators</h3>
+<pre class="code ascii"><code> client ──► Retry ──► Logging ──► Cache ──► DbPriceService
+            (same PriceService interface at every layer; order is a choice:
+             Cache outside Retry = cached failures skip retries; inside = each retry checks the cache)</code></pre>
+
+  <h3>Composite: a tree treated as one</h3>
+  <figure>
+    <svg viewBox="0 0 660 310" role="img" aria-label="Tree: Bundle Office kit (price is the sum of children) contains Product desk 199, Bundle Tech and Product chair 89; Bundle Tech contains Product monitor 149 and Product keyboard 49">
+      <rect class="sk" x="130" y="15" width="400" height="44" rx="10"/>
+      <text class="lbl b" x="330" y="43" text-anchor="middle">Bundle 'Office kit' → price = Σ children</text>
+      <rect class="sk green" x="10" y="120" width="180" height="44" rx="10"/>
+      <text class="lbl g" x="100" y="148" text-anchor="middle">Product: desk 199</text>
+      <rect class="sk" x="235" y="120" width="190" height="44" rx="10"/>
+      <text class="lbl b" x="330" y="148" text-anchor="middle">Bundle 'Tech' → Σ</text>
+      <rect class="sk green" x="470" y="120" width="180" height="44" rx="10"/>
+      <text class="lbl g" x="560" y="148" text-anchor="middle">Product: chair 89</text>
+      <rect class="sk green" x="110" y="240" width="200" height="44" rx="10"/>
+      <text class="lbl g" x="210" y="268" text-anchor="middle">Product: monitor 149</text>
+      <rect class="sk green" x="340" y="240" width="210" height="44" rx="10"/>
+      <text class="lbl g" x="445" y="268" text-anchor="middle">Product: keyboard 49</text>
+      <path class="sk blue" d="M200 59 C 170 85, 130 100, 105 118" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M330 59 L330 118" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M460 59 C 490 85, 530 100, 555 118" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M290 164 C 260 195, 230 215, 215 238" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M370 164 C 400 195, 430 215, 445 238" style="color:var(--ink)" marker-end="url(#arr)"/>
+    </svg>
+    <figcaption>Fig 2: Composite — a Bundle (composite) and a Product (leaf) answer the same <code>price()</code> call; green = leaf</figcaption>
+  </figure>
+
+  <div class="pagebreak">~ page 3 ~</div>
+
+  <h2>Example</h2>
+  <span class="lang">python</span>
+<pre class="code"><code>from typing import Protocol
+import functools, time, logging
+
+# ---- Adapter: our port, their SDK ---------------------------------------
+class PaymentGateway(Protocol):
+    def charge(self, cents: int, token: str) -&gt; str: ...
+
+class FakeStripeSDK:                                  # stands in for the real third-party SDK
+    def create_payment_intent(self, amount, currency, payment_method, confirm):
+        return {"id": f"pi_{amount}", "status": "succeeded"}
+
+class StripeAdapter:
+    """Translates our PaymentGateway interface into the SDK's shape."""
+    def __init__(self, sdk, currency="eur"):
+        self.sdk, self.currency = sdk, currency
+    def charge(self, cents, token):
+        pi = self.sdk.create_payment_intent(amount=cents, currency=self.currency,
+                                            payment_method=token, confirm=True)
+        if pi["status"] != "succeeded":
+            raise RuntimeError(f"payment failed: {pi['status']}")
+        return pi["id"]
+
+# ---- Decorator: same interface, extra behavior --------------------------
+class PriceService(Protocol):
+    def price(self, sku: str) -&gt; int: ...
+
+class DbPriceService:
+    def __init__(self): self.calls = 0
+    def price(self, sku):
+        self.calls += 1; time.sleep(0.01); return {"desk": 19900, "chair": 8900}[sku]
+
+class CachingPriceService:
+    def __init__(self, inner: PriceService, ttl=60):
+        self.inner, self.ttl, self.cache = inner, ttl, {}
+    def price(self, sku):
+        hit = self.cache.get(sku)
+        if hit and time.monotonic() - hit[1] &lt; self.ttl:
+            return hit[0]
+        value = self.inner.price(sku)
+        self.cache[sku] = (value, time.monotonic())
+        return value
+
+class LoggingPriceService:
+    def __init__(self, inner: PriceService): self.inner = inner
+    def price(self, sku):
+        logging.info("price lookup %s", sku)
+        return self.inner.price(sku)
+
+db = DbPriceService()
+svc = LoggingPriceService(CachingPriceService(db))    # stack in any order
+print(svc.price("desk"), svc.price("desk"), db.calls)  # 19900 19900 1
+
+# ---- Function decorator (Python syntax for the same idea) ---------------
+def logged(fn):
+    @functools.wraps(fn)                               # keep name/docstring
+    def wrapper(*a, **kw):
+        logging.info("call %s", fn.__name__)
+        return fn(*a, **kw)
+    return wrapper
+
+# ---- Composite -----------------------------------------------------------
+class Product:
+    def __init__(self, name, cents): self.name, self.cents = name, cents
+    def price(self): return self.cents
+
+class Bundle:
+    def __init__(self, name, *items, discount_pct=0):
+        self.name, self.items, self.discount = name, items, discount_pct
+    def price(self):
+        return sum(i.price() for i in self.items) * (100 - self.discount) // 100
+
+kit = Bundle("office", Product("desk", 19900), Product("chair", 8900),
+             Bundle("tech", Product("monitor", 14900), Product("keyboard", 4900)),
+             discount_pct=10)
+print(kit.price())                                     # 43740
+print(StripeAdapter(FakeStripeSDK()).charge(500, "tok_visa"))   # pi_500</code></pre>
+
+  <h2>Exercises</h2>
+  <ol style="list-style:none;padding-left:0">
+    <li>1. Adapt a mismatched interface without changing its callers.
+      <div class="box"><b>Solution</b> Callers use <code>storage.put(key, bytes)</code> and <code>get(key)</code>. The new library offers <code>upload_blob(container, name, data, overwrite)</code> and <code>download_blob(...)</code>. Write <code>BlobStorageAdapter(client, container)</code> implementing <code>put</code>/<code>get</code> by translating arguments, errors (their <code>ResourceNotFoundError</code> → your <code>KeyError</code>), and return types. Only the composition root changes to build the adapter.</div></li>
+    <li>2. Add a logging decorator to a service.
+      <div class="box"><b>Solution</b> See <code>LoggingPriceService</code>: implement the same interface, hold the inner service, log before and after (with duration and errors), and delegate. The original class is untouched, and you can wrap any implementation, including fakes in tests.</div></li>
+    <li>3. Is Python's <code>functools.lru_cache</code> a decorator in the GoF sense?
+      <div class="box"><b>Solution</b> Yes in spirit: it wraps a callable, keeps the same call signature, and adds caching behavior without changing the function. The GoF version wraps <i>objects</i> behind an interface; Python's syntax applies the same idea to functions.</div></li>
+  </ol>
+
+  <div class="pagebreak">~ page 4 ~</div>
+
+  <h2>Mini project</h2>
+  <p><b>A facade over a messy subsystem + a caching decorator.</b></p>
+  <figure>
+    <svg viewBox="0 0 660 490" role="img" aria-label="Flow: app code calls ShippingFacade, which uses CarrierAAdapter (XML SOAP), CarrierBAdapter (REST, cm/kg), CarrierCAdapter (CSV over SFTP) and a rule to pick the cheapest carrier meeting the delivery date; adapters implement the CarrierPort interface; CachingCarrier decorator wraps the adapters">
+      <rect class="sk" x="240" y="15" width="180" height="44" rx="10"/>
+      <text class="lbl b" x="330" y="43" text-anchor="middle">app code</text>
+      <path class="sk blue" d="M330 59 L330 98" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <rect class="sk green" x="150" y="100" width="360" height="84" rx="10"/>
+      <text class="lbl g" x="330" y="126" text-anchor="middle">ShippingFacade</text>
+      <text class="lbl" x="330" y="148" text-anchor="middle">quote(order) → Quote</text>
+      <text class="lbl" x="330" y="170" text-anchor="middle">book(order) → Label</text>
+      <rect class="sk" x="10" y="250" width="145" height="84" rx="10"/>
+      <text class="lbl b" x="82" y="276" text-anchor="middle" style="font-size:15px">CarrierAAdapter</text>
+      <text class="lbl" x="82" y="298" text-anchor="middle" style="font-size:15px">(XML SOAP)</text>
+      <rect class="sk" x="175" y="250" width="145" height="84" rx="10"/>
+      <text class="lbl b" x="247" y="276" text-anchor="middle" style="font-size:15px">CarrierBAdapter</text>
+      <text class="lbl" x="247" y="298" text-anchor="middle" style="font-size:15px">(REST, cm/kg)</text>
+      <rect class="sk" x="340" y="250" width="145" height="84" rx="10"/>
+      <text class="lbl b" x="412" y="276" text-anchor="middle" style="font-size:15px">CarrierCAdapter</text>
+      <text class="lbl" x="412" y="298" text-anchor="middle" style="font-size:15px">(CSV over SFTP)</text>
+      <rect class="sk" x="505" y="250" width="145" height="84" rx="10"/>
+      <text class="lbl" x="577" y="276" text-anchor="middle" style="font-size:14px">pick the cheapest</text>
+      <text class="lbl" x="577" y="298" text-anchor="middle" style="font-size:14px">carrier that meets</text>
+      <text class="lbl" x="577" y="320" text-anchor="middle" style="font-size:14px">the delivery date</text>
+      <path class="sk blue" d="M200 184 C 160 205, 110 225, 85 248" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M290 184 C 275 205, 258 225, 250 248" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M370 184 C 385 205, 400 225, 410 248" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M460 184 C 500 205, 550 225, 575 248" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <!-- CarrierPort -->
+      <rect class="sk" x="400" y="400" width="250" height="44" rx="10" style="stroke-dasharray:8 6"/>
+      <text class="lbl b" x="525" y="428" text-anchor="middle">CarrierPort interface</text>
+      <path class="sk blue" d="M120 334 C 180 380, 330 395, 398 418" style="color:var(--ink);stroke-dasharray:6 5" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M270 334 C 310 370, 360 392, 398 412" style="color:var(--ink);stroke-dasharray:6 5" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M440 334 C 450 365, 460 385, 470 398" style="color:var(--ink);stroke-dasharray:6 5" marker-end="url(#arr)"/>
+      <!-- CachingCarrier -->
+      <rect class="sk red" x="10" y="395" width="300" height="64" rx="10"/>
+      <text class="lbl r" x="160" y="420" text-anchor="middle" style="font-size:15px">CachingCarrier (decorator)</text>
+      <text class="lbl" x="160" y="443" text-anchor="middle" style="font-size:13px">quotes cached 10 min per route+weight</text>
+      <path class="sk red" d="M50 395 L65 337" style="color:var(--red);stroke-dasharray:6 5" marker-end="url(#arr)"/>
+      <path class="sk red" d="M200 395 C 215 370, 235 350, 245 337" style="color:var(--red);stroke-dasharray:6 5" marker-end="url(#arr)"/>
+      <path class="sk red" d="M290 395 C 330 375, 380 355, 400 337" style="color:var(--red);stroke-dasharray:6 5" marker-end="url(#arr)"/>
+      <text class="lbl r" x="140" y="375" style="font-size:15px">wraps</text>
+    </svg>
+    <figcaption>Fig 3: blue dashed = adapters implement <code>CarrierPort</code>; red dashed = <code>CachingCarrier</code> "wraps" each adapter</figcaption>
+  </figure>
+
+  <h3>Steps</h3>
+  <ol style="list-style:none;padding-left:0">
+    <li>1. Simulate three "carriers" with ugly, different APIs (units, formats, error styles).</li>
+    <li>2. Write one <code>CarrierPort</code> and an adapter per carrier that normalizes units and errors.</li>
+    <li>3. <code>ShippingFacade.quote(order)</code> asks all carriers, applies selection rules, and returns one <code>Quote</code>; <code>book(order)</code> books with the chosen carrier.</li>
+    <li>4. A <code>CachingCarrier</code> decorator caches quotes by <code>(from, to, weight_bucket)</code> for 10 minutes; stack it without editing the adapters.</li>
+    <li>5. Tests: fakes for each carrier; verify the cache hit count and the selection rules.</li>
+  </ol>
+  <div class="box"><b>Done when:</b> app code imports only the facade, adding a fourth carrier means one new adapter, and the cache cuts carrier calls by 90% in a replayed workload.</div>
+
+  <h2>Open source</h2>
+  <ul>
+    <li><a href="https://github.com/python/cpython"><code>python/cpython</code></a> <code>functools.wraps</code> (decorators) — <code>Lib/functools.py</code>: <code>wraps</code>/<code>update_wrapper</code> copy <code>__name__</code>, <code>__doc__</code>, and <code>__wrapped__</code> so decorated functions stay introspectable.</li>
+    <li><a href="https://github.com/rust-lang/rust"><code>rust-lang/rust</code></a> adapter traits — iterator adapters (<code>map</code>, <code>filter</code>, <code>take</code> in <code>library/core/src/iter/adapters/</code>) are decorators: each wraps an <code>Iterator</code> and is itself an <code>Iterator</code>. <code>BufReader&lt;R: Read&gt;</code> decorates any reader with buffering.</li>
+  </ul>
+
+  <h2>Interview</h2>
+  <ol style="list-style:none;padding-left:0">
+    <li>1. <b>"Adapter vs Facade?"</b>
+      <div class="box"><b>Answer</b> An Adapter makes one existing interface match another interface that clients already expect — usually one-to-one, often wrapping a single class (a third-party SDK behind your port). A Facade defines a <i>new, simpler</i> interface over a whole subsystem of many classes to make common tasks easy. Adapter is about compatibility; Facade is about simplicity.</div></li>
+    <li>2. <b>"Decorator vs inheritance for adding behavior?"</b>
+      <div class="box"><b>Answer</b> Inheritance binds behavior at compile time, and combining features multiplies subclasses (logging × caching × retry = many classes). It also couples you to the parent's internals. Decorators wrap any implementation of the interface at runtime, stack in any combination and order, keep each concern in one small class, and leave the original untouched (open–closed). Downsides: more small objects, and ordering matters.</div></li>
+  </ol>
+
+  <h2>Checklist</h2>
+  <ul>
+    <li class="todo">wrap, don't fork, third-party APIs</li>
+    <li class="todo">add behavior without editing the target</li>
+    <li class="todo">hide complexity behind a facade</li>
+  </ul>
+  <div class="gap"></div>
+  <p class="black"><a href="index.md">Contents</a> · ← <a href="ch05-gof-creational-patterns.notes.html">Chapter 5 — GoF Creational Patterns</a> · Next → <a href="ch07-gof-behavioral-patterns.notes.html">Chapter 7 — GoF Behavioral Patterns</a></p>
+
+  <nav class="nav"><a href="ch05-gof-creational-patterns.notes.html">← Ch 5 — GoF Creational Patterns</a><a href="index.notes.html">☰ Contents</a><a href="ch07-gof-behavioral-patterns.notes.html">Ch 7 — GoF Behavioral Patterns →</a></nav>
+</main>
+</body>
+</html>

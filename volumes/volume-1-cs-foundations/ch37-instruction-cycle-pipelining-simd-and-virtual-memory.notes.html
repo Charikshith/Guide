@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ch 37 — Instruction Cycle, Pipelining, SIMD &amp; Virtual Memory — Notes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;700&family=Kalam:wght@400;700&family=Patrick+Hand&display=swap" rel="stylesheet">
+<style>
+/* ===== Page tokens ===== */
+:root{
+  --line:32px;                 /* ruled-line spacing; every vertical size is a multiple */
+  --paper:#fdfbf4; --rule:#c9dcef; --margin:#e8a0a0;
+  --ink:#1f3a93;               /* blue pen (body) */
+  --ink2:#222;                 /* black pen (headings) */
+  --red:#c0392b; --green:#1e8449;
+  --hl-yellow:rgba(255,235,59,.55); --hl-pink:rgba(255,128,171,.45);
+  --hl-green:rgba(118,255,3,.35); --hl-blue:rgba(64,196,255,.35);
+  --sticky:#fff59d; --desk:#e9e4d8;
+  --hand:'Kalam','Patrick Hand','Comic Sans MS','Segoe Print','Bradley Hand',cursive;
+  --title:'Caveat','Kalam','Segoe Print','Bradley Hand',cursive;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){ --desk:#2b2b2b; }
+}
+:root[data-theme="dark"]{ --desk:#2b2b2b; }
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--desk);font-family:var(--hand);color:var(--ink);}
+
+/* ===== Notebook sheet ===== */
+.page{
+  position:relative; max-width:860px; margin:24px auto; padding:var(--line) 28px calc(var(--line)*2) 84px;
+  background:
+    linear-gradient(90deg,transparent 64px,var(--margin) 64px,var(--margin) 66px,transparent 66px),
+    repeating-linear-gradient(var(--paper) 0,var(--paper) calc(var(--line) - 1px),var(--rule) calc(var(--line) - 1px),var(--rule) var(--line));
+  background-color:var(--paper);
+  box-shadow:0 2px 6px rgba(0,0,0,.15),0 12px 28px rgba(0,0,0,.12);
+  font-size:20px; line-height:var(--line);
+}
+.page::before{ /* punched holes */
+  content:""; position:absolute; left:22px; top:0; bottom:0; width:18px;
+  background:radial-gradient(circle,var(--desk) 7px,transparent 8px) 0 40px/18px 220px repeat-y;
+}
+@media (max-width:600px){
+  .page{margin:0;padding-left:52px;padding-right:16px;font-size:18px;
+    background:
+      linear-gradient(90deg,transparent 40px,var(--margin) 40px,var(--margin) 42px,transparent 42px),
+      repeating-linear-gradient(var(--paper) 0,var(--paper) calc(var(--line) - 1px),var(--rule) calc(var(--line) - 1px),var(--rule) var(--line));
+    background-color:var(--paper);}
+  .page::before{left:10px;width:16px}
+}
+
+/* ===== Text (all margins are multiples of --line so text sits on the rules) ===== */
+.date{position:absolute;top:0;right:24px;font-family:var(--title);font-size:22px;color:var(--ink2);line-height:var(--line)}
+h1{font-family:var(--title);font-weight:700;color:var(--ink2);font-size:46px;line-height:calc(var(--line)*2);margin:0;transform:rotate(-1deg)}
+h1 .u{background:linear-gradient(transparent 62%,var(--hl-yellow) 62%,var(--hl-yellow) 92%,transparent 92%)}
+h2{font-family:var(--title);font-weight:700;color:var(--red);font-size:32px;line-height:calc(var(--line)*1.5);margin:calc(var(--line)*.5) 0 0}
+h2::before{content:"➤ ";font-size:22px}
+p,li{margin:0}
+ul,ol{margin:0;padding-left:28px}
+ul{list-style:none}
+ul>li::before{content:"–";position:absolute;margin-left:-20px}
+ul>li.star::before{content:"★";color:var(--red)}
+ul>li.arrow::before{content:"→"}
+ul>li.check::before{content:"✓";color:var(--green)}
+.gap{height:var(--line)}
+
+/* ===== Pen effects ===== */
+.hl{background:var(--hl-yellow);padding:0 3px;border-radius:3px 6px 4px 7px}
+.hl.pink{background:var(--hl-pink)} .hl.green{background:var(--hl-green)} .hl.blue{background:var(--hl-blue)}
+.red{color:var(--red)} .green{color:var(--green)} .black{color:var(--ink2)}
+.ul{text-decoration:underline wavy var(--red);text-underline-offset:5px}
+.circ{border:2px solid var(--red);border-radius:50% 45% 55% 48%;padding:0 6px}
+.strike{text-decoration:line-through 2px var(--red)}
+.term{font-weight:700;color:var(--ink2)}
+.box{display:flow-root;border:2.5px solid var(--ink2);border-radius:4px 10px 6px 12px;padding:calc(var(--line)*.5 - 2.5px) 14px;margin:calc(var(--line)*.5) 0;transform:rotate(-.4deg);background:rgba(255,255,255,.35)}
+.box.red{border-color:var(--red)}
+.formula{font-family:var(--title);font-size:28px;text-align:center;color:var(--ink2)}
+
+/* sticky note */
+.sticky{float:right;width:min(250px,42%);margin:0 0 var(--line) 20px;padding:var(--line) 16px;background:var(--sticky);
+  color:#333;transform:rotate(2.2deg);box-shadow:2px 4px 8px rgba(0,0,0,.18);font-size:18px}
+.sticky b{font-family:var(--title);font-size:24px;color:var(--red)}
+@media (max-width:600px){.sticky{float:none;width:auto;margin:var(--line) 0}}
+
+/* margin annotation (lives in the red margin) */
+.side{position:absolute;left:4px;width:58px;text-align:center;font-family:var(--title);font-size:17px;line-height:18px;color:var(--red);transform:rotate(-8deg)}
+@media (max-width:600px){.side{display:none}}
+
+/* two-column notes */
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:0 28px}
+@media (max-width:600px){.cols{grid-template-columns:1fr}}
+
+/* diagrams */
+figure{margin:var(--line) 0;text-align:center}
+figure svg{width:100%;max-width:640px;height:auto;overflow:visible}
+figcaption{font-family:var(--title);font-size:20px;color:var(--ink2)}
+/* phones: keep labels readable — diagram scrolls inside its own box instead of shrinking */
+@media (max-width:600px){figure{overflow-x:auto}figure svg{min-width:520px}}
+.sk{fill:none;stroke:var(--ink2);stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round;filter:url(#rough)}
+.sk.blue{stroke:var(--ink)} .sk.red{stroke:var(--red)} .sk.green{stroke:var(--green)}
+.lbl{font-family:var(--hand);font-size:17px;fill:var(--ink)}
+.lbl.b{font-weight:700;fill:var(--ink2)} .lbl.r{fill:var(--red)} .lbl.g{fill:var(--green)}
+
+/* table */
+.wrap{overflow-x:auto}
+table{border-collapse:collapse;margin:calc(var(--line)*.5) 0;min-width:100%}
+th,td{border:2px solid var(--ink2);padding:0 10px;text-align:left;vertical-align:top}
+th{font-family:var(--title);font-size:24px;color:var(--ink2)}
+
+@media print{body{background:#fff}.page{box-shadow:none;margin:0}.page::before{display:none}}
+
+/* ===== Added for long chapter notes ===== */
+pre.code{font-family:Consolas,'Courier New',monospace;font-size:14px;line-height:var(--line);color:var(--ink);background:rgba(255,255,255,.45);
+  border-left:4px solid var(--red);margin:calc(var(--line)*.5) 0;padding:0 12px;overflow-x:auto;white-space:pre}
+pre.code.ascii{border-left-color:var(--green)}
+code{font-family:Consolas,'Courier New',monospace;font-size:.82em;background:rgba(0,0,0,.06);padding:0 3px;border-radius:3px}
+pre.code code{background:none;padding:0;font-size:inherit}
+.lang{font-family:var(--title);font-size:18px;color:var(--red)}
+h3{font-family:var(--title);font-weight:700;color:var(--ink2);font-size:26px;line-height:var(--line);margin:calc(var(--line)*.5) 0 0}
+h3::before{content:"✎ ";font-size:18px;color:var(--red)}
+.nav{display:flex;justify-content:space-between;gap:12px;font-family:var(--title);font-size:22px;line-height:var(--line)}
+.nav a{color:var(--red);text-decoration:none}
+.nav a:hover{text-decoration:underline wavy}
+.pagebreak{border-top:3px dashed var(--margin);margin:var(--line) 0;text-align:center;font-family:var(--title);color:var(--red);line-height:var(--line)}
+li.todo::before{content:"☐";color:var(--ink2)}
+a{color:var(--ink);text-decoration:underline dotted}
+</style>
+</head>
+<body>
+<!-- One shared hand-drawn wobble filter; give every diagram stroke class="sk" -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <!-- userSpaceOnUse region: a % region collapses to nothing on perfectly straight lines (zero-height bbox) -->
+  <filter id="rough" filterUnits="userSpaceOnUse" x="-500" y="-500" width="3000" height="3000">
+    <feTurbulence type="fractalNoise" baseFrequency="0.03" numOctaves="2" seed="3" result="n"/>
+    <feDisplacementMap in="SourceGraphic" in2="n" scale="3"/>
+  </filter>
+  <marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+    <path d="M1 1 L9 5 L1 9" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+  </marker>
+</defs></svg>
+
+<main class="page">
+  <nav class="nav"><a href="ch36-binary-cpu-registers-cache-and-memory-hierarchy.notes.html">← Ch 36 — Binary, CPU, Registers, Cache &amp; Memory Hierarchy</a><a href="index.notes.html">☰ Contents</a><a href="ch38-os-processes-threads-scheduling-synchronization-and-deadlocks.notes.html">Ch 38 — OS: Processes, Threads, Scheduling, Synchronization &amp; Deadlocks →</a></nav>
+  <div class="date">2026-10-10</div>
+  <h1><span class="u">Ch 37 — Instruction Cycle, Pipelining, SIMD &amp; Virtual Memory</span></h1>
+  <p class="black">Chapter 37 — Instruction Cycle, Pipelining, SIMD &amp; Virtual Memory</p>
+  <p class="black"><b>Volume 1 — Computer Science Foundations</b> · <a href="index.md">Contents</a> · ← <a href="ch36-binary-cpu-registers-cache-and-memory-hierarchy.notes.html">Chapter 36 — Binary, CPU, Registers, Cache &amp; Memory Hierarchy</a> · Next → <a href="ch38-os-processes-threads-scheduling-synchronization-and-deadlocks.notes.html">Chapter 38 — OS: Processes, Threads, Scheduling, Synchronization &amp; Deadlocks</a></p>
+  <h2>Concept</h2>
+  <p>Fetch-decode-execute; pipelining and hazards; SIMD (data parallelism); virtual memory and page tables.</p>
+  <div class="box"><b>In one sentence:</b> a CPU runs instructions in an assembly line (pipeline) so several are in flight at once, does the same operation on many numbers with one instruction (SIMD), and gives every process the illusion of its own private memory through virtual addresses that hardware translates on the fly.</div>
+  <p><b>Mental model — a laundromat.</b> Washing (fetch), drying (decode), folding (execute), putting away (write back). With one load at a time, each takes 4 hours. With an assembly line, a new load starts every hour, so 4 loads are in progress at once. A <i>hazard</i> is when load 2 needs a sock still in load 1's dryer: it must wait (a bubble). SIMD is a washer big enough for 8 shirts in one cycle.</p>
+  <h3>The instruction cycle</h3>
+  <div class="wrap"><table>
+<tr><th>Stage</th><th>Classic 5-stage RISC</th><th>Does</th></tr>
+<tr><td>IF</td><td>instruction fetch</td><td>read the instruction at PC</td></tr>
+<tr><td>ID</td><td>decode / register read</td><td>work out the operation, read source registers</td></tr>
+<tr><td>EX</td><td>execute</td><td>ALU computes, or computes an address</td></tr>
+<tr><td>MEM</td><td>memory access</td><td>load or store</td></tr>
+<tr><td>WB</td><td>write back</td><td>write the result to the destination register</td></tr>
+</table></div>
+  <h3>Hazards — why the pipeline stalls</h3>
+  <div class="wrap"><table>
+<tr><th>Type</th><th>Cause</th><th>Example</th><th>Fix</th></tr>
+<tr><td><b>Data</b></td><td>an instruction needs a result not yet written</td><td><code>ADD r1, r2, r3</code> then <code>SUB r4, r1, r5</code></td><td>forwarding/bypassing; stall</td></tr>
+<tr><td><b>Control</b></td><td>a branch: which instruction comes next?</td><td><code>if (x &gt; 0)</code></td><td>branch prediction (&gt;95% accurate); speculative execution</td></tr>
+<tr><td><b>Structural</b></td><td>two instructions need the same hardware in one cycle</td><td>one memory port for fetch and load</td><td>more hardware; separate I/D caches</td></tr>
+</table></div>
+  <p>A mispredicted branch flushes the pipeline — ~15–20 cycles lost on modern CPUs. That's why sorted data can make an <code>if</code> inside a loop several times faster.</p>
+  <h3>SIMD (single instruction, multiple data)</h3>
+  <div class="wrap"><table>
+<tr><th>ISA</th><th>Register width</th><th>32-bit floats per instruction</th></tr>
+<tr><td>-----</td><td>---------------:</td><td>:-:</td></tr>
+<tr><td>SSE</td><td>128 bits</td><td>4</td></tr>
+<tr><td>AVX2</td><td>256 bits</td><td>8</td></tr>
+<tr><td>AVX-512</td><td>512 bits</td><td>16</td></tr>
+<tr><td>ARM NEON / SVE</td><td>128 / up to 2048 bits</td><td>4 / scalable</td></tr>
+</table></div>
+  <p>You rarely write SIMD by hand: NumPy, BLAS, compilers (auto-vectorization), and libraries like <code>simdjson</code> use it for you. GPUs push the same idea to thousands of lanes.</p>
+  <h3>Virtual memory</h3>
+  <ul>
+<li>Each process sees its own flat address space (0 … 2⁴⁸ on x86-64).</li>
+<li>Memory is split into <b>pages</b> (usually 4 KB; "huge pages" are 2 MB or 1 GB).</li>
+<li>A per-process <b>page table</b> maps virtual page → physical frame, plus permission bits (read/write/execute, user/kernel).</li>
+<li>The <b>TLB</b> (translation lookaside buffer) caches recent translations. A TLB miss triggers a <i>page walk</i> through 4–5 levels of table.</li>
+<li>A <b>page fault</b> happens when a page isn't mapped: the OS loads it (from disk or swap), allocates it on first touch, or kills the process (segfault).</li>
+</ul>
+  <p>Benefits: isolation (one process can't read another's memory), overcommit and lazy allocation, memory-mapped files, shared libraries mapped once, copy-on-write <code>fork()</code>.</p>
+  <h2>Prereqs</h2>
+  <ul>
+<li><a href="ch36-binary-cpu-registers-cache-and-memory-hierarchy.notes.html">Chapter 36 — Binary, CPU, Registers, Cache &amp; Memory Hierarchy</a></li>
+</ul>
+  <h2>Diagram</h2>
+  <h3>A 5-stage pipeline with a data-hazard bubble</h3>
+  <pre class="code ascii"><code> cycle:            1    2    3    4    5    6    7    8
+ I1 ADD r1,r2,r3   IF   ID   EX   MEM  WB
+ I2 SUB r4,r1,r5        IF   ID   ░░   EX   MEM  WB         ← needs r1: one bubble
+ I3 AND r6,r7,r8             IF   ░░   ID   EX   MEM  WB
+                                  ▲ stall (forwarding from EX/MEM removes most of these)
+ without a pipeline: 3 instructions × 5 cycles = 15 cycles; with it: ~8
+</code></pre>
+  <h3>SIMD: one instruction, 8 lanes</h3>
+  <pre class="code ascii"><code> scalar: 8 separate ADDs            AVX2: one VADDPS
+ a0+b0  a1+b1  …  a7+b7             ┌──┬──┬──┬──┬──┬──┬──┬──┐
+                                    │a0│a1│a2│a3│a4│a5│a6│a7│  ymm0
+                                    ├──┼──┼──┼──┼──┼──┼──┼──┤  +
+                                    │b0│b1│b2│b3│b4│b5│b6│b7│  ymm1
+                                    ├──┼──┼──┼──┼──┼──┼──┼──┤  =
+                                    │c0│c1│c2│c3│c4│c5│c6│c7│  ymm2
+                                    └──┴──┴──┴──┴──┴──┴──┴──┘
+</code></pre>
+  <h3>Virtual → physical address translation</h3>
+  <figure>
+<svg viewBox="0 0 442 982" style="max-width:442px" role="img" aria-label="Virtual → physical address translation"><g transform="translate(250,0)"><path class="sk blue" d="M-7 68 C -7 101, -7 101, -7 134" style="color:var(--ink)" marker-end="url(#arr)"/><path class="sk blue" d="M-7 192 C -7 225, -9 225, -9 258" style="color:var(--ink)" marker-end="url(#arr)"/><path class="sk blue" d="M-22 318 C -249 358, -249 784, -103 824" style="color:var(--ink)" marker-end="url(#arr)"/><path class="sk blue" d="M4 318 C 4 362, -14 362, -14 406" style="color:var(--ink)" marker-end="url(#arr)"/><path class="sk blue" d="M-14 464 C -14 497, -23 497, -23 530" style="color:var(--ink)" marker-end="url(#arr)"/><path class="sk blue" d="M-36 590 C -36 645, -127 645, -127 700" style="color:var(--ink)" marker-end="url(#arr)"/><path class="sk blue" d="M-127 736 C -127 780, -129 780, -129 824" style="color:var(--ink)" marker-end="url(#arr)"/><path class="sk blue" d="M-10 590 C -10 634, 61 634, 61 678" style="color:var(--ink)" marker-end="url(#arr)"/><path class="sk blue" d="M-116 860 C -116 893, -110 893, -110 926" style="color:var(--ink)" marker-end="url(#arr)"/><rect class="sk" x="-90" y="10" width="167" height="58" rx="10" style="fill:#fdfbf4"/><rect class="sk" x="-143" y="134" width="272" height="58" rx="10" style="fill:#fdfbf4"/><path class="sk" d="M-9 258 L60 288 L-9 318 L-79 288 Z" style="fill:#fdfbf4"/><rect class="sk" x="-230" y="824" width="228" height="36" rx="10" style="fill:#fdfbf4"/><rect class="sk" x="-119" y="406" width="211" height="58" rx="10" style="fill:#fdfbf4"/><path class="sk" d="M-23 530 L47 560 L-23 590 L-93 560 Z" style="fill:#fdfbf4"/><rect class="sk" x="-175" y="700" width="96" height="36" rx="10" style="fill:#fdfbf4"/><rect class="sk" x="-48" y="678" width="220" height="80" rx="10" style="fill:#fdfbf4"/><rect class="sk" x="-172" y="926" width="123" height="36" rx="10" style="fill:#fdfbf4"/><rect x="-220" y="560" width="34" height="22" style="fill:var(--paper);stroke:none"/><text class="lbl r" x="-203" y="576" text-anchor="middle">yes</text><rect x="-14" y="339" width="26" height="22" style="fill:var(--paper);stroke:none"/><text class="lbl r" x="-1" y="355" text-anchor="middle">no</text><rect x="-76" y="619" width="34" height="22" style="fill:var(--paper);stroke:none"/><text class="lbl r" x="-59" y="635" text-anchor="middle">yes</text><rect x="-5" y="611" width="26" height="22" style="fill:var(--paper);stroke:none"/><text class="lbl r" x="8" y="627" text-anchor="middle">no</text><text class="lbl b" x="-7" y="34" text-anchor="middle">virtual address</text><text class="lbl b" x="-7" y="56" text-anchor="middle">0x7f3a_1c2d_5abc</text><text class="lbl b" x="-7" y="158" text-anchor="middle">page number | offset (low 12</text><text class="lbl b" x="-7" y="180" text-anchor="middle">bits = 0xabc)</text><text class="lbl b" x="-9" y="294" text-anchor="middle">TLB hit?</text><text class="lbl b" x="-116" y="848" text-anchor="middle">physical frame + offset</text><text class="lbl b" x="-14" y="430" text-anchor="middle">page walk:</text><text class="lbl b" x="-14" y="452" text-anchor="middle">PML4 → PDPT → PD → PT</text><text class="lbl b" x="-23" y="566" text-anchor="middle">present?</text><text class="lbl b" x="-127" y="724" text-anchor="middle">fill TLB</text><text class="lbl b" x="61" y="702" text-anchor="middle">PAGE FAULT → kernel:</text><text class="lbl b" x="61" y="724" text-anchor="middle">load page / allocate /</text><text class="lbl b" x="61" y="746" text-anchor="middle">SIGSEGV</text><text class="lbl b" x="-110" y="950" text-anchor="middle">cache / RAM</text></g></svg>
+<figcaption>Fig 1: Virtual → physical address translation (redrawn from the chapter diagram)</figcaption>
+</figure>
+  <div class="pagebreak">~ page 2 ~</div>
+  <h2>Example</h2>
+  <span class="lang">python</span>
+<pre class="code"><code>import numpy as np, time
+a = np.random.rand(10_000_000).astype(np.float32)
+b = np.random.rand(10_000_000).astype(np.float32)
+
+t = time.perf_counter(); c = [x + y for x, y in zip(a[:1_000_000], b[:1_000_000])]; slow = time.perf_counter() - t
+t = time.perf_counter(); c = a + b; fast = time.perf_counter() - t    # vectorized, uses SIMD
+print(f"python loop (1M): {slow:.3f}s   numpy (10M): {fast:.3f}s")
+</code></pre>
+  <span class="lang">python</span>
+<pre class="code"><code># Branch prediction: the same work on sorted vs shuffled data (a classic)
+import random, time
+data = [random.randint(0, 255) for _ in range(2_000_000)]
+for label, xs in (("shuffled", data), ("sorted", sorted(data))):
+    t = time.perf_counter()
+    s = 0
+    for x in xs:
+        if x &gt;= 128:
+            s += x
+    print(label, round(time.perf_counter() - t, 3))
+# The gap is small in Python (interpreter overhead hides it) but 2–6× in C/Rust.
+</code></pre>
+  <span class="lang">bash</span>
+<pre class="code"><code>getconf PAGESIZE                             # 4096
+cat /proc/self/maps | head                   # this process's virtual memory regions
+perf stat -e branch-misses,dTLB-load-misses ./app   # count mispredictions and TLB misses
+grep -o -w 'avx2\|avx512f' /proc/cpuinfo | sort -u   # which SIMD sets this CPU supports
+</code></pre>
+  <h2>Exercises</h2>
+  <ol style="list-style:none;padding-left:0">
+<li>1. Identify a pipeline hazard in a code snippet.
+<pre class="code ascii"><code>LW   r1, 0(r2)     # load from memory
+ADD  r3, r1, r4    # uses r1 immediately
+BEQ  r3, r0, done
+</code></pre>
+<div class="box"><b>Solution</b> Data hazard (load-use): ADD needs r1, which arrives only after LW's MEM stage — even forwarding leaves a 1-cycle bubble. Control hazard: BEQ's outcome is unknown until EX, so the CPU predicts. Compilers reorder independent instructions into the load-delay slot to hide the bubble.</div></li>
+<li>2. Explain how a TLB miss resolves.
+<div class="box"><b>Solution</b> The hardware page walker reads the page-table levels (4 or 5 memory accesses, often cached) to find the frame. If the entry is valid, it fills the TLB and the access retries (tens of cycles). If the page isn't present, a page fault traps into the kernel, which maps the page (possibly reading it from disk: µs to ms) or signals SIGSEGV.</div></li>
+<li>3. Why does <code>fork()</code> of a 10 GB process return almost instantly?
+<div class="box"><b>Solution</b> Copy-on-write: the child gets a copy of the page tables pointing to the same physical pages, all marked read-only. Only when either process writes a page does the kernel copy that one page.</div></li>
+</ol>
+  <h2>Mini project</h2>
+  <p><b>A 5-stage pipeline simulator that shows stalls/bubbles on a small program.</b></p>
+  <figure>
+<svg viewBox="0 0 596 522" style="max-width:596px" role="img" aria-label="A 5-stage pipeline simulator that shows stalls/bubbles on a small program."><g transform="translate(494,0)"><path class="sk blue" d="M-130 68 C -130 101, -130 101, -130 134" style="color:var(--ink)" marker-end="url(#arr)"/><path class="sk blue" d="M-143 192 C -143 225, -299 225, -299 258" style="color:var(--ink)" marker-end="url(#arr)"/><path class="sk blue" d="M-312 378 C -312 422, -365 422, -365 466" style="color:var(--ink)" marker-end="url(#arr)"/><path class="sk blue" d="M-286 378 C -286 422, -199 422, -199 466" style="color:var(--ink)" marker-end="url(#arr)"/><path class="sk blue" d="M-117 192 C -117 235, -5 235, -5 278" style="color:var(--ink)" marker-end="url(#arr)"/><rect class="sk" x="-227" y="10" width="193" height="58" rx="10" style="fill:#fdfbf4"/><rect class="sk" x="-245" y="134" width="228" height="58" rx="10" style="fill:#fdfbf4"/><path class="sk" d="M-299 258 L-123 318 L-299 378 L-474 318 Z" style="fill:#fdfbf4"/><rect class="sk" x="-436" y="466" width="140" height="36" rx="10" style="fill:#fdfbf4"/><rect class="sk" x="-265" y="466" width="132" height="36" rx="10" style="fill:#fdfbf4"/><rect class="sk" x="-93" y="278" width="176" height="80" rx="10" style="fill:#fdfbf4"/><rect x="-409" y="399" width="166" height="22" style="fill:var(--paper);stroke:none"/><text class="lbl r" x="-325" y="415" text-anchor="middle">yes, no forwarding</text><rect x="-325" y="399" width="122" height="22" style="fill:var(--paper);stroke:none"/><text class="lbl r" x="-264" y="415" text-anchor="middle">forwarding on</text><text class="lbl b" x="-130" y="34" text-anchor="middle">small program</text><text class="lbl b" x="-130" y="56" text-anchor="middle">(5–15 instructions)</text><text class="lbl b" x="-130" y="158" text-anchor="middle">cycle loop:</text><text class="lbl b" x="-130" y="180" text-anchor="middle">advance IF→ID→EX→MEM→WB</text><text class="lbl b" x="-299" y="302" text-anchor="middle">hazard detection:</text><text class="lbl b" x="-299" y="324" text-anchor="middle">source reg written by an</text><text class="lbl b" x="-299" y="346" text-anchor="middle">instruction in EX/MEM?</text><text class="lbl b" x="-365" y="490" text-anchor="middle">insert bubble</text><text class="lbl b" x="-199" y="490" text-anchor="middle">bypass value</text><text class="lbl b" x="-5" y="302" text-anchor="middle">print a cycle ×</text><text class="lbl b" x="-5" y="324" text-anchor="middle">instruction table</text><text class="lbl b" x="-5" y="346" text-anchor="middle">+ CPI</text></g></svg>
+<figcaption>Fig 2: A 5-stage pipeline simulator that shows stalls/bubbles on a small program. (redrawn from the chapter diagram)</figcaption>
+</figure>
+  <h3>Steps</h3>
+  <ol style="list-style:none;padding-left:0">
+<li>1. Represent each instruction with <code>op, dst, src1, src2</code>; keep five pipeline "latches".</li>
+<li>2. Each cycle, move instructions forward; detect RAW (read-after-write) dependencies against instructions still in the pipeline.</li>
+<li>3. Option A: stall until write-back. Option B: forwarding from EX/MEM, with a stall only for load-use.</li>
+<li>4. Branches: predict not-taken; on a taken branch, flush and count the penalty.</li>
+<li>5. Print the classic diagram table and the CPI (cycles per instruction) for both options.</li>
+</ol>
+  <div class="box"><b>Done when:</b> your table matches a hand-drawn diagram for 3 test programs, and forwarding visibly lowers the CPI.</div>
+  <div class="pagebreak">~ page 3 ~</div>
+  <h2>Open source</h2>
+  <ul>
+<li>[<code>verilator/verilator</code>](https://github.com/verilator/verilator) (simulate real HDL) — compiles Verilog into fast C++; pair it with an open RISC-V core such as PicoRV32 or the Berkeley <code>riscv-sodor</code> educational 5-stage cores to watch a real pipeline.</li>
+</ul>
+  <h2>Interview</h2>
+  <ol style="list-style:none;padding-left:0">
+<li>1. <b>"What is a pipeline hazard?"</b>
+<div class="box"><b>Answer</b> A situation where the next instruction can't safely enter its stage in the next cycle. Data hazards: it needs a result not yet produced. Control hazards: it's unknown which instruction comes after a branch. Structural hazards: two instructions need the same hardware. Fixes include forwarding, stalls, branch prediction with speculation, and duplicated hardware.</div></li>
+<li>2. <b>"Why does virtual memory exist?"</b>
+<div class="box"><b>Answer</b> Isolation and protection (processes can't touch each other's or the kernel's memory), a simple private address space for every program, efficient sharing (libraries, copy-on-write fork, shared memory), lazy allocation and overcommit, memory-mapped files, and swapping to disk when RAM runs out.</div></li>
+</ol>
+  <h2>Checklist</h2>
+  <ul>
+<li class="todo">trace fetch-decode-execute</li>
+<li class="todo">name the three hazard types</li>
+<li class="todo">explain page faults</li>
+</ul>
+  <p class="black"><a href="index.md">Contents</a> · ← <a href="ch36-binary-cpu-registers-cache-and-memory-hierarchy.notes.html">Chapter 36 — Binary, CPU, Registers, Cache &amp; Memory Hierarchy</a> · Next → <a href="ch38-os-processes-threads-scheduling-synchronization-and-deadlocks.notes.html">Chapter 38 — OS: Processes, Threads, Scheduling, Synchronization &amp; Deadlocks</a></p>
+  <nav class="nav"><a href="ch36-binary-cpu-registers-cache-and-memory-hierarchy.notes.html">← Ch 36 — Binary, CPU, Registers, Cache &amp; Memory Hierarchy</a><a href="index.notes.html">☰ Contents</a><a href="ch38-os-processes-threads-scheduling-synchronization-and-deadlocks.notes.html">Ch 38 — OS: Processes, Threads, Scheduling, Synchronization &amp; Deadlocks →</a></nav>
+</main>
+</body>
+</html>

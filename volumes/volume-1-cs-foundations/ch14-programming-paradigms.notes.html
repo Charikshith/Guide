@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ch 14 — Programming Paradigms — Notes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;700&family=Kalam:wght@400;700&family=Patrick+Hand&display=swap" rel="stylesheet">
+<style>
+/* ===== Page tokens ===== */
+:root{
+  --line:32px;                 /* ruled-line spacing; every vertical size is a multiple */
+  --paper:#fdfbf4; --rule:#c9dcef; --margin:#e8a0a0;
+  --ink:#1f3a93;               /* blue pen (body) */
+  --ink2:#222;                 /* black pen (headings) */
+  --red:#c0392b; --green:#1e8449;
+  --hl-yellow:rgba(255,235,59,.55); --hl-pink:rgba(255,128,171,.45);
+  --hl-green:rgba(118,255,3,.35); --hl-blue:rgba(64,196,255,.35);
+  --sticky:#fff59d; --desk:#e9e4d8;
+  --hand:'Kalam','Patrick Hand','Comic Sans MS','Segoe Print','Bradley Hand',cursive;
+  --title:'Caveat','Kalam','Segoe Print','Bradley Hand',cursive;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){ --desk:#2b2b2b; }
+}
+:root[data-theme="dark"]{ --desk:#2b2b2b; }
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--desk);font-family:var(--hand);color:var(--ink);}
+
+/* ===== Notebook sheet ===== */
+.page{
+  position:relative; max-width:860px; margin:24px auto; padding:var(--line) 28px calc(var(--line)*2) 84px;
+  background:
+    linear-gradient(90deg,transparent 64px,var(--margin) 64px,var(--margin) 66px,transparent 66px),
+    repeating-linear-gradient(var(--paper) 0,var(--paper) calc(var(--line) - 1px),var(--rule) calc(var(--line) - 1px),var(--rule) var(--line));
+  background-color:var(--paper);
+  box-shadow:0 2px 6px rgba(0,0,0,.15),0 12px 28px rgba(0,0,0,.12);
+  font-size:20px; line-height:var(--line);
+}
+.page::before{ /* punched holes */
+  content:""; position:absolute; left:22px; top:0; bottom:0; width:18px;
+  background:radial-gradient(circle,var(--desk) 7px,transparent 8px) 0 40px/18px 220px repeat-y;
+}
+@media (max-width:600px){
+  .page{margin:0;padding-left:52px;padding-right:16px;font-size:18px;
+    background:
+      linear-gradient(90deg,transparent 40px,var(--margin) 40px,var(--margin) 42px,transparent 42px),
+      repeating-linear-gradient(var(--paper) 0,var(--paper) calc(var(--line) - 1px),var(--rule) calc(var(--line) - 1px),var(--rule) var(--line));
+    background-color:var(--paper);}
+  .page::before{left:10px;width:16px}
+}
+
+/* ===== Text (all margins are multiples of --line so text sits on the rules) ===== */
+.date{position:absolute;top:0;right:24px;font-family:var(--title);font-size:22px;color:var(--ink2);line-height:var(--line)}
+h1{font-family:var(--title);font-weight:700;color:var(--ink2);font-size:46px;line-height:calc(var(--line)*2);margin:0;transform:rotate(-1deg)}
+h1 .u{background:linear-gradient(transparent 62%,var(--hl-yellow) 62%,var(--hl-yellow) 92%,transparent 92%)}
+h2{font-family:var(--title);font-weight:700;color:var(--red);font-size:32px;line-height:calc(var(--line)*1.5);margin:calc(var(--line)*.5) 0 0}
+h2::before{content:"➤ ";font-size:22px}
+p,li{margin:0}
+ul,ol{margin:0;padding-left:28px}
+ul{list-style:none}
+ul>li::before{content:"–";position:absolute;margin-left:-20px}
+ul>li.star::before{content:"★";color:var(--red)}
+ul>li.arrow::before{content:"→"}
+ul>li.check::before{content:"✓";color:var(--green)}
+.gap{height:var(--line)}
+
+/* ===== Pen effects ===== */
+.hl{background:var(--hl-yellow);padding:0 3px;border-radius:3px 6px 4px 7px}
+.hl.pink{background:var(--hl-pink)} .hl.green{background:var(--hl-green)} .hl.blue{background:var(--hl-blue)}
+.red{color:var(--red)} .green{color:var(--green)} .black{color:var(--ink2)}
+.ul{text-decoration:underline wavy var(--red);text-underline-offset:5px}
+.circ{border:2px solid var(--red);border-radius:50% 45% 55% 48%;padding:0 6px}
+.strike{text-decoration:line-through 2px var(--red)}
+.term{font-weight:700;color:var(--ink2)}
+.box{display:flow-root;border:2.5px solid var(--ink2);border-radius:4px 10px 6px 12px;padding:calc(var(--line)*.5 - 2.5px) 14px;margin:calc(var(--line)*.5) 0;transform:rotate(-.4deg);background:rgba(255,255,255,.35)}
+.box.red{border-color:var(--red)}
+.formula{font-family:var(--title);font-size:28px;text-align:center;color:var(--ink2)}
+
+/* sticky note */
+.sticky{float:right;width:min(250px,42%);margin:0 0 var(--line) 20px;padding:var(--line) 16px;background:var(--sticky);
+  color:#333;transform:rotate(2.2deg);box-shadow:2px 4px 8px rgba(0,0,0,.18);font-size:18px}
+.sticky b{font-family:var(--title);font-size:24px;color:var(--red)}
+@media (max-width:600px){.sticky{float:none;width:auto;margin:var(--line) 0}}
+
+/* margin annotation (lives in the red margin) */
+.side{position:absolute;left:4px;width:58px;text-align:center;font-family:var(--title);font-size:17px;line-height:18px;color:var(--red);transform:rotate(-8deg)}
+@media (max-width:600px){.side{display:none}}
+
+/* two-column notes */
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:0 28px}
+@media (max-width:600px){.cols{grid-template-columns:1fr}}
+
+/* diagrams */
+figure{margin:var(--line) 0;text-align:center}
+figure svg{width:100%;max-width:640px;height:auto;overflow:visible}
+figcaption{font-family:var(--title);font-size:20px;color:var(--ink2)}
+/* phones: keep labels readable — diagram scrolls inside its own box instead of shrinking */
+@media (max-width:600px){figure{overflow-x:auto}figure svg{min-width:520px}}
+.sk{fill:none;stroke:var(--ink2);stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round;filter:url(#rough)}
+.sk.blue{stroke:var(--ink)} .sk.red{stroke:var(--red)} .sk.green{stroke:var(--green)}
+.lbl{font-family:var(--hand);font-size:17px;fill:var(--ink)}
+.lbl.b{font-weight:700;fill:var(--ink2)} .lbl.r{fill:var(--red)} .lbl.g{fill:var(--green)}
+
+/* table */
+.wrap{overflow-x:auto}
+table{border-collapse:collapse;margin:calc(var(--line)*.5) 0;min-width:100%}
+th,td{border:2px solid var(--ink2);padding:0 10px;text-align:left;vertical-align:top}
+th{font-family:var(--title);font-size:24px;color:var(--ink2)}
+
+@media print{body{background:#fff}.page{box-shadow:none;margin:0}.page::before{display:none}}
+
+/* ===== Added for long chapter notes ===== */
+pre.code{font-family:Consolas,'Courier New',monospace;font-size:14px;line-height:var(--line);color:var(--ink);background:rgba(255,255,255,.45);
+  border-left:4px solid var(--red);margin:calc(var(--line)*.5) 0;padding:0 12px;overflow-x:auto;white-space:pre}
+pre.code.ascii{border-left-color:var(--green)}
+code{font-family:Consolas,'Courier New',monospace;font-size:.82em;background:rgba(0,0,0,.06);padding:0 3px;border-radius:3px}
+pre.code code{background:none;padding:0;font-size:inherit}
+.lang{font-family:var(--title);font-size:18px;color:var(--red)}
+h3{font-family:var(--title);font-weight:700;color:var(--ink2);font-size:26px;line-height:var(--line);margin:calc(var(--line)*.5) 0 0}
+h3::before{content:"✎ ";font-size:18px;color:var(--red)}
+.nav{display:flex;justify-content:space-between;gap:12px;font-family:var(--title);font-size:22px;line-height:var(--line)}
+.nav a{color:var(--red);text-decoration:none}
+.nav a:hover{text-decoration:underline wavy}
+.pagebreak{border-top:3px dashed var(--margin);margin:var(--line) 0;text-align:center;font-family:var(--title);color:var(--red);line-height:var(--line)}
+li.todo::before{content:"☐";color:var(--ink2)}
+a{color:var(--ink);text-decoration:underline dotted}
+</style>
+</head>
+<body>
+<!-- One shared hand-drawn wobble filter; give every diagram stroke class="sk" -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <!-- userSpaceOnUse region: a % region collapses to nothing on perfectly straight lines (zero-height bbox) -->
+  <filter id="rough" filterUnits="userSpaceOnUse" x="-500" y="-500" width="3000" height="3000">
+    <feTurbulence type="fractalNoise" baseFrequency="0.03" numOctaves="2" seed="3" result="n"/>
+    <feDisplacementMap in="SourceGraphic" in2="n" scale="3"/>
+  </filter>
+  <marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+    <path d="M1 1 L9 5 L1 9" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+  </marker>
+</defs></svg>
+
+<main class="page">
+  <nav class="nav"><a href="ch13-concurrency-threads-processes-async-futures-and-coroutines.notes.html">← Ch 13 — Concurrency: Threads, Processes, Async, Futures &amp; Coroutines</a><a href="index.notes.html">☰ Contents</a><a href="ch15-correctness-traps.notes.html">Ch 15 — Correctness Traps →</a></nav>
+  <div class="date">2026-10-10</div>
+  <h1><span class="u">Ch 14 — Programming Paradigms</span></h1>
+  <p class="black"><b>Volume 1 — Computer Science Foundations</b> · <a href="index.md">Contents</a> · ← <a href="ch13-concurrency-threads-processes-async-futures-and-coroutines.notes.html">Chapter 13 — Concurrency: Threads, Processes, Async, Futures &amp; Coroutines</a> · Next → <a href="ch15-correctness-traps.notes.html">Chapter 15 — Correctness Traps</a></p>
+<p class="black">Chapter 14 — Programming Paradigms</p>
+<h2>Concept</h2>
+<p>Imperative, declarative, object-oriented, functional, reactive, and event-driven styles — and recognizing them in real code.</p>
+<div class="box"><b>In one sentence:</b> a paradigm is a way of organizing a program — step-by-step instructions, descriptions of the result, objects sending messages, pure functions transforming data, or reactions to streams of events — and real codebases mix them.</div>
+<h3>Mental model — getting a sandwich.</h3>
+<ul>
+<li><p><b>Imperative:</b> "Take two slices. Spread butter. Add cheese. Close." (How.)</p></li>
+<li><p><b>Declarative:</b> "One cheese sandwich, please." (What.)</p></li>
+<li><p><b>Object-oriented:</b> ask the <code>Chef</code> object to <code>make(Sandwich)</code>; the chef hides how.</p></li>
+<li><p><b>Functional:</b> <code>sandwich = close(add(cheese, spread(butter, bread)))</code> — no step changes an existing thing; each returns a new one.</p></li>
+<li><p><b>Event-driven:</b> when the buzzer rings (event), pick up the sandwich (handler).</p></li>
+<li><p><b>Reactive:</b> subscribe to a stream of orders and describe how every future order flows to the counter.</p></li>
+</ul>
+<h3>The paradigms</h3>
+<div class="wrap"><table>
+<tr><th>Paradigm</th><th>Core idea</th><th>You'll see</th><th>Languages / tools</th></tr>
+<tr><td>Imperative</td><td>statements change state step by step</td><td>loops, assignments, mutation</td><td>C, Python, Go</td></tr>
+<tr><td>Procedural</td><td>imperative, organized into procedures</td><td>functions over shared structs</td><td>C, Pascal</td></tr>
+<tr><td>Declarative</td><td>describe the result, not the steps</td><td>queries, configs, markup</td><td>SQL, HTML, CSS, Terraform, regex</td></tr>
+<tr><td>Object-oriented</td><td>bundle data + behavior; objects collaborate</td><td>classes, methods, interfaces, polymorphism</td><td>Java, C#, Python, Ruby</td></tr>
+<tr><td>Functional</td><td>pure functions, immutable data, functions as values</td><td><code>map</code>/<code>filter</code>/<code>reduce</code>, recursion, no mutation</td><td>Haskell, Elixir, Clojure, F#; functional style in JS/Python/Rust</td></tr>
+<tr><td>Event-driven</td><td>control flow is driven by events</td><td>callbacks, handlers, listeners, message queues</td><td>JS in browsers, GUIs, Node.js</td></tr>
+<tr><td>Reactive</td><td>compose asynchronous <i>streams</i> of values over time</td><td>observables, operators (<code>map</code>, <code>debounce</code>, <code>merge</code>)</td><td>RxJS, RxPY, Reactor, Kotlin Flow</td></tr>
+</table></div>
+<p><b>Pure functions and immutability</b> — the heart of functional style.</p>
+<ul>
+<li><p>A <b>pure function</b> returns the same output for the same input and has no side effects (no I/O, no mutation of outside state). Easy to test, cache, and parallelize.</p></li>
+<li><p><b>Immutable data</b> can't be changed after creation. No one can modify it behind your back, so sharing it between threads is safe.</p></li>
+<li><p>Real programs need side effects. Functional style <i>pushes them to the edges</i>: a pure core, with a thin imperative shell doing I/O.</p></li>
+</ul>
+<h2>Prereqs</h2>
+<ul>
+<li><p><a href="ch03-functions-parameters-return-values-scope-and-namespaces.notes.html">Chapter 3 — Functions, Parameters, Return Values, Scope &amp; Namespaces</a></p></li>
+<li><p><a href="ch13-concurrency-threads-processes-async-futures-and-coroutines.notes.html">Chapter 13 — Concurrency: Threads, Processes, Async, Futures &amp; Coroutines</a></p></li>
+</ul>
+<div class="pagebreak">~ page 2 ~</div>
+<h2>Diagram</h2>
+<h3>A map of paradigms</h3>
+<figure>
+  <svg viewBox="0 0 660 625" role="img" aria-label="Paradigms tree: Imperative (Procedural, Object-oriented), Declarative (Functional, Query/config, Reactive), Event-driven (Callbacks), each with a code example">
+    <circle class="sk" cx="62" cy="340" r="53" style="fill:var(--hl-yellow)"/>
+    <rect class="sk" x="168" y="86" width="114" height="37" rx="10" style="fill:var(--paper)"/>
+    <rect class="sk" x="164" y="348" width="123" height="37" rx="10" style="fill:var(--paper)"/>
+    <rect class="sk" x="159" y="550" width="132" height="37" rx="10" style="fill:var(--paper)"/>
+    <rect class="sk" x="350" y="14" width="280" height="83" rx="10" style="fill:var(--paper)"/>
+    <rect class="sk" x="350" y="114" width="280" height="83" rx="10" style="fill:var(--paper)"/>
+    <rect class="sk" x="350" y="214" width="280" height="83" rx="10" style="fill:var(--paper)"/>
+    <rect class="sk" x="350" y="313" width="280" height="106" rx="10" style="fill:var(--paper)"/>
+    <rect class="sk" x="350" y="434" width="280" height="83" rx="10" style="fill:var(--paper)"/>
+    <rect class="sk" x="350" y="538" width="280" height="60" rx="10" style="fill:var(--paper)"/>
+    <path class="sk blue" d="M115 340 C115 222 168 222 168 105" style="color:var(--ink)" marker-end="url(#arr)"/>
+    <path class="sk blue" d="M115 340 C139 340 139 366 164 366" style="color:var(--ink)" marker-end="url(#arr)"/>
+    <path class="sk blue" d="M115 340 C115 454 159 454 159 568" style="color:var(--ink)" marker-end="url(#arr)"/>
+    <path class="sk blue" d="M282 105 C316 105 316 55 350 55" style="color:var(--ink)" marker-end="url(#arr)"/>
+    <path class="sk blue" d="M282 105 C316 105 316 155 350 155" style="color:var(--ink)" marker-end="url(#arr)"/>
+    <path class="sk blue" d="M286 366 C286 310 350 310 350 255" style="color:var(--ink)" marker-end="url(#arr)"/>
+    <path class="sk blue" d="M286 366 L350 366" style="color:var(--ink)" marker-end="url(#arr)"/>
+    <path class="sk blue" d="M286 366 C286 420 350 420 350 475" style="color:var(--ink)" marker-end="url(#arr)"/>
+    <path class="sk blue" d="M291 568 L350 568" style="color:var(--ink)" marker-end="url(#arr)"/>
+    <text class="lbl b" x="62" y="345" text-anchor="middle">Paradigms</text>
+    <text class="lbl b" x="225" y="110" text-anchor="middle">Imperative</text>
+    <text class="lbl b" x="225" y="371" text-anchor="middle">Declarative</text>
+    <text class="lbl b" x="225" y="573" text-anchor="middle">Event-driven</text>
+    <text class="lbl b" x="490" y="37" text-anchor="middle">Procedural</text>
+    <text class="lbl b" x="490" y="60" text-anchor="middle">for i in range(n):</text>
+    <text class="lbl b" x="490" y="83" text-anchor="middle">total += x[i]</text>
+    <text class="lbl b" x="490" y="137" text-anchor="middle">Object-oriented</text>
+    <text class="lbl b" x="490" y="160" text-anchor="middle">cart.add(item);</text>
+    <text class="lbl b" x="490" y="183" text-anchor="middle">cart.checkout()</text>
+    <text class="lbl b" x="490" y="237" text-anchor="middle">Functional</text>
+    <text class="lbl b" x="490" y="260" text-anchor="middle">sum(map(price,</text>
+    <text class="lbl b" x="490" y="283" text-anchor="middle">filter(in_stock, items)))</text>
+    <text class="lbl b" x="490" y="337" text-anchor="middle">Query / config</text>
+    <text class="lbl b" x="490" y="360" text-anchor="middle">SELECT sum(price)</text>
+    <text class="lbl b" x="490" y="383" text-anchor="middle">FROM items</text>
+    <text class="lbl b" x="490" y="406" text-anchor="middle">WHERE in_stock</text>
+    <text class="lbl b" x="490" y="457" text-anchor="middle">Reactive</text>
+    <text class="lbl b" x="490" y="480" text-anchor="middle">clicks.pipe(</text>
+    <text class="lbl b" x="490" y="503" text-anchor="middle">debounce(300), map(search))</text>
+    <text class="lbl b" x="490" y="562" text-anchor="middle">Callbacks</text>
+    <text class="lbl b" x="490" y="585" text-anchor="middle">button.on('click', handler)</text>
+  </svg>
+  <figcaption>Fig: programming paradigms and a one-line example of each</figcaption>
+</figure>
+<h3>Same task, three styles: total price of in-stock items</h3>
+<pre class="code ascii"><code> IMPERATIVE                  FUNCTIONAL                          DECLARATIVE (SQL)
+ total = 0                   total = sum(                        SELECT SUM(price)
+ for it in items:                i.price                         FROM items
+     if it.in_stock:             for i in items                  WHERE in_stock;
+         total += it.price       if i.in_stock)
+   how, step by step           transform data, no mutation         what, not how</code></pre>
+<h3>Reactive stream: search-as-you-type</h3>
+<pre class="code ascii"><code> keystrokes:   h──e──l──l──o────────────w──o──r──l──d──────►
+ debounce(300)                  "hello"                 "world"
+ map(search)                    [results…]              [results…]
+ switchMap cancels the "hello" request if "world" arrives first</code></pre>
+<div class="pagebreak">~ page 3 ~</div>
+<h2>Example</h2>
+<span class="lang">python</span>
+<pre class="code"><code>from functools import reduce
+from dataclasses import dataclass
+
+@dataclass(frozen=True)                     # immutable object
+class Item:
+    name: str
+    price: float
+    in_stock: bool
+
+items = [Item("pen", 2.0, True), Item("ink", 9.5, False), Item("pad", 4.0, True)]
+
+# Imperative
+total = 0.0
+for it in items:
+    if it.in_stock:
+        total += it.price
+
+# Functional: map / filter / reduce
+total_fn = reduce(lambda acc, p: acc + p,
+                  map(lambda i: i.price, filter(lambda i: i.in_stock, items)), 0.0)
+assert total == total_fn == 6.0
+
+# Object-oriented
+class Cart:
+    def __init__(self): self._items = []
+    def add(self, item): self._items.append(item)
+    def total(self): return sum(i.price for i in self._items if i.in_stock)
+
+# Event-driven: register callbacks, fire events
+handlers = {}
+def on(event, fn): handlers.setdefault(event, []).append(fn)
+def emit(event, payload):
+    for fn in handlers.get(event, []): fn(payload)
+
+on("order_placed", lambda o: print("email receipt for", o))
+on("order_placed", lambda o: print("reserve stock for", o))
+emit("order_placed", "order-42")</code></pre>
+<span class="lang">python</span>
+<pre class="code"><code># Reactive (RxPY): pip install reactivex
+import reactivex as rx
+from reactivex import operators as ops
+
+rx.from_iterable([1, 2, 3, 4, 5, 6]).pipe(
+    ops.filter(lambda x: x % 2 == 0),
+    ops.map(lambda x: x * 10),
+).subscribe(print)                          # 20 40 60</code></pre>
+<h2>Exercises</h2>
+<ol style="list-style:none;padding-left:0">
+<li><p>1. Rewrite an imperative loop as <code>map/filter/reduce</code>.</p>
+<span class="lang">python</span>
+<pre class="code"><code>out = []
+for w in words:
+    if len(w) &gt; 3:
+        out.append(w.upper())</code></pre>
+<div class="box"><b>Solution</b>
+<p><code>out = list(map(str.upper, filter(lambda w: len(w) &amp;gt; 3, words)))</code>, or more idiomatically <code>[w.upper() for w in words if len(w) &amp;gt; 3]</code>.</p>
+</div></li>
+<li><p>2. Model an event-driven system with callbacks.</p>
+<div class="box"><b>Solution</b>
+<p>See the <code>on</code>/<code>emit</code> example. Extend it: <code>off()</code> to unsubscribe, catch exceptions per handler so one failing listener doesn't break the rest, and async handlers.</p>
+</div></li>
+<li><p>3. Is this function pure? <code>def add_tax(order): order.total *= 1.2; return order</code></p>
+<div class="box"><b>Solution</b>
+<p>No. It mutates its input — a side effect visible to the caller. Pure version: <code>return replace(order, total=order.total * 1.2)</code>, which returns a new object.</p>
+</div></li>
+</ol>
+<div class="pagebreak">~ page 4 ~</div>
+<h2>Mini project</h2>
+<h3>A tiny reactive event bus with subscribe/publish and a functional pipeline.</h3>
+<figure>
+  <svg viewBox="0 0 660 360" role="img" aria-label="Event bus: publish(orders, o) goes to EventBus (topic to subscribers), which feeds a pipeline subscriber (filter big, map to_alert, sink print) and an audit log subscriber; the pipeline subscriber has an unsubscribe() handle">
+    <rect class="sk" x="9" y="135" width="132" height="60" rx="10" style="fill:var(--paper)"/>
+    <rect class="sk" x="209" y="124" width="123" height="83" rx="10" style="fill:var(--hl-yellow)"/>
+    <rect class="sk" x="459" y="30" width="123" height="60" rx="10" style="fill:var(--paper)"/>
+    <rect class="sk" x="419" y="137" width="202" height="106" rx="10" style="fill:var(--paper)"/>
+    <rect class="sk" x="450" y="285" width="140" height="60" rx="10" style="fill:var(--hl-green)"/>
+    <path class="sk blue" d="M141 165 L209 165" style="color:var(--ink)" marker-end="url(#arr)"/>
+    <path class="sk blue" d="M331 165 C395 165 395 60 459 60" style="color:var(--ink)" marker-end="url(#arr)"/>
+    <path class="sk blue" d="M331 165 C375 165 375 190 419 190" style="color:var(--ink)" marker-end="url(#arr)"/>
+    <path class="sk blue" d="M520 243 L520 285" style="color:var(--ink)" marker-end="url(#arr)"/>
+    <text class="lbl b" x="75" y="159" text-anchor="middle">publish(</text>
+    <text class="lbl b" x="75" y="182" text-anchor="middle">'orders', o)</text>
+    <text class="lbl b" x="270" y="147" text-anchor="middle">EventBus</text>
+    <text class="lbl b" x="270" y="170" text-anchor="middle">topic →</text>
+    <text class="lbl b" x="270" y="193" text-anchor="middle">subscribers</text>
+    <text class="lbl b" x="520" y="54" text-anchor="middle">subscriber:</text>
+    <text class="lbl b" x="520" y="77" text-anchor="middle">audit log</text>
+    <text class="lbl b" x="520" y="161" text-anchor="middle">subscriber: pipeline</text>
+    <text class="lbl b" x="520" y="184" text-anchor="middle">filter(big) →</text>
+    <text class="lbl b" x="520" y="207" text-anchor="middle">map(to_alert) →</text>
+    <text class="lbl b" x="520" y="230" text-anchor="middle">sink(print)</text>
+    <text class="lbl b" x="520" y="309" text-anchor="middle">unsubscribe()</text>
+    <text class="lbl b" x="520" y="332" text-anchor="middle">handle</text>
+  </svg>
+  <figcaption>Fig: publish/subscribe through an EventBus, with an unsubscribe handle returned to the pipeline subscriber</figcaption>
+</figure>
+<h3>Steps</h3>
+<ol style="list-style:none;padding-left:0">
+<li><p>1. <code>EventBus.subscribe(topic, fn)</code> returns an unsubscribe function; <code>publish(topic, payload)</code> calls every subscriber.</p></li>
+<li><p>2. A <code>Stream</code> class with chainable <code>map</code>, <code>filter</code>, <code>take(n)</code>, and <code>debounce(seconds)</code> that returns new streams (immutable pipeline objects).</p></li>
+<li><p>3. Connect them: <code>bus.stream("orders").filter(lambda o: o.total &gt; 100).map(to_alert).subscribe(print)</code>.</p></li>
+<li><p>4. Isolate failures: one subscriber raising must not stop the others.</p></li>
+<li><p>5. Write the pipeline operators as pure functions and test them without the bus.</p></li>
+</ol>
+<div class="box"><b>Done when:</b> you can build a 3-stage pipeline in one line, and every operator has a unit test with no mocks.</div>
+<h2>Open source</h2>
+<ul>
+<li><p>[<code>ReactiveX/RxPY</code>](https://github.com/ReactiveX/RxPY) — <code>reactivex/operators/</code> implements each operator as a function returning a function. It is functional composition in practice.</p></li>
+<li><p>[<code>python/cpython</code>](https://github.com/python/cpython) <code>itertools</code> — the docs' "Itertools Recipes" section is a masterclass in lazy functional pipelines.</p></li>
+</ul>
+<div class="pagebreak">~ page 5 ~</div>
+<h2>Interview</h2>
+<ol style="list-style:none;padding-left:0">
+<li>1. <h3>"Declarative vs imperative?"</h3>
+<div class="box"><b>Answer</b>
+<p>Imperative code tells the computer <i>how</i>: explicit steps and state changes. Declarative code states <i>what</i> result you want and lets an engine decide how (SQL's query planner, React's DOM diffing, Terraform's plan). Declarative code is usually shorter and easier to optimize; imperative code gives precise control.</p>
+</div></li>
+<li>2. <h3>"What makes code 'functional'?"</h3>
+<div class="box"><b>Answer</b>
+<p>Functions are values (passed and returned), most functions are pure, data is immutable, and programs are built by composing transformations instead of mutating state. Side effects are isolated at the edges. You can write functional-style code in most languages.</p>
+</div></li>
+</ol>
+<h2>Checklist</h2>
+<ul>
+<li class="todo"><p>write pure functions</p></li>
+<li class="todo"><p>identify a paradigm in the wild</p></li>
+<li class="todo"><p>explain immutability benefits</p></li>
+</ul>
+<p class="black"><a href="index.md">Contents</a> · ← <a href="ch13-concurrency-threads-processes-async-futures-and-coroutines.notes.html">Chapter 13 — Concurrency: Threads, Processes, Async, Futures &amp; Coroutines</a> · Next → <a href="ch15-correctness-traps.notes.html">Chapter 15 — Correctness Traps</a></p>
+  <nav class="nav"><a href="ch13-concurrency-threads-processes-async-futures-and-coroutines.notes.html">← Ch 13 — Concurrency: Threads, Processes, Async, Futures &amp; Coroutines</a><a href="index.notes.html">☰ Contents</a><a href="ch15-correctness-traps.notes.html">Ch 15 — Correctness Traps →</a></nav>
+</main>
+</body>
+</html>

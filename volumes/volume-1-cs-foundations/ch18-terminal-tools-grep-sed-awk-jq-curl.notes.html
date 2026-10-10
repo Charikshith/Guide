@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ch 18 — Terminal Tools: grep, sed, awk, jq, curl, wget, find, xargs, tmux, rsync — Notes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;700&family=Kalam:wght@400;700&family=Patrick+Hand&display=swap" rel="stylesheet">
+<style>
+/* ===== Page tokens ===== */
+:root{
+  --line:32px;                 /* ruled-line spacing; every vertical size is a multiple */
+  --paper:#fdfbf4; --rule:#c9dcef; --margin:#e8a0a0;
+  --ink:#1f3a93;               /* blue pen (body) */
+  --ink2:#222;                 /* black pen (headings) */
+  --red:#c0392b; --green:#1e8449;
+  --hl-yellow:rgba(255,235,59,.55); --hl-pink:rgba(255,128,171,.45);
+  --hl-green:rgba(118,255,3,.35); --hl-blue:rgba(64,196,255,.35);
+  --sticky:#fff59d; --desk:#e9e4d8;
+  --hand:'Kalam','Patrick Hand','Comic Sans MS','Segoe Print','Bradley Hand',cursive;
+  --title:'Caveat','Kalam','Segoe Print','Bradley Hand',cursive;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){ --desk:#2b2b2b; }
+}
+:root[data-theme="dark"]{ --desk:#2b2b2b; }
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--desk);font-family:var(--hand);color:var(--ink);}
+
+/* ===== Notebook sheet ===== */
+.page{
+  position:relative; max-width:860px; margin:24px auto; padding:var(--line) 28px calc(var(--line)*2) 84px;
+  background:
+    linear-gradient(90deg,transparent 64px,var(--margin) 64px,var(--margin) 66px,transparent 66px),
+    repeating-linear-gradient(var(--paper) 0,var(--paper) calc(var(--line) - 1px),var(--rule) calc(var(--line) - 1px),var(--rule) var(--line));
+  background-color:var(--paper);
+  box-shadow:0 2px 6px rgba(0,0,0,.15),0 12px 28px rgba(0,0,0,.12);
+  font-size:20px; line-height:var(--line);
+}
+.page::before{ /* punched holes */
+  content:""; position:absolute; left:22px; top:0; bottom:0; width:18px;
+  background:radial-gradient(circle,var(--desk) 7px,transparent 8px) 0 40px/18px 220px repeat-y;
+}
+@media (max-width:600px){
+  .page{margin:0;padding-left:52px;padding-right:16px;font-size:18px;
+    background:
+      linear-gradient(90deg,transparent 40px,var(--margin) 40px,var(--margin) 42px,transparent 42px),
+      repeating-linear-gradient(var(--paper) 0,var(--paper) calc(var(--line) - 1px),var(--rule) calc(var(--line) - 1px),var(--rule) var(--line));
+    background-color:var(--paper);}
+  .page::before{left:10px;width:16px}
+}
+
+/* ===== Text (all margins are multiples of --line so text sits on the rules) ===== */
+.date{position:absolute;top:0;right:24px;font-family:var(--title);font-size:22px;color:var(--ink2);line-height:var(--line)}
+h1{font-family:var(--title);font-weight:700;color:var(--ink2);font-size:46px;line-height:calc(var(--line)*2);margin:0;transform:rotate(-1deg)}
+h1 .u{background:linear-gradient(transparent 62%,var(--hl-yellow) 62%,var(--hl-yellow) 92%,transparent 92%)}
+h2{font-family:var(--title);font-weight:700;color:var(--red);font-size:32px;line-height:calc(var(--line)*1.5);margin:calc(var(--line)*.5) 0 0}
+h2::before{content:"➤ ";font-size:22px}
+p,li{margin:0}
+ul,ol{margin:0;padding-left:28px}
+ul{list-style:none}
+ul>li::before{content:"–";position:absolute;margin-left:-20px}
+ul>li.star::before{content:"★";color:var(--red)}
+ul>li.arrow::before{content:"→"}
+ul>li.check::before{content:"✓";color:var(--green)}
+.gap{height:var(--line)}
+
+/* ===== Pen effects ===== */
+.hl{background:var(--hl-yellow);padding:0 3px;border-radius:3px 6px 4px 7px}
+.hl.pink{background:var(--hl-pink)} .hl.green{background:var(--hl-green)} .hl.blue{background:var(--hl-blue)}
+.red{color:var(--red)} .green{color:var(--green)} .black{color:var(--ink2)}
+.ul{text-decoration:underline wavy var(--red);text-underline-offset:5px}
+.circ{border:2px solid var(--red);border-radius:50% 45% 55% 48%;padding:0 6px}
+.strike{text-decoration:line-through 2px var(--red)}
+.term{font-weight:700;color:var(--ink2)}
+.box{display:flow-root;border:2.5px solid var(--ink2);border-radius:4px 10px 6px 12px;padding:calc(var(--line)*.5 - 2.5px) 14px;margin:calc(var(--line)*.5) 0;transform:rotate(-.4deg);background:rgba(255,255,255,.35)}
+.box.red{border-color:var(--red)}
+.formula{font-family:var(--title);font-size:28px;text-align:center;color:var(--ink2)}
+
+/* sticky note */
+.sticky{float:right;width:min(250px,42%);margin:0 0 var(--line) 20px;padding:var(--line) 16px;background:var(--sticky);
+  color:#333;transform:rotate(2.2deg);box-shadow:2px 4px 8px rgba(0,0,0,.18);font-size:18px}
+.sticky b{font-family:var(--title);font-size:24px;color:var(--red)}
+@media (max-width:600px){.sticky{float:none;width:auto;margin:var(--line) 0}}
+
+/* margin annotation (lives in the red margin) */
+.side{position:absolute;left:4px;width:58px;text-align:center;font-family:var(--title);font-size:17px;line-height:18px;color:var(--red);transform:rotate(-8deg)}
+@media (max-width:600px){.side{display:none}}
+
+/* two-column notes */
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:0 28px}
+@media (max-width:600px){.cols{grid-template-columns:1fr}}
+
+/* diagrams */
+figure{margin:var(--line) 0;text-align:center}
+figure svg{width:100%;max-width:640px;height:auto;overflow:visible}
+figcaption{font-family:var(--title);font-size:20px;color:var(--ink2)}
+/* phones: keep labels readable — diagram scrolls inside its own box instead of shrinking */
+@media (max-width:600px){figure{overflow-x:auto}figure svg{min-width:520px}}
+.sk{fill:none;stroke:var(--ink2);stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round;filter:url(#rough)}
+.sk.blue{stroke:var(--ink)} .sk.red{stroke:var(--red)} .sk.green{stroke:var(--green)}
+.lbl{font-family:var(--hand);font-size:17px;fill:var(--ink)}
+.lbl.b{font-weight:700;fill:var(--ink2)} .lbl.r{fill:var(--red)} .lbl.g{fill:var(--green)}
+
+/* table */
+.wrap{overflow-x:auto}
+table{border-collapse:collapse;margin:calc(var(--line)*.5) 0;min-width:100%}
+th,td{border:2px solid var(--ink2);padding:0 10px;text-align:left;vertical-align:top}
+th{font-family:var(--title);font-size:24px;color:var(--ink2)}
+
+@media print{body{background:#fff}.page{box-shadow:none;margin:0}.page::before{display:none}}
+
+/* ===== Added for long chapter notes ===== */
+pre.code{font-family:Consolas,'Courier New',monospace;font-size:14px;line-height:var(--line);color:var(--ink);background:rgba(255,255,255,.45);
+  border-left:4px solid var(--red);margin:calc(var(--line)*.5) 0;padding:0 12px;overflow-x:auto;white-space:pre}
+pre.code.ascii{border-left-color:var(--green)}
+code{font-family:Consolas,'Courier New',monospace;font-size:.82em;background:rgba(0,0,0,.06);padding:0 3px;border-radius:3px}
+pre.code code{background:none;padding:0;font-size:inherit}
+.lang{font-family:var(--title);font-size:18px;color:var(--red)}
+h3{font-family:var(--title);font-weight:700;color:var(--ink2);font-size:26px;line-height:var(--line);margin:calc(var(--line)*.5) 0 0}
+h3::before{content:"✎ ";font-size:18px;color:var(--red)}
+.nav{display:flex;justify-content:space-between;gap:12px;font-family:var(--title);font-size:22px;line-height:var(--line)}
+.nav a{color:var(--red);text-decoration:none}
+.nav a:hover{text-decoration:underline wavy}
+.pagebreak{border-top:3px dashed var(--margin);margin:var(--line) 0;text-align:center;font-family:var(--title);color:var(--red);line-height:var(--line)}
+li.todo::before{content:"☐";color:var(--ink2)}
+a{color:var(--ink);text-decoration:underline dotted}
+</style>
+</head>
+<body>
+<!-- One shared hand-drawn wobble filter; give every diagram stroke class="sk" -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <!-- userSpaceOnUse region: a % region collapses to nothing on perfectly straight lines (zero-height bbox) -->
+  <filter id="rough" filterUnits="userSpaceOnUse" x="-500" y="-500" width="3000" height="3000">
+    <feTurbulence type="fractalNoise" baseFrequency="0.03" numOctaves="2" seed="3" result="n"/>
+    <feDisplacementMap in="SourceGraphic" in2="n" scale="3"/>
+  </filter>
+  <marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+    <path d="M1 1 L9 5 L1 9" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+  </marker>
+</defs></svg>
+
+<main class="page">
+  <nav class="nav"><a href="ch17-linux-processes-signals-services-systemd-ssh-cron.notes.html">← Ch 17 — Linux: Processes, Signals, Services, systemd, SSH, Cron &amp; Networking</a><a href="index.notes.html">☰ Contents</a><a href="ch19-git-branching-merge-rebase-and-cherry-pick.notes.html">Ch 19 — Git: Branching, Merge, Rebase &amp; Cherry-Pick →</a></nav>
+  <div class="date">2026-10-10</div>
+  <h1><span class="u">Ch 18 — Terminal Tools: grep, sed, awk, jq, curl, wget, find, xargs, tmux, rsync</span></h1>
+  <p class="black"><b>Volume 1 — Computer Science Foundations</b> · <a href="index.md">Contents</a> · ← <a href="ch17-linux-processes-signals-services-systemd-ssh-cron.notes.html">Chapter 17 — Linux: Processes, Signals, Services, systemd, SSH, Cron &amp; Networking</a> · Next → <a href="ch19-git-branching-merge-rebase-and-cherry-pick.notes.html">Chapter 19 — Git: Branching, Merge, Rebase &amp; Cherry-Pick</a></p>
+<p class="black">Chapter 18 — Terminal Tools: grep, sed, awk, jq, curl, wget, find, xargs, tmux, rsync</p>
+<h2>Concept</h2>
+<p>The Unix toolbox — text search/transform, JSON, HTTP clients, file discovery, multiplexing, and sync.</p>
+<div class="box"><b>In one sentence:</b> each Unix tool does one small job on a stream of text, and the pipe <code>|</code> snaps them together into programs you write in one line.</div>
+<p><b>Mental model — a factory conveyor belt.</b> Text rides along the belt. <code>grep</code> is a filter that removes items. <code>sed</code> is a stamping machine that edits each item. <code>awk</code> is a sorter that splits items into columns and does arithmetic. <code>sort | uniq -c</code> is the counting station at the end.</p>
+<h3>The toolbox</h3>
+<div class="wrap"><table>
+<tr><th>Tool</th><th>Job</th><th>Most-used forms</th></tr>
+<tr><td><code>grep</code></td><td>keep lines matching a pattern</td><td><code>-i</code> ignore case, <code>-v</code> invert, <code>-r</code> recurse, <code>-n</code> line numbers, <code>-E</code> extended regex, <code>-o</code> only the match, <code>-c</code> count</td></tr>
+<tr><td><code>sed</code></td><td>edit lines in a stream</td><td><code>s/old/new/g</code>, <code>-n '5,10p'</code>, <code>-i</code> in place (GNU)</td></tr>
+<tr><td><code>awk</code></td><td>column processing + small programs</td><td><code>awk -F, '{s+=$3} END {print s}'</code>, <code>$1</code>, <code>NF</code>, <code>NR</code></td></tr>
+<tr><td><code>sort</code> / <code>uniq</code></td><td>order / collapse duplicates</td><td><code>sort -n</code>, <code>-r</code>, <code>-k2,2</code>, <code>-t,</code>; <code>uniq -c</code> needs sorted input</td></tr>
+<tr><td><code>cut</code> / <code>tr</code> / <code>wc</code> / <code>head</code> / <code>tail</code></td><td>slice columns, translate chars, count, peek</td><td><code>cut -d, -f2</code>, <code>tr a-z A-Z</code>, <code>wc -l</code>, <code>tail -f</code></td></tr>
+<tr><td><code>jq</code></td><td>query and transform JSON</td><td><code>.field</code>, <code>.[]</code>, <code>select(.x &gt; 1)</code>, <code>-r</code> raw output</td></tr>
+<tr><td><code>curl</code></td><td>HTTP (and more) client</td><td><code>-sS</code> quiet with errors, <code>-X POST</code>, <code>-H</code>, <code>-d</code>, <code>-o</code>, <code>-L</code> follow redirects, <code>-w '%{http_code}'</code></td></tr>
+<tr><td><code>wget</code></td><td>download files, recursively</td><td><code>wget -c</code> resume, <code>-r -np</code> mirror</td></tr>
+<tr><td><code>find</code></td><td>locate files by name, type, size, time</td><td><code>-name '*.py'</code>, <code>-type f</code>, <code>-size +100M</code>, <code>-mtime -1</code>, <code>-exec … {} +</code></td></tr>
+<tr><td><code>xargs</code></td><td>turn input lines into command arguments</td><td><code>-0</code> with <code>find -print0</code>, <code>-n1</code> one at a time, <code>-P8</code> in parallel</td></tr>
+<tr><td><code>tmux</code></td><td>persistent terminal sessions, splits</td><td><code>tmux new -s work</code>, detach <code>Ctrl-b d</code>, <code>tmux attach -t work</code></td></tr>
+<tr><td><code>rsync</code></td><td>efficient sync (sends only differences)</td><td><code>rsync -avz --delete src/ host:dst/</code>, <code>-n</code> dry run</td></tr>
+</table></div>
+<p>**Why <code>xargs</code>?<i>* Many commands take file names as *arguments</i>, not as <i>stdin</i>. <code>find … | rm</code> does nothing useful, because <code>rm</code> doesn't read stdin. <code>xargs</code> converts the stream into arguments, and batches them to stay under the OS argument-length limit.</p>
+<h2>Prereqs</h2>
+<ul>
+<li><p><a href="ch16-linux-filesystem-shell-bash-permissions-users-and.notes.html">Chapter 16 — Linux: Filesystem, Shell, Bash, Permissions, Users &amp; Groups</a></p></li>
+</ul>
+<div class="pagebreak">~ page 2 ~</div>
+<h2>Diagram</h2>
+<h3>A pipeline: top error paths in an access log</h3>
+<figure>
+  <svg viewBox="0 0 640 310" role="img" aria-label="Pipeline: access.log (1M lines) to grep ' 500 ' keep errors, to sed -E 's/\?.*//' strip query strings, to awk '{print $7}' take the path column, to sort, to uniq -c count repeats, to sort -rn, to head -5">
+    <rect class="sk" x="33" y="20" width="114" height="60" rx="10" style="fill:var(--paper)"/>
+    <rect class="sk" x="224" y="20" width="132" height="60" rx="10" style="fill:var(--paper)"/>
+    <rect class="sk" x="413" y="20" width="193" height="60" rx="10" style="fill:var(--paper)"/>
+    <rect class="sk" x="409" y="120" width="202" height="60" rx="10" style="fill:var(--paper)"/>
+    <rect class="sk" x="299" y="132" width="61" height="37" rx="10" style="fill:var(--paper)"/>
+    <rect class="sk" x="80" y="120" width="140" height="60" rx="10" style="fill:var(--paper)"/>
+    <rect class="sk" x="102" y="232" width="96" height="37" rx="10" style="fill:var(--paper)"/>
+    <rect class="sk" x="286" y="232" width="88" height="37" rx="10" style="fill:var(--hl-green)"/>
+    <path class="sk blue" d="M147 50 L224 50" style="color:var(--ink)" marker-end="url(#arr)"/>
+    <path class="sk blue" d="M356 50 L413 50" style="color:var(--ink)" marker-end="url(#arr)"/>
+    <path class="sk blue" d="M510 80 L510 120" style="color:var(--ink)" marker-end="url(#arr)"/>
+    <path class="sk blue" d="M409 150 L361 150" style="color:var(--ink)" marker-end="url(#arr)"/>
+    <path class="sk blue" d="M299 150 L220 150" style="color:var(--ink)" marker-end="url(#arr)"/>
+    <path class="sk blue" d="M150 180 L150 232" style="color:var(--ink)" marker-end="url(#arr)"/>
+    <path class="sk blue" d="M198 250 L286 250" style="color:var(--ink)" marker-end="url(#arr)"/>
+    <text class="lbl b" x="90" y="44" text-anchor="middle">access.log</text>
+    <text class="lbl b" x="90" y="67" text-anchor="middle">1M lines</text>
+    <text class="lbl b" x="290" y="44" text-anchor="middle">grep ' 500 '</text>
+    <text class="lbl b" x="290" y="67" text-anchor="middle">keep errors</text>
+    <text class="lbl b" x="510" y="44" text-anchor="middle">sed -E 's/\?.*//'</text>
+    <text class="lbl b" x="510" y="67" text-anchor="middle">strip query strings</text>
+    <text class="lbl b" x="510" y="144" text-anchor="middle">awk '{print $7}'</text>
+    <text class="lbl b" x="510" y="167" text-anchor="middle">take the path column</text>
+    <text class="lbl b" x="330" y="155" text-anchor="middle">sort</text>
+    <text class="lbl b" x="150" y="144" text-anchor="middle">uniq -c</text>
+    <text class="lbl b" x="150" y="167" text-anchor="middle">count repeats</text>
+    <text class="lbl b" x="150" y="255" text-anchor="middle">sort -rn</text>
+    <text class="lbl b" x="330" y="255" text-anchor="middle">head -5</text>
+  </svg>
+  <figcaption>Fig: top 5 paths with 500 errors — each stage feeds the next (read left to right, then the rows snake back)</figcaption>
+</figure>
+<pre class="code ascii"><code> stage          sample output
+ ─────────────  ───────────────────────────────────────────────────────────
+ grep           10.0.0.7 - - [..] "GET /api/cart?id=9 HTTP/1.1" 500 ...
+ sed            10.0.0.7 - - [..] "GET /api/cart HTTP/1.1" 500 ...
+ awk            /api/cart
+ sort|uniq -c      412 /api/cart
+                    97 /api/pay
+ sort -rn|head  412 /api/cart  ← the answer</code></pre>
+<h3>Streams: stdin, stdout, stderr</h3>
+<pre class="code ascii"><code>            ┌──────────┐ stdout (1) ──► next command in the pipe
+ stdin (0) ─►  command  │
+            └──────────┘ stderr (2) ──► terminal (not piped unless 2&gt;&amp;1)</code></pre>
+<div class="pagebreak">~ page 3 ~</div>
+<h2>Example</h2>
+<span class="lang">bash</span>
+<pre class="code"><code># Count HTTP statuses in JSON logs (one object per line)
+jq -r '.status' logs.json | sort | uniq -c | sort -rn
+
+# Find TODOs in Python files (safe with spaces in names)
+find . -name '*.py' -print0 | xargs -0 grep -n TODO
+
+# Sum the 3rd column of a CSV, skipping the header
+awk -F, 'NR &gt; 1 { total += $3 } END { printf "%.2f\n", total }' sales.csv
+
+# In-place replace across files (GNU sed; on macOS use sed -i '')
+grep -rl 'old_name' src/ | xargs sed -i 's/old_name/new_name/g'
+
+# The 10 largest files under a directory
+find /var -type f -printf '%s %p\n' 2&gt;/dev/null | sort -rn | head -10
+du -ah /var 2&gt;/dev/null | sort -rh | head -10           # alternative, human-readable
+
+# HTTP: status code and timing only
+curl -sS -o /dev/null -w '%{http_code} %{time_total}s\n' https://example.com
+
+# POST JSON and pick a field
+curl -sS -X POST https://httpbin.org/post -H 'Content-Type: application/json' \
+     -d '{"name":"ada"}' | jq -r '.json.name'
+
+# jq: filter and reshape
+jq '[.[] | select(.age &gt;= 18) | {name, email}]' users.json
+
+# Parallel: compress logs with 8 workers
+find logs -name '*.log' -print0 | xargs -0 -n1 -P8 gzip
+
+# Sync a folder to a server (dry run first!)
+rsync -avzn --delete ./site/ web:/var/www/site/</code></pre>
+<h2>Exercises</h2>
+<ol style="list-style:none;padding-left:0">
+<li><p>1. Sum a CSV column with awk.</p>
+<div class="box"><b>Solution</b>
+<p><code>awk -F, 'NR&amp;gt;1 {s+=$3} END {print s}' file.csv</code>. For CSVs with quoted commas, awk is the wrong tool; use <code>mlr</code>, <code>csvkit</code>, or Python.</p>
+</div></li>
+<li><p>2. Extract all URLs from logs with grep + sed.</p>
+<div class="box"><b>Solution</b>
+<p><code>grep -oE 'https?://[^ "]+' app.log | sed -E 's/[).,;]+$//' | sort -u</code>. <code>-o</code> prints only the match, the sed strips trailing punctuation, and <code>sort -u</code> dedups.</p>
+</div></li>
+<li><p>3. Why is <code>for f in $(find . -name '*.txt')</code> dangerous?</p>
+<div class="box"><b>Solution</b>
+<p>Word splitting breaks names containing spaces or newlines into several items, and globs in names expand. Use <code>find … -print0 | xargs -0</code>, <code>find … -exec cmd {} +</code>, or a <code>while IFS= read -r -d '' f</code> loop.</p>
+</div></li>
+</ol>
+<div class="pagebreak">~ page 4 ~</div>
+<h2>Mini project</h2>
+<h3>A shell pipeline that parses access logs into a top-N report using jq/awk/sort.</h3>
+<figure>
+  <svg viewBox="0 0 640 580" role="img" aria-label="Flowchart: access.log (nginx combined) or app.jsonl; format? text goes through awk to extract status, path, bytes, ms; json goes through jq -r to a tab-separated row; both give a normalized TSV, which feeds top 10 paths by hits, top 10 by 5xx count, and p50/p95 latency per path; all three go into report.md">
+    <rect class="sk" x="68" y="10" width="264" height="60" rx="10" style="fill:var(--paper)"/>
+    <path class="sk" d="M200 106 L257 135 L200 164 L143 135 Z" style="fill:var(--paper)"/>
+    <rect class="sk" x="13" y="205" width="184" height="60" rx="10" style="fill:var(--paper)"/>
+    <rect class="sk" x="332" y="204" width="176" height="83" rx="10" style="fill:var(--paper)"/>
+    <rect class="sk" x="175" y="332" width="149" height="37" rx="10" style="fill:var(--hl-yellow)"/>
+    <rect class="sk" x="29" y="420" width="132" height="60" rx="10" style="fill:var(--paper)"/>
+    <rect class="sk" x="237" y="420" width="105" height="60" rx="10" style="fill:var(--paper)"/>
+    <rect class="sk" x="412" y="420" width="176" height="60" rx="10" style="fill:var(--paper)"/>
+    <rect class="sk" x="247" y="522" width="105" height="37" rx="10" style="fill:var(--hl-green)"/>
+    <path class="sk blue" d="M200 70 L200 106" style="color:var(--ink)" marker-end="url(#arr)"/>
+    <path class="sk blue" d="M143 135 C143 170 105 170 105 205" style="color:var(--ink)" marker-end="url(#arr)"/>
+    <path class="sk blue" d="M257 135 C338 135 338 204 420 204" style="color:var(--ink)" marker-end="url(#arr)"/>
+    <path class="sk blue" d="M105 265 C160 265 160 332 215 332" style="color:var(--ink)" marker-end="url(#arr)"/>
+    <path class="sk blue" d="M420 296 C352 296 352 332 285 332" style="color:var(--ink)" marker-end="url(#arr)"/>
+    <path class="sk blue" d="M215 368 C155 368 155 420 95 420" style="color:var(--ink)" marker-end="url(#arr)"/>
+    <path class="sk blue" d="M250 368 C250 394 290 394 290 420" style="color:var(--ink)" marker-end="url(#arr)"/>
+    <path class="sk blue" d="M285 368 C392 368 392 420 500 420" style="color:var(--ink)" marker-end="url(#arr)"/>
+    <path class="sk blue" d="M95 480 C175 480 175 522 255 522" style="color:var(--ink)" marker-end="url(#arr)"/>
+    <path class="sk blue" d="M290 480 C290 501 300 501 300 522" style="color:var(--ink)" marker-end="url(#arr)"/>
+    <path class="sk blue" d="M500 480 C422 480 422 522 345 522" style="color:var(--ink)" marker-end="url(#arr)"/>
+    <text class="lbl b" x="200" y="34" text-anchor="middle">access.log (nginx combined)</text>
+    <text class="lbl b" x="200" y="57" text-anchor="middle">or app.jsonl</text>
+    <text class="lbl b" x="200" y="140" text-anchor="middle">format?</text>
+    <text class="lbl b" x="105" y="229" text-anchor="middle">awk: status, path,</text>
+    <text class="lbl b" x="105" y="252" text-anchor="middle">bytes, ms</text>
+    <text class="lbl b" x="420" y="227" text-anchor="middle">jq -r '[.status,</text>
+    <text class="lbl b" x="420" y="250" text-anchor="middle">.path,.bytes,.ms]</text>
+    <text class="lbl b" x="420" y="273" text-anchor="middle">| @tsv'</text>
+    <text class="lbl b" x="250" y="355" text-anchor="middle">normalized TSV</text>
+    <text class="lbl b" x="95" y="444" text-anchor="middle">top 10 paths</text>
+    <text class="lbl b" x="95" y="467" text-anchor="middle">by hits</text>
+    <text class="lbl b" x="290" y="444" text-anchor="middle">top 10 by</text>
+    <text class="lbl b" x="290" y="467" text-anchor="middle">5xx count</text>
+    <text class="lbl b" x="500" y="444" text-anchor="middle">p50 / p95 latency</text>
+    <text class="lbl b" x="500" y="467" text-anchor="middle">per path</text>
+    <text class="lbl b" x="300" y="545" text-anchor="middle">report.md</text>
+    <text class="lbl r" x="105" y="150" text-anchor="middle" style="font-size:15px">text</text>
+    <text class="lbl r" x="330" y="145" text-anchor="middle" style="font-size:15px">json</text>
+  </svg>
+  <figcaption>Fig: log-report pipeline — normalize both formats to TSV, build three tables, write report.md</figcaption>
+</figure>
+<h3>Steps</h3>
+<ol style="list-style:none;padding-left:0">
+<li><p>1. <code>report.sh LOGFILE [N]</code> with <code>set -euo pipefail</code> and a usage message.</p></li>
+<li><p>2. Normalize both input formats into TSV: <code>status  path  bytes  ms</code>.</p></li>
+<li><p>3. Build three tables with <code>sort | uniq -c | sort -rn | head -N</code>, and compute p95 by sorting the <code>ms</code> values per path in awk.</p></li>
+<li><p>4. Write Markdown tables to <code>report.md</code>.</p></li>
+<li><p>5. Benchmark it on 1 GB of logs and compare with a Python version.</p></li>
+</ol>
+<div class="box"><b>Done when:</b> one command produces the report for both formats, and the numbers match a Python cross-check.</div>
+<h2>Open source</h2>
+<ul>
+<li><p>[<code>jqlang/jq</code>](https://github.com/jqlang/jq) — the manual's "Basic filters" and "Builtin operators and functions" sections; <code>src/builtin.jq</code> shows many built-ins are written in jq itself.</p></li>
+<li><p>[<code>curl/curl</code>](https://github.com/curl/curl) — <code>docs/cmdline-opts/</code> has one file per option; <code>everything.curl.dev</code> is the free book.</p></li>
+</ul>
+<div class="pagebreak">~ page 5 ~</div>
+<h2>Interview</h2>
+<ol style="list-style:none;padding-left:0">
+<li>1. <h3>"How do you find the 10 largest files under a directory?"</h3>
+<div class="box"><b>Answer</b>
+<p><code>find DIR -type f -printf '%s %p\n' | sort -rn | head -10</code> (GNU), or <code>du -ah DIR | sort -rh | head -10</code>. On macOS: <code>find DIR -type f -exec stat -f '%z %N' {} + | sort -rn | head</code>. For interactive use, <code>ncdu</code>.</p>
+</div></li>
+<li>2. <h3>"xargs — why is it needed?"</h3>
+<div class="box"><b>Answer</b>
+<p>It turns lines on stdin into command-line arguments for commands that don't read stdin (<code>rm</code>, <code>grep</code> on files, <code>gzip</code>). It batches arguments to stay under the OS limit and can run in parallel (<code>-P</code>). Use <code>-0</code> with <code>find -print0</code> to handle any file name safely.</p>
+</div></li>
+</ol>
+<h2>Checklist</h2>
+<ul>
+<li class="todo"><p>compose pipelines fluently</p></li>
+<li class="todo"><p>use jq for JSON</p></li>
+<li class="todo"><p>batch safely with xargs</p></li>
+</ul>
+<p class="black"><a href="index.md">Contents</a> · ← <a href="ch17-linux-processes-signals-services-systemd-ssh-cron.notes.html">Chapter 17 — Linux: Processes, Signals, Services, systemd, SSH, Cron &amp; Networking</a> · Next → <a href="ch19-git-branching-merge-rebase-and-cherry-pick.notes.html">Chapter 19 — Git: Branching, Merge, Rebase &amp; Cherry-Pick</a></p>
+  <nav class="nav"><a href="ch17-linux-processes-signals-services-systemd-ssh-cron.notes.html">← Ch 17 — Linux: Processes, Signals, Services, systemd, SSH, Cron &amp; Networking</a><a href="index.notes.html">☰ Contents</a><a href="ch19-git-branching-merge-rebase-and-cherry-pick.notes.html">Ch 19 — Git: Branching, Merge, Rebase &amp; Cherry-Pick →</a></nav>
+</main>
+</body>
+</html>

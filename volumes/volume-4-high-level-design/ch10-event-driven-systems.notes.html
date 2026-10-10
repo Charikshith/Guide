@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ch 10 — Event-Driven Systems — Notes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;700&family=Kalam:wght@400;700&family=Patrick+Hand&display=swap" rel="stylesheet">
+<style>
+/* ===== Page tokens ===== */
+:root{
+  --line:32px;                 /* ruled-line spacing; every vertical size is a multiple */
+  --paper:#fdfbf4; --rule:#c9dcef; --margin:#e8a0a0;
+  --ink:#1f3a93;               /* blue pen (body) */
+  --ink2:#222;                 /* black pen (headings) */
+  --red:#c0392b; --green:#1e8449;
+  --hl-yellow:rgba(255,235,59,.55); --hl-pink:rgba(255,128,171,.45);
+  --hl-green:rgba(118,255,3,.35); --hl-blue:rgba(64,196,255,.35);
+  --sticky:#fff59d; --desk:#e9e4d8;
+  --hand:'Kalam','Patrick Hand','Comic Sans MS','Segoe Print','Bradley Hand',cursive;
+  --title:'Caveat','Kalam','Segoe Print','Bradley Hand',cursive;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){ --desk:#2b2b2b; }
+}
+:root[data-theme="dark"]{ --desk:#2b2b2b; }
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--desk);font-family:var(--hand);color:var(--ink);}
+
+/* ===== Notebook sheet ===== */
+.page{
+  position:relative; max-width:860px; margin:24px auto; padding:var(--line) 28px calc(var(--line)*2) 84px;
+  background:
+    linear-gradient(90deg,transparent 64px,var(--margin) 64px,var(--margin) 66px,transparent 66px),
+    repeating-linear-gradient(var(--paper) 0,var(--paper) calc(var(--line) - 1px),var(--rule) calc(var(--line) - 1px),var(--rule) var(--line));
+  background-color:var(--paper);
+  box-shadow:0 2px 6px rgba(0,0,0,.15),0 12px 28px rgba(0,0,0,.12);
+  font-size:20px; line-height:var(--line);
+}
+.page::before{ /* punched holes */
+  content:""; position:absolute; left:22px; top:0; bottom:0; width:18px;
+  background:radial-gradient(circle,var(--desk) 7px,transparent 8px) 0 40px/18px 220px repeat-y;
+}
+@media (max-width:600px){
+  .page{margin:0;padding-left:52px;padding-right:16px;font-size:18px;
+    background:
+      linear-gradient(90deg,transparent 40px,var(--margin) 40px,var(--margin) 42px,transparent 42px),
+      repeating-linear-gradient(var(--paper) 0,var(--paper) calc(var(--line) - 1px),var(--rule) calc(var(--line) - 1px),var(--rule) var(--line));
+    background-color:var(--paper);}
+  .page::before{left:10px;width:16px}
+}
+
+/* ===== Text (all margins are multiples of --line so text sits on the rules) ===== */
+.date{position:absolute;top:0;right:24px;font-family:var(--title);font-size:22px;color:var(--ink2);line-height:var(--line)}
+h1{font-family:var(--title);font-weight:700;color:var(--ink2);font-size:46px;line-height:calc(var(--line)*2);margin:0;transform:rotate(-1deg)}
+h1 .u{background:linear-gradient(transparent 62%,var(--hl-yellow) 62%,var(--hl-yellow) 92%,transparent 92%)}
+h2{font-family:var(--title);font-weight:700;color:var(--red);font-size:32px;line-height:calc(var(--line)*1.5);margin:calc(var(--line)*.5) 0 0}
+h2::before{content:"➤ ";font-size:22px}
+p,li{margin:0}
+ul,ol{margin:0;padding-left:28px}
+ul{list-style:none}
+ul>li::before{content:"–";position:absolute;margin-left:-20px}
+ul>li.star::before{content:"★";color:var(--red)}
+ul>li.arrow::before{content:"→"}
+ul>li.check::before{content:"✓";color:var(--green)}
+.gap{height:var(--line)}
+
+/* ===== Pen effects ===== */
+.hl{background:var(--hl-yellow);padding:0 3px;border-radius:3px 6px 4px 7px}
+.hl.pink{background:var(--hl-pink)} .hl.green{background:var(--hl-green)} .hl.blue{background:var(--hl-blue)}
+.red{color:var(--red)} .green{color:var(--green)} .black{color:var(--ink2)}
+.ul{text-decoration:underline wavy var(--red);text-underline-offset:5px}
+.circ{border:2px solid var(--red);border-radius:50% 45% 55% 48%;padding:0 6px}
+.strike{text-decoration:line-through 2px var(--red)}
+.term{font-weight:700;color:var(--ink2)}
+.box{display:flow-root;border:2.5px solid var(--ink2);border-radius:4px 10px 6px 12px;padding:calc(var(--line)*.5 - 2.5px) 14px;margin:calc(var(--line)*.5) 0;transform:rotate(-.4deg);background:rgba(255,255,255,.35)}
+.box.red{border-color:var(--red)}
+.formula{font-family:var(--title);font-size:28px;text-align:center;color:var(--ink2)}
+
+/* sticky note */
+.sticky{float:right;width:min(250px,42%);margin:0 0 var(--line) 20px;padding:var(--line) 16px;background:var(--sticky);
+  color:#333;transform:rotate(2.2deg);box-shadow:2px 4px 8px rgba(0,0,0,.18);font-size:18px}
+.sticky b{font-family:var(--title);font-size:24px;color:var(--red)}
+@media (max-width:600px){.sticky{float:none;width:auto;margin:var(--line) 0}}
+
+/* margin annotation (lives in the red margin) */
+.side{position:absolute;left:4px;width:58px;text-align:center;font-family:var(--title);font-size:17px;line-height:18px;color:var(--red);transform:rotate(-8deg)}
+@media (max-width:600px){.side{display:none}}
+
+/* two-column notes */
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:0 28px}
+@media (max-width:600px){.cols{grid-template-columns:1fr}}
+
+/* diagrams */
+figure{margin:var(--line) 0;text-align:center}
+figure svg{width:100%;max-width:640px;height:auto;overflow:visible}
+figcaption{font-family:var(--title);font-size:20px;color:var(--ink2)}
+/* phones: keep labels readable — diagram scrolls inside its own box instead of shrinking */
+@media (max-width:600px){figure{overflow-x:auto}figure svg{min-width:520px}}
+.sk{fill:none;stroke:var(--ink2);stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round;filter:url(#rough)}
+.sk.blue{stroke:var(--ink)} .sk.red{stroke:var(--red)} .sk.green{stroke:var(--green)}
+.lbl{font-family:var(--hand);font-size:17px;fill:var(--ink)}
+.lbl.b{font-weight:700;fill:var(--ink2)} .lbl.r{fill:var(--red)} .lbl.g{fill:var(--green)}
+
+/* table */
+.wrap{overflow-x:auto}
+table{border-collapse:collapse;margin:calc(var(--line)*.5) 0;min-width:100%}
+th,td{border:2px solid var(--ink2);padding:0 10px;text-align:left;vertical-align:top}
+th{font-family:var(--title);font-size:24px;color:var(--ink2)}
+
+@media print{body{background:#fff}.page{box-shadow:none;margin:0}.page::before{display:none}}
+
+/* ===== Added for long chapter notes ===== */
+pre.code{font-family:Consolas,'Courier New',monospace;font-size:14px;line-height:var(--line);color:var(--ink);background:rgba(255,255,255,.45);
+  border-left:4px solid var(--red);margin:calc(var(--line)*.5) 0;padding:0 12px;overflow-x:auto;white-space:pre}
+pre.code.ascii{border-left-color:var(--green)}
+code{font-family:Consolas,'Courier New',monospace;font-size:.82em;background:rgba(0,0,0,.06);padding:0 3px;border-radius:3px}
+pre.code code{background:none;padding:0;font-size:inherit}
+.lang{font-family:var(--title);font-size:18px;color:var(--red)}
+h3{font-family:var(--title);font-weight:700;color:var(--ink2);font-size:26px;line-height:var(--line);margin:calc(var(--line)*.5) 0 0}
+h3::before{content:"✎ ";font-size:18px;color:var(--red)}
+.nav{display:flex;justify-content:space-between;gap:12px;font-family:var(--title);font-size:22px;line-height:var(--line)}
+.nav a{color:var(--red);text-decoration:none}
+.nav a:hover{text-decoration:underline wavy}
+.pagebreak{border-top:3px dashed var(--margin);margin:var(--line) 0;text-align:center;font-family:var(--title);color:var(--red);line-height:var(--line)}
+li.todo::before{content:"☐";color:var(--ink2)}
+a{color:var(--ink);text-decoration:underline dotted}
+
+details{margin:calc(var(--line)*.5) 0}
+summary{cursor:pointer;font-family:var(--title);font-size:22px;color:var(--red)}
+details>summary+*{margin-top:0}
+.fig{margin:var(--line) 0}
+ol.num{list-style:none;padding-left:38px}
+ol.num>li>.n{position:absolute;margin-left:-34px;font-weight:700;color:var(--red)}
+</style>
+</head>
+<body>
+<!-- One shared hand-drawn wobble filter; give every diagram stroke class="sk" -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <!-- userSpaceOnUse region: a % region collapses to nothing on perfectly straight lines (zero-height bbox) -->
+  <filter id="rough" filterUnits="userSpaceOnUse" x="-500" y="-500" width="3000" height="3000">
+    <feTurbulence type="fractalNoise" baseFrequency="0.03" numOctaves="2" seed="3" result="n"/>
+    <feDisplacementMap in="SourceGraphic" in2="n" scale="3"/>
+  </filter>
+  <marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+    <path d="M1 1 L9 5 L1 9" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+  </marker>
+</defs></svg>
+
+<main class="page">
+  <nav class="nav"><a href="ch09-database-scaling.notes.html">← Ch 9 — Database Scaling</a><a href="index.notes.html">☰ Contents</a><a href="ch11-cdn-edge-and-geo-distribution.notes.html">Ch 11 — CDN, Edge &amp; Geo-Distribution →</a></nav>
+  <div class="date">2026-10-10</div>
+  <h1><span class="u">Ch 10 — Event-Driven Systems</span></h1>
+  <p class="black">Chapter 10 — Event-Driven Systems</p>
+<p class="black"><b>Volume 4 — High-Level Design</b> · <a href="index.md">Contents</a> · ← <a href="ch09-database-scaling.notes.html">Chapter 9 — Database Scaling</a> · Next → <a href="ch11-cdn-edge-and-geo-distribution.notes.html">Chapter 11 — CDN, Edge &amp; Geo-Distribution</a></p>
+<h2>Concept</h2>
+<p>Event producers/consumers, event schemas, ordering, idempotency, and eventual consistency.</p>
+<div class="box"><b>In one sentence:</b> in an event-driven system, services announce facts ("an order was placed") instead of calling each other directly, and any number of other services react on their own schedule — which decouples teams and absorbs load spikes, at the price of eventual consistency and careful handling of order and duplicates.</div>
+<p><b>Mental model — a town crier vs phone calls.</b> In request/response, the order clerk must phone billing, shipping, and analytics one by one, and if shipping doesn't answer, the order is stuck. With events, the clerk shouts "Order 123 placed!" in the square once; whoever cares writes it down and acts. New listeners can join without the clerk changing anything. But nobody knows exactly <i>when</i> each listener acted.</p>
+<h3>Event-driven vs request/response</h3>
+<div class="wrap"><table>
+<tr><th></th><th>Request/response (sync)</th><th>Event-driven (async)</th></tr>
+<tr><td>Coupling</td><td>caller knows every callee, their API, and their availability</td><td>the producer knows only the event schema</td></tr>
+<tr><td>Failure</td><td>a callee failure fails the caller (cascades)</td><td>consumers fail independently; the log buffers</td></tr>
+<tr><td>Latency to the user</td><td>the sum of the chain</td><td>fast acknowledgment; work finishes later</td></tr>
+<tr><td>Consistency</td><td>immediate (if every step succeeded)</td><td><b>eventual</b></td></tr>
+<tr><td>Adding a new reaction</td><td>change the caller</td><td>add a consumer</td></tr>
+<tr><td>Debugging</td><td>a stack trace / one trace</td><td>distributed: needs correlation IDs and tracing</td></tr>
+<tr><td>Best for</td><td>queries; things the user needs <i>now</i></td><td>side effects, integration, fan-out, analytics, workflows</td></tr>
+</table></div>
+<h3>Kinds of events</h3>
+<div class="wrap"><table>
+<tr><th>Kind</th><th>Payload</th><th>Example</th><th>Trade-off</th></tr>
+<tr><td>Notification</td><td>just the ID</td><td><code>OrderPlaced {order_id}</code></td><td>small; consumers call back for details (coupling + load)</td></tr>
+<tr><td><b>Event-carried state transfer</b></td><td>the data consumers need</td><td><code>OrderPlaced {order_id, customer, items, total}</code></td><td>consumers are autonomous; bigger events; schema is a contract</td></tr>
+<tr><td>Domain event (event sourcing)</td><td>the state change itself</td><td><a href="../volume-1-cs-foundations/ch52-event-sourcing-and-cqrs-distributed-view.notes.html">Vol 1 Ch 52</a></td><td>full history</td></tr>
+</table></div>
+<h3>Choreography vs orchestration</h3>
+<div class="wrap"><table>
+<tr><th></th><th>Choreography</th><th>Orchestration</th></tr>
+<tr><td>How</td><td>each service reacts to events and emits its own</td><td>a central orchestrator (a saga coordinator, Temporal, Step Functions) tells each step what to do</td></tr>
+<tr><td>Pros</td><td>fully decoupled; no central point</td><td>the flow is visible in one place; easy timeouts and compensation</td></tr>
+<tr><td>Cons</td><td>the overall flow is implicit and hard to follow</td><td>the orchestrator knows every participant</td></tr>
+<tr><td>Use</td><td>simple fan-out reactions</td><td>multi-step business processes with compensation (sagas)</td></tr>
+</table></div>
+<h3>The hard parts and their fixes</h3>
+<div class="wrap"><table>
+<tr><th>Problem</th><th>Fix</th></tr>
+<tr><td>Duplicates (at-least-once delivery)</td><td><b>idempotent consumers</b>: dedup by <code>event_id</code> in the same transaction as the side effect</td></tr>
+<tr><td>Ordering</td><td>partition by the entity key (<code>order_id</code>); rely on per-key order only; use sequence numbers to detect gaps</td></tr>
+<tr><td>Writing to the DB <i>and</i> publishing the event atomically</td><td>the <b>transactional outbox</b>: write the event to an <code>outbox</code> table in the same DB transaction; a relay publishes it (or CDC with Debezium)</td></tr>
+<tr><td>Poison messages</td><td>bounded retries → a <b>dead-letter queue</b>, with alerting and replay tooling</td></tr>
+<tr><td>Schema evolution</td><td>versioned schemas in a <b>schema registry</b> with compatibility rules (backward/forward)</td></tr>
+<tr><td>Eventual consistency in the UI</td><td>show "processing"; return a version; read your own writes from the source</td></tr>
+<tr><td>Tracing a flow</td><td>carry <code>correlation_id</code> and <code>causation_id</code> in every event; propagate trace context</td></tr>
+</table></div>
+<div class="pagebreak">~ page 2 ~</div>
+<h2>Prereqs</h2>
+<ul>
+<li><a href="ch07-message-queues-and-streaming-kafka-sqs-pub.notes.html">Chapter 7 — Message Queues &amp; Streaming (Kafka, SQS, Pub/Sub)</a></li>
+<li><a href="../volume-3-low-level-design/ch12-event-bus-cqrs-and-event-sourcing.notes.html">Vol 3 Ch 12 — Event Bus, CQRS &amp; Event Sourcing</a></li>
+</ul>
+<h2>Diagram</h2>
+<h3>An event flow across services with a schema registry</h3>
+<figure>
+<svg viewBox="0 0 485 686" role="img" aria-label="Diagram 1 (redrawn from Mermaid)"><path class="sk" style="color:var(--ink2)" d="M242 187 C242 230, 242 230, 242 273" marker-end="url(#arr)"/><path class="sk" style="color:var(--ink2)" d="M242 324 C242 350, 242 350, 242 376" marker-end="url(#arr)"/><path class="sk red" style="color:var(--red);stroke-dasharray:7 6" d="M242 92 C242 120, 242 120, 242 147"/><path class="sk red" style="color:var(--red);stroke-dasharray:7 6" d="M242 92 C242 290, 87 290, 87 488" marker-end="url(#arr)"/><path class="sk red" style="color:var(--red);stroke-dasharray:7 6" d="M242 92 C242 290, 242 290, 242 488" marker-end="url(#arr)"/><path class="sk red" style="color:var(--red);stroke-dasharray:7 6" d="M242 92 C242 290, 398 290, 398 488" marker-end="url(#arr)"/><path class="sk" style="color:var(--ink2)" d="M242 445 C242 466, 87 466, 87 488" marker-end="url(#arr)"/><path class="sk" style="color:var(--ink2)" d="M242 445 C242 466, 242 466, 242 488" marker-end="url(#arr)"/><path class="sk" style="color:var(--ink2)" d="M242 445 C242 466, 398 466, 398 488" marker-end="url(#arr)"/><path class="sk" style="color:var(--ink2)" d="M87 561 C87 587, 149 587, 149 613" marker-end="url(#arr)"/><path class="sk red" style="color:var(--red);stroke-dasharray:7 6" d="M87 561 C87 587, 329 587, 329 613" marker-end="url(#arr)"/><rect x="158" y="204" width="168" height="52" rx="4" style="fill:#fdfbf4;stroke:none"/><text class="lbl g" style="font-size:14px" x="242" y="218" text-anchor="middle">1. INSERT order + outbox</text><text class="lbl g" style="font-size:14px" x="242" y="234" text-anchor="middle">row</text><text class="lbl g" style="font-size:14px" x="242" y="250" text-anchor="middle">(one transaction)</text><rect x="191" y="340" width="102" height="20" rx="4" style="fill:#fdfbf4;stroke:none"/><text class="lbl g" style="font-size:14px" x="242" y="354" text-anchor="middle">2. relay / CDC</text><rect x="208" y="110" width="69" height="20" rx="4" style="fill:#fdfbf4;stroke:none"/><text class="lbl g" style="font-size:14px" x="242" y="124" text-anchor="middle">validates</text><rect x="63" y="577" width="109" height="20" rx="4" style="fill:#fdfbf4;stroke:none"/><text class="lbl g" style="font-size:14px" x="118" y="591" text-anchor="middle">PaymentCaptured</text><rect x="150" y="577" width="116" height="20" rx="4" style="fill:#fdfbf4;stroke:none"/><text class="lbl g" style="font-size:14px" x="208" y="591" text-anchor="middle">after 5 failures</text><rect class="sk" style="fill:#fdfbf4" x="181" y="147" width="122" height="40" rx="10"/><text class="lbl" style="font-size:15px" x="242" y="172" text-anchor="middle">Order service</text><path class="sk" style="fill:#e3f1d8" d="M195 284 A47 8 0 0 1 290 284 L290 316 A47 8 0 0 1 195 316 Z"/><path class="sk" d="M195 284 A47 8 0 0 0 290 284"/><text class="lbl" style="font-size:15px" x="242" y="305" text-anchor="middle">orders DB</text><path class="sk" style="fill:#e3f1d8" d="M154 387 A88 8 0 0 1 330 387 L330 437 A88 8 0 0 1 154 437 Z"/><path class="sk" d="M154 387 A88 8 0 0 0 330 387"/><text class="lbl" style="font-size:15px" x="242" y="408" text-anchor="middle">Kafka topic 'orders'</text><text class="lbl" style="font-size:15px" x="242" y="426" text-anchor="middle">key = order_id</text><rect class="sk" style="fill:#fdfbf4" x="152" y="22" width="181" height="70" rx="10"/><text class="lbl" style="font-size:15px" x="242" y="44" text-anchor="middle">Schema registry</text><text class="lbl" style="font-size:15px" x="242" y="62" text-anchor="middle">OrderPlaced v1, v2</text><text class="lbl" style="font-size:15px" x="242" y="80" text-anchor="middle">(backward compatible)</text><rect class="sk" style="fill:#fdfbf4" x="22" y="491" width="130" height="70" rx="10"/><text class="lbl" style="font-size:15px" x="87" y="513" text-anchor="middle">Billing</text><text class="lbl" style="font-size:15px" x="87" y="531" text-anchor="middle">consumer group</text><text class="lbl" style="font-size:15px" x="87" y="549" text-anchor="middle">'billing'</text><rect class="sk" style="fill:#fdfbf4" x="178" y="491" width="130" height="70" rx="10"/><text class="lbl" style="font-size:15px" x="242" y="513" text-anchor="middle">Shipping</text><text class="lbl" style="font-size:15px" x="242" y="531" text-anchor="middle">consumer group</text><text class="lbl" style="font-size:15px" x="242" y="549" text-anchor="middle">'shipping'</text><rect class="sk" style="fill:#fdfbf4" x="333" y="491" width="130" height="70" rx="10"/><text class="lbl" style="font-size:15px" x="398" y="513" text-anchor="middle">Analytics</text><text class="lbl" style="font-size:15px" x="398" y="531" text-anchor="middle">consumer group</text><text class="lbl" style="font-size:15px" x="398" y="549" text-anchor="middle">'analytics'</text><path class="sk" style="fill:#e3f1d8" d="M76 624 A73 8 0 0 1 222 624 L222 656 A73 8 0 0 1 76 656 Z"/><path class="sk" d="M76 624 A73 8 0 0 0 222 624"/><text class="lbl" style="font-size:15px" x="149" y="645" text-anchor="middle">topic 'payments'</text><path class="sk" style="fill:#e3f1d8" d="M248 624 A81 8 0 0 1 409 624 L409 656 A81 8 0 0 1 248 656 Z"/><path class="sk" d="M248 624 A81 8 0 0 0 409 624"/><text class="lbl" style="font-size:15px" x="329" y="645" text-anchor="middle">orders.billing.DLQ</text></svg>
+<figcaption>Fig 1: diagram redrawn by hand from the Mermaid source</figcaption>
+</figure>
+<h3>Why the outbox exists: the dual-write problem</h3>
+<pre class="code ascii"><code> WITHOUT outbox                                  WITH outbox
+ BEGIN; INSERT order; COMMIT;  ✓                 BEGIN;
+ publish("OrderPlaced")        ✗ crash here        INSERT order;
+ → the order exists, but nobody ever hears        INSERT outbox(event);
+   about it (or: publish first, DB fails →      COMMIT;             ← atomic
+   a ghost event for an order that doesn't exist) relay: read outbox → publish → mark sent
+                                                 (at-least-once → consumers dedup)</code></pre>
+<h3>Ordering: per key, not global</h3>
+<pre class="code ascii"><code> partition 0: [o-7 Placed] [o-7 Paid] [o-7 Shipped]      order within o-7 ✓
+ partition 1: [o-9 Placed] [o-9 Cancelled]               order within o-9 ✓
+ no ordering between o-7 and o-9 — and none is needed</code></pre>
+<h3>A choreographed checkout saga with compensation</h3>
+<figure>
+<svg viewBox="0 0 640 303" role="img" aria-label="Diagram 2 (redrawn from Mermaid)"><path class="sk" style="stroke-dasharray:3 7;stroke-width:1.6" d="M120 42 L120 297"/><path class="sk" style="stroke-dasharray:3 7;stroke-width:1.6" d="M320 42 L320 297"/><path class="sk" style="stroke-dasharray:3 7;stroke-width:1.6" d="M520 42 L520 297"/><rect class="sk" style="fill:#dcecff" x="28" y="10" width="184" height="32" rx="8"/><text class="lbl b" style="font-size:15px" x="120" y="31" text-anchor="middle">Orders</text><rect class="sk" style="fill:#dcecff" x="228" y="10" width="184" height="32" rx="8"/><text class="lbl b" style="font-size:15px" x="320" y="31" text-anchor="middle">Inventory</text><rect class="sk" style="fill:#dcecff" x="428" y="10" width="184" height="32" rx="8"/><text class="lbl b" style="font-size:15px" x="520" y="31" text-anchor="middle">Payments</text><path class="sk" style="color:var(--ink2)" d="M120 87 L316 87" marker-end="url(#arr)"/><text class="lbl" style="font-size:14px" x="220" y="76" text-anchor="middle">OrderPlaced</text><path class="sk" style="color:var(--ink2)" d="M320 128 L516 128" marker-end="url(#arr)"/><text class="lbl" style="font-size:14px" x="420" y="117" text-anchor="middle">StockReserved</text><path class="sk" style="color:var(--red);stroke-dasharray:7 6" d="M520 169 L324 169" marker-end="url(#arr)"/><text class="lbl" style="font-size:14px" x="420" y="158" text-anchor="middle">PaymentFailed</text><path class="sk" style="color:var(--red);stroke-dasharray:7 6" d="M320 227 L124 227" marker-end="url(#arr)"/><text class="lbl" style="font-size:14px" x="220" y="199" text-anchor="middle">StockReleased</text><text class="lbl" style="font-size:14px" x="220" y="216" text-anchor="middle">(compensation)</text><path class="sk" style="color:var(--ink2)" d="M120 251 C175 251, 175 277, 123 277" marker-end="url(#arr)"/><text class="lbl" style="font-size:14px" x="182" y="261" text-anchor="start">mark order FAILED, notify</text><text class="lbl" style="font-size:14px" x="182" y="278" text-anchor="start">the customer</text></svg>
+<figcaption>Fig 2: diagram redrawn by hand from the Mermaid source</figcaption>
+</figure>
+<div class="pagebreak">~ page 3 ~</div>
+<h2>Example</h2>
+<h3>An <code>OrderPlaced</code> event consumed by billing, shipping, and analytics</h3>
+<span class="lang">json</span>
+<pre class="code"><code>{
+  "event_id": "4f1c2a9e-8b1d-4c1e-9a55-2b6f0d3c7e11",
+  "type": "OrderPlaced",
+  "version": 2,
+  "occurred_at": "2024-05-01T10:02:11.330Z",
+  "producer": "order-service",
+  "correlation_id": "r-8f2a",
+  "key": "order-123",
+  "data": {
+    "order_id": "order-123",
+    "customer_id": "c-7",
+    "items": [{"sku": "SKU-1", "qty": 2, "unit_price_cents": 1500}],
+    "total_cents": 3000,
+    "currency": "EUR",
+    "shipping_country": "DE"
+  }
+}</code></pre>
+<span class="lang">python</span>
+<pre class="code"><code># Transactional outbox: write the state change and the event together
+import json, uuid
+def place_order(conn, order):
+    with conn.transaction():
+        conn.execute("INSERT INTO orders (id, customer_id, total_cents) VALUES (%s, %s, %s)",
+                     (order["id"], order["customer_id"], order["total_cents"]))
+        event = {"event_id": str(uuid.uuid4()), "type": "OrderPlaced", "version": 2,
+                 "key": order["id"], "data": order}
+        conn.execute("INSERT INTO outbox (id, topic, key, payload) VALUES (%s, %s, %s, %s)",
+                     (event["event_id"], "orders", order["id"], json.dumps(event)))
+
+# Relay: publish unsent outbox rows (at-least-once)
+def relay(conn, producer):
+    rows = conn.execute("SELECT id, topic, key, payload FROM outbox WHERE sent_at IS NULL "
+                        "ORDER BY created_at LIMIT 500 FOR UPDATE SKIP LOCKED").fetchall()
+    for id_, topic, key, payload in rows:
+        producer.produce(topic, key=key, value=payload)
+    producer.flush()
+    conn.execute("UPDATE outbox SET sent_at = now() WHERE id = ANY(%s)", ([r[0] for r in rows],))</code></pre>
+<span class="lang">python</span>
+<pre class="code"><code># Idempotent consumer: dedup and side effect in ONE transaction
+def handle_order_placed(conn, event):
+    with conn.transaction():
+        inserted = conn.execute(
+            "INSERT INTO processed_events (consumer, event_id) VALUES ('billing', %s) "
+            "ON CONFLICT DO NOTHING", (event["event_id"],)).rowcount
+        if inserted == 0:
+            return                          # already handled: a redelivery
+        d = event["data"]
+        conn.execute("INSERT INTO invoices (order_id, amount_cents, currency) VALUES (%s, %s, %s)",
+                     (d["order_id"], d["total_cents"], d["currency"]))</code></pre>
+<h2>Exercises</h2>
+<ol class="num">
+<li><span class="n">1.</span>Design an event schema with versioning.
+<details open><summary>Solution</summary>An envelope (<code>event_id, type, version, occurred_at, producer, key, correlation_id, causation_id</code>) plus <code>data</code>. Define it in Avro or Protobuf and register it with <b>backward</b> compatibility, so new consumers can read old events. Allowed changes: add optional fields with defaults. For breaking changes (renames, type changes), publish <code>OrderPlaced v3</code> — often to a new topic — dual-publish during migration, and retire v2 after consumers move. Document the ownership and meaning of each field.</details></li>
+<li><span class="n">2.</span>Make a consumer idempotent across redeliveries.
+<details open><summary>Solution</summary>See <code>handle_order_placed</code>: a <code>processed_events</code> table with a unique <code>(consumer, event_id)</code> constraint, written in the same transaction as the side effect. Or make the side effect naturally idempotent: an upsert keyed by <code>order_id</code>, or a conditional update with a version. For external side effects (sending email, charging a card), pass an idempotency key to the provider.</details></li>
+<li><span class="n">3.</span>A consumer receives <code>OrderShipped</code> before <code>OrderPlaced</code> for the same order. How can that happen, and what do you do?
+<details open><summary>Solution</summary>The events were published to different partitions or topics, a producer retried out of order, or they came from different services. Partition every event about an order by <code>order_id</code> in one topic when order matters. Otherwise, make the consumer tolerant: store out-of-order events and apply them when the prerequisite arrives, or model state so that any order converges (e.g. status with sequence numbers, ignoring older sequences).</details></li>
+</ol>
+<div class="pagebreak">~ page 4 ~</div>
+<h2>Mini project</h2>
+<h3>An event-driven workflow with two consumers and a schema registry.</h3>
+<figure>
+<svg viewBox="0 0 567 516" role="img" aria-label="Diagram 3 (redrawn from Mermaid)"><path class="sk" style="color:var(--ink2)" d="M79 95 C79 133, 254 133, 254 171" marker-end="url(#arr)"/><path class="sk" style="color:var(--ink2)" d="M254 226 C254 248, 254 248, 254 269" marker-end="url(#arr)"/><path class="sk" style="color:var(--ink2)" d="M254 360 C254 386, 168 386, 168 412" marker-end="url(#arr)"/><path class="sk" style="color:var(--ink2)" d="M254 360 C254 382, 339 382, 339 403" marker-end="url(#arr)"/><path class="sk" style="color:var(--ink2)" d="M240 450 C529 450, 529 316, 332 316" marker-end="url(#arr)"/><path class="sk red" style="color:var(--red);stroke-dasharray:7 6" d="M235 128 C235 270, 168 270, 168 412" marker-end="url(#arr)"/><path class="sk red" style="color:var(--red);stroke-dasharray:7 6" d="M235 128 C235 266, 339 266, 339 403" marker-end="url(#arr)"/><path class="sk red" style="color:var(--red);stroke-dasharray:7 6" d="M409 119 C409 145, 254 145, 254 171" marker-end="url(#arr)"/><path class="sk red" style="color:var(--red);stroke-dasharray:7 6" d="M409 119 C409 266, 168 266, 168 412" marker-end="url(#arr)"/><path class="sk red" style="color:var(--red);stroke-dasharray:7 6" d="M409 119 C409 261, 339 261, 339 403" marker-end="url(#arr)"/><rect class="sk" style="fill:#fdfbf4" x="22" y="55" width="115" height="40" rx="10"/><text class="lbl" style="font-size:15px" x="79" y="80" text-anchor="middle">POST /orders</text><rect class="sk" style="fill:#fdfbf4" x="185" y="174" width="137" height="52" rx="10"/><text class="lbl" style="font-size:15px" x="254" y="196" text-anchor="middle">order service +</text><text class="lbl" style="font-size:15px" x="254" y="214" text-anchor="middle">outbox</text><rect class="sk" style="fill:#fdfbf4" x="178" y="272" width="152" height="88" rx="10"/><text class="lbl" style="font-size:15px" x="254" y="294" text-anchor="middle">Redpanda (Kafka</text><text class="lbl" style="font-size:15px" x="254" y="312" text-anchor="middle">API)</text><text class="lbl" style="font-size:15px" x="254" y="330" text-anchor="middle">+ built-in schema</text><text class="lbl" style="font-size:15px" x="254" y="348" text-anchor="middle">registry</text><rect class="sk" style="fill:#fdfbf4" x="96" y="415" width="144" height="70" rx="10"/><text class="lbl" style="font-size:15px" x="168" y="437" text-anchor="middle">billing consumer</text><text class="lbl" style="font-size:15px" x="168" y="455" text-anchor="middle">idempotent,</text><text class="lbl" style="font-size:15px" x="168" y="473" text-anchor="middle">retries → DLQ</text><rect class="sk" style="fill:#fdfbf4" x="266" y="406" width="144" height="88" rx="10"/><text class="lbl" style="font-size:15px" x="339" y="428" text-anchor="middle">notification</text><text class="lbl" style="font-size:15px" x="339" y="446" text-anchor="middle">consumer</text><text class="lbl" style="font-size:15px" x="339" y="464" text-anchor="middle">(sends email via</text><text class="lbl" style="font-size:15px" x="339" y="482" text-anchor="middle">a fake SMTP)</text><rect class="sk" style="fill:#fdfbf4" x="163" y="22" width="144" height="106" rx="10"/><text class="lbl" style="font-size:15px" x="235" y="44" text-anchor="middle">chaos: kill</text><text class="lbl" style="font-size:15px" x="235" y="62" text-anchor="middle">consumers,</text><text class="lbl" style="font-size:15px" x="235" y="80" text-anchor="middle">duplicate</text><text class="lbl" style="font-size:15px" x="235" y="98" text-anchor="middle">deliveries,</text><text class="lbl" style="font-size:15px" x="235" y="116" text-anchor="middle">a poison message</text><rect class="sk" style="fill:#fdfbf4" x="333" y="31" width="152" height="88" rx="10"/><text class="lbl" style="font-size:15px" x="409" y="53" text-anchor="middle">correlation_id in</text><text class="lbl" style="font-size:15px" x="409" y="71" text-anchor="middle">logs +</text><text class="lbl" style="font-size:15px" x="409" y="89" text-anchor="middle">OTel trace across</text><text class="lbl" style="font-size:15px" x="409" y="107" text-anchor="middle">all hops</text></svg>
+<figcaption>Fig 3: diagram redrawn by hand from the Mermaid source</figcaption>
+</figure>
+<h3>Steps</h3>
+<ol class="num">
+<li><span class="n">1.</span>Order service with an outbox table and a relay (or Debezium CDC).</li>
+<li><span class="n">2.</span>Register an Avro/JSON schema; the producer validates before publishing; try a breaking change and watch the registry reject it.</li>
+<li><span class="n">3.</span>Two consumers (billing, notification), each idempotent, with bounded retries and a DLQ.</li>
+<li><span class="n">4.</span>A replay tool that re-publishes a DLQ message after a fix.</li>
+<li><span class="n">5.</span>Chaos tests: kill a consumer mid-batch, force duplicate deliveries, inject a poison message. Check invariants: one invoice per order, one email per order.</li>
+<li><span class="n">6.</span>Trace one order end to end with its correlation ID.</li>
+</ol>
+<div class="box"><b>Done when:</b> duplicates and crashes never produce double invoices or emails, the poison message lands in the DLQ with an alert, and a breaking schema change is rejected.</div>
+<h2>Design</h2>
+<h3>Design an event-driven checkout pipeline.</h3>
+<p>Requirements: 2,000 orders/s at peak (sales events); checkout must respond in &lt; 300 ms; payment, inventory, fraud, email, loyalty points, and analytics all react; no order may be lost or double-charged.</p>
+<figure>
+<svg viewBox="0 0 640 185" role="img" aria-label="Diagram 4 (redrawn from Mermaid)"><g transform="scale(0.371)"><path class="sk" style="color:var(--ink2)" d="M92 213 C173 213, 173 174, 254 174" marker-end="url(#arr)"/><path class="sk" style="color:var(--ink2)" d="M372 174 C990 174, 990 213, 1609 213" marker-end="url(#arr)"/><path class="sk" style="color:var(--ink2)" d="M372 174 C481 174, 481 213, 590 213" marker-end="url(#arr)"/><path class="sk" style="color:var(--ink2)" d="M687 213 C796 213, 796 213, 905 213" marker-end="url(#arr)"/><path class="sk" style="color:var(--ink2)" d="M1040 213 C1151 213, 1151 42, 1262 42" marker-end="url(#arr)"/><path class="sk" style="color:var(--ink2)" d="M1326 62 C1326 448, 974 448, 974 285" marker-end="url(#arr)"/><path class="sk" style="color:var(--ink2)" d="M1040 213 C1149 213, 1149 141, 1258 141" marker-end="url(#arr)"/><path class="sk" style="color:var(--ink2)" d="M1326 194 C1326 462, 974 462, 974 285" marker-end="url(#arr)"/><path class="sk" style="color:var(--ink2)" d="M1040 213 C1164 213, 1164 240, 1288 240" marker-end="url(#arr)"/><path class="sk" style="color:var(--ink2)" d="M1040 213 C1162 213, 1162 306, 1284 306" marker-end="url(#arr)"/><path class="sk" style="color:var(--ink2)" d="M1040 213 C1155 213, 1155 378, 1269 378" marker-end="url(#arr)"/><path class="sk red" style="color:var(--red);stroke-dasharray:7 6" d="M1391 141 C1500 141, 1500 213, 1609 213" marker-end="url(#arr)"/><path class="sk" style="color:var(--ink2)" d="M314 194 C314 476, 57 476, 57 236" marker-end="url(#arr)"/><path class="sk" style="color:var(--ink2)" d="M92 213 C173 213, 173 246, 254 246" marker-end="url(#arr)"/><rect x="903" y="176" width="175" height="36" rx="4" style="fill:#fdfbf4;stroke:none"/><text class="lbl g" style="font-size:14px" x="990" y="190" text-anchor="middle">sync: validate cart,</text><text class="lbl g" style="font-size:14px" x="990" y="206" text-anchor="middle">reserve stock (fast path)</text><rect x="406" y="184" width="149" height="20" rx="4" style="fill:#fdfbf4;stroke:none"/><text class="lbl g" style="font-size:14px" x="481" y="198" text-anchor="middle">INSERT order + outbox</text><rect x="782" y="203" width="30" height="20" rx="4" style="fill:#fdfbf4;stroke:none"/><text class="lbl g" style="font-size:14px" x="796" y="217" text-anchor="middle">CDC</text><rect x="1066" y="396" width="168" height="20" rx="4" style="fill:#fdfbf4;stroke:none"/><text class="lbl g" style="font-size:14px" x="1150" y="410" text-anchor="middle">PaymentCaptured / Failed</text><rect x="1432" y="167" width="135" height="20" rx="4" style="fill:#fdfbf4;stroke:none"/><text class="lbl g" style="font-size:14px" x="1500" y="181" text-anchor="middle">failure: compensate</text><rect x="105" y="401" width="162" height="20" rx="4" style="fill:#fdfbf4;stroke:none"/><text class="lbl g" style="font-size:14px" x="186" y="415" text-anchor="middle">202 Accepted + order_id</text><rect x="112" y="220" width="122" height="20" rx="4" style="fill:#fdfbf4;stroke:none"/><text class="lbl g" style="font-size:14px" x="173" y="234" text-anchor="middle">poll / SSE status</text><rect class="sk" style="fill:#fdfbf4" x="22" y="193" width="70" height="40" rx="10"/><text class="lbl" style="font-size:15px" x="57" y="218" text-anchor="middle">users</text><rect class="sk" style="fill:#fdfbf4" x="257" y="154" width="115" height="40" rx="10"/><text class="lbl" style="font-size:15px" x="314" y="179" text-anchor="middle">Checkout API</text><rect class="sk" style="fill:#fdfbf4" x="1612" y="193" width="93" height="40" rx="10"/><text class="lbl" style="font-size:15px" x="1658" y="218" text-anchor="middle">Inventory</text><path class="sk" style="fill:#e3f1d8" d="M593 197 A47 8 0 0 1 687 197 L687 229 A47 8 0 0 1 593 229 Z"/><path class="sk" d="M593 197 A47 8 0 0 0 687 197"/><text class="lbl" style="font-size:15px" x="640" y="218" text-anchor="middle">orders DB</text><path class="sk" style="fill:#e3f1d8" d="M908 152 A66 8 0 0 1 1040 152 L1040 274 A66 8 0 0 1 908 274 Z"/><path class="sk" d="M908 152 A66 8 0 0 0 1040 152"/><text class="lbl" style="font-size:15px" x="974" y="173" text-anchor="middle">Kafka: orders</text><text class="lbl" style="font-size:15px" x="974" y="191" text-anchor="middle">48 partitions,</text><text class="lbl" style="font-size:15px" x="974" y="209" text-anchor="middle">key =</text><text class="lbl" style="font-size:15px" x="974" y="227" text-anchor="middle">order_id,</text><text class="lbl" style="font-size:15px" x="974" y="245" text-anchor="middle">RF=3,</text><text class="lbl" style="font-size:15px" x="974" y="263" text-anchor="middle">min.insync=2</text><rect class="sk" style="fill:#fdfbf4" x="1265" y="22" width="122" height="40" rx="10"/><text class="lbl" style="font-size:15px" x="1326" y="47" text-anchor="middle">Fraud scoring</text><rect class="sk" style="fill:#fdfbf4" x="1261" y="88" width="130" height="106" rx="10"/><text class="lbl" style="font-size:15px" x="1326" y="110" text-anchor="middle">Payments</text><text class="lbl" style="font-size:15px" x="1326" y="128" text-anchor="middle">orchestrator</text><text class="lbl" style="font-size:15px" x="1326" y="146" text-anchor="middle">(saga)</text><text class="lbl" style="font-size:15px" x="1326" y="164" text-anchor="middle">idempotency</text><text class="lbl" style="font-size:15px" x="1326" y="182" text-anchor="middle">key = order_id</text><rect class="sk" style="fill:#fdfbf4" x="1291" y="220" width="70" height="40" rx="10"/><text class="lbl" style="font-size:15px" x="1326" y="245" text-anchor="middle">Email</text><rect class="sk" style="fill:#fdfbf4" x="1287" y="286" width="78" height="40" rx="10"/><text class="lbl" style="font-size:15px" x="1326" y="311" text-anchor="middle">Loyalty</text><rect class="sk" style="fill:#fdfbf4" x="1272" y="352" width="107" height="52" rx="10"/><text class="lbl" style="font-size:15px" x="1326" y="374" text-anchor="middle">Analytics →</text><text class="lbl" style="font-size:15px" x="1326" y="392" text-anchor="middle">warehouse</text><rect class="sk" style="fill:#fdfbf4" x="257" y="220" width="115" height="52" rx="10"/><text class="lbl" style="font-size:15px" x="314" y="242" text-anchor="middle">Order status</text><text class="lbl" style="font-size:15px" x="314" y="260" text-anchor="middle">(projection)</text></g></svg>
+<figcaption>Fig 4: diagram redrawn by hand from the Mermaid source</figcaption>
+</figure>
+<h3>Decisions to justify</h3>
+<ul>
+<li><b>Sync where the user needs an answer, async for everything else.</b> Cart validation and stock reservation are synchronous; payment, email, loyalty, and analytics are events. The API returns <code>202 Accepted</code> with the order ID in &lt; 300 ms.</li>
+<li><b>Outbox + CDC</b> so that no order exists without its event, and no event exists without its order.</li>
+<li><b>Partitioning by <code>order_id</code></b> keeps all events for one order in order. 48 partitions allow up to 48 parallel consumers per group; at 2,000 events/s, that's ~40/s per partition — lots of headroom.</li>
+<li><b>An orchestrated saga for payment</b> (visible flow, timeouts, compensation that releases stock), <b>choreography</b> for simple reactions (email, loyalty).</li>
+<li><b>Exactly-once effects</b> = at-least-once delivery + idempotent consumers + provider idempotency keys.</li>
+<li><b>Durability:</b> replication factor 3, <code>acks=all</code>, <code>min.insync.replicas=2</code>.</li>
+<li><b>Observability:</b> consumer lag per group as the key alert; DLQ depth; end-to-end order latency (placed → paid).</li>
+</ul>
+<div class="pagebreak">~ page 5 ~</div>
+<h2>Open source</h2>
+<ul>
+<li><a href="https://github.com/apache/kafka"><code>apache/kafka</code></a> — partitions, consumer groups, idempotent producers, and transactions (<code>enable.idempotence</code>, <code>transactional.id</code>).</li>
+<li><a href="https://github.com/confluentinc/schema-registry"><code>confluentinc/schema-registry</code></a> — schema storage with compatibility checks for Avro, Protobuf, and JSON Schema. See also <code>debezium/debezium</code> for CDC-based outboxes.</li>
+</ul>
+<h2>Interview</h2>
+<ol class="num">
+<li><span class="n">1.</span><b>"Event-driven vs request/response?"</b>
+<details open><summary>Answer</summary>Request/response is simple and immediately consistent, and suits queries and anything the user needs right now, but it couples services in time and availability, so failures and latency cascade. Event-driven decouples producers from consumers, absorbs load spikes, and makes adding reactions easy, but it brings eventual consistency, duplicate and ordering handling, and harder debugging. Most systems use both: sync for the user-facing critical path, events for side effects and integration.</details></li>
+<li><span class="n">2.</span><b>"How do you handle event ordering?"</b>
+<details open><summary>Answer</summary>Don't require global order — it doesn't scale. Require order only per entity: publish all of an entity's events with the same key so they land in one partition, and process each partition sequentially. Add sequence numbers or versions so consumers can detect gaps and ignore stale events. Where cross-entity order matters, design for commutativity or have one producer serialize the decisions.</details></li>
+</ol>
+<div class="pagebreak">~ page 6 ~</div>
+<h2>Checklist</h2>
+<ul>
+<li class="todo">version event schemas</li>
+<li class="todo">idempotent consumers</li>
+<li class="todo">accept eventual consistency</li>
+</ul>
+  <nav class="nav"><a href="ch09-database-scaling.notes.html">← Ch 9 — Database Scaling</a><a href="index.notes.html">☰ Contents</a><a href="ch11-cdn-edge-and-geo-distribution.notes.html">Ch 11 — CDN, Edge &amp; Geo-Distribution →</a></nav>
+</main>
+</body>
+</html>

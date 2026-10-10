@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ch 3 — Design Principles (Cohesion, Coupling, YAGNI, DRY, KISS) — Notes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;700&family=Kalam:wght@400;700&family=Patrick+Hand&display=swap" rel="stylesheet">
+<style>
+/* ===== Page tokens ===== */
+:root{
+  --line:32px;                 /* ruled-line spacing; every vertical size is a multiple */
+  --paper:#fdfbf4; --rule:#c9dcef; --margin:#e8a0a0;
+  --ink:#1f3a93;               /* blue pen (body) */
+  --ink2:#222;                 /* black pen (headings) */
+  --red:#c0392b; --green:#1e8449;
+  --hl-yellow:rgba(255,235,59,.55); --hl-pink:rgba(255,128,171,.45);
+  --hl-green:rgba(118,255,3,.35); --hl-blue:rgba(64,196,255,.35);
+  --sticky:#fff59d; --desk:#e9e4d8;
+  --hand:'Kalam','Patrick Hand','Comic Sans MS','Segoe Print','Bradley Hand',cursive;
+  --title:'Caveat','Kalam','Segoe Print','Bradley Hand',cursive;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){ --desk:#2b2b2b; }
+}
+:root[data-theme="dark"]{ --desk:#2b2b2b; }
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--desk);font-family:var(--hand);color:var(--ink);}
+
+/* ===== Notebook sheet ===== */
+.page{
+  position:relative; max-width:860px; margin:24px auto; padding:var(--line) 28px calc(var(--line)*2) 84px;
+  background:
+    linear-gradient(90deg,transparent 64px,var(--margin) 64px,var(--margin) 66px,transparent 66px),
+    repeating-linear-gradient(var(--paper) 0,var(--paper) calc(var(--line) - 1px),var(--rule) calc(var(--line) - 1px),var(--rule) var(--line));
+  background-color:var(--paper);
+  box-shadow:0 2px 6px rgba(0,0,0,.15),0 12px 28px rgba(0,0,0,.12);
+  font-size:20px; line-height:var(--line);
+}
+.page::before{ /* punched holes */
+  content:""; position:absolute; left:22px; top:0; bottom:0; width:18px;
+  background:radial-gradient(circle,var(--desk) 7px,transparent 8px) 0 40px/18px 220px repeat-y;
+}
+@media (max-width:600px){
+  .page{margin:0;padding-left:52px;padding-right:16px;font-size:18px;
+    background:
+      linear-gradient(90deg,transparent 40px,var(--margin) 40px,var(--margin) 42px,transparent 42px),
+      repeating-linear-gradient(var(--paper) 0,var(--paper) calc(var(--line) - 1px),var(--rule) calc(var(--line) - 1px),var(--rule) var(--line));
+    background-color:var(--paper);}
+  .page::before{left:10px;width:16px}
+}
+
+/* ===== Text (all margins are multiples of --line so text sits on the rules) ===== */
+.date{position:absolute;top:0;right:24px;font-family:var(--title);font-size:22px;color:var(--ink2);line-height:var(--line)}
+h1{font-family:var(--title);font-weight:700;color:var(--ink2);font-size:46px;line-height:calc(var(--line)*2);margin:0;transform:rotate(-1deg)}
+h1 .u{background:linear-gradient(transparent 62%,var(--hl-yellow) 62%,var(--hl-yellow) 92%,transparent 92%)}
+h2{font-family:var(--title);font-weight:700;color:var(--red);font-size:32px;line-height:calc(var(--line)*1.5);margin:calc(var(--line)*.5) 0 0}
+h2::before{content:"➤ ";font-size:22px}
+p,li{margin:0}
+ul,ol{margin:0;padding-left:28px}
+ul{list-style:none}
+ul>li::before{content:"–";position:absolute;margin-left:-20px}
+ul>li.star::before{content:"★";color:var(--red)}
+ul>li.arrow::before{content:"→"}
+ul>li.check::before{content:"✓";color:var(--green)}
+.gap{height:var(--line)}
+
+/* ===== Pen effects ===== */
+.hl{background:var(--hl-yellow);padding:0 3px;border-radius:3px 6px 4px 7px}
+.hl.pink{background:var(--hl-pink)} .hl.green{background:var(--hl-green)} .hl.blue{background:var(--hl-blue)}
+.red{color:var(--red)} .green{color:var(--green)} .black{color:var(--ink2)}
+.ul{text-decoration:underline wavy var(--red);text-underline-offset:5px}
+.circ{border:2px solid var(--red);border-radius:50% 45% 55% 48%;padding:0 6px}
+.strike{text-decoration:line-through 2px var(--red)}
+.term{font-weight:700;color:var(--ink2)}
+.box{display:flow-root;border:2.5px solid var(--ink2);border-radius:4px 10px 6px 12px;padding:calc(var(--line)*.5 - 2.5px) 14px;margin:calc(var(--line)*.5) 0;transform:rotate(-.4deg);background:rgba(255,255,255,.35)}
+.box.red{border-color:var(--red)}
+.formula{font-family:var(--title);font-size:28px;text-align:center;color:var(--ink2)}
+
+/* sticky note */
+.sticky{float:right;width:min(250px,42%);margin:0 0 var(--line) 20px;padding:var(--line) 16px;background:var(--sticky);
+  color:#333;transform:rotate(2.2deg);box-shadow:2px 4px 8px rgba(0,0,0,.18);font-size:18px}
+.sticky b{font-family:var(--title);font-size:24px;color:var(--red)}
+@media (max-width:600px){.sticky{float:none;width:auto;margin:var(--line) 0}}
+
+/* margin annotation (lives in the red margin) */
+.side{position:absolute;left:4px;width:58px;text-align:center;font-family:var(--title);font-size:17px;line-height:18px;color:var(--red);transform:rotate(-8deg)}
+@media (max-width:600px){.side{display:none}}
+
+/* two-column notes */
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:0 28px}
+@media (max-width:600px){.cols{grid-template-columns:1fr}}
+
+/* diagrams */
+figure{margin:var(--line) 0;text-align:center}
+figure svg{width:100%;max-width:640px;height:auto;overflow:visible}
+figcaption{font-family:var(--title);font-size:20px;color:var(--ink2)}
+/* phones: keep labels readable — diagram scrolls inside its own box instead of shrinking */
+@media (max-width:600px){figure{overflow-x:auto}figure svg{min-width:520px}}
+.sk{fill:none;stroke:var(--ink2);stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round;filter:url(#rough)}
+.sk.blue{stroke:var(--ink)} .sk.red{stroke:var(--red)} .sk.green{stroke:var(--green)}
+.lbl{font-family:var(--hand);font-size:17px;fill:var(--ink)}
+.lbl.b{font-weight:700;fill:var(--ink2)} .lbl.r{fill:var(--red)} .lbl.g{fill:var(--green)}
+
+/* table */
+.wrap{overflow-x:auto}
+table{border-collapse:collapse;margin:calc(var(--line)*.5) 0;min-width:100%}
+th,td{border:2px solid var(--ink2);padding:0 10px;text-align:left;vertical-align:top}
+th{font-family:var(--title);font-size:24px;color:var(--ink2)}
+
+@media print{body{background:#fff}.page{box-shadow:none;margin:0}.page::before{display:none}}
+
+/* ===== Added for long chapter notes ===== */
+pre.code{font-family:Consolas,'Courier New',monospace;font-size:14px;line-height:var(--line);color:var(--ink);background:rgba(255,255,255,.45);
+  border-left:4px solid var(--red);margin:calc(var(--line)*.5) 0;padding:0 12px;overflow-x:auto;white-space:pre}
+pre.code.ascii{border-left-color:var(--green)}
+code{font-family:Consolas,'Courier New',monospace;font-size:.82em;background:rgba(0,0,0,.06);padding:0 3px;border-radius:3px}
+pre.code code{background:none;padding:0;font-size:inherit}
+.lang{font-family:var(--title);font-size:18px;color:var(--red)}
+h3{font-family:var(--title);font-weight:700;color:var(--ink2);font-size:26px;line-height:var(--line);margin:calc(var(--line)*.5) 0 0}
+h3::before{content:"✎ ";font-size:18px;color:var(--red)}
+.nav{display:flex;justify-content:space-between;gap:12px;font-family:var(--title);font-size:22px;line-height:var(--line)}
+.nav a{color:var(--red);text-decoration:none}
+.nav a:hover{text-decoration:underline wavy}
+.pagebreak{border-top:3px dashed var(--margin);margin:var(--line) 0;text-align:center;font-family:var(--title);color:var(--red);line-height:var(--line)}
+li.todo::before{content:"☐";color:var(--ink2)}
+a{color:var(--ink);text-decoration:underline dotted}
+</style>
+</head>
+<body>
+<!-- One shared hand-drawn wobble filter; give every diagram stroke class="sk" -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <!-- userSpaceOnUse region: a % region collapses to nothing on perfectly straight lines (zero-height bbox) -->
+  <filter id="rough" filterUnits="userSpaceOnUse" x="-500" y="-500" width="3000" height="3000">
+    <feTurbulence type="fractalNoise" baseFrequency="0.03" numOctaves="2" seed="3" result="n"/>
+    <feDisplacementMap in="SourceGraphic" in2="n" scale="3"/>
+  </filter>
+  <marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+    <path d="M1 1 L9 5 L1 9" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+  </marker>
+</defs></svg>
+
+<main class="page">
+  <nav class="nav"><a href="ch02-solid-principles.notes.html">← Ch 2 — SOLID Principles</a><a href="index.notes.html">☰ Contents</a><a href="ch04-uml-and-diagramming.notes.html">Ch 4 — UML &amp; Diagramming →</a></nav>
+  <div class="date">2026-10-10</div>
+  <h1><span class="u">Ch 3 — Design Principles (Cohesion, Coupling, YAGNI, DRY, KISS)</span></h1>
+    <p class="black">Volume 3 — Low-Level Design · <a href="index.md">Contents</a> · ← <a href="ch02-solid-principles.notes.html">Chapter 2 — SOLID Principles</a> · Next → <a href="ch04-uml-and-diagramming.notes.html">Chapter 4 — UML &amp; Diagramming</a></p>
+
+  <p class="black">Chapter 3 — Design Principles (Cohesion, Coupling, YAGNI, DRY, KISS)</p>
+
+  <h2>Concept</h2>
+  <p>Cohesion vs coupling; YAGNI/DRY/KISS as heuristics, and when they conflict.</p>
+  <div class="box"><b>In one sentence:</b> good design keeps things that change together in the same place (high cohesion) and minimizes how much separate places need to know about each other (low coupling) — while DRY, YAGNI, and KISS are rules of thumb that help, but can pull in opposite directions and must be weighed, not obeyed blindly.</div>
+
+  <h3>Mental model — a toolbox with drawers</h3>
+  <p>A well-organized toolbox has one drawer for screwdrivers, one for wrenches (cohesion: related things together). You can take out the screwdriver drawer without disturbing the wrenches (low coupling). A drawer labeled "misc" is low cohesion. A drawer that only opens if two others are open first is high coupling.</p>
+
+  <h3>Cohesion</h3>
+  <p>How strongly the parts of one module belong together.</p>
+  <div class="wrap"><table>
+    <tr><th>Level (worst → best)</th><th>Parts are together because…</th><th>Example</th></tr>
+    <tr><td>Coincidental</td><td>no reason</td><td><code>utils.py</code> with date helpers, a CSV parser, and an email regex</td></tr>
+    <tr><td>Logical</td><td>they're the "same kind" of thing</td><td><code>handlers.py</code> with every HTTP handler of every feature</td></tr>
+    <tr><td>Temporal</td><td>they run at the same time</td><td><code>startup()</code> that inits the DB, loads config, warms caches</td></tr>
+    <tr><td>Communicational</td><td>they use the same data</td><td>functions all operating on the <code>orders</code> table</td></tr>
+    <tr><td><b>Functional</b></td><td>they all contribute to one well-defined job</td><td><code>pricing/</code> computing an order's price, and nothing else</td></tr>
+  </table></div>
+
+  <h3>Coupling</h3>
+  <p>How much one module depends on another's details.</p>
+  <div class="wrap"><table>
+    <tr><th>Level (worst → best)</th><th>Means</th><th>Example</th></tr>
+    <tr><td>Content</td><td>reaches into another module's internals</td><td><code>orders._cache.clear()</code> from outside</td></tr>
+    <tr><td>Common / global</td><td>shares global mutable state</td><td>a module-level <code>CONFIG</code> dict everyone mutates</td></tr>
+    <tr><td>Control</td><td>passes flags that steer the other's logic</td><td><code>render(data, mode=3)</code></td></tr>
+    <tr><td>Stamp</td><td>passes a big structure when a field would do</td><td><code>send_email(user)</code> when it only needs <code>user.email</code></td></tr>
+    <tr><td><b>Data</b></td><td>passes only the simple data needed</td><td><code>send_email(to="a@b.c", subject=…)</code></td></tr>
+    <tr><td><b>Message / interface</b></td><td>talks through a small, stable interface or events</td><td><code>payments.charge(amount)</code>; an <code>OrderPlaced</code> event</td></tr>
+  </table></div>
+
+  <h3>Measuring coupling</h3>
+  <p><i>fan-out</i> (how many modules this one imports) and <i>fan-in</i> (how many import it); Martin's <i>instability</i></p>
+  <p class="formula">I = fan_out / (fan_in + fan_out)</p>
+  <p>(0 = stable, relied upon; 1 = unstable, relies on others). Stable modules should be abstract; dependencies should point toward stability. Cycles between modules are the strongest smell.</p>
+
+  <aside class="sticky"><b>Exam tip!</b><br>Instability I = fan-out / (fan-in + fan-out). 0 = stable, 1 = unstable. Depend toward stability.</aside>
+  <h3>The heuristics</h3>
+  <div class="wrap"><table>
+    <tr><th>Heuristic</th><th>Says</th><th>Protects against</th><th>Over-applied, it causes</th></tr>
+    <tr><td><b>DRY</b> — Don't Repeat Yourself</td><td>every piece of <i>knowledge</i> has one authoritative place</td><td>inconsistent copies of a rule (tax rate in 4 places)</td><td>"shared" helpers that couple unrelated features; flag-laden functions</td></tr>
+    <tr><td><b>YAGNI</b> — You Aren't Gonna Need It</td><td>don't build for imagined futures</td><td>speculative generality: plugin systems with one plugin, unused parameters</td><td>refusing obvious, cheap design for known needs</td></tr>
+    <tr><td><b>KISS</b> — Keep It Simple</td><td>the simplest thing that works</td><td>cleverness, needless layers and indirection</td><td>oversimplifying a truly complex domain</td></tr>
+  </table></div>
+
+  <h3>When DRY hurts</h3>
+  <p>DRY is about <i>knowledge</i>, not <i>text</i>. Two snippets that look the same but represent different decisions ("a user's display name" vs "an invoice's legal name") will change for different reasons. Merging them couples two features: a change for one breaks the other, and the shared function grows flags. Rule of three: tolerate duplication until the third occurrence <i>and</i> you're sure it's the same concept. "Duplication is far cheaper than the wrong abstraction" (Sandi Metz).</p>
+
+  <div class="pagebreak">~ page 2 ~</div>
+
+  <h2>Prereqs</h2>
+  <ul>
+    <li><a href="ch02-solid-principles.notes.html">Chapter 2 — SOLID Principles</a></li>
+  </ul>
+
+  <h2>Diagram</h2>
+  <h3>A cohesion/coupling matrix with the target zone</h3>
+<pre class="code ascii"><code>                      COUPLING  →
+                 low                          high
+            ┌──────────────────────┬──────────────────────┐
+     high   │  ✅ TARGET            │  "distributed        │
+            │  focused modules,     │   monolith": each     │
+ COHESION   │  small interfaces     │   part is neat but    │
+            │                       │   everything calls    │
+            │                       │   everything          │
+            ├──────────────────────┼──────────────────────┤
+     low    │  "junk drawers":      │  ❌ BIG BALL OF MUD    │
+            │  utils.py, misc/,     │  change anything,     │
+            │  isolated but random  │  break everything     │
+            └──────────────────────┴──────────────────────┘</code></pre>
+
+  <h3>A tangled module graph vs a clean one</h3>
+  <figure>
+    <svg viewBox="0 0 660 350" role="img" aria-label="Before: orders and billing depend on each other, orders to users, users to billing, billing and users to utils, utils to orders. After: orders, billing and users all depend on shared-kernel (Money, Ids); orders reaches billing only through an OrderPlaced event">
+      <rect class="sk" x="5" y="10" width="315" height="335" rx="10" style="stroke-dasharray:8 6"/>
+      <text class="lbl r" x="162" y="40" text-anchor="middle" style="font-size:15px">before: cycles, fan-out everywhere</text>
+      <rect class="sk red" x="30" y="130" width="100" height="40" rx="8"/>
+      <text class="lbl b" x="80" y="156" text-anchor="middle">orders</text>
+      <rect class="sk red" x="200" y="130" width="100" height="40" rx="8"/>
+      <text class="lbl b" x="250" y="156" text-anchor="middle">billing</text>
+      <rect class="sk red" x="30" y="270" width="100" height="40" rx="8"/>
+      <text class="lbl b" x="80" y="296" text-anchor="middle">users</text>
+      <rect class="sk red" x="200" y="270" width="100" height="40" rx="8"/>
+      <text class="lbl b" x="250" y="296" text-anchor="middle">utils</text>
+      <path class="sk blue" d="M130 140 C 155 128, 175 128, 198 140" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M200 162 C 175 172, 155 172, 132 162" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M70 170 L70 268" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M125 270 C 150 230, 190 200, 215 172" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M205 270 C 180 235, 150 205, 122 172" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M265 170 L265 268" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M130 290 L198 290" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <rect class="sk" x="340" y="10" width="315" height="335" rx="10" style="stroke-dasharray:8 6"/>
+      <text class="lbl g" x="497" y="32" text-anchor="middle" style="font-size:15px">after: dependencies point</text>
+      <text class="lbl g" x="497" y="52" text-anchor="middle" style="font-size:15px">toward stable cores</text>
+      <rect class="sk green" x="350" y="130" width="85" height="40" rx="8"/>
+      <text class="lbl b" x="392" y="156" text-anchor="middle">orders</text>
+      <rect class="sk green" x="460" y="130" width="85" height="40" rx="8"/>
+      <text class="lbl b" x="502" y="156" text-anchor="middle">billing</text>
+      <rect class="sk green" x="570" y="130" width="80" height="40" rx="8"/>
+      <text class="lbl b" x="610" y="156" text-anchor="middle">users</text>
+      <rect class="sk green" x="420" y="270" width="170" height="56" rx="8"/>
+      <text class="lbl b" x="505" y="294" text-anchor="middle" style="font-size:15px">shared-kernel:</text>
+      <text class="lbl b" x="505" y="315" text-anchor="middle" style="font-size:15px">Money, Ids</text>
+      <path class="sk blue" d="M392 172 L438 268" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M502 172 L505 268" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M610 172 L578 268" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk red" d="M392 128 C 392 95, 502 95, 502 126" style="color:var(--red);stroke-dasharray:6 5" marker-end="url(#arr)"/>
+      <text class="lbl r" x="447" y="88" text-anchor="middle" style="font-size:15px">OrderPlaced event</text>
+    </svg>
+    <figcaption>Fig 1: left = before (cycles, fan-out everywhere); right = after (dependencies point toward stable cores; dashed = event)</figcaption>
+  </figure>
+
+  <h3>DRY that increased coupling</h3>
+<pre class="code ascii"><code> before: two similar functions            "DRY" merge                          undone
+ format_user_name(u)     ─┐               format_name(x, kind, legal=False,     format_user_name(u)
+ format_invoice_name(i)  ─┴─► merged ─►     uppercase=False, strip_suffix=…)   format_invoice_name(i)
+                                            └ every change for invoices          each changes for its
+                                              risks breaking user profiles       own reason again</code></pre>
+
+  <div class="pagebreak">~ page 3 ~</div>
+
+  <h2>Example</h2>
+  <span class="lang">python</span>
+<pre class="code"><code># The "DRY" mistake: one shared helper for two concepts
+def format_name(first, last, *, legal=False, company=None, uppercase=False):
+    if legal and company:                  # invoices need the company's legal name
+        name = company
+    else:
+        name = f"{first} {last}".strip()   # profiles show a friendly name
+    return name.upper() if uppercase else name
+
+# Callers:
+#   profile:  format_name(u.first, u.last)
+#   invoice:  format_name(c.first, c.last, legal=True, company=c.legal_name, uppercase=True)
+# A new invoice rule ("append the VAT number") now risks the profile page too.
+
+# Undo it: duplication of TEXT is fine when the KNOWLEDGE differs
+def display_name(user) -&gt; str:
+    return f"{user.first} {user.last}".strip()
+
+def invoice_party_name(customer) -&gt; str:
+    base = customer.legal_name or f"{customer.first} {customer.last}"
+    return f"{base.upper()} (VAT {customer.vat_id})" if customer.vat_id else base.upper()
+
+# Real DRY: one authoritative place for a real rule
+VAT_RATE = {"DE": 0.19, "FR": 0.20, "NL": 0.21}   # used by pricing, invoices, and reports</code></pre>
+
+  <span class="lang">python</span>
+<pre class="code"><code># Measure coupling: fan-in, fan-out, instability, and cycles from imports
+import ast, pathlib, collections
+
+def import_graph(pkg_dir: str, pkg: str):
+    graph = collections.defaultdict(set)
+    for f in pathlib.Path(pkg_dir).rglob("*.py"):
+        mod = f.relative_to(pkg_dir).with_suffix("").parts[0]
+        for node in ast.walk(ast.parse(f.read_text(encoding="utf-8"))):
+            names = []
+            if isinstance(node, ast.ImportFrom) and node.module:
+                names = [node.module]
+            elif isinstance(node, ast.Import):
+                names = [a.name for a in node.names]
+            for n in names:
+                parts = n.split(".")
+                if parts[0] == pkg and len(parts) &gt; 1 and parts[1] != mod:
+                    graph[mod].add(parts[1])
+    return graph
+
+def report(graph):
+    mods = set(graph) | {d for ds in graph.values() for d in ds}
+    fan_in = {m: sum(m in ds for ds in graph.values()) for m in mods}
+    for m in sorted(mods):
+        out = len(graph.get(m, ()))
+        inst = out / (out + fan_in[m]) if out + fan_in[m] else 0
+        print(f"{m:12s} fan-in {fan_in[m]}  fan-out {out}  instability {inst:.2f}")
+    cycles = [(a, b) for a in graph for b in graph[a] if a in graph.get(b, ())]
+    print("cycles:", sorted({tuple(sorted(c)) for c in cycles}))</code></pre>
+
+  <h2>Exercises</h2>
+  <ol style="list-style:none;padding-left:0">
+    <li>1. Measure coupling of two modules and reduce it.
+      <div class="box"><b>Solution</b> Run the import-graph script (or <code>pydeps</code>, <code>import-linter</code>). Suppose <code>orders</code> and <code>billing</code> import each other (a cycle). Fix: move shared value types (<code>Money</code>, <code>OrderId</code>) into a small shared kernel both depend on; let <code>billing</code> react to an <code>OrderPlaced</code> event instead of <code>orders</code> calling billing internals; pass data, not whole objects. Re-measure: the cycle is gone and fan-out drops. Add an <code>import-linter</code> contract to CI so it can't return.</div></li>
+    <li>2. Find a premature abstraction (YAGNI violation) and remove it.
+      <div class="box"><b>Solution</b> Typical finds: an <code>AbstractStorageFactoryProvider</code> with one implementation; a plugin registry with one plugin; config options nobody sets; a generic <code>Repository[T]</code> used by one type. Inline it: replace the interface + factory with the concrete class and delete unused parameters. Keep a seam only where a test double or a second implementation actually exists. The code gets shorter and easier to follow; re-add the abstraction when the second real case arrives.</div></li>
+    <li>3. Two teams' services both define <code>normalize_phone()</code>. Should you share it?
+      <div class="box"><b>Solution</b> If it represents the same business rule (for example E.164 normalization required by your SMS provider), put it in one library or service with an owner. If each team normalizes for different reasons (display vs fraud checks), keep separate copies: they will diverge, and a shared version would couple two release cycles.</div></li>
+  </ol>
+
+  <div class="pagebreak">~ page 4 ~</div>
+
+  <h2>Mini project</h2>
+  <p><b>Refactor a tangled module into high-cohesion, low-coupling components.</b></p>
+  <figure>
+    <svg viewBox="0 0 660 575" role="img" aria-label="Flow: messy shop package, measure import graph, target structure, move functions and break cycles, import-linter contracts in CI, re-measure with before/after graphs">
+      <rect class="sk red" x="100" y="15" width="460" height="82" rx="12"/>
+      <text class="lbl b" x="330" y="41" text-anchor="middle">shop/ with utils.py, helpers.py,</text>
+      <text class="lbl b" x="330" y="63" text-anchor="middle">cycles between orders ↔ billing ↔ users,</text>
+      <text class="lbl b" x="330" y="85" text-anchor="middle">global CONFIG dict</text>
+      <path class="sk blue" d="M330 97 C 336 108, 324 114, 330 123" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <rect class="sk" x="100" y="125" width="460" height="64" rx="12"/>
+      <text class="lbl b" x="330" y="151" text-anchor="middle">measure: import graph,</text>
+      <text class="lbl b" x="330" y="173" text-anchor="middle">cycles, fan-in/out, instability</text>
+      <path class="sk blue" d="M330 189 C 336 200, 324 206, 330 215" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <rect class="sk" x="100" y="217" width="460" height="64" rx="12"/>
+      <text class="lbl b" x="330" y="243" text-anchor="middle">target structure:</text>
+      <text class="lbl b" x="330" y="265" text-anchor="middle">orders/ billing/ users/ + shared_kernel/</text>
+      <path class="sk blue" d="M330 281 C 336 292, 324 298, 330 307" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <rect class="sk" x="100" y="309" width="460" height="82" rx="12"/>
+      <text class="lbl b" x="330" y="335" text-anchor="middle">move functions to where they belong,</text>
+      <text class="lbl b" x="330" y="357" text-anchor="middle">break cycles with events or interfaces,</text>
+      <text class="lbl b" x="330" y="379" text-anchor="middle">replace globals with injected config</text>
+      <path class="sk blue" d="M330 391 C 336 402, 324 408, 330 417" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <rect class="sk" x="100" y="419" width="460" height="64" rx="12"/>
+      <text class="lbl b" x="330" y="445" text-anchor="middle">import-linter contracts in CI:</text>
+      <text class="lbl b" x="330" y="467" text-anchor="middle">no cycles, no layer violations</text>
+      <path class="sk blue" d="M330 483 C 336 494, 324 500, 330 509" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <rect class="sk green" x="100" y="511" width="460" height="44" rx="12"/>
+      <text class="lbl g" x="330" y="539" text-anchor="middle">re-measure + before/after graphs</text>
+    </svg>
+    <figcaption>Fig 2: from a messy package to guarded, measured modules</figcaption>
+  </figure>
+
+  <h3>Steps</h3>
+  <ol style="list-style:none;padding-left:0">
+    <li>1. Start from a messy package (write one, or take an old project).</li>
+    <li>2. Generate the import graph and a table of fan-in, fan-out, and instability; list the cycles.</li>
+    <li>3. Dissolve <code>utils.py</code>: move each function next to the feature that uses it (or into a small shared kernel if truly shared).</li>
+    <li>4. Break each cycle using a shared kernel, dependency inversion, or events.</li>
+    <li>5. Replace global mutable config with injected settings.</li>
+    <li>6. Add <code>import-linter</code> contracts (forbidden imports, layers, independence) to CI; re-measure and draw the before/after graphs.</li>
+  </ol>
+  <div class="box"><b>Done when:</b> there are no import cycles, no junk-drawer modules, and a CI contract fails if someone reintroduces a forbidden dependency.</div>
+
+  <h2>Open source</h2>
+  <ul>
+    <li><a href="https://github.com/rust-lang/rust"><code>rust-lang/rust</code></a> (module boundaries) — the standard library's split into <code>core</code> (no allocation, no OS), <code>alloc</code>, and <code>std</code> is a large-scale lesson in low coupling: each layer depends only on the one below.</li>
+    <li><a href="https://github.com/golang/go"><code>golang/go</code></a> (packages) — Go forbids import cycles at compile time and encourages small, focused packages (<code>net/http</code>, <code>encoding/json</code>); <code>internal/</code> directories enforce boundaries. See also <code>seddonym/import-linter</code> for Python.</li>
+  </ul>
+
+  <h2>Interview</h2>
+  <ol style="list-style:none;padding-left:0">
+    <li>1. <b>"DRY vs coupling — when does DRY hurt?"</b>
+      <div class="box"><b>Answer</b> When it merges code that looks alike but represents different knowledge that changes for different reasons. The shared abstraction couples the callers: a change for one risks the others, and the function accumulates flags and special cases. DRY is about a single source of truth for a <i>rule</i>, not about deleting similar lines. Wait for the rule of three and confirm it's the same concept; otherwise prefer duplication to the wrong abstraction.</div></li>
+    <li>2. <b>"What's cohesion?"</b>
+      <div class="box"><b>Answer</b> The degree to which the elements of a module belong together — ideally they all serve one clearly defined purpose (functional cohesion), so a change to that purpose is local and the module is easy to name, understand, and test. Low cohesion shows up as "utils" or "manager" modules, "and" in the description, and unrelated changes landing in the same file. High cohesion inside modules plus low coupling between them is the core goal of modular design.</div></li>
+  </ol>
+
+  <h2>Checklist</h2>
+  <ul>
+    <li class="todo">keep related things together</li>
+    <li class="todo">reduce cross-module fan-in/fan-out</li>
+    <li class="todo">say no to speculative generality</li>
+  </ul>
+  <div class="gap"></div>
+  <p class="black"><a href="index.md">Contents</a> · ← <a href="ch02-solid-principles.notes.html">Chapter 2 — SOLID Principles</a> · Next → <a href="ch04-uml-and-diagramming.notes.html">Chapter 4 — UML &amp; Diagramming</a></p>
+
+  <nav class="nav"><a href="ch02-solid-principles.notes.html">← Ch 2 — SOLID Principles</a><a href="index.notes.html">☰ Contents</a><a href="ch04-uml-and-diagramming.notes.html">Ch 4 — UML &amp; Diagramming →</a></nav>
+</main>
+</body>
+</html>

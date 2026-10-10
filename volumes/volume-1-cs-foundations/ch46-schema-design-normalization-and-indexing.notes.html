@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ch 46 — Schema Design, Normalization &amp; Indexing — Notes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;700&family=Kalam:wght@400;700&family=Patrick+Hand&display=swap" rel="stylesheet">
+<style>
+/* ===== Page tokens ===== */
+:root{
+  --line:32px;                 /* ruled-line spacing; every vertical size is a multiple */
+  --paper:#fdfbf4; --rule:#c9dcef; --margin:#e8a0a0;
+  --ink:#1f3a93;               /* blue pen (body) */
+  --ink2:#222;                 /* black pen (headings) */
+  --red:#c0392b; --green:#1e8449;
+  --hl-yellow:rgba(255,235,59,.55); --hl-pink:rgba(255,128,171,.45);
+  --hl-green:rgba(118,255,3,.35); --hl-blue:rgba(64,196,255,.35);
+  --sticky:#fff59d; --desk:#e9e4d8;
+  --hand:'Kalam','Patrick Hand','Comic Sans MS','Segoe Print','Bradley Hand',cursive;
+  --title:'Caveat','Kalam','Segoe Print','Bradley Hand',cursive;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){ --desk:#2b2b2b; }
+}
+:root[data-theme="dark"]{ --desk:#2b2b2b; }
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--desk);font-family:var(--hand);color:var(--ink);}
+
+/* ===== Notebook sheet ===== */
+.page{
+  position:relative; max-width:860px; margin:24px auto; padding:var(--line) 28px calc(var(--line)*2) 84px;
+  background:
+    linear-gradient(90deg,transparent 64px,var(--margin) 64px,var(--margin) 66px,transparent 66px),
+    repeating-linear-gradient(var(--paper) 0,var(--paper) calc(var(--line) - 1px),var(--rule) calc(var(--line) - 1px),var(--rule) var(--line));
+  background-color:var(--paper);
+  box-shadow:0 2px 6px rgba(0,0,0,.15),0 12px 28px rgba(0,0,0,.12);
+  font-size:20px; line-height:var(--line);
+}
+.page::before{ /* punched holes */
+  content:""; position:absolute; left:22px; top:0; bottom:0; width:18px;
+  background:radial-gradient(circle,var(--desk) 7px,transparent 8px) 0 40px/18px 220px repeat-y;
+}
+@media (max-width:600px){
+  .page{margin:0;padding-left:52px;padding-right:16px;font-size:18px;
+    background:
+      linear-gradient(90deg,transparent 40px,var(--margin) 40px,var(--margin) 42px,transparent 42px),
+      repeating-linear-gradient(var(--paper) 0,var(--paper) calc(var(--line) - 1px),var(--rule) calc(var(--line) - 1px),var(--rule) var(--line));
+    background-color:var(--paper);}
+  .page::before{left:10px;width:16px}
+}
+
+/* ===== Text (all margins are multiples of --line so text sits on the rules) ===== */
+.date{position:absolute;top:0;right:24px;font-family:var(--title);font-size:22px;color:var(--ink2);line-height:var(--line)}
+h1{font-family:var(--title);font-weight:700;color:var(--ink2);font-size:46px;line-height:calc(var(--line)*2);margin:0;transform:rotate(-1deg)}
+h1 .u{background:linear-gradient(transparent 62%,var(--hl-yellow) 62%,var(--hl-yellow) 92%,transparent 92%)}
+h2{font-family:var(--title);font-weight:700;color:var(--red);font-size:32px;line-height:calc(var(--line)*1.5);margin:calc(var(--line)*.5) 0 0}
+h2::before{content:"➤ ";font-size:22px}
+p,li{margin:0}
+ul,ol{margin:0;padding-left:28px}
+ul{list-style:none}
+ul>li::before{content:"–";position:absolute;margin-left:-20px}
+ul>li.star::before{content:"★";color:var(--red)}
+ul>li.arrow::before{content:"→"}
+ul>li.check::before{content:"✓";color:var(--green)}
+.gap{height:var(--line)}
+
+/* ===== Pen effects ===== */
+.hl{background:var(--hl-yellow);padding:0 3px;border-radius:3px 6px 4px 7px}
+.hl.pink{background:var(--hl-pink)} .hl.green{background:var(--hl-green)} .hl.blue{background:var(--hl-blue)}
+.red{color:var(--red)} .green{color:var(--green)} .black{color:var(--ink2)}
+.ul{text-decoration:underline wavy var(--red);text-underline-offset:5px}
+.circ{border:2px solid var(--red);border-radius:50% 45% 55% 48%;padding:0 6px}
+.strike{text-decoration:line-through 2px var(--red)}
+.term{font-weight:700;color:var(--ink2)}
+.box{display:flow-root;border:2.5px solid var(--ink2);border-radius:4px 10px 6px 12px;padding:calc(var(--line)*.5 - 2.5px) 14px;margin:calc(var(--line)*.5) 0;transform:rotate(-.4deg);background:rgba(255,255,255,.35)}
+.box.red{border-color:var(--red)}
+.formula{font-family:var(--title);font-size:28px;text-align:center;color:var(--ink2)}
+
+/* sticky note */
+.sticky{float:right;width:min(250px,42%);margin:0 0 var(--line) 20px;padding:var(--line) 16px;background:var(--sticky);
+  color:#333;transform:rotate(2.2deg);box-shadow:2px 4px 8px rgba(0,0,0,.18);font-size:18px}
+.sticky b{font-family:var(--title);font-size:24px;color:var(--red)}
+@media (max-width:600px){.sticky{float:none;width:auto;margin:var(--line) 0}}
+
+/* margin annotation (lives in the red margin) */
+.side{position:absolute;left:4px;width:58px;text-align:center;font-family:var(--title);font-size:17px;line-height:18px;color:var(--red);transform:rotate(-8deg)}
+@media (max-width:600px){.side{display:none}}
+
+/* two-column notes */
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:0 28px}
+@media (max-width:600px){.cols{grid-template-columns:1fr}}
+
+/* diagrams */
+figure{margin:var(--line) 0;text-align:center}
+figure svg{width:100%;max-width:640px;height:auto;overflow:visible}
+figcaption{font-family:var(--title);font-size:20px;color:var(--ink2)}
+/* phones: keep labels readable — diagram scrolls inside its own box instead of shrinking */
+@media (max-width:600px){figure{overflow-x:auto}figure svg{min-width:520px}}
+.sk{fill:none;stroke:var(--ink2);stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round;filter:url(#rough)}
+.sk.blue{stroke:var(--ink)} .sk.red{stroke:var(--red)} .sk.green{stroke:var(--green)}
+.lbl{font-family:var(--hand);font-size:17px;fill:var(--ink)}
+.lbl.b{font-weight:700;fill:var(--ink2)} .lbl.r{fill:var(--red)} .lbl.g{fill:var(--green)}
+
+/* table */
+.wrap{overflow-x:auto}
+table{border-collapse:collapse;margin:calc(var(--line)*.5) 0;min-width:100%}
+th,td{border:2px solid var(--ink2);padding:0 10px;text-align:left;vertical-align:top}
+th{font-family:var(--title);font-size:24px;color:var(--ink2)}
+
+@media print{body{background:#fff}.page{box-shadow:none;margin:0}.page::before{display:none}}
+
+/* ===== Added for long chapter notes ===== */
+pre.code{font-family:Consolas,'Courier New',monospace;font-size:14px;line-height:var(--line);color:var(--ink);background:rgba(255,255,255,.45);
+  border-left:4px solid var(--red);margin:calc(var(--line)*.5) 0;padding:0 12px;overflow-x:auto;white-space:pre}
+pre.code.ascii{border-left-color:var(--green)}
+code{font-family:Consolas,'Courier New',monospace;font-size:.82em;background:rgba(0,0,0,.06);padding:0 3px;border-radius:3px}
+pre.code code{background:none;padding:0;font-size:inherit}
+.lang{font-family:var(--title);font-size:18px;color:var(--red)}
+h3{font-family:var(--title);font-weight:700;color:var(--ink2);font-size:26px;line-height:var(--line);margin:calc(var(--line)*.5) 0 0}
+h3::before{content:"✎ ";font-size:18px;color:var(--red)}
+.nav{display:flex;justify-content:space-between;gap:12px;font-family:var(--title);font-size:22px;line-height:var(--line)}
+.nav a{color:var(--red);text-decoration:none}
+.nav a:hover{text-decoration:underline wavy}
+.pagebreak{border-top:3px dashed var(--margin);margin:var(--line) 0;text-align:center;font-family:var(--title);color:var(--red);line-height:var(--line)}
+li.todo::before{content:"☐";color:var(--ink2)}
+a{color:var(--ink);text-decoration:underline dotted}
+</style>
+</head>
+<body>
+<!-- One shared hand-drawn wobble filter; give every diagram stroke class="sk" -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <!-- userSpaceOnUse region: a % region collapses to nothing on perfectly straight lines (zero-height bbox) -->
+  <filter id="rough" filterUnits="userSpaceOnUse" x="-500" y="-500" width="3000" height="3000">
+    <feTurbulence type="fractalNoise" baseFrequency="0.03" numOctaves="2" seed="3" result="n"/>
+    <feDisplacementMap in="SourceGraphic" in2="n" scale="3"/>
+  </filter>
+  <marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+    <path d="M1 1 L9 5 L1 9" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+  </marker>
+</defs></svg>
+
+<main class="page">
+  <nav class="nav"><a href="ch45-sql-and-the-relational-model.notes.html">← Ch 45 — SQL &amp; the Relational Model</a><a href="index.notes.html">☰ Contents</a><a href="ch47-acid-transactions-and-isolation.notes.html">Ch 47 — ACID, Transactions &amp; Isolation →</a></nav>
+  <div class="date">2026-10-10</div>
+  <h1><span class="u">Ch 46 — Schema Design, Normalization &amp; Indexing</span></h1>
+  <p class="black">Volume 1 — Computer Science Foundations · <a href="index.md">Contents</a> · ← <a href="ch45-sql-and-the-relational-model.notes.html">Chapter 45 — SQL &amp; the Relational Model</a> · Next → <a href="ch47-acid-transactions-and-isolation.notes.html">Chapter 47 — ACID, Transactions &amp; Isolation</a></p>
+  <h2>Concept</h2>
+  <p>Normal forms, denormalization trade-offs, B-tree indexes, composite indexes, and query planning (EXPLAIN).</p>
+  <div class="box"><b>In one sentence:</b> normalization stores each fact exactly once so it can't contradict itself, denormalization deliberately copies facts to make reads faster, and indexes are sorted side-structures that let the database jump to rows instead of scanning them — and <code>EXPLAIN</code> shows you which path the planner chose.</div>
+  <div class="box red"><b>Mental model — a library.</b> Normalization: each author's biography is written once, in the author file, not photocopied into every book. An index is the card catalog, sorted by author then title: you flip straight to "Tolkien" instead of walking every shelf. A composite index is like a phone book sorted by (last name, first name): it helps you find "Smith, John" or all Smiths, but not everyone named John.</div>
+  <h3>Normal forms (the practical three)</h3>
+  <div class="wrap"><table>
+<tr><th>Form</th><th>Rule</th><th>Violation example</th><th>Fix</th></tr>
+<tr><td><b>1NF</b></td><td>atomic values; no repeating groups</td><td><code>phones = "555-1, 555-2"</code></td><td>a <code>phones</code> table, one row per phone</td></tr>
+<tr><td><b>2NF</b></td><td>1NF + every non-key column depends on the <i>whole</i> key</td><td>in <code>order_items(order_id, product_id, product_name)</code>, the name depends only on <code>product_id</code></td><td>move the name to <code>products</code></td></tr>
+<tr><td><b>3NF</b></td><td>2NF + no column depends on another non-key column</td><td><code>orders(…, customer_id, customer_city)</code> — the city depends on the customer</td><td>move the city to <code>customers</code></td></tr>
+</table></div>
+  <p>"Every non-key attribute depends on the key, the whole key, and nothing but the key."</p>
+  <p><b>Anomalies normalization prevents:</b> <i>update</i> (change a city in one row but not the others), <i>insert</i> (can't add a product until someone orders it), <i>delete</i> (deleting the last order erases the customer).</p>
+  <p><b>When to denormalize</b> — on purpose, after measuring:</p>
+  <ul>
+<li>read-heavy paths where joins dominate (feeds, dashboards) → materialized views, summary tables, cached counters;</li>
+<li>analytics (star schemas);</li>
+<li>document stores where you read the whole aggregate at once.</li>
+</ul>
+  <p>Cost: you must keep the copies in sync (triggers, application logic, events), and they can drift.</p>
+  <h3>B-tree indexes</h3>
+  <div class="wrap"><table>
+<tr><th>Fact</th><th>Consequence</th></tr>
+<tr><td>Sorted, balanced tree; each node is a page (8 KB in Postgres) with hundreds of keys</td><td>lookups take ~3–4 page reads even for 100M rows</td></tr>
+<tr><td>Leaves are linked in order</td><td>range scans and <code>ORDER BY</code> can use the index</td></tr>
+<tr><td>Every index is updated on every write</td><td>more indexes → slower writes and more storage</td></tr>
+<tr><td>Low-selectivity columns (<code>is_active</code> true/false)</td><td>rarely helpful alone; consider a partial index</td></tr>
+</table></div>
+  <p><b>Composite index order matters — the leftmost-prefix rule.</b> An index on <code>(user_id, created_at)</code> supports:</p>
+  <div class="wrap"><table>
+<tr><th>Query</th><th>Uses the index?</th></tr>
+<tr><td><code>WHERE user_id = 7</code></td><td>✓</td></tr>
+<tr><td><code>WHERE user_id = 7 AND created_at &gt; '2024-01-01'</code></td><td>✓ (equality first, then range)</td></tr>
+<tr><td><code>WHERE user_id = 7 ORDER BY created_at DESC LIMIT 20</code></td><td>✓ no sort needed</td></tr>
+<tr><td><code>WHERE created_at &gt; '2024-01-01'</code></td><td>✗ (can't skip the first column; mostly)</td></tr>
+</table></div>
+  <p>Rule of thumb: equality columns first, then the range or sort column. A <b>covering index</b> (<code>INCLUDE (total_cents)</code>) lets the query be answered from the index alone (an <i>index-only scan</i>).</p>
+  <h2>Prereqs</h2>
+  <ul>
+<li><a href="ch45-sql-and-the-relational-model.notes.html">Chapter 45 — SQL &amp; the Relational Model</a></li>
+</ul>
+  <div class="pagebreak">~ page 2 ~</div>
+  <h2>Diagram</h2>
+  <h3>A B-tree index over <code>orders.user_id</code></h3>
+  <figure>
+<svg viewBox="0 0 660 380" role="img" aria-label="B+tree: root [400 | 800]; internal nodes [100 | 250], [500 | 650], [900 | 1200]; leaves 1..99 with row pointers, 100..249, 250..399, 400..499 and more, linked left to right by next pointers">
+
+<path class="sk blue" d="M306 58 L234 122" style="color:var(--ink);" marker-end="url(#arr)"/>
+<path class="sk blue" d="M344 58 L416 122" style="color:var(--ink);" marker-end="url(#arr)"/>
+<path class="sk blue" d="M371 58 L539 122" style="color:var(--ink);" marker-end="url(#arr)"/>
+<path class="sk blue" d="M196 158 L120 228" style="color:var(--ink);" marker-end="url(#arr)"/>
+<path class="sk blue" d="M215 158 L215 238" style="color:var(--ink);" marker-end="url(#arr)"/>
+<path class="sk blue" d="M230 158 L297 238" style="color:var(--ink);" marker-end="url(#arr)"/>
+<path class="sk blue" d="M434 158 L427 238" style="color:var(--ink);" marker-end="url(#arr)"/>
+<path class="sk blue" d="M447 158 L508 247" style="color:var(--ink);" marker-end="url(#arr)"/>
+<path class="sk red" d="M80 302 L80 335 L215 335 L215 292" style="color:var(--red);stroke-dasharray:7 5;" marker-end="url(#arr)"/>
+<path class="sk red" d="M215 292 L215 335 L320 335 L320 292" style="color:var(--red);stroke-dasharray:7 5;" marker-end="url(#arr)"/>
+<path class="sk red" d="M320 292 L320 335 L425 335 L425 292" style="color:var(--red);stroke-dasharray:7 5;" marker-end="url(#arr)"/>
+<rect class="sk" x="236" y="22" width="178" height="35" rx="10"/>
+<text class="lbl b" x="325" y="47" text-anchor="middle" style="font-size:14px">root: [ 400 ∣ 800 ]</text>
+<rect class="sk" x="150" y="122" width="130" height="35" rx="10"/>
+<text class="lbl b" x="215" y="147" text-anchor="middle" style="font-size:14px">[ 100 ∣ 250 ]</text>
+<rect class="sk" x="370" y="122" width="130" height="35" rx="10"/>
+<text class="lbl b" x="435" y="147" text-anchor="middle" style="font-size:14px">[ 500 ∣ 650 ]</text>
+<rect class="sk" x="516" y="122" width="138" height="35" rx="10"/>
+<text class="lbl b" x="585" y="147" text-anchor="middle" style="font-size:14px">[ 900 ∣ 1200 ]</text>
+<rect class="sk green" x="11" y="228" width="138" height="74" rx="10"/>
+<text class="lbl g" x="80" y="252" text-anchor="middle" style="font-size:14px">leaf:</text>
+<text class="lbl g" x="80" y="272" text-anchor="middle" style="font-size:14px">1…99</text>
+<text class="lbl g" x="80" y="291" text-anchor="middle" style="font-size:14px">→ row pointers</text>
+<rect class="sk green" x="174" y="238" width="82" height="55" rx="10"/>
+<text class="lbl g" x="215" y="262" text-anchor="middle" style="font-size:14px">leaf:</text>
+<text class="lbl g" x="215" y="281" text-anchor="middle" style="font-size:14px">100…249</text>
+<rect class="sk green" x="279" y="238" width="82" height="55" rx="10"/>
+<text class="lbl g" x="320" y="262" text-anchor="middle" style="font-size:14px">leaf:</text>
+<text class="lbl g" x="320" y="281" text-anchor="middle" style="font-size:14px">250…399</text>
+<rect class="sk green" x="384" y="238" width="82" height="55" rx="10"/>
+<text class="lbl g" x="425" y="262" text-anchor="middle" style="font-size:14px">leaf:</text>
+<text class="lbl g" x="425" y="281" text-anchor="middle" style="font-size:14px">400…499</text>
+<rect class="sk green" x="503" y="247" width="34" height="35" rx="10"/>
+<text class="lbl g" x="520" y="272" text-anchor="middle" style="font-size:14px">…</text>
+<rect x="126" y="341" width="42" height="22" rx="4" style="fill:#fdfbf4;opacity:.92;stroke:none"/>
+<text class="lbl r" x="148" y="356" text-anchor="middle" style="font-size:15px">next</text>
+<rect x="246" y="341" width="42" height="22" rx="4" style="fill:#fdfbf4;opacity:.92;stroke:none"/>
+<text class="lbl r" x="268" y="356" text-anchor="middle" style="font-size:15px">next</text>
+<rect x="351" y="341" width="42" height="22" rx="4" style="fill:#fdfbf4;opacity:.92;stroke:none"/>
+<text class="lbl r" x="372" y="356" text-anchor="middle" style="font-size:15px">next</text>
+
+</svg>
+<figcaption>Fig 1: a B+tree: sorted keys in internal nodes, leaves chained by next pointers</figcaption>
+</figure>
+  <p><code>WHERE user_id = 300</code>: root → A → leaf 250…399 → heap row. Three hops, not a million.</p>
+  <h3>Composite index <code>(user_id, created_at)</code> — how entries are sorted</h3>
+  <pre class="code ascii"><code> (5, 2024-01-02)
+ (5, 2024-03-09)
+ (7, 2023-12-30)   ┐
+ (7, 2024-02-14)   │ WHERE user_id = 7 ORDER BY created_at: one contiguous slice, already sorted
+ (7, 2024-05-01)   ┘
+ (9, 2024-01-15)
+ created_at alone is scattered across every user_id → the index doesn't help</code></pre>
+  <h3>A query plan tree from EXPLAIN</h3>
+  <figure>
+<svg viewBox="0 0 660 310" role="img" aria-label="query plan: Limit (rows=20) over Nested Loop; Nested Loop reads orders via Index Scan on orders_user_created_idx with Index Cond user_id = 7, rows=20, 0.05 ms, and products via Index Scan on products_pkey, rows=1 per loop">
+
+<path class="sk blue" d="M330 53 L330 97" style="color:var(--ink);" marker-end="url(#arr)"/>
+<path class="sk blue" d="M306 133 L232 188" style="color:var(--ink);" marker-end="url(#arr)"/>
+<path class="sk blue" d="M355 133 L448 198" style="color:var(--ink);" marker-end="url(#arr)"/>
+<rect class="sk" x="257" y="17" width="146" height="35" rx="10"/>
+<text class="lbl b" x="330" y="42" text-anchor="middle" style="font-size:14px">Limit (rows=20)</text>
+<rect class="sk" x="273" y="97" width="114" height="35" rx="10"/>
+<text class="lbl b" x="330" y="122" text-anchor="middle" style="font-size:14px">Nested Loop</text>
+<rect class="sk green" x="65" y="188" width="210" height="93" rx="10"/>
+<text class="lbl g" x="170" y="213" text-anchor="middle" style="font-size:14px">Index Scan using</text>
+<text class="lbl g" x="170" y="232" text-anchor="middle" style="font-size:14px">orders_user_created_idx</text>
+<text class="lbl g" x="170" y="251" text-anchor="middle" style="font-size:14px">Index Cond: user_id = 7</text>
+<text class="lbl g" x="170" y="271" text-anchor="middle" style="font-size:14px">rows=20, 0.05 ms</text>
+<rect class="sk green" x="423" y="198" width="154" height="74" rx="10"/>
+<text class="lbl g" x="500" y="222" text-anchor="middle" style="font-size:14px">Index Scan using</text>
+<text class="lbl g" x="500" y="242" text-anchor="middle" style="font-size:14px">products_pkey</text>
+<text class="lbl g" x="500" y="261" text-anchor="middle" style="font-size:14px">rows=1 per loop</text>
+
+</svg>
+<figcaption>Fig 2: reading a plan: Limit over a Nested Loop of two index scans</figcaption>
+</figure>
+  <div class="pagebreak">~ page 3 ~</div>
+  <h2>Example</h2>
+  <span class="lang">sql</span>
+<pre class="code"><code>-- Before: a sequential scan over 5M rows
+EXPLAIN ANALYZE
+SELECT id, total_cents FROM orders
+WHERE user_id = 7 ORDER BY created_at DESC LIMIT 20;
+--  Limit  (actual time=812.4..812.4 rows=20)
+--    -&gt;  Sort  (Sort Key: created_at DESC)  Sort Method: top-N heapsort
+--          -&gt;  Seq Scan on orders  (rows=5000000)  Filter: (user_id = 7)  Rows Removed by Filter: 4999871
+
+CREATE INDEX CONCURRENTLY orders_user_created_idx
+  ON orders (user_id, created_at DESC) INCLUDE (total_cents);
+
+-- After: an index-only scan, no sort
+--  Limit  (actual time=0.041..0.052 rows=20)
+--    -&gt;  Index Only Scan using orders_user_created_idx on orders  (rows=20)
+--          Index Cond: (user_id = 7)   Heap Fetches: 0
+
+-- Partial index: only the rows you actually query
+CREATE INDEX orders_pending_idx ON orders (created_at) WHERE status = 'pending';
+
+-- Expression index for case-insensitive lookups
+CREATE UNIQUE INDEX users_email_lower_idx ON users (lower(email));
+SELECT * FROM users WHERE lower(email) = lower('Ada@Example.com');</code></pre>
+  <p><b>Reading EXPLAIN</b> — look for: <code>Seq Scan</code> on big tables with selective filters; big gaps between <i>estimated</i> and <i>actual</i> rows (stale statistics → <code>ANALYZE</code>); <code>Sort</code> or <code>Hash</code> spilling to disk; <code>Nested Loop</code> with many loops over a scan; <code>Rows Removed by Filter</code> in the millions.</p>
+  <h2>Exercises</h2>
+  <ol style="list-style:none;padding-left:0">
+<li>1. Normalize a table to 3NF.
+<pre class="code ascii"><code>orders_flat(order_id, order_date, customer_id, customer_name, customer_city,
+            product_id, product_name, unit_price, quantity)</code></pre>
+<div class="box"><b>Solution</b>
+<p><code>customers(customer_id PK, name, city)</code>; <code>products(product_id PK, name, current_price)</code>; <code>orders(order_id PK, order_date, customer_id FK)</code>; <code>order_items(order_id FK, product_id FK, quantity, unit_price, PK(order_id, product_id))</code>. Keep <code>unit_price</code> on the order item on purpose: it records the price at purchase time, which is a different fact from the current price.</p></div></li>
+<li>2. Design the optimal index for a given query and verify with EXPLAIN.
+<p><code>SELECT * FROM tickets WHERE tenant_id = $1 AND status = 'open' ORDER BY priority DESC, created_at LIMIT 50;</code></p>
+<div class="box"><b>Solution</b>
+<p><code>CREATE INDEX ON tickets (tenant_id, status, priority DESC, created_at);</code> — equality columns first, then the sort columns in the same order and direction. EXPLAIN should show an Index Scan with no Sort node. If <code>status = 'open'</code> is a small fraction, a partial index <code>WHERE status = 'open'</code> on <code>(tenant_id, priority DESC, created_at)</code> is smaller and faster.</p></div></li>
+<li>3. You add an index but the planner still does a <code>Seq Scan</code>. Give three reasons.
+<div class="box"><b>Solution</b>
+<p>(1) The query returns a large fraction of the table, so a sequential scan really is cheaper. (2) Statistics are stale — run <code>ANALYZE</code>. (3) The predicate can't use the index: a function on the column (<code>WHERE date(created_at) = …</code>), a type mismatch, a leading wildcard <code>LIKE '%x'</code>, or a column that isn't the leftmost in the composite index.</p></div></li>
+</ol>
+  <div class="pagebreak">~ page 4 ~</div>
+  <h2>Mini project</h2>
+  <h3>Add indexes to a slow schema and measure the query-speed change.</h3>
+  <figure>
+<svg viewBox="0 0 660 350" role="img" aria-label="generate 5M orders and 500k users, run 5 slow queries, take a baseline with EXPLAIN (ANALYZE, BUFFERS), design indexes, measure again, measure write cost, and write report.md">
+
+<path class="sk blue" d="M189 50 L216 50" style="color:var(--ink);" marker-end="url(#arr)"/>
+<path class="sk blue" d="M354 50 L413 50" style="color:var(--ink);" marker-end="url(#arr)"/>
+<path class="sk blue" d="M527 87 L522 153" style="color:var(--ink);" marker-end="url(#arr)"/>
+<path class="sk blue" d="M387 180 L349 180" style="color:var(--ink);" marker-end="url(#arr)"/>
+<path class="sk blue" d="M219 198 L143 263" style="color:var(--ink);" marker-end="url(#arr)"/>
+<path class="sk blue" d="M266 198 L379 273" style="color:var(--ink);" marker-end="url(#arr)"/>
+<path class="sk blue" d="M181 300 L263 300" style="color:var(--ink);" marker-end="url(#arr)"/>
+<rect class="sk" x="11" y="23" width="178" height="55" rx="10"/>
+<text class="lbl b" x="100" y="47" text-anchor="middle" style="font-size:14px">generate 5M orders,</text>
+<text class="lbl b" x="100" y="66" text-anchor="middle" style="font-size:14px">500k users (skewed)</text>
+<rect class="sk" x="216" y="32" width="138" height="35" rx="10"/>
+<text class="lbl b" x="285" y="57" text-anchor="middle" style="font-size:14px">5 slow queries</text>
+<rect class="sk" x="413" y="13" width="233" height="74" rx="10"/>
+<text class="lbl b" x="530" y="37" text-anchor="middle" style="font-size:14px">baseline:</text>
+<text class="lbl b" x="530" y="57" text-anchor="middle" style="font-size:14px">EXPLAIN (ANALYZE, BUFFERS)</text>
+<text class="lbl b" x="530" y="76" text-anchor="middle" style="font-size:14px">p50 over 20 runs</text>
+<rect class="sk green" x="387" y="153" width="265" height="55" rx="10"/>
+<text class="lbl g" x="520" y="177" text-anchor="middle" style="font-size:14px">design indexes</text>
+<text class="lbl g" x="520" y="196" text-anchor="middle" style="font-size:14px">(composite, partial, covering)</text>
+<rect class="sk" x="131" y="162" width="218" height="35" rx="10"/>
+<text class="lbl b" x="240" y="187" text-anchor="middle" style="font-size:14px">after: same measurements</text>
+<rect class="sk red" x="19" y="263" width="162" height="74" rx="10"/>
+<text class="lbl r" x="100" y="287" text-anchor="middle" style="font-size:14px">write cost:</text>
+<text class="lbl r" x="100" y="307" text-anchor="middle" style="font-size:14px">insert throughput</text>
+<text class="lbl r" x="100" y="326" text-anchor="middle" style="font-size:14px">before/after</text>
+<rect class="sk green" x="263" y="273" width="313" height="55" rx="10"/>
+<text class="lbl g" x="420" y="297" text-anchor="middle" style="font-size:14px">report.md: table of</text>
+<text class="lbl g" x="420" y="316" text-anchor="middle" style="font-size:14px">time, plan type, buffers, index size</text>
+
+</svg>
+<figcaption>Fig 3: mini project: baseline, design indexes, re-measure, report</figcaption>
+</figure>
+  <h3>Steps</h3>
+  <ol style="list-style:none;padding-left:0">
+<li>1. Load realistic, skewed data with <code>generate_series</code> in Postgres (a few heavy users, many light ones).</li>
+<li>2. Pick 5 queries: a lookup by email, a user's recent orders, pending orders older than 1 day, revenue by day for a month, and search by name prefix.</li>
+<li>3. Record <code>EXPLAIN (ANALYZE, BUFFERS)</code> and median time for each.</li>
+<li>4. Add the minimal set of indexes; re-measure; record index sizes (<code>pg_relation_size</code>).</li>
+<li>5. Measure insert throughput before and after to show the write cost.</li>
+</ol>
+  <div class="box"><b>Done when:</b> every query has a before/after row in the report with plan type, time, and buffers, and you can justify each index.</div>
+  <h2>Open source</h2>
+  <ul>
+<li><a href="https://github.com/postgres/postgres"><code>postgres/postgres</code></a> planner — <code>src/backend/optimizer/</code> (the path, cost, and plan modules) and <code>src/backend/access/nbtree/README</code>, a readable description of Postgres's B-tree (Lehman–Yao).</li>
+</ul>
+  <h2>Interview</h2>
+  <ol style="list-style:none;padding-left:0">
+<li>1. <h3>"When to denormalize?"</h3>
+<div class="box"><b>Answer</b>
+<p>When measured read performance matters more than write simplicity, and joins or aggregations are the bottleneck: feeds, dashboards, counters, search documents, analytics star schemas. Do it deliberately — materialized views, summary tables, cached columns — with a clear sync mechanism and ownership. Keep the normalized source of truth when possible.</p></div></li>
+<li>2. <h3>"Why does a composite index order matter?"</h3>
+<div class="box"><b>Answer</b>
+<p>A composite B-tree is sorted by the first column, then the second within it, and so on. It can only be searched efficiently from the left: a condition on a later column alone matches entries scattered across the whole index. Put equality-filtered columns first, then range or sort columns, matching the query's <code>ORDER BY</code> so the sort is free.</p></div></li>
+</ol>
+  <h2>Checklist</h2>
+  <ul>
+<li class="todo">reach 3NF</li>
+<li class="todo">read EXPLAIN</li>
+<li class="todo">index for real query patterns</li>
+</ul>
+  <p class="black"><a href="index.md">Contents</a> · ← <a href="ch45-sql-and-the-relational-model.notes.html">Chapter 45 — SQL &amp; the Relational Model</a> · Next → <a href="ch47-acid-transactions-and-isolation.notes.html">Chapter 47 — ACID, Transactions &amp; Isolation</a></p>
+  <nav class="nav"><a href="ch45-sql-and-the-relational-model.notes.html">← Ch 45 — SQL &amp; the Relational Model</a><a href="index.notes.html">☰ Contents</a><a href="ch47-acid-transactions-and-isolation.notes.html">Ch 47 — ACID, Transactions &amp; Isolation →</a></nav>
+</main>
+</body>
+</html>

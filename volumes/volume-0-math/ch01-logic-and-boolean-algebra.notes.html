@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ch 1 — Logic &amp; Boolean Algebra — Notes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;700&family=Kalam:wght@400;700&family=Patrick+Hand&display=swap" rel="stylesheet">
+<style>
+/* ===== Page tokens ===== */
+:root{
+  --line:32px;                 /* ruled-line spacing; every vertical size is a multiple */
+  --paper:#fdfbf4; --rule:#c9dcef; --margin:#e8a0a0;
+  --ink:#1f3a93;               /* blue pen (body) */
+  --ink2:#222;                 /* black pen (headings) */
+  --red:#c0392b; --green:#1e8449;
+  --hl-yellow:rgba(255,235,59,.55); --hl-pink:rgba(255,128,171,.45);
+  --hl-green:rgba(118,255,3,.35); --hl-blue:rgba(64,196,255,.35);
+  --sticky:#fff59d; --desk:#e9e4d8;
+  --hand:'Kalam','Patrick Hand','Comic Sans MS','Segoe Print','Bradley Hand',cursive;
+  --title:'Caveat','Kalam','Segoe Print','Bradley Hand',cursive;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){ --desk:#2b2b2b; }
+}
+:root[data-theme="dark"]{ --desk:#2b2b2b; }
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--desk);font-family:var(--hand);color:var(--ink);}
+
+/* ===== Notebook sheet ===== */
+.page{
+  position:relative; max-width:860px; margin:24px auto; padding:var(--line) 28px calc(var(--line)*2) 84px;
+  background:
+    linear-gradient(90deg,transparent 64px,var(--margin) 64px,var(--margin) 66px,transparent 66px),
+    repeating-linear-gradient(var(--paper) 0,var(--paper) calc(var(--line) - 1px),var(--rule) calc(var(--line) - 1px),var(--rule) var(--line));
+  background-color:var(--paper);
+  box-shadow:0 2px 6px rgba(0,0,0,.15),0 12px 28px rgba(0,0,0,.12);
+  font-size:20px; line-height:var(--line);
+}
+.page::before{ /* punched holes */
+  content:""; position:absolute; left:22px; top:0; bottom:0; width:18px;
+  background:radial-gradient(circle,var(--desk) 7px,transparent 8px) 0 40px/18px 220px repeat-y;
+}
+@media (max-width:600px){
+  .page{margin:0;padding-left:52px;padding-right:16px;font-size:18px;
+    background:
+      linear-gradient(90deg,transparent 40px,var(--margin) 40px,var(--margin) 42px,transparent 42px),
+      repeating-linear-gradient(var(--paper) 0,var(--paper) calc(var(--line) - 1px),var(--rule) calc(var(--line) - 1px),var(--rule) var(--line));
+    background-color:var(--paper);}
+  .page::before{left:10px;width:16px}
+}
+
+/* ===== Text (all margins are multiples of --line so text sits on the rules) ===== */
+.date{position:absolute;top:0;right:24px;font-family:var(--title);font-size:22px;color:var(--ink2);line-height:var(--line)}
+h1{font-family:var(--title);font-weight:700;color:var(--ink2);font-size:46px;line-height:calc(var(--line)*2);margin:0;transform:rotate(-1deg)}
+h1 .u{background:linear-gradient(transparent 62%,var(--hl-yellow) 62%,var(--hl-yellow) 92%,transparent 92%)}
+h2{font-family:var(--title);font-weight:700;color:var(--red);font-size:32px;line-height:calc(var(--line)*1.5);margin:calc(var(--line)*.5) 0 0}
+h2::before{content:"➤ ";font-size:22px}
+p,li{margin:0}
+ul,ol{margin:0;padding-left:28px}
+ul{list-style:none}
+ul>li::before{content:"–";position:absolute;margin-left:-20px}
+ul>li.star::before{content:"★";color:var(--red)}
+ul>li.arrow::before{content:"→"}
+ul>li.check::before{content:"✓";color:var(--green)}
+.gap{height:var(--line)}
+
+/* ===== Pen effects ===== */
+.hl{background:var(--hl-yellow);padding:0 3px;border-radius:3px 6px 4px 7px}
+.hl.pink{background:var(--hl-pink)} .hl.green{background:var(--hl-green)} .hl.blue{background:var(--hl-blue)}
+.red{color:var(--red)} .green{color:var(--green)} .black{color:var(--ink2)}
+.ul{text-decoration:underline wavy var(--red);text-underline-offset:5px}
+.circ{border:2px solid var(--red);border-radius:50% 45% 55% 48%;padding:0 6px}
+.strike{text-decoration:line-through 2px var(--red)}
+.term{font-weight:700;color:var(--ink2)}
+.box{display:flow-root;border:2.5px solid var(--ink2);border-radius:4px 10px 6px 12px;padding:calc(var(--line)*.5 - 2.5px) 14px;margin:calc(var(--line)*.5) 0;transform:rotate(-.4deg);background:rgba(255,255,255,.35)}
+.box.red{border-color:var(--red)}
+.formula{font-family:var(--title);font-size:28px;text-align:center;color:var(--ink2)}
+
+/* sticky note */
+.sticky{float:right;width:min(250px,42%);margin:0 0 var(--line) 20px;padding:var(--line) 16px;background:var(--sticky);
+  color:#333;transform:rotate(2.2deg);box-shadow:2px 4px 8px rgba(0,0,0,.18);font-size:18px}
+.sticky b{font-family:var(--title);font-size:24px;color:var(--red)}
+@media (max-width:600px){.sticky{float:none;width:auto;margin:var(--line) 0}}
+
+/* margin annotation (lives in the red margin) */
+.side{position:absolute;left:4px;width:58px;text-align:center;font-family:var(--title);font-size:17px;line-height:18px;color:var(--red);transform:rotate(-8deg)}
+@media (max-width:600px){.side{display:none}}
+
+/* two-column notes */
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:0 28px}
+@media (max-width:600px){.cols{grid-template-columns:1fr}}
+
+/* diagrams */
+figure{margin:var(--line) 0;text-align:center}
+figure svg{width:100%;max-width:640px;height:auto;overflow:visible}
+figcaption{font-family:var(--title);font-size:20px;color:var(--ink2)}
+/* phones: keep labels readable — diagram scrolls inside its own box instead of shrinking */
+@media (max-width:600px){figure{overflow-x:auto}figure svg{min-width:520px}}
+.sk{fill:none;stroke:var(--ink2);stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round;filter:url(#rough)}
+.sk.blue{stroke:var(--ink)} .sk.red{stroke:var(--red)} .sk.green{stroke:var(--green)}
+.lbl{font-family:var(--hand);font-size:17px;fill:var(--ink)}
+.lbl.b{font-weight:700;fill:var(--ink2)} .lbl.r{fill:var(--red)} .lbl.g{fill:var(--green)}
+
+/* table */
+.wrap{overflow-x:auto}
+table{border-collapse:collapse;margin:calc(var(--line)*.5) 0;min-width:100%}
+th,td{border:2px solid var(--ink2);padding:0 10px;text-align:left;vertical-align:top}
+th{font-family:var(--title);font-size:24px;color:var(--ink2)}
+
+@media print{body{background:#fff}.page{box-shadow:none;margin:0}.page::before{display:none}}
+
+/* ===== Added for long chapter notes ===== */
+pre.code{font-family:Consolas,'Courier New',monospace;font-size:14px;line-height:var(--line);color:var(--ink);background:rgba(255,255,255,.45);
+  border-left:4px solid var(--red);margin:calc(var(--line)*.5) 0;padding:0 12px;overflow-x:auto;white-space:pre}
+pre.code.ascii{border-left-color:var(--green)}
+code{font-family:Consolas,'Courier New',monospace;font-size:.82em;background:rgba(0,0,0,.06);padding:0 3px;border-radius:3px}
+pre.code code{background:none;padding:0;font-size:inherit}
+.lang{font-family:var(--title);font-size:18px;color:var(--red)}
+h3{font-family:var(--title);font-weight:700;color:var(--ink2);font-size:26px;line-height:var(--line);margin:calc(var(--line)*.5) 0 0}
+h3::before{content:"✎ ";font-size:18px;color:var(--red)}
+.nav{display:flex;justify-content:space-between;gap:12px;font-family:var(--title);font-size:22px;line-height:var(--line)}
+.nav a{color:var(--red);text-decoration:none}
+.nav a:hover{text-decoration:underline wavy}
+.pagebreak{border-top:3px dashed var(--margin);margin:var(--line) 0;text-align:center;font-family:var(--title);color:var(--red);line-height:var(--line)}
+li.todo::before{content:"☐";color:var(--ink2)}
+a{color:var(--ink);text-decoration:underline dotted}
+</style>
+</head>
+<body>
+<!-- One shared hand-drawn wobble filter; give every diagram stroke class="sk" -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <!-- userSpaceOnUse region: a % region collapses to nothing on perfectly straight lines (zero-height bbox) -->
+  <filter id="rough" filterUnits="userSpaceOnUse" x="-500" y="-500" width="3000" height="3000">
+    <feTurbulence type="fractalNoise" baseFrequency="0.03" numOctaves="2" seed="3" result="n"/>
+    <feDisplacementMap in="SourceGraphic" in2="n" scale="3"/>
+  </filter>
+  <marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+    <path d="M1 1 L9 5 L1 9" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+  </marker>
+</defs></svg>
+
+<main class="page">
+  <nav class="nav"><span></span><a href="index.notes.html">☰ Contents</a><a href="ch02-sets-relations-and-functions.notes.html">Ch 2 — Sets, Relations &amp; Functions →</a></nav>
+  <div class="date">2026-10-10</div>
+  <h1><span class="u">Ch 1 — Logic &amp; Boolean Algebra</span></h1>
+  <p class="black">Volume 0 — Math &amp; Mental Models · <a href="index.md">Contents</a> · Next → <a href="ch02-sets-relations-and-functions.notes.html">Chapter 2 — Sets, Relations &amp; Functions</a></p>
+
+  <p class="black">Chapter 1 — Logic &amp; Boolean Algebra</p>
+
+  <h2>Concept</h2>
+  <p>Propositional logic, truth tables, De Morgan's laws; how boolean algebra maps to <code>and</code>/<code>or</code>/<code>not</code> and bitwise operators.</p>
+  <div class="box"><b>In one sentence:</b> every <code>if</code> you write is a small logic formula, and boolean algebra is the set of rules that lets you rewrite that formula without changing what it means.</div>
+
+  <h3>Mental model — light switches</h3>
+  <p>A proposition is a switch that is either ON (<code>True</code>, <code>1</code>) or OFF (<code>False</code>, <code>0</code>). Operators wire switches together:</p>
+  <ul>
+    <li class="star"><span class="term">AND</span> — two switches in <i>series</i>: the bulb lights only if both are ON.</li>
+    <li class="star"><span class="term">OR</span> — two switches in <i>parallel</i>: the bulb lights if either is ON.</li>
+    <li class="star"><span class="term">NOT</span> — an inverter: flips ON to OFF.</li>
+  </ul>
+
+  <figure>
+    <svg viewBox="0 0 640 220" role="img" aria-label="AND is two switches in series, OR is two switches in parallel, each lighting a bulb">
+      <text class="lbl b" x="170" y="28" text-anchor="middle">AND (series)</text>
+      <path class="sk" d="M30 110 L80 110"/>
+      <rect class="sk" x="80" y="92" width="50" height="36" rx="6"/>
+      <text class="lbl b" x="105" y="116" text-anchor="middle">A</text>
+      <path class="sk" d="M130 110 L170 110"/>
+      <rect class="sk" x="170" y="92" width="50" height="36" rx="6"/>
+      <text class="lbl b" x="195" y="116" text-anchor="middle">B</text>
+      <path class="sk" d="M220 110 L268 110"/>
+      <circle class="sk red" cx="290" cy="110" r="22"/>
+      <path class="sk red" d="M277 97 L303 123 M303 97 L277 123"/>
+      <text class="lbl r" x="290" y="158" text-anchor="middle">bulb</text>
+      <text class="lbl b" x="470" y="28" text-anchor="middle">OR (parallel)</text>
+      <path class="sk" d="M360 110 L400 110"/>
+      <path class="sk" d="M400 60 L400 160"/>
+      <path class="sk" d="M400 60 L430 60"/>
+      <rect class="sk" x="430" y="42" width="50" height="36" rx="6"/>
+      <text class="lbl b" x="455" y="66" text-anchor="middle">A</text>
+      <path class="sk" d="M480 60 L520 60"/>
+      <path class="sk" d="M400 160 L430 160"/>
+      <rect class="sk" x="430" y="142" width="50" height="36" rx="6"/>
+      <text class="lbl b" x="455" y="166" text-anchor="middle">B</text>
+      <path class="sk" d="M480 160 L520 160"/>
+      <path class="sk" d="M520 60 L520 160"/>
+      <path class="sk" d="M520 110 L548 110"/>
+      <circle class="sk red" cx="570" cy="110" r="22"/>
+      <path class="sk red" d="M557 97 L583 123 M583 97 L557 123"/>
+      <text class="lbl r" x="570" y="158" text-anchor="middle">bulb</text>
+    </svg>
+    <figcaption>Fig 1: AND = series, OR = parallel</figcaption>
+  </figure>
+
+  <h3>Key terms</h3>
+  <div class="wrap"><table>
+    <tr><th>Term</th><th>Symbol</th><th>Python (logical)</th><th>Bitwise</th><th>Meaning</th></tr>
+    <tr><td>Conjunction</td><td><code>A ∧ B</code></td><td><code>a and b</code></td><td><code>a &amp; b</code></td><td>both true</td></tr>
+    <tr><td>Disjunction</td><td><code>A ∨ B</code></td><td><code>a or b</code></td><td><code>a | b</code></td><td>at least one true</td></tr>
+    <tr><td>Negation</td><td><code>¬A</code></td><td><code>not a</code></td><td><code>~a</code></td><td>flip</td></tr>
+    <tr><td>Exclusive or</td><td><code>A ⊕ B</code></td><td><code>a != b</code></td><td><code>a ^ b</code></td><td>exactly one true</td></tr>
+    <tr><td>Implication</td><td><code>A → B</code></td><td><code>(not a) or b</code></td><td>—</td><td>"if A then B"; false only when A is true and B is false</td></tr>
+    <tr><td>Equivalence</td><td><code>A ↔ B</code></td><td><code>a == b</code></td><td>—</td><td>same value</td></tr>
+  </table></div>
+
+  <h3>The laws you will actually use</h3>
+  <div class="wrap"><table>
+    <tr><th>Law</th><th>Form</th></tr>
+    <tr><td>De Morgan (1)</td><td><code>¬(A ∧ B) = ¬A ∨ ¬B</code></td></tr>
+    <tr><td>De Morgan (2)</td><td><code>¬(A ∨ B) = ¬A ∧ ¬B</code></td></tr>
+    <tr><td>Double negation</td><td><code>¬¬A = A</code></td></tr>
+    <tr><td>Distributive</td><td><code>A ∧ (B ∨ C) = (A ∧ B) ∨ (A ∧ C)</code></td></tr>
+    <tr><td>Absorption</td><td><code>A ∨ (A ∧ B) = A</code></td></tr>
+    <tr><td>Identity / Annihilator</td><td><code>A ∧ 1 = A</code>, <code>A ∧ 0 = 0</code>, <code>A ∨ 0 = A</code>, <code>A ∨ 1 = 1</code></td></tr>
+    <tr><td>Complement</td><td><code>A ∧ ¬A = 0</code>, <code>A ∨ ¬A = 1</code></td></tr>
+  </table></div>
+
+  <aside class="sticky"><b>Mnemonic!</b><br>De Morgan: break the bar, change the sign (AND ↔ OR).</aside>
+  <h3>Short-circuit evaluation</h3>
+  <p><code>a and b</code> does not evaluate <code>b</code> if <code>a</code> is false; <code>a or b</code> does not evaluate <code>b</code> if <code>a</code> is true. This is why <code>if user and user.is_admin:</code> is safe when <code>user</code> is <code>None</code>.</p>
+  <div class="gap"></div>
+
+  <div class="pagebreak">~ page 2 ~</div>
+
+  <h2>Prereqs</h2>
+  <p>None. This is the first chapter of the guide.</p>
+
+  <h2>Diagram</h2>
+  <h3>Truth tables for the core gates</h3>
+  <div class="wrap"><table>
+    <tr><th>A</th><th>B</th><th>A ∧ B</th><th>A ∨ B</th><th>¬A</th><th>A ⊕ B</th><th>A → B</th></tr>
+    <tr><td>0</td><td>0</td><td>0</td><td>0</td><td>1</td><td>0</td><td>1</td></tr>
+    <tr><td>0</td><td>1</td><td>0</td><td>1</td><td>1</td><td>1</td><td>1</td></tr>
+    <tr><td>1</td><td>0</td><td>0</td><td>1</td><td>0</td><td>1</td><td>0</td></tr>
+    <tr><td>1</td><td>1</td><td>1</td><td>1</td><td>0</td><td>0</td><td>1</td></tr>
+  </table></div>
+
+  <h3>De Morgan as a Venn diagram</h3>
+  <p><code>¬(A ∧ B)</code> is "everything outside the overlap", which is exactly "outside A <b>or</b> outside B".</p>
+  <figure>
+    <svg viewBox="0 0 640 290" role="img" aria-label="Venn diagram: everything is shaded except the overlap of A and B">
+      <text class="lbl b" x="320" y="24" text-anchor="middle">¬(A ∧ B)  =  ¬A ∨ ¬B</text>
+      <rect class="sk" x="40" y="40" width="560" height="190" style="fill:#cfe6c4"/>
+      <circle class="sk" cx="250" cy="135" r="80" style="fill:#cfe6c4"/>
+      <circle class="sk" cx="390" cy="135" r="80" style="fill:#cfe6c4"/>
+      <path class="sk red" d="M320 96 A80 80 0 0 1 320 174 A80 80 0 0 1 320 96 Z" style="fill:#fdfbf4"/>
+      <text class="lbl b" x="205" y="141" text-anchor="middle">A</text>
+      <text class="lbl b" x="435" y="141" text-anchor="middle">B</text>
+      <text class="lbl g" x="545" y="70" text-anchor="middle">shaded = true</text>
+      <path class="sk red" d="M320 178 C 320 210, 320 240, 320 252" style="color:var(--red)" marker-end="url(#arr)"/>
+      <text class="lbl r" x="320" y="278" text-anchor="middle">only unshaded region = overlap A ∧ B</text>
+    </svg>
+    <figcaption>Fig 2: ░ = shaded (true). The only unshaded region is the overlap A ∧ B.</figcaption>
+  </figure>
+<pre class="code ascii"><code>      ¬(A ∧ B)  =  ¬A ∨ ¬B
+ ┌──────────────────────────────┐
+ │ ░░░░░░░░░░░░░░░░░░░░░░░░░░░░ │   ░ = shaded (true)
+ │ ░░░░ ╭───────╮╭───────╮ ░░░░ │
+ │ ░░░░ │ ░░A░░ ││░░B░░░ │ ░░░░ │   The only unshaded
+ │ ░░░░ │ ░░░░░ ╭┼╮░░░░░ │ ░░░░ │   region is the
+ │ ░░░░ │ ░░░░░ │ │░░░░░ │ ░░░░ │   overlap A ∧ B.
+ │ ░░░░ │ ░░░░░ ╰┼╯░░░░░ │ ░░░░ │
+ │ ░░░░ ╰───────╯╰───────╯ ░░░░ │
+ └──────────────────────────────┘</code></pre>
+
+  <h3>Rewriting a condition with De Morgan</h3>
+  <figure>
+    <svg viewBox="0 0 640 330" role="img" aria-label="not (logged_in and verified) becomes (not logged_in) or (not verified) by De Morgan (1), read aloud as either not logged in, or not verified">
+      <rect class="sk" x="90" y="20" width="460" height="56" rx="12"/>
+      <text class="lbl b" x="320" y="54" text-anchor="middle">not (logged_in and verified)</text>
+      <path class="sk blue" d="M320 76 C 330 100, 310 112, 320 138" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <text class="lbl r" x="350" y="112">De Morgan (1)</text>
+      <rect class="sk" x="90" y="140" width="460" height="56" rx="12"/>
+      <text class="lbl b" x="320" y="174" text-anchor="middle">(not logged_in) or (not verified)</text>
+      <path class="sk blue" d="M320 196 C 330 220, 310 232, 320 258" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <text class="lbl r" x="350" y="232">read aloud</text>
+      <rect class="sk green" x="90" y="260" width="460" height="56" rx="12"/>
+      <text class="lbl b" x="320" y="294" text-anchor="middle">'either not logged in, or not verified'</text>
+    </svg>
+    <figcaption>Fig 3: De Morgan (1) applied to a login check</figcaption>
+  </figure>
+
+  <h3>Every gate from NAND</h3>
+  <p>NAND (<code>¬(A ∧ B)</code>) is <i>functionally complete</i>: you can build any circuit from it alone.</p>
+  <figure>
+    <svg viewBox="0 0 640 240" role="img" aria-label="NOT from one NAND with A wired to both inputs; AND from two NANDs">
+      <rect class="sk" x="15" y="30" width="245" height="180" rx="10" style="stroke-dasharray:8 6"/>
+      <text class="lbl b" x="137" y="56" text-anchor="middle">NOT</text>
+      <rect class="sk" x="30" y="105" width="50" height="30" rx="6"/>
+      <text class="lbl b" x="55" y="127" text-anchor="middle">A</text>
+      <path class="sk blue" d="M80 113 C 95 108, 105 108, 114 112" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M80 127 C 95 132, 105 132, 114 128" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <circle class="sk" cx="142" cy="120" r="28"/>
+      <text class="lbl b" x="142" y="126" text-anchor="middle" style="font-size:14px">NAND</text>
+      <path class="sk blue" d="M170 120 L196 120" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <rect class="sk green" x="200" y="105" width="48" height="30" rx="6"/>
+      <text class="lbl g" x="224" y="127" text-anchor="middle">¬A</text>
+      <rect class="sk" x="280" y="30" width="345" height="180" rx="10" style="stroke-dasharray:8 6"/>
+      <text class="lbl b" x="452" y="56" text-anchor="middle">AND</text>
+      <rect class="sk" x="295" y="75" width="50" height="30" rx="6"/>
+      <text class="lbl b" x="320" y="97" text-anchor="middle">A</text>
+      <rect class="sk" x="295" y="140" width="50" height="30" rx="6"/>
+      <text class="lbl b" x="320" y="162" text-anchor="middle">B</text>
+      <path class="sk blue" d="M345 92 C 358 100, 365 106, 372 110" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M345 155 C 358 145, 365 135, 372 130" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <circle class="sk" cx="400" cy="120" r="28"/>
+      <text class="lbl b" x="400" y="126" text-anchor="middle" style="font-size:14px">NAND</text>
+      <path class="sk blue" d="M428 113 C 440 108, 448 108, 456 112" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M428 127 C 440 132, 448 132, 456 128" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <circle class="sk" cx="484" cy="120" r="28"/>
+      <text class="lbl b" x="484" y="126" text-anchor="middle" style="font-size:14px">NAND</text>
+      <path class="sk blue" d="M512 120 L536 120" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <rect class="sk green" x="540" y="105" width="70" height="30" rx="6"/>
+      <text class="lbl g" x="575" y="127" text-anchor="middle">A ∧ B</text>
+    </svg>
+    <figcaption>Fig 4: NOT = NAND(A, A); AND = NAND whose output is fed twice into a second NAND</figcaption>
+  </figure>
+
+  <div class="pagebreak">~ page 3 ~</div>
+
+  <h2>Example</h2>
+  <p>De Morgan, checked by brute force over every input:</p>
+  <span class="lang">python</span>
+<pre class="code"><code>from itertools import product
+
+for a, b in product([False, True], repeat=2):
+    assert (not (a and b)) == (not a or not b)   # De Morgan (1)
+    assert (not (a or b)) == (not a and not b)   # De Morgan (2)
+print("De Morgan holds for all 4 inputs")</code></pre>
+
+  <p>The same laws hold bit-by-bit on integers:</p>
+  <span class="lang">python</span>
+<pre class="code"><code>a, b = 0b1100, 0b1010
+mask = 0b1111                      # keep 4 bits so ~ stays readable
+assert (~(a &amp; b)) &amp; mask == ((~a) | (~b)) &amp; mask
+print(bin(a &amp; b), bin(a | b), bin(a ^ b))   # 0b1000 0b1110 0b110</code></pre>
+
+  <p>The power-of-two trick — <code>x &amp; (x - 1)</code> clears the lowest set bit:</p>
+<pre class="code ascii"><code>x       = 0b0100_0000   (64)
+x - 1   = 0b0011_1111   (63)
+x &amp; x-1 = 0b0000_0000   → 0, so 64 is a power of two
+
+x       = 0b0100_1000   (72)
+x - 1   = 0b0100_0111
+x &amp; x-1 = 0b0100_0000   → not 0, so 72 is not</code></pre>
+  <span class="lang">python</span>
+<pre class="code"><code>def is_power_of_two(x: int) -&gt; bool:
+    return x &gt; 0 and (x &amp; (x - 1)) == 0</code></pre>
+
+  <p>Simplifying a real condition:</p>
+  <span class="lang">python</span>
+<pre class="code"><code># Before: hard to read
+if not (not is_weekend or (is_holiday and not office_open)):
+    ...
+
+# Step 1 — De Morgan (2):  ¬(X ∨ Y) = ¬X ∧ ¬Y
+#   = is_weekend and not (is_holiday and not office_open)
+# Step 2 — De Morgan (1):  ¬(P ∧ ¬Q) = ¬P ∨ Q
+#   = is_weekend and (not is_holiday or office_open)
+if is_weekend and (not is_holiday or office_open):
+    ...</code></pre>
+
+  <h2>Exercises</h2>
+  <ol style="list-style:none;padding-left:0">
+    <li>1. Build the truth table for <code>(A → B) ∧ ¬B</code> and show it forces <code>¬A</code> (modus tollens).
+      <div class="box"><b>Solution</b>
+        <div class="wrap"><table>
+          <tr><th>A</th><th>B</th><th>A → B</th><th>¬B</th><th>(A → B) ∧ ¬B</th></tr>
+          <tr><td>0</td><td>0</td><td>1</td><td>1</td><td><b>1</b></td></tr>
+          <tr><td>0</td><td>1</td><td>1</td><td>0</td><td>0</td></tr>
+          <tr><td>1</td><td>0</td><td>0</td><td>1</td><td>0</td></tr>
+          <tr><td>1</td><td>1</td><td>1</td><td>0</td><td>0</td></tr>
+        </table></div>
+        <p>The formula is true in exactly one row, and in that row <code>A = 0</code>. So whenever it holds, <code>¬A</code> holds.</p>
+      </div></li>
+    <li>2. Simplify <code>¬(¬A ∨ (B ∧ ¬C))</code> to a form using only AND and NOT.
+      <div class="box"><b>Solution</b>
+        <p><code>¬(¬A ∨ (B ∧ ¬C))</code> → De Morgan (2) → <code>A ∧ ¬(B ∧ ¬C)</code>. That already uses only AND and NOT. (Expanded further: <code>A ∧ (¬B ∨ C)</code>.)</p>
+      </div></li>
+    <li>3. Write <code>xor(a, b)</code> in Python using only <code>and</code>, <code>or</code>, <code>not</code>. Verify it against <code>a != b</code> for all inputs.
+      <div class="box"><b>Hint</b> <code>A ⊕ B = (A ∨ B) ∧ ¬(A ∧ B)</code>.</div></li>
+    <li>4. Negate this guard correctly, then simplify: <code>if age &gt;= 18 and (has_id or is_member):</code>.
+      <div class="box"><b>Solution</b> <code>age &lt; 18 or (not has_id and not is_member)</code>.</div></li>
+  </ol>
+
+  <div class="pagebreak">~ page 4 ~</div>
+
+  <h2>Mini project</h2>
+  <p><b>A boolean-expression simplifier that reduces small expressions via De Morgan and distributivity.</b></p>
+  <figure>
+    <svg viewBox="0 0 640 330" role="img" aria-label="Pipeline: input 'not (a and not b)' to Tokenizer to Parser to AST to Rewrite rules to output 'not a or b'; Rewrite rules and the input both feed the Truth-table verifier">
+      <rect class="sk" x="20" y="30" width="190" height="50" rx="10"/>
+      <text class="lbl b" x="115" y="61" text-anchor="middle">'not (a and not b)'</text>
+      <path class="sk blue" d="M210 55 L248 55" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <rect class="sk" x="250" y="30" width="120" height="50" rx="10"/>
+      <text class="lbl b" x="310" y="61" text-anchor="middle">Tokenizer</text>
+      <path class="sk blue" d="M370 55 L418 55" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <rect class="sk" x="420" y="30" width="170" height="50" rx="10"/>
+      <text class="lbl b" x="505" y="61" text-anchor="middle">Parser → AST</text>
+      <path class="sk blue" d="M505 80 C 510 105, 500 125, 505 148" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <rect class="sk" x="420" y="150" width="170" height="50" rx="10"/>
+      <text class="lbl b" x="505" y="181" text-anchor="middle">Rewrite rules</text>
+      <path class="sk blue" d="M420 175 L378 175" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <rect class="sk green" x="215" y="150" width="160" height="50" rx="10"/>
+      <text class="lbl g" x="295" y="181" text-anchor="middle">'not a or b'</text>
+      <path class="sk blue" d="M505 200 C 505 250, 470 285, 432 285" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M115 80 C 105 200, 130 285, 218 285" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <rect class="sk red" x="220" y="260" width="210" height="50" rx="10"/>
+      <text class="lbl r" x="325" y="291" text-anchor="middle">Truth-table verifier</text>
+    </svg>
+    <figcaption>Fig 5: the simplifier pipeline; the verifier compares input and output truth tables</figcaption>
+  </figure>
+
+  <h3>Steps</h3>
+  <ol style="list-style:none;padding-left:0">
+    <li>1. <b>Tokenize</b> strings like <code>not (a and not b)</code> into <code>NOT</code>, <code>LPAREN</code>, <code>VAR(a)</code>, <code>AND</code>, …</li>
+    <li>2. <b>Parse</b> into a tree: <code>Not(And(Var a, Not(Var b)))</code>.</li>
+    <li>3. <b>Rewrite</b> bottom-up with rules: double negation, De Morgan (push <code>not</code> inward), identity/annihilator, absorption.</li>
+    <li>4. <b>Verify</b> every rewrite by comparing truth tables of input and output — never trust a rule you haven't checked.</li>
+    <li>5. <b>Print</b> the result back as a string.</li>
+  </ol>
+  <div class="box"><b>Done when:</b> it reduces <code>not (not a or not b)</code> to <code>a and b</code>, and the verifier passes for 20 random expressions.</div>
+
+  <h2>Open source</h2>
+  <ul>
+    <li><code>sympy/sympy</code> (github.com/sympy/sympy) — the <code>sympy.logic</code> module. Read <code>sympy/logic/boolalg.py</code>: look at <code>to_cnf</code>, <code>to_dnf</code>, and <code>simplify_logic</code> to see these laws applied at scale.</li>
+  </ul>
+  <span class="lang">python</span>
+<pre class="code"><code>from sympy import symbols
+from sympy.logic.boolalg import simplify_logic
+a, b = symbols("a b")
+print(simplify_logic(~(~a | ~b)))   # a &amp; b</code></pre>
+
+  <h2>Interview</h2>
+  <ol style="list-style:none;padding-left:0">
+    <li>1. <b>"Why does <code>x &amp; (x - 1) == 0</code> test for a power of two?"</b>
+      <div class="box"><b>Answer</b> A power of two has exactly one set bit. Subtracting 1 flips that bit to 0 and every bit below it to 1, so the AND is 0. Any other positive number keeps its higher set bit, so the AND is non-zero. Guard for <code>x &gt; 0</code>.</div></li>
+    <li>2. <b>"Prove De Morgan's laws with a truth table."</b>
+      <div class="box"><b>Answer</b> List all 4 rows of (A, B); compute <code>¬(A ∧ B)</code> and <code>¬A ∨ ¬B</code> column by column; the columns match in every row. Same for the OR form.</div></li>
+  </ol>
+
+  <h2>Checklist</h2>
+  <ul>
+    <li class="todo">derive every gate from NAND alone</li>
+    <li class="todo">negate a compound condition correctly</li>
+    <li class="todo">know short-circuit evaluation order</li>
+    <li class="todo">convert <code>if/else</code> chains into boolean expressions</li>
+  </ul>
+  <div class="gap"></div>
+  <p class="black"><a href="index.md">Contents</a> · Next → <a href="ch02-sets-relations-and-functions.notes.html">Chapter 2 — Sets, Relations &amp; Functions</a></p>
+  <nav class="nav"><span></span><a href="index.notes.html">☰ Contents</a><a href="ch02-sets-relations-and-functions.notes.html">Ch 2 — Sets, Relations &amp; Functions →</a></nav>
+</main>
+</body>
+</html>

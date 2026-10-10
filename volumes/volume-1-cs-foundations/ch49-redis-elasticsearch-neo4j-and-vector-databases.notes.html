@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ch 49 — Redis, Elasticsearch, Neo4j &amp; Vector Databases — Notes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;700&family=Kalam:wght@400;700&family=Patrick+Hand&display=swap" rel="stylesheet">
+<style>
+/* ===== Page tokens ===== */
+:root{
+  --line:32px;                 /* ruled-line spacing; every vertical size is a multiple */
+  --paper:#fdfbf4; --rule:#c9dcef; --margin:#e8a0a0;
+  --ink:#1f3a93;               /* blue pen (body) */
+  --ink2:#222;                 /* black pen (headings) */
+  --red:#c0392b; --green:#1e8449;
+  --hl-yellow:rgba(255,235,59,.55); --hl-pink:rgba(255,128,171,.45);
+  --hl-green:rgba(118,255,3,.35); --hl-blue:rgba(64,196,255,.35);
+  --sticky:#fff59d; --desk:#e9e4d8;
+  --hand:'Kalam','Patrick Hand','Comic Sans MS','Segoe Print','Bradley Hand',cursive;
+  --title:'Caveat','Kalam','Segoe Print','Bradley Hand',cursive;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){ --desk:#2b2b2b; }
+}
+:root[data-theme="dark"]{ --desk:#2b2b2b; }
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--desk);font-family:var(--hand);color:var(--ink);}
+
+/* ===== Notebook sheet ===== */
+.page{
+  position:relative; max-width:860px; margin:24px auto; padding:var(--line) 28px calc(var(--line)*2) 84px;
+  background:
+    linear-gradient(90deg,transparent 64px,var(--margin) 64px,var(--margin) 66px,transparent 66px),
+    repeating-linear-gradient(var(--paper) 0,var(--paper) calc(var(--line) - 1px),var(--rule) calc(var(--line) - 1px),var(--rule) var(--line));
+  background-color:var(--paper);
+  box-shadow:0 2px 6px rgba(0,0,0,.15),0 12px 28px rgba(0,0,0,.12);
+  font-size:20px; line-height:var(--line);
+}
+.page::before{ /* punched holes */
+  content:""; position:absolute; left:22px; top:0; bottom:0; width:18px;
+  background:radial-gradient(circle,var(--desk) 7px,transparent 8px) 0 40px/18px 220px repeat-y;
+}
+@media (max-width:600px){
+  .page{margin:0;padding-left:52px;padding-right:16px;font-size:18px;
+    background:
+      linear-gradient(90deg,transparent 40px,var(--margin) 40px,var(--margin) 42px,transparent 42px),
+      repeating-linear-gradient(var(--paper) 0,var(--paper) calc(var(--line) - 1px),var(--rule) calc(var(--line) - 1px),var(--rule) var(--line));
+    background-color:var(--paper);}
+  .page::before{left:10px;width:16px}
+}
+
+/* ===== Text (all margins are multiples of --line so text sits on the rules) ===== */
+.date{position:absolute;top:0;right:24px;font-family:var(--title);font-size:22px;color:var(--ink2);line-height:var(--line)}
+h1{font-family:var(--title);font-weight:700;color:var(--ink2);font-size:46px;line-height:calc(var(--line)*2);margin:0;transform:rotate(-1deg)}
+h1 .u{background:linear-gradient(transparent 62%,var(--hl-yellow) 62%,var(--hl-yellow) 92%,transparent 92%)}
+h2{font-family:var(--title);font-weight:700;color:var(--red);font-size:32px;line-height:calc(var(--line)*1.5);margin:calc(var(--line)*.5) 0 0}
+h2::before{content:"➤ ";font-size:22px}
+p,li{margin:0}
+ul,ol{margin:0;padding-left:28px}
+ul{list-style:none}
+ul>li::before{content:"–";position:absolute;margin-left:-20px}
+ul>li.star::before{content:"★";color:var(--red)}
+ul>li.arrow::before{content:"→"}
+ul>li.check::before{content:"✓";color:var(--green)}
+.gap{height:var(--line)}
+
+/* ===== Pen effects ===== */
+.hl{background:var(--hl-yellow);padding:0 3px;border-radius:3px 6px 4px 7px}
+.hl.pink{background:var(--hl-pink)} .hl.green{background:var(--hl-green)} .hl.blue{background:var(--hl-blue)}
+.red{color:var(--red)} .green{color:var(--green)} .black{color:var(--ink2)}
+.ul{text-decoration:underline wavy var(--red);text-underline-offset:5px}
+.circ{border:2px solid var(--red);border-radius:50% 45% 55% 48%;padding:0 6px}
+.strike{text-decoration:line-through 2px var(--red)}
+.term{font-weight:700;color:var(--ink2)}
+.box{display:flow-root;border:2.5px solid var(--ink2);border-radius:4px 10px 6px 12px;padding:calc(var(--line)*.5 - 2.5px) 14px;margin:calc(var(--line)*.5) 0;transform:rotate(-.4deg);background:rgba(255,255,255,.35)}
+.box.red{border-color:var(--red)}
+.formula{font-family:var(--title);font-size:28px;text-align:center;color:var(--ink2)}
+
+/* sticky note */
+.sticky{float:right;width:min(250px,42%);margin:0 0 var(--line) 20px;padding:var(--line) 16px;background:var(--sticky);
+  color:#333;transform:rotate(2.2deg);box-shadow:2px 4px 8px rgba(0,0,0,.18);font-size:18px}
+.sticky b{font-family:var(--title);font-size:24px;color:var(--red)}
+@media (max-width:600px){.sticky{float:none;width:auto;margin:var(--line) 0}}
+
+/* margin annotation (lives in the red margin) */
+.side{position:absolute;left:4px;width:58px;text-align:center;font-family:var(--title);font-size:17px;line-height:18px;color:var(--red);transform:rotate(-8deg)}
+@media (max-width:600px){.side{display:none}}
+
+/* two-column notes */
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:0 28px}
+@media (max-width:600px){.cols{grid-template-columns:1fr}}
+
+/* diagrams */
+figure{margin:var(--line) 0;text-align:center}
+figure svg{width:100%;max-width:640px;height:auto;overflow:visible}
+figcaption{font-family:var(--title);font-size:20px;color:var(--ink2)}
+/* phones: keep labels readable — diagram scrolls inside its own box instead of shrinking */
+@media (max-width:600px){figure{overflow-x:auto}figure svg{min-width:520px}}
+.sk{fill:none;stroke:var(--ink2);stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round;filter:url(#rough)}
+.sk.blue{stroke:var(--ink)} .sk.red{stroke:var(--red)} .sk.green{stroke:var(--green)}
+.lbl{font-family:var(--hand);font-size:17px;fill:var(--ink)}
+.lbl.b{font-weight:700;fill:var(--ink2)} .lbl.r{fill:var(--red)} .lbl.g{fill:var(--green)}
+
+/* table */
+.wrap{overflow-x:auto}
+table{border-collapse:collapse;margin:calc(var(--line)*.5) 0;min-width:100%}
+th,td{border:2px solid var(--ink2);padding:0 10px;text-align:left;vertical-align:top}
+th{font-family:var(--title);font-size:24px;color:var(--ink2)}
+
+@media print{body{background:#fff}.page{box-shadow:none;margin:0}.page::before{display:none}}
+
+/* ===== Added for long chapter notes ===== */
+pre.code{font-family:Consolas,'Courier New',monospace;font-size:14px;line-height:var(--line);color:var(--ink);background:rgba(255,255,255,.45);
+  border-left:4px solid var(--red);margin:calc(var(--line)*.5) 0;padding:0 12px;overflow-x:auto;white-space:pre}
+pre.code.ascii{border-left-color:var(--green)}
+code{font-family:Consolas,'Courier New',monospace;font-size:.82em;background:rgba(0,0,0,.06);padding:0 3px;border-radius:3px}
+pre.code code{background:none;padding:0;font-size:inherit}
+.lang{font-family:var(--title);font-size:18px;color:var(--red)}
+h3{font-family:var(--title);font-weight:700;color:var(--ink2);font-size:26px;line-height:var(--line);margin:calc(var(--line)*.5) 0 0}
+h3::before{content:"✎ ";font-size:18px;color:var(--red)}
+.nav{display:flex;justify-content:space-between;gap:12px;font-family:var(--title);font-size:22px;line-height:var(--line)}
+.nav a{color:var(--red);text-decoration:none}
+.nav a:hover{text-decoration:underline wavy}
+.pagebreak{border-top:3px dashed var(--margin);margin:var(--line) 0;text-align:center;font-family:var(--title);color:var(--red);line-height:var(--line)}
+li.todo::before{content:"☐";color:var(--ink2)}
+a{color:var(--ink);text-decoration:underline dotted}
+</style>
+</head>
+<body>
+<!-- One shared hand-drawn wobble filter; give every diagram stroke class="sk" -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <!-- userSpaceOnUse region: a % region collapses to nothing on perfectly straight lines (zero-height bbox) -->
+  <filter id="rough" filterUnits="userSpaceOnUse" x="-500" y="-500" width="3000" height="3000">
+    <feTurbulence type="fractalNoise" baseFrequency="0.03" numOctaves="2" seed="3" result="n"/>
+    <feDisplacementMap in="SourceGraphic" in2="n" scale="3"/>
+  </filter>
+  <marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+    <path d="M1 1 L9 5 L1 9" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+  </marker>
+</defs></svg>
+
+<main class="page">
+  <nav class="nav"><a href="ch48-nosql-mongodb-cassandra-and-dynamodb.notes.html">← Ch 48 — NoSQL: MongoDB, Cassandra &amp; DynamoDB</a><a href="index.notes.html">☰ Contents</a><a href="ch50-cap-consistency-and-consensus.notes.html">Ch 50 — CAP, Consistency &amp; Consensus →</a></nav>
+  <div class="date">2026-10-10</div>
+  <h1><span class="u">Ch 49 — Redis, Elasticsearch, Neo4j &amp; Vector Databases</span></h1>
+  <p class="black">Volume 1 — Computer Science Foundations · <a href="index.md">Contents</a> · ← <a href="ch48-nosql-mongodb-cassandra-and-dynamodb.notes.html">Chapter 48 — NoSQL: MongoDB, Cassandra &amp; DynamoDB</a> · Next → <a href="ch50-cap-consistency-and-consensus.notes.html">Chapter 50 — CAP, Consistency &amp; Consensus</a></p>
+  <h2>Concept</h2>
+  <p>Caching (Redis), full-text search (Elasticsearch), graphs (Neo4j), and vector similarity (Qdrant/Milvus).</p>
+  <div class="box"><b>In one sentence:</b> specialized databases each make one kind of question fast — Redis answers "what's the value for this key?" in microseconds from memory, Elasticsearch answers "which documents contain these words, best first?", Neo4j answers "who is connected to whom, through what?", and vector databases answer "what is most <i>similar in meaning</i> to this?".</div>
+  <h3>Mental model.</h3>
+  <ul>
+<li><b>Redis</b> — a whiteboard next to your desk: tiny, instant, and wiped if you're careless.</li>
+<li><b>Elasticsearch</b> — the index at the back of a book: word → pages, with the best pages first.</li>
+<li><b>Neo4j</b> — a string-and-pins detective board: follow the strings.</li>
+<li><b>Vector DB</b> — a map where similar ideas sit close together; you ask "what's near this point?".</li>
+</ul>
+  <h3>Redis data structures</h3>
+  <div class="wrap"><table>
+<tr><th>Type</th><th>Commands</th><th>Use</th></tr>
+<tr><td>String</td><td><code>SET k v EX 60</code>, <code>GET</code>, <code>INCR</code>, <code>SET k v NX</code></td><td>cache, counters, locks</td></tr>
+<tr><td>Hash</td><td><code>HSET user:1 name Ada</code>, <code>HGETALL</code></td><td>objects, sessions</td></tr>
+<tr><td>List</td><td><code>LPUSH</code>, <code>RPOP</code>, <code>BLPOP</code>, <code>LRANGE</code></td><td>queues, recent items</td></tr>
+<tr><td>Set</td><td><code>SADD</code>, <code>SISMEMBER</code>, <code>SINTER</code></td><td>tags, unique visitors, friends in common</td></tr>
+<tr><td>Sorted set</td><td><code>ZADD</code>, <code>ZRANGE … REV</code>, <code>ZINCRBY</code></td><td>leaderboards, rate-limit windows, priority queues</td></tr>
+<tr><td>Stream</td><td><code>XADD</code>, <code>XREADGROUP</code>, <code>XACK</code></td><td>event logs with consumer groups</td></tr>
+<tr><td>HyperLogLog</td><td><code>PFADD</code>, <code>PFCOUNT</code></td><td>approximate unique counts in 12 KB</td></tr>
+<tr><td>Bitmap / geo</td><td><code>SETBIT</code>, <code>GEOSEARCH</code></td><td>flags per user, "stores near me"</td></tr>
+</table></div>
+  <h3>Redis persistence vs pure cache</h3>
+  <div class="wrap"><table>
+<tr><th>Mode</th><th>Durability</th><th>Trade-off</th></tr>
+<tr><td>none</td><td>lost on restart</td><td>fastest; pure cache</td></tr>
+<tr><td>RDB snapshots</td><td>lose up to the last snapshot interval</td><td>compact, fast restarts</td></tr>
+<tr><td>AOF (<code>appendfsync everysec</code>)</td><td>lose ≤ ~1 s</td><td>bigger files; rewrites</td></tr>
+<tr><td>RDB + AOF</td><td>best of both</td><td>common for Redis as a primary store</td></tr>
+<tr><td>Replication + Sentinel/Cluster</td><td>survives node loss</td><td>async replication can still lose recent writes</td></tr>
+</table></div>
+  <h3>Elasticsearch / OpenSearch — the inverted index</h3>
+  <div class="wrap"><table>
+<tr><th>Step</th><th>Does</th></tr>
+<tr><td>Analysis</td><td>tokenize, lowercase, remove stop words, stem ("running" → "run")</td></tr>
+<tr><td>Inverted index</td><td>term → list of doc IDs (+ positions)</td></tr>
+<tr><td>Scoring</td><td><b>BM25</b>: rare terms and short fields count more</td></tr>
+<tr><td>Scaling</td><td>an index is split into shards (with replicas) across nodes</td></tr>
+</table></div>
+  <p><b>Graph databases (Neo4j)</b> — nodes and relationships are stored as direct pointers ("index-free adjacency"), so following a hop costs O(1) instead of a join. The query language is Cypher, with ASCII-art patterns: <code>(a:Person)-[:FRIEND]-&gt;(b)</code>. They win when queries are <i>many hops deep</i> or the path itself is the answer (recommendations, fraud rings, access graphs, knowledge graphs).</p>
+  <p><b>Vector databases</b> — store embeddings (vectors from an ML model, see <a href="../volume-0-math/ch09-linear-algebra-for-ai.notes.html">Vol 0 Ch 9</a>) and find nearest neighbors by cosine or dot-product similarity. Exact search is O(n·d), so they use <b>approximate nearest neighbor (ANN)</b> indexes such as <b>HNSW</b>, a layered "small-world" graph searched greedily, in about O(log n). Examples: Qdrant, Milvus, Weaviate, pgvector (Postgres), and Elasticsearch/OpenSearch k-NN. More in <a href="../volume-5-ai-systems/ch10-vector-databases.notes.html">Vol 5 Ch 10</a>.</p>
+  <h2>Prereqs</h2>
+  <ul>
+<li><a href="ch45-sql-and-the-relational-model.notes.html">Chapter 45 — SQL &amp; the Relational Model</a></li>
+<li><a href="ch48-nosql-mongodb-cassandra-and-dynamodb.notes.html">Chapter 48 — NoSQL: MongoDB, Cassandra &amp; DynamoDB</a></li>
+</ul>
+  <div class="pagebreak">~ page 2 ~</div>
+  <h2>Diagram</h2>
+  <h3>An inverted index</h3>
+  <pre class="code ascii"><code> doc 1: "Red running shoes"          term      → postings (doc: positions)
+ doc 2: "Blue trail running shoe"    blue      → 2:[0]
+ doc 3: "Red dress"                  dress     → 3:[1]
+                                     red       → 1:[0]  3:[0]
+ query "red shoe"                    run       → 1:[1]  2:[2]      (stemmed)
+   red  → {1, 3}                     shoe      → 1:[2]  2:[3]      (stemmed)
+   shoe → {1, 2}                     trail     → 2:[1]
+   BM25 ranks doc 1 first (matches both terms), then 2 and 3</code></pre>
+  <h3>A graph of nodes and edges: friends-of-friends</h3>
+  <figure>
+<svg viewBox="0 0 660 350" role="img" aria-label="graph: Ada is FRIEND of Bob and Cy; Bob is FRIEND of Dee; Cy is FRIEND of Dee and Eve; Dee LIKES the product Kayak; Dee and Eve are highlighted">
+
+<path class="sk blue" d="M82 152 L198 83" style="color:var(--ink);" marker-end="url(#arr)"/>
+<path class="sk blue" d="M82 178 L200 248" style="color:var(--ink);" marker-end="url(#arr)"/>
+<path class="sk blue" d="M243 82 L377 153" style="color:var(--ink);" marker-end="url(#arr)"/>
+<path class="sk blue" d="M240 249 L377 177" style="color:var(--ink);" marker-end="url(#arr)"/>
+<path class="sk blue" d="M243 266 L374 303" style="color:var(--ink);" marker-end="url(#arr)"/>
+<path class="sk blue" d="M428 165 L502 165" style="color:var(--ink);" marker-end="url(#arr)"/>
+<ellipse class="sk" cx="60" cy="165" rx="28" ry="21"/>
+<text class="lbl b" x="60" y="172" text-anchor="middle" style="font-size:15px">Ada</text>
+<ellipse class="sk" cx="220" cy="70" rx="28" ry="21"/>
+<text class="lbl b" x="220" y="77" text-anchor="middle" style="font-size:15px">Bob</text>
+<ellipse class="sk" cx="220" cy="260" rx="24" ry="21"/>
+<text class="lbl b" x="220" y="267" text-anchor="middle" style="font-size:15px">Cy</text>
+<ellipse class="sk" cx="400" cy="165" rx="28" ry="21" style="fill:#fff3b0;"/>
+<text class="lbl b" x="400" y="172" text-anchor="middle" style="font-size:15px">Dee</text>
+<ellipse class="sk" cx="400" cy="310" rx="28" ry="21" style="fill:#fff3b0;"/>
+<text class="lbl b" x="400" y="317" text-anchor="middle" style="font-size:15px">Eve</text>
+<rect class="sk green" x="502" y="147" width="146" height="37" rx="8"/>
+<path class="sk green" d="M511 147 L511 183 M639 147 L639 183"/>
+<text class="lbl g" x="575" y="172" text-anchor="middle" style="font-size:15px">Product: Kayak</text>
+<rect x="110" y="107" width="59" height="22" rx="4" style="fill:#fdfbf4;opacity:.92;stroke:none"/>
+<text class="lbl r" x="140" y="122" text-anchor="middle" style="font-size:15px">FRIEND</text>
+<rect x="112" y="202" width="59" height="22" rx="4" style="fill:#fdfbf4;opacity:.92;stroke:none"/>
+<text class="lbl r" x="141" y="218" text-anchor="middle" style="font-size:15px">FRIEND</text>
+<rect x="280" y="107" width="59" height="22" rx="4" style="fill:#fdfbf4;opacity:.92;stroke:none"/>
+<text class="lbl r" x="310" y="122" text-anchor="middle" style="font-size:15px">FRIEND</text>
+<rect x="279" y="202" width="59" height="22" rx="4" style="fill:#fdfbf4;opacity:.92;stroke:none"/>
+<text class="lbl r" x="309" y="218" text-anchor="middle" style="font-size:15px">FRIEND</text>
+<rect x="279" y="274" width="59" height="22" rx="4" style="fill:#fdfbf4;opacity:.92;stroke:none"/>
+<text class="lbl r" x="308" y="289" text-anchor="middle" style="font-size:15px">FRIEND</text>
+<rect x="440" y="154" width="51" height="22" rx="4" style="fill:#fdfbf4;opacity:.92;stroke:none"/>
+<text class="lbl g" x="465" y="170" text-anchor="middle" style="font-size:15px">LIKES</text>
+
+</svg>
+<figcaption>Fig 1: a small property graph; Dee and Eve (highlighted) are friends-of-friends of Ada</figcaption>
+</figure>
+  <p>Ada's friends-of-friends who aren't already friends: Dee (via Bob and Cy) and Eve.</p>
+  <h3>Vector nearest neighbors and an HNSW graph</h3>
+  <pre class="code ascii"><code> 2-D projection of embeddings                    HNSW layers (search from the top down)
+        "kayak" ●                                layer 2:  ●───────────●            (few long links)
+   "canoe" ●   ● "paddle"                        layer 1:  ●───●───●───●───●
+            ✚ query: "boat for rivers"           layer 0:  ●─●─●─●─●─●─●─●─●─●─●    (all points)
+                                                 greedy: jump far on top, refine below
+        ● "invoice"   ● "tax"
+ nearest 3 by cosine: canoe, kayak, paddle</code></pre>
+  <div class="pagebreak">~ page 3 ~</div>
+  <h2>Example</h2>
+  <span class="lang">bash</span>
+<pre class="code"><code>redis-cli SET "product:42" '{"name":"Kayak"}' EX 60      # cache with a 60 s TTL
+redis-cli TTL product:42                                 # 60
+redis-cli ZINCRBY leaderboard 10 "ada"
+redis-cli ZRANGE leaderboard 0 9 REV WITHSCORES          # top 10
+redis-cli SET lock:job:7 "worker-3" NX PX 30000          # a simple lease lock</code></pre>
+  <span class="lang">python</span>
+<pre class="code"><code>import json, redis
+r = redis.Redis()
+
+def top_products(category):
+    key = f"top:{category}"
+    if (hit := r.get(key)) is not None:
+        return json.loads(hit)
+    rows = db_expensive_query(category)            # ~800 ms
+    r.set(key, json.dumps(rows), ex=300)           # cache-aside, 5 min TTL
+    return rows</code></pre>
+  <span class="lang">json</span>
+<pre class="code"><code>POST /products/_search
+{
+  "query": {
+    "bool": {
+      "must":   { "match": { "title": "red shoe" } },
+      "filter": { "range": { "price_cents": { "lte": 10000 } } }
+    }
+  },
+  "size": 10
+}</code></pre>
+  <span class="lang">cypher</span>
+<pre class="code"><code>// Friends-of-friends Ada doesn't know yet, ranked by mutual friends
+MATCH (me:Person {name: "Ada"})-[:FRIEND]-&gt;(f)-[:FRIEND]-&gt;(fof)
+WHERE fof &lt;&gt; me AND NOT (me)-[:FRIEND]-&gt;(fof)
+RETURN fof.name, count(f) AS mutual
+ORDER BY mutual DESC LIMIT 10;</code></pre>
+  <span class="lang">python</span>
+<pre class="code"><code>from qdrant_client import QdrantClient
+from qdrant_client.models import Distance, VectorParams, PointStruct
+
+q = QdrantClient(":memory:")
+q.create_collection("docs", vectors_config=VectorParams(size=4, distance=Distance.COSINE))
+q.upsert("docs", [PointStruct(id=1, vector=[0.9, 0.1, 0.0, 0.2], payload={"t": "canoe"}),
+                  PointStruct(id=2, vector=[0.0, 0.8, 0.6, 0.0], payload={"t": "invoice"})])
+hits = q.query_points("docs", query=[0.85, 0.15, 0.05, 0.1], limit=1).points
+print(hits[0].payload)                         # {'t': 'canoe'}</code></pre>
+  <h2>Exercises</h2>
+  <ol style="list-style:none;padding-left:0">
+<li>1. Cache an expensive query in Redis with TTL.
+<div class="box"><b>Solution</b>
+<p>See <code>top_products</code> (cache-aside). Add TTL jitter (<code>300 + random(0, 60)</code>) to avoid synchronized expiry, invalidate (<code>DEL</code>) when the underlying data changes, and use a lock (<code>SET NX</code>) so only one caller recomputes a hot key. See <a href="../volume-4-high-level-design/ch05-caching-strategies.notes.html">Vol 4 Ch 5</a>.</p></div></li>
+<li>2. Write a Cypher query for friends-of-friends.
+<div class="box"><b>Solution</b>
+<p>See above. For "within 3 hops": <code>MATCH p = shortestPath((me)-[:FRIEND*..3]-(other)) RETURN other, length(p)</code>. In SQL, the same query needs a recursive CTE with a join per hop, which slows down fast as depth grows.</p></div></li>
+<li>3. Run a vector similarity search.
+<div class="box"><b>Solution</b>
+<p>Embed ~100 sentences with a small model (e.g. <code>sentence-transformers/all-MiniLM-L6-v2</code>, 384 dimensions), upsert them into Qdrant or pgvector, and query with an embedded question. Compare the top-5 with exact brute-force cosine search to measure ANN recall.</p></div></li>
+</ol>
+  <div class="pagebreak">~ page 4 ~</div>
+  <h2>Mini project</h2>
+  <h3>A hybrid search endpoint combining full-text + vector ranking.</h3>
+  <figure>
+<svg viewBox="0 0 660 575" role="img" aria-label="a search query runs BM25 keyword search (top 50) and, after embedding the query, vector search (top 50); Reciprocal Rank Fusion with score = sum of 1/(60 + rank) merges them into a top 10 with explanation, cached in Redis for 5 minutes">
+
+<path class="sk blue" d="M314 53 L175 203" style="color:var(--ink);" marker-end="url(#arr)"/>
+<path class="sk blue" d="M364 53 L486 117" style="color:var(--ink);" marker-end="url(#arr)"/>
+<path class="sk blue" d="M516 153 L505 208" style="color:var(--ink);" marker-end="url(#arr)"/>
+<path class="sk blue" d="M197 257 L283 308" style="color:var(--ink);" marker-end="url(#arr)"/>
+<path class="sk blue" d="M454 262 L376 308" style="color:var(--ink);" marker-end="url(#arr)"/>
+<path class="sk blue" d="M330 362 L330 403" style="color:var(--ink);" marker-end="url(#arr)"/>
+<path class="sk blue" d="M330 457 L330 498" style="color:var(--ink);" marker-end="url(#arr)"/>
+<rect class="sk" x="181" y="17" width="297" height="35" rx="10"/>
+<text class="lbl b" x="330" y="42" text-anchor="middle" style="font-size:14px">GET /search?q=boat for calm rivers</text>
+<rect class="sk" x="447" y="117" width="146" height="35" rx="10"/>
+<text class="lbl b" x="520" y="142" text-anchor="middle" style="font-size:14px">embed the query</text>
+<rect class="sk" x="9" y="203" width="281" height="55" rx="10"/>
+<text class="lbl b" x="150" y="227" text-anchor="middle" style="font-size:14px">BM25 (OpenSearch / Postgres FTS)</text>
+<text class="lbl b" x="150" y="246" text-anchor="middle" style="font-size:14px">top 50 by keywords</text>
+<rect class="sk" x="355" y="208" width="289" height="55" rx="10"/>
+<text class="lbl b" x="500" y="232" text-anchor="middle" style="font-size:14px">vector search (Qdrant / pgvector)</text>
+<text class="lbl b" x="500" y="251" text-anchor="middle" style="font-size:14px">top 50 by meaning</text>
+<rect class="sk green" x="217" y="308" width="226" height="55" rx="10"/>
+<text class="lbl g" x="330" y="332" text-anchor="middle" style="font-size:14px">Reciprocal Rank Fusion</text>
+<text class="lbl g" x="330" y="351" text-anchor="middle" style="font-size:14px">score = Σ 1 / (60 + rank)</text>
+<rect class="sk" x="221" y="403" width="218" height="55" rx="10"/>
+<text class="lbl b" x="330" y="427" text-anchor="middle" style="font-size:14px">top 10 + explanation</text>
+<text class="lbl b" x="330" y="446" text-anchor="middle" style="font-size:14px">(which list, which rank)</text>
+<path class="sk red" d="M176 506 C 176 494, 484 494, 484 506 L484 544 C 484 556, 176 556, 176 544 Z"/>
+<path class="sk red" d="M176 506 C 176 518, 484 518, 484 506"/>
+<text class="lbl r" x="330" y="540" text-anchor="middle" style="font-size:14px">Redis: cache query → results, 5 min</text>
+
+</svg>
+<figcaption>Fig 2: mini project: hybrid search with Reciprocal Rank Fusion</figcaption>
+</figure>
+  <h3>Steps</h3>
+  <ol style="list-style:none;padding-left:0">
+<li>1. Index ~5k product descriptions in both a keyword engine and a vector store.</li>
+<li>2. <code>/search</code> runs both in parallel and merges them with Reciprocal Rank Fusion.</li>
+<li>3. Return why each hit ranked (its keyword rank, vector rank, fused score).</li>
+<li>4. Build 20 test queries with expected results; measure precision@10 for keyword-only, vector-only, and hybrid.</li>
+<li>5. Cache results in Redis with a TTL; show the latency with and without the cache.</li>
+</ol>
+  <div class="box"><b>Done when:</b> hybrid beats both single methods on your test set, and cached queries return in under 5 ms.</div>
+  <h2>Open source</h2>
+  <ul>
+<li><a href="https://github.com/redis/redis"><code>redis/redis</code></a> — <code>src/t_zset.c</code> (sorted sets are a skip list plus a hash) and <code>src/server.c</code>'s single-threaded event loop.</li>
+<li><a href="https://github.com/qdrant/qdrant"><code>qdrant/qdrant</code></a> — a vector database in Rust; <code>lib/segment/src/index/hnsw_index/</code> is its HNSW implementation with payload filtering.</li>
+</ul>
+  <h2>Interview</h2>
+  <ol style="list-style:none;padding-left:0">
+<li>1. <h3>"Redis persistence vs pure cache?"</h3>
+<div class="box"><b>Answer</b>
+<p>As a pure cache, turn persistence off: data can be rebuilt from the source of truth, so restarts only cost warm-up. As a primary store (sessions, queues, leaderboards), enable AOF (<code>everysec</code>, losing ≤1 s) and/or RDB snapshots, plus replicas with Sentinel or Cluster. Replication is asynchronous, so failover can still lose recent writes. Memory is the size limit either way, so set <code>maxmemory</code> and an eviction policy.</p></div></li>
+<li>2. <h3>"When graph DB over SQL?"</h3>
+<div class="box"><b>Answer</b>
+<p>When queries traverse variable or deep relationship chains (friends-of-friends, fraud rings, dependency or permission graphs, shortest paths) and the relationships themselves matter. In SQL each hop is a join and recursive CTEs get slow as depth and fan-out grow; graph databases follow stored pointers per hop. For simple one- or two-hop relations, SQL is fine and simpler to operate.</p></div></li>
+</ol>
+  <h2>Checklist</h2>
+  <ul>
+<li class="todo">set sensible TTLs</li>
+<li class="todo">know inverted-index basics</li>
+<li class="todo">run a vector search</li>
+</ul>
+  <p class="black"><a href="index.md">Contents</a> · ← <a href="ch48-nosql-mongodb-cassandra-and-dynamodb.notes.html">Chapter 48 — NoSQL: MongoDB, Cassandra &amp; DynamoDB</a> · Next → <a href="ch50-cap-consistency-and-consensus.notes.html">Chapter 50 — CAP, Consistency &amp; Consensus</a></p>
+  <nav class="nav"><a href="ch48-nosql-mongodb-cassandra-and-dynamodb.notes.html">← Ch 48 — NoSQL: MongoDB, Cassandra &amp; DynamoDB</a><a href="index.notes.html">☰ Contents</a><a href="ch50-cap-consistency-and-consensus.notes.html">Ch 50 — CAP, Consistency &amp; Consensus →</a></nav>
+</main>
+</body>
+</html>

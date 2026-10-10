@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ch 1 — OOP Fundamentals — Notes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;700&family=Kalam:wght@400;700&family=Patrick+Hand&display=swap" rel="stylesheet">
+<style>
+/* ===== Page tokens ===== */
+:root{
+  --line:32px;                 /* ruled-line spacing; every vertical size is a multiple */
+  --paper:#fdfbf4; --rule:#c9dcef; --margin:#e8a0a0;
+  --ink:#1f3a93;               /* blue pen (body) */
+  --ink2:#222;                 /* black pen (headings) */
+  --red:#c0392b; --green:#1e8449;
+  --hl-yellow:rgba(255,235,59,.55); --hl-pink:rgba(255,128,171,.45);
+  --hl-green:rgba(118,255,3,.35); --hl-blue:rgba(64,196,255,.35);
+  --sticky:#fff59d; --desk:#e9e4d8;
+  --hand:'Kalam','Patrick Hand','Comic Sans MS','Segoe Print','Bradley Hand',cursive;
+  --title:'Caveat','Kalam','Segoe Print','Bradley Hand',cursive;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){ --desk:#2b2b2b; }
+}
+:root[data-theme="dark"]{ --desk:#2b2b2b; }
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--desk);font-family:var(--hand);color:var(--ink);}
+
+/* ===== Notebook sheet ===== */
+.page{
+  position:relative; max-width:860px; margin:24px auto; padding:var(--line) 28px calc(var(--line)*2) 84px;
+  background:
+    linear-gradient(90deg,transparent 64px,var(--margin) 64px,var(--margin) 66px,transparent 66px),
+    repeating-linear-gradient(var(--paper) 0,var(--paper) calc(var(--line) - 1px),var(--rule) calc(var(--line) - 1px),var(--rule) var(--line));
+  background-color:var(--paper);
+  box-shadow:0 2px 6px rgba(0,0,0,.15),0 12px 28px rgba(0,0,0,.12);
+  font-size:20px; line-height:var(--line);
+}
+.page::before{ /* punched holes */
+  content:""; position:absolute; left:22px; top:0; bottom:0; width:18px;
+  background:radial-gradient(circle,var(--desk) 7px,transparent 8px) 0 40px/18px 220px repeat-y;
+}
+@media (max-width:600px){
+  .page{margin:0;padding-left:52px;padding-right:16px;font-size:18px;
+    background:
+      linear-gradient(90deg,transparent 40px,var(--margin) 40px,var(--margin) 42px,transparent 42px),
+      repeating-linear-gradient(var(--paper) 0,var(--paper) calc(var(--line) - 1px),var(--rule) calc(var(--line) - 1px),var(--rule) var(--line));
+    background-color:var(--paper);}
+  .page::before{left:10px;width:16px}
+}
+
+/* ===== Text (all margins are multiples of --line so text sits on the rules) ===== */
+.date{position:absolute;top:0;right:24px;font-family:var(--title);font-size:22px;color:var(--ink2);line-height:var(--line)}
+h1{font-family:var(--title);font-weight:700;color:var(--ink2);font-size:46px;line-height:calc(var(--line)*2);margin:0;transform:rotate(-1deg)}
+h1 .u{background:linear-gradient(transparent 62%,var(--hl-yellow) 62%,var(--hl-yellow) 92%,transparent 92%)}
+h2{font-family:var(--title);font-weight:700;color:var(--red);font-size:32px;line-height:calc(var(--line)*1.5);margin:calc(var(--line)*.5) 0 0}
+h2::before{content:"➤ ";font-size:22px}
+p,li{margin:0}
+ul,ol{margin:0;padding-left:28px}
+ul{list-style:none}
+ul>li::before{content:"–";position:absolute;margin-left:-20px}
+ul>li.star::before{content:"★";color:var(--red)}
+ul>li.arrow::before{content:"→"}
+ul>li.check::before{content:"✓";color:var(--green)}
+.gap{height:var(--line)}
+
+/* ===== Pen effects ===== */
+.hl{background:var(--hl-yellow);padding:0 3px;border-radius:3px 6px 4px 7px}
+.hl.pink{background:var(--hl-pink)} .hl.green{background:var(--hl-green)} .hl.blue{background:var(--hl-blue)}
+.red{color:var(--red)} .green{color:var(--green)} .black{color:var(--ink2)}
+.ul{text-decoration:underline wavy var(--red);text-underline-offset:5px}
+.circ{border:2px solid var(--red);border-radius:50% 45% 55% 48%;padding:0 6px}
+.strike{text-decoration:line-through 2px var(--red)}
+.term{font-weight:700;color:var(--ink2)}
+.box{display:flow-root;border:2.5px solid var(--ink2);border-radius:4px 10px 6px 12px;padding:calc(var(--line)*.5 - 2.5px) 14px;margin:calc(var(--line)*.5) 0;transform:rotate(-.4deg);background:rgba(255,255,255,.35)}
+.box.red{border-color:var(--red)}
+.formula{font-family:var(--title);font-size:28px;text-align:center;color:var(--ink2)}
+
+/* sticky note */
+.sticky{float:right;width:min(250px,42%);margin:0 0 var(--line) 20px;padding:var(--line) 16px;background:var(--sticky);
+  color:#333;transform:rotate(2.2deg);box-shadow:2px 4px 8px rgba(0,0,0,.18);font-size:18px}
+.sticky b{font-family:var(--title);font-size:24px;color:var(--red)}
+@media (max-width:600px){.sticky{float:none;width:auto;margin:var(--line) 0}}
+
+/* margin annotation (lives in the red margin) */
+.side{position:absolute;left:4px;width:58px;text-align:center;font-family:var(--title);font-size:17px;line-height:18px;color:var(--red);transform:rotate(-8deg)}
+@media (max-width:600px){.side{display:none}}
+
+/* two-column notes */
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:0 28px}
+@media (max-width:600px){.cols{grid-template-columns:1fr}}
+
+/* diagrams */
+figure{margin:var(--line) 0;text-align:center}
+figure svg{width:100%;max-width:640px;height:auto;overflow:visible}
+figcaption{font-family:var(--title);font-size:20px;color:var(--ink2)}
+/* phones: keep labels readable — diagram scrolls inside its own box instead of shrinking */
+@media (max-width:600px){figure{overflow-x:auto}figure svg{min-width:520px}}
+.sk{fill:none;stroke:var(--ink2);stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round;filter:url(#rough)}
+.sk.blue{stroke:var(--ink)} .sk.red{stroke:var(--red)} .sk.green{stroke:var(--green)}
+.lbl{font-family:var(--hand);font-size:17px;fill:var(--ink)}
+.lbl.b{font-weight:700;fill:var(--ink2)} .lbl.r{fill:var(--red)} .lbl.g{fill:var(--green)}
+
+/* table */
+.wrap{overflow-x:auto}
+table{border-collapse:collapse;margin:calc(var(--line)*.5) 0;min-width:100%}
+th,td{border:2px solid var(--ink2);padding:0 10px;text-align:left;vertical-align:top}
+th{font-family:var(--title);font-size:24px;color:var(--ink2)}
+
+@media print{body{background:#fff}.page{box-shadow:none;margin:0}.page::before{display:none}}
+
+/* ===== Added for long chapter notes ===== */
+pre.code{font-family:Consolas,'Courier New',monospace;font-size:14px;line-height:var(--line);color:var(--ink);background:rgba(255,255,255,.45);
+  border-left:4px solid var(--red);margin:calc(var(--line)*.5) 0;padding:0 12px;overflow-x:auto;white-space:pre}
+pre.code.ascii{border-left-color:var(--green)}
+code{font-family:Consolas,'Courier New',monospace;font-size:.82em;background:rgba(0,0,0,.06);padding:0 3px;border-radius:3px}
+pre.code code{background:none;padding:0;font-size:inherit}
+.lang{font-family:var(--title);font-size:18px;color:var(--red)}
+h3{font-family:var(--title);font-weight:700;color:var(--ink2);font-size:26px;line-height:var(--line);margin:calc(var(--line)*.5) 0 0}
+h3::before{content:"✎ ";font-size:18px;color:var(--red)}
+.nav{display:flex;justify-content:space-between;gap:12px;font-family:var(--title);font-size:22px;line-height:var(--line)}
+.nav a{color:var(--red);text-decoration:none}
+.nav a:hover{text-decoration:underline wavy}
+.pagebreak{border-top:3px dashed var(--margin);margin:var(--line) 0;text-align:center;font-family:var(--title);color:var(--red);line-height:var(--line)}
+li.todo::before{content:"☐";color:var(--ink2)}
+a{color:var(--ink);text-decoration:underline dotted}
+</style>
+</head>
+<body>
+<!-- One shared hand-drawn wobble filter; give every diagram stroke class="sk" -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <!-- userSpaceOnUse region: a % region collapses to nothing on perfectly straight lines (zero-height bbox) -->
+  <filter id="rough" filterUnits="userSpaceOnUse" x="-500" y="-500" width="3000" height="3000">
+    <feTurbulence type="fractalNoise" baseFrequency="0.03" numOctaves="2" seed="3" result="n"/>
+    <feDisplacementMap in="SourceGraphic" in2="n" scale="3"/>
+  </filter>
+  <marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+    <path d="M1 1 L9 5 L1 9" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+  </marker>
+</defs></svg>
+
+<main class="page">
+  <nav class="nav"><span></span><a href="index.notes.html">☰ Contents</a><a href="ch02-solid-principles.notes.html">Ch 2 — SOLID Principles →</a></nav>
+  <div class="date">2026-10-10</div>
+  <h1><span class="u">Ch 1 — OOP Fundamentals</span></h1>
+  <p class="black">Volume 3 — Low-Level Design · <a href="index.md">Contents</a> · Next → <a href="ch02-solid-principles.notes.html">Chapter 2 — SOLID Principles</a></p>
+
+  <p class="black">Chapter 1 — OOP Fundamentals</p>
+
+  <h2>Concept</h2>
+  <p>Encapsulation, inheritance, composition, polymorphism; objects as data + behavior with invariants.</p>
+  <div class="box"><b>In one sentence:</b> an object bundles data with the only operations allowed to change it, so it can guarantee its own rules (invariants) — and you build bigger behavior by composing small objects and swapping them through shared interfaces, using inheritance sparingly.</div>
+
+  <h3>Mental model — a vending machine</h3>
+  <p>You can't reach inside and set the coin count to a million; you press buttons (methods), and the machine enforces its rules: no snack without enough money, never a negative stock count (invariants). It's <i>made of</i> parts — a coin box, a dispenser, a display (composition). Different models all accept "insert coin" and "select item" (polymorphism), even though each works differently inside.</p>
+
+  <h3>The four pillars, practically</h3>
+  <div class="wrap"><table>
+    <tr><th>Pillar</th><th>What it really is for</th><th>In code</th></tr>
+    <tr><td><b>Encapsulation</b></td><td>protecting invariants: the object is the only thing that can put itself into a state</td><td>private fields + methods that validate; no public setters for rule-bound data</td></tr>
+    <tr><td><b>Abstraction</b></td><td>exposing <i>what</i> an object does, hiding <i>how</i></td><td>a small public interface; implementation details private</td></tr>
+    <tr><td><b>Polymorphism</b></td><td>many implementations behind one interface; callers don't branch on type</td><td><code>shape.area()</code> for any shape; interfaces, traits, protocols, duck typing</td></tr>
+    <tr><td><b>Inheritance</b></td><td>reusing and specializing an existing class ("is-a")</td><td><code>class SavingsAccount(Account)</code> — use sparingly</td></tr>
+    <tr><td><b>Composition</b></td><td>building objects out of other objects ("has-a")</td><td><code>Car</code> <i>has an</i> <code>Engine</code>; delegate to it</td></tr>
+  </table></div>
+
+  <aside class="sticky"><b>Exam tip!</b><br>Encapsulation = protecting invariants, not just hiding fields. Favor composition over inheritance.</aside>
+  <h3>Invariants</h3>
+  <p>Statements that must be true for every object at every observable moment: <code>balance &gt;= 0</code>, <code>start &lt;= end</code>, <code>currency is a valid ISO code</code>, <code>items is never empty for a submitted order</code>. Encapsulation's job is to make it <i>impossible</i> to break them from outside: validate in the constructor, change state only through methods that re-check, and return copies (or immutable views) instead of internal mutable collections.</p>
+
+  <h3>Make invalid states unrepresentable</h3>
+  <p>Design types so that a bad value can't even be constructed: <code>Email</code> instead of <code>str</code>, an enum instead of a status string, <code>DateRange(start, end)</code> that validates <code>start &lt;= end</code>, separate <code>DraftOrder</code> and <code>SubmittedOrder</code> types instead of one class with nullable fields.</p>
+
+  <h3>Composition vs inheritance</h3>
+  <div class="wrap"><table>
+    <tr><th></th><th>Inheritance ("is-a")</th><th>Composition ("has-a")</th></tr>
+    <tr><td>Coupling</td><td>tight: the subclass depends on the parent's <i>internals</i> ("fragile base class")</td><td>loose: depends only on the part's interface</td></tr>
+    <tr><td>Flexibility</td><td>fixed at class-definition time</td><td>parts can be swapped at runtime</td></tr>
+    <tr><td>Combining behaviors</td><td>class explosion (<code>FlyingSwimmingDuck</code>)</td><td>mix parts freely</td></tr>
+    <tr><td>Good when</td><td>a true, stable is-a with substitutability (see LSP in <a href="ch02-solid-principles.notes.html">Ch 2</a>); framework base classes</td><td>almost everything else</td></tr>
+  </table></div>
+  <div class="box red">Rule of thumb: <b>favor composition</b>; inherit only for genuine subtypes that honor the parent's contract.</div>
+
+  <div class="pagebreak">~ page 2 ~</div>
+
+  <h2>Prereqs</h2>
+  <ul>
+    <li><a href="../volume-1-cs-foundations/ch14-programming-paradigms.notes.html">Vol 1 Ch 14 — Programming Paradigms</a></li>
+  </ul>
+
+  <h2>Diagram</h2>
+  <h3>A class diagram with fields/methods, is-a vs has-a</h3>
+  <figure>
+    <svg viewBox="0 0 660 420" role="img" aria-label="Class diagram: SavingsAccount inherits from Account (is-a); Account has many Transactions (composition, 1 to many); Account uses Money">
+      <!-- Money -->
+      <rect class="sk" x="10" y="20" width="120" height="108" rx="6"/>
+      <text class="lbl b" x="70" y="44" text-anchor="middle">Money</text>
+      <path class="sk" d="M10 54 L130 54"/>
+      <text class="lbl" x="20" y="78" style="font-size:15px">+int cents</text>
+      <text class="lbl" x="20" y="102" style="font-size:15px">+str currency</text>
+      <!-- Account -->
+      <rect class="sk" x="200" y="20" width="240" height="190" rx="6"/>
+      <text class="lbl b" x="320" y="44" text-anchor="middle">Account</text>
+      <path class="sk" d="M200 54 L440 54"/>
+      <text class="lbl" x="210" y="76" style="font-size:15px">-str id</text>
+      <text class="lbl" x="210" y="98" style="font-size:15px">-Money balance</text>
+      <text class="lbl" x="210" y="120" style="font-size:15px">-list&lt;Transaction&gt; history</text>
+      <path class="sk" d="M200 130 L440 130"/>
+      <text class="lbl" x="210" y="152" style="font-size:15px">+deposit(amount) void</text>
+      <text class="lbl" x="210" y="174" style="font-size:15px">+withdraw(amount) void</text>
+      <text class="lbl" x="210" y="196" style="font-size:15px">+balance() Money</text>
+      <!-- Transaction -->
+      <rect class="sk" x="510" y="20" width="140" height="130" rx="6"/>
+      <text class="lbl b" x="580" y="44" text-anchor="middle">Transaction</text>
+      <path class="sk" d="M510 54 L650 54"/>
+      <text class="lbl" x="520" y="78" style="font-size:15px">+str kind</text>
+      <text class="lbl" x="520" y="102" style="font-size:15px">+Money amount</text>
+      <text class="lbl" x="520" y="126" style="font-size:15px">+datetime at</text>
+      <!-- SavingsAccount -->
+      <rect class="sk" x="200" y="300" width="240" height="100" rx="6"/>
+      <text class="lbl b" x="320" y="324" text-anchor="middle">SavingsAccount</text>
+      <path class="sk" d="M200 334 L440 334"/>
+      <text class="lbl" x="210" y="356" style="font-size:15px">-Rate interest_rate</text>
+      <path class="sk" d="M200 366 L440 366"/>
+      <text class="lbl" x="210" y="388" style="font-size:15px">+add_interest() void</text>
+      <!-- edges -->
+      <path class="sk blue" d="M200 100 C 180 98, 160 102, 133 100" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <text class="lbl r" x="166" y="86" text-anchor="middle">uses</text>
+      <path class="sk" d="M440 100 L452 92 L464 100 L452 108 Z" style="fill:var(--hl-blue)"/>
+      <path class="sk blue" d="M464 100 C 480 98, 495 102, 508 100" style="color:var(--ink)"/>
+      <text class="lbl r" x="472" y="86" style="font-size:15px">1</text>
+      <text class="lbl r" x="474" y="124" style="font-size:15px">many</text>
+      <text class="lbl r" x="580" y="184" text-anchor="middle">has-a (composition)</text>
+      <path class="sk blue" d="M320 300 C 326 260, 314 240, 320 214" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <text class="lbl r" x="340" y="262">is-a</text>
+    </svg>
+    <figcaption>Fig 1: SavingsAccount is-a Account (inheritance); Account "1" has-a "many" Transaction (composition); Account uses Money</figcaption>
+  </figure>
+
+  <h3>Encapsulation guarding an invariant</h3>
+<pre class="code ascii"><code>                 ┌──────────── BankAccount ────────────┐
+ withdraw(500) ─►│ if amount &gt; balance: raise ✗         │
+                 │ balance -= amount                    │   invariant: balance ≥ 0
+ deposit(-20) ──►│ if amount &lt;= 0: raise ✗              │   holds after EVERY method
+                 │ _balance  (private)                  │
+ acct._balance = -1  ✗ not part of the public interface  │
+                 └──────────────────────────────────────┘</code></pre>
+
+  <h3>Inheritance explosion vs composition</h3>
+<pre class="code ascii"><code> INHERITANCE                                  COMPOSITION
+ Bird ── FlyingBird ── FlyingSwimmingBird      Bird
+      └─ SwimmingBird ── SwimmingDivingBird    ├── movement: [Fly(), Swim()]
+      └─ … one class per combination           └── sound: Quack()
+                                               any combination, swappable at runtime</code></pre>
+
+  <div class="pagebreak">~ page 3 ~</div>
+
+  <h2>Example</h2>
+  <span class="lang">python</span>
+<pre class="code"><code>from dataclasses import dataclass
+from datetime import datetime, timezone
+
+@dataclass(frozen=True)
+class Money:
+    cents: int
+    currency: str = "EUR"
+    def __post_init__(self):
+        if len(self.currency) != 3:
+            raise ValueError("currency must be an ISO 4217 code")
+    def __add__(self, other: "Money") -&gt; "Money":
+        self._same(other); return Money(self.cents + other.cents, self.currency)
+    def __sub__(self, other: "Money") -&gt; "Money":
+        self._same(other); return Money(self.cents - other.cents, self.currency)
+    def _same(self, other):
+        if other.currency != self.currency:
+            raise ValueError("currency mismatch")
+
+@dataclass(frozen=True)
+class Transaction:
+    kind: str
+    amount: Money
+    at: datetime
+
+class InsufficientFunds(Exception): ...
+
+class BankAccount:
+    """Invariant: balance &gt;= 0, and balance == sum of the history."""
+    def __init__(self, account_id: str, currency: str = "EUR"):
+        self._id = account_id
+        self._balance = Money(0, currency)
+        self._history: list[Transaction] = []
+
+    @property
+    def balance(self) -&gt; Money:
+        return self._balance                       # read-only; there is no setter
+
+    @property
+    def history(self) -&gt; tuple[Transaction, ...]:
+        return tuple(self._history)                # a copy: callers can't mutate our list
+
+    def deposit(self, amount: Money) -&gt; None:
+        if amount.cents &lt;= 0:
+            raise ValueError("deposit must be positive")
+        self._apply("deposit", amount, self._balance + amount)
+
+    def withdraw(self, amount: Money) -&gt; None:
+        if amount.cents &lt;= 0:
+            raise ValueError("withdrawal must be positive")
+        if amount.cents &gt; self._balance.cents:
+            raise InsufficientFunds(f"balance {self._balance.cents}, requested {amount.cents}")
+        self._apply("withdraw", amount, self._balance - amount)
+
+    def _apply(self, kind, amount, new_balance):
+        self._history.append(Transaction(kind, amount, datetime.now(timezone.utc)))
+        self._balance = new_balance
+
+acct = BankAccount("acc-1")
+acct.deposit(Money(1000))
+acct.withdraw(Money(300))
+print(acct.balance)                                # Money(cents=700, currency='EUR')
+try:
+    acct.withdraw(Money(5000))
+except InsufficientFunds as e:
+    print("refused:", e)</code></pre>
+
+  <span class="lang">python</span>
+<pre class="code"><code># Polymorphism through a shared interface — callers never check types
+from typing import Protocol
+
+class FeePolicy(Protocol):
+    def fee(self, amount: Money) -&gt; Money: ...
+
+class FlatFee:
+    def fee(self, amount): return Money(50, amount.currency)
+
+class PercentFee:
+    def __init__(self, pct): self.pct = pct
+    def fee(self, amount): return Money(amount.cents * self.pct // 100, amount.currency)
+
+class Transfer:                                    # composition: HAS a fee policy
+    def __init__(self, policy: FeePolicy): self.policy = policy
+    def total(self, amount): return amount + self.policy.fee(amount)
+
+print(Transfer(FlatFee()).total(Money(1000)).cents, Transfer(PercentFee(2)).total(Money(1000)).cents)  # 1050 1020</code></pre>
+
+  <h2>Exercises</h2>
+  <ol style="list-style:none;padding-left:0">
+    <li>1. Refactor inheritance to composition.
+      <span class="lang">python</span>
+<pre class="code"><code>class Logger: ...
+class FileLogger(Logger): ...
+class TimestampedFileLogger(FileLogger): ...
+class TimestampedJsonFileLogger(TimestampedFileLogger): ...</code></pre>
+      <div class="box"><b>Solution</b> Split the independent concerns into parts: a <i>sink</i> (<code>FileSink</code>, <code>StdoutSink</code>), a <i>formatter</i> (<code>TextFormatter</code>, <code>JsonFormatter</code>), and <i>enrichers</i> (<code>Timestamp()</code>). Then <code>Logger(sink=FileSink("app.log"), formatter=JsonFormatter(), enrichers=[Timestamp()])</code>. Any combination is possible without new classes, and each part is testable alone.</div></li>
+    <li>2. Design a class where no invalid state is representable.
+      <div class="box"><b>Solution</b> A <code>DateRange</code>: frozen, validated in <code>__post_init__</code> (<code>start &lt;= end</code>, both timezone-aware), with methods that return <i>new</i> ranges (<code>extend(days)</code>) and re-validate. Or an order lifecycle modeled as separate types — <code>DraftOrder</code> (editable, may be empty) → <code>submit()</code> → <code>SubmittedOrder</code> (non-empty, immutable items, has <code>submitted_at</code>) — so "a submitted order without items" can't exist.</div></li>
+    <li>3. Why does returning <code>self._history</code> directly break encapsulation?
+      <div class="box"><b>Solution</b> The caller gets a reference to the internal list and can append a fake transaction or clear it, breaking the invariant "balance equals the sum of the history" without going through any method. Return a tuple or copy, or an immutable view.</div></li>
+  </ol>
+
+  <div class="pagebreak">~ page 4 ~</div>
+
+  <h2>Mini project</h2>
+  <p><b>A <code>BankAccount</code>/<code>Transaction</code> domain model with enforced invariants.</b></p>
+  <figure>
+    <svg viewBox="0 0 660 400" role="img" aria-label="Class diagram: Account composes Transaction, Account uses Money, TransferService uses Account and the FeePolicy interface">
+      <!-- Money -->
+      <rect class="sk" x="10" y="20" width="190" height="144" rx="6"/>
+      <text class="lbl b" x="105" y="44" text-anchor="middle">Money</text>
+      <path class="sk" d="M10 54 L200 54"/>
+      <text class="lbl" x="20" y="76" style="font-size:15px">+int cents</text>
+      <text class="lbl" x="20" y="98" style="font-size:15px">+str currency</text>
+      <path class="sk" d="M10 108 L200 108"/>
+      <text class="lbl" x="20" y="130" style="font-size:15px">+add(other) Money</text>
+      <text class="lbl" x="20" y="152" style="font-size:15px">+sub(other) Money</text>
+      <!-- Account -->
+      <rect class="sk" x="235" y="20" width="190" height="166" rx="6"/>
+      <text class="lbl b" x="330" y="44" text-anchor="middle">Account</text>
+      <path class="sk" d="M235 54 L425 54"/>
+      <text class="lbl" x="245" y="76" style="font-size:15px">-Money balance</text>
+      <text class="lbl" x="245" y="98" style="font-size:15px">-list&lt;Transaction&gt; history</text>
+      <path class="sk" d="M235 108 L425 108"/>
+      <text class="lbl" x="245" y="130" style="font-size:15px">+deposit(Money)</text>
+      <text class="lbl" x="245" y="152" style="font-size:15px">+withdraw(Money)</text>
+      <text class="lbl" x="245" y="174" style="font-size:15px">+statement(period) list</text>
+      <!-- Transaction -->
+      <rect class="sk" x="470" y="20" width="180" height="134" rx="6"/>
+      <text class="lbl b" x="560" y="44" text-anchor="middle">Transaction</text>
+      <path class="sk" d="M470 54 L650 54"/>
+      <text class="lbl" x="480" y="76" style="font-size:15px">+TxId id</text>
+      <text class="lbl" x="480" y="98" style="font-size:15px">+Kind kind</text>
+      <text class="lbl" x="480" y="120" style="font-size:15px">+Money amount</text>
+      <text class="lbl" x="480" y="142" style="font-size:15px">+datetime at</text>
+      <!-- TransferService -->
+      <rect class="sk" x="150" y="290" width="310" height="68" rx="6"/>
+      <text class="lbl b" x="305" y="314" text-anchor="middle">TransferService</text>
+      <path class="sk" d="M150 324 L460 324"/>
+      <text class="lbl" x="160" y="346" style="font-size:15px">+transfer(src, dst, Money, FeePolicy)</text>
+      <!-- FeePolicy -->
+      <rect class="sk" x="500" y="290" width="150" height="90" rx="6"/>
+      <text class="lbl" x="575" y="311" text-anchor="middle" style="font-size:14px">&lt;&lt;interface&gt;&gt;</text>
+      <text class="lbl b" x="575" y="332" text-anchor="middle">FeePolicy</text>
+      <path class="sk" d="M500 342 L650 342"/>
+      <text class="lbl" x="510" y="366" style="font-size:15px">+fee(Money) Money</text>
+      <!-- edges -->
+      <path class="sk blue" d="M235 90 C 225 88, 215 92, 203 90" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk" d="M425 90 L437 82 L449 90 L437 98 Z" style="fill:var(--hl-blue)"/>
+      <path class="sk blue" d="M449 90 L467 90" style="color:var(--ink)"/>
+      <path class="sk blue" d="M330 290 C 336 250, 324 230, 330 190" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M460 335 C 475 332, 488 338, 498 335" style="color:var(--ink)" marker-end="url(#arr)"/>
+    </svg>
+    <figcaption>Fig 2: Account *-- Transaction (composition); Account --&gt; Money; TransferService --&gt; Account; TransferService --&gt; FeePolicy</figcaption>
+  </figure>
+
+  <h3>Steps</h3>
+  <ol style="list-style:none;padding-left:0">
+    <li>1. An immutable <code>Money</code> value object (integer cents, currency; arithmetic refuses mixed currencies).</li>
+    <li>2. <code>Account</code> with private state; <code>deposit</code>/<code>withdraw</code> enforce <code>balance &gt;= 0</code>; <code>history</code> is read-only.</li>
+    <li>3. A <code>Kind</code> enum instead of strings; a <code>Transaction</code> value object.</li>
+    <li>4. <code>TransferService</code> that moves money between two accounts atomically (both succeed or neither), with a pluggable <code>FeePolicy</code> (composition + polymorphism).</li>
+    <li>5. Property tests (Hypothesis): for any sequence of random operations, <code>balance &gt;= 0</code> and <code>balance == sum(history)</code> always hold.</li>
+  </ol>
+  <div class="box"><b>Done when:</b> no public API call sequence can break the invariants, which the property tests prove over thousands of random sequences.</div>
+
+  <h2>Open source</h2>
+  <ul>
+    <li><a href="https://github.com/python/cpython"><code>python/cpython</code></a> classes — <code>Lib/dataclasses.py</code> (how <code>frozen=True</code> blocks assignment) and <code>Lib/fractions.py</code> (a well-encapsulated immutable value type).</li>
+    <li><a href="https://github.com/rust-lang/rust"><code>rust-lang/rust</code></a> (structs + traits as OOP) — Rust has no inheritance: private fields by default, <code>impl</code> blocks for behavior, and traits for polymorphism. See the Rust Book chapter 17, "Object-Oriented Programming Features".</li>
+  </ul>
+
+  <h2>Interview</h2>
+  <ol style="list-style:none;padding-left:0">
+    <li>1. <b>"Composition vs inheritance?"</b>
+      <div class="box"><b>Answer</b> Inheritance models is-a and reuses code, but couples the subclass to the parent's internals, fixes behavior at compile time, and multiplies classes when behaviors combine. Composition builds objects from parts behind interfaces: looser coupling, runtime swapping, and easy combination. Prefer composition; use inheritance only for true subtypes that can substitute for the parent everywhere (Liskov), or when a framework requires it.</div></li>
+    <li>2. <b>"What is encapsulation really for?"</b>
+      <div class="box"><b>Answer</b> Protecting invariants. It isn't about hiding fields for the sake of it: it makes the object the sole gatekeeper of its own state, so every state change passes through code that enforces the rules. That keeps bugs local (only the class can break its invariants), lets you change the internal representation without breaking callers, and makes the public interface small and meaningful.</div></li>
+  </ol>
+
+  <h2>Checklist</h2>
+  <ul>
+    <li class="todo">hide fields behind methods</li>
+    <li class="todo">make invalid states unrepresentable</li>
+    <li class="todo">prefer composition</li>
+  </ul>
+  <div class="gap"></div>
+  <p class="black"><a href="index.md">Contents</a> · Next → <a href="ch02-solid-principles.notes.html">Chapter 2 — SOLID Principles</a></p>
+  <nav class="nav"><span></span><a href="index.notes.html">☰ Contents</a><a href="ch02-solid-principles.notes.html">Ch 2 — SOLID Principles →</a></nav>
+</main>
+</body>
+</html>

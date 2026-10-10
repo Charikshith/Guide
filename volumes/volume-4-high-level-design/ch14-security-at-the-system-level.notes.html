@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ch 14 — Security at the System Level — Notes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;700&family=Kalam:wght@400;700&family=Patrick+Hand&display=swap" rel="stylesheet">
+<style>
+/* ===== Page tokens ===== */
+:root{
+  --line:32px;                 /* ruled-line spacing; every vertical size is a multiple */
+  --paper:#fdfbf4; --rule:#c9dcef; --margin:#e8a0a0;
+  --ink:#1f3a93;               /* blue pen (body) */
+  --ink2:#222;                 /* black pen (headings) */
+  --red:#c0392b; --green:#1e8449;
+  --hl-yellow:rgba(255,235,59,.55); --hl-pink:rgba(255,128,171,.45);
+  --hl-green:rgba(118,255,3,.35); --hl-blue:rgba(64,196,255,.35);
+  --sticky:#fff59d; --desk:#e9e4d8;
+  --hand:'Kalam','Patrick Hand','Comic Sans MS','Segoe Print','Bradley Hand',cursive;
+  --title:'Caveat','Kalam','Segoe Print','Bradley Hand',cursive;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){ --desk:#2b2b2b; }
+}
+:root[data-theme="dark"]{ --desk:#2b2b2b; }
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--desk);font-family:var(--hand);color:var(--ink);}
+
+/* ===== Notebook sheet ===== */
+.page{
+  position:relative; max-width:860px; margin:24px auto; padding:var(--line) 28px calc(var(--line)*2) 84px;
+  background:
+    linear-gradient(90deg,transparent 64px,var(--margin) 64px,var(--margin) 66px,transparent 66px),
+    repeating-linear-gradient(var(--paper) 0,var(--paper) calc(var(--line) - 1px),var(--rule) calc(var(--line) - 1px),var(--rule) var(--line));
+  background-color:var(--paper);
+  box-shadow:0 2px 6px rgba(0,0,0,.15),0 12px 28px rgba(0,0,0,.12);
+  font-size:20px; line-height:var(--line);
+}
+.page::before{ /* punched holes */
+  content:""; position:absolute; left:22px; top:0; bottom:0; width:18px;
+  background:radial-gradient(circle,var(--desk) 7px,transparent 8px) 0 40px/18px 220px repeat-y;
+}
+@media (max-width:600px){
+  .page{margin:0;padding-left:52px;padding-right:16px;font-size:18px;
+    background:
+      linear-gradient(90deg,transparent 40px,var(--margin) 40px,var(--margin) 42px,transparent 42px),
+      repeating-linear-gradient(var(--paper) 0,var(--paper) calc(var(--line) - 1px),var(--rule) calc(var(--line) - 1px),var(--rule) var(--line));
+    background-color:var(--paper);}
+  .page::before{left:10px;width:16px}
+}
+
+/* ===== Text (all margins are multiples of --line so text sits on the rules) ===== */
+.date{position:absolute;top:0;right:24px;font-family:var(--title);font-size:22px;color:var(--ink2);line-height:var(--line)}
+h1{font-family:var(--title);font-weight:700;color:var(--ink2);font-size:46px;line-height:calc(var(--line)*2);margin:0;transform:rotate(-1deg)}
+h1 .u{background:linear-gradient(transparent 62%,var(--hl-yellow) 62%,var(--hl-yellow) 92%,transparent 92%)}
+h2{font-family:var(--title);font-weight:700;color:var(--red);font-size:32px;line-height:calc(var(--line)*1.5);margin:calc(var(--line)*.5) 0 0}
+h2::before{content:"➤ ";font-size:22px}
+p,li{margin:0}
+ul,ol{margin:0;padding-left:28px}
+ul{list-style:none}
+ul>li::before{content:"–";position:absolute;margin-left:-20px}
+ul>li.star::before{content:"★";color:var(--red)}
+ul>li.arrow::before{content:"→"}
+ul>li.check::before{content:"✓";color:var(--green)}
+.gap{height:var(--line)}
+
+/* ===== Pen effects ===== */
+.hl{background:var(--hl-yellow);padding:0 3px;border-radius:3px 6px 4px 7px}
+.hl.pink{background:var(--hl-pink)} .hl.green{background:var(--hl-green)} .hl.blue{background:var(--hl-blue)}
+.red{color:var(--red)} .green{color:var(--green)} .black{color:var(--ink2)}
+.ul{text-decoration:underline wavy var(--red);text-underline-offset:5px}
+.circ{border:2px solid var(--red);border-radius:50% 45% 55% 48%;padding:0 6px}
+.strike{text-decoration:line-through 2px var(--red)}
+.term{font-weight:700;color:var(--ink2)}
+.box{display:flow-root;border:2.5px solid var(--ink2);border-radius:4px 10px 6px 12px;padding:calc(var(--line)*.5 - 2.5px) 14px;margin:calc(var(--line)*.5) 0;transform:rotate(-.4deg);background:rgba(255,255,255,.35)}
+.box.red{border-color:var(--red)}
+.formula{font-family:var(--title);font-size:28px;text-align:center;color:var(--ink2)}
+
+/* sticky note */
+.sticky{float:right;width:min(250px,42%);margin:0 0 var(--line) 20px;padding:var(--line) 16px;background:var(--sticky);
+  color:#333;transform:rotate(2.2deg);box-shadow:2px 4px 8px rgba(0,0,0,.18);font-size:18px}
+.sticky b{font-family:var(--title);font-size:24px;color:var(--red)}
+@media (max-width:600px){.sticky{float:none;width:auto;margin:var(--line) 0}}
+
+/* margin annotation (lives in the red margin) */
+.side{position:absolute;left:4px;width:58px;text-align:center;font-family:var(--title);font-size:17px;line-height:18px;color:var(--red);transform:rotate(-8deg)}
+@media (max-width:600px){.side{display:none}}
+
+/* two-column notes */
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:0 28px}
+@media (max-width:600px){.cols{grid-template-columns:1fr}}
+
+/* diagrams */
+figure{margin:var(--line) 0;text-align:center}
+figure svg{width:100%;max-width:640px;height:auto;overflow:visible}
+figcaption{font-family:var(--title);font-size:20px;color:var(--ink2)}
+/* phones: keep labels readable — diagram scrolls inside its own box instead of shrinking */
+@media (max-width:600px){figure{overflow-x:auto}figure svg{min-width:520px}}
+.sk{fill:none;stroke:var(--ink2);stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round;filter:url(#rough)}
+.sk.blue{stroke:var(--ink)} .sk.red{stroke:var(--red)} .sk.green{stroke:var(--green)}
+.lbl{font-family:var(--hand);font-size:17px;fill:var(--ink)}
+.lbl.b{font-weight:700;fill:var(--ink2)} .lbl.r{fill:var(--red)} .lbl.g{fill:var(--green)}
+
+/* table */
+.wrap{overflow-x:auto}
+table{border-collapse:collapse;margin:calc(var(--line)*.5) 0;min-width:100%}
+th,td{border:2px solid var(--ink2);padding:0 10px;text-align:left;vertical-align:top}
+th{font-family:var(--title);font-size:24px;color:var(--ink2)}
+
+@media print{body{background:#fff}.page{box-shadow:none;margin:0}.page::before{display:none}}
+
+/* ===== Added for long chapter notes ===== */
+pre.code{font-family:Consolas,'Courier New',monospace;font-size:14px;line-height:var(--line);color:var(--ink);background:rgba(255,255,255,.45);
+  border-left:4px solid var(--red);margin:calc(var(--line)*.5) 0;padding:0 12px;overflow-x:auto;white-space:pre}
+pre.code.ascii{border-left-color:var(--green)}
+code{font-family:Consolas,'Courier New',monospace;font-size:.82em;background:rgba(0,0,0,.06);padding:0 3px;border-radius:3px}
+pre.code code{background:none;padding:0;font-size:inherit}
+.lang{font-family:var(--title);font-size:18px;color:var(--red)}
+h3{font-family:var(--title);font-weight:700;color:var(--ink2);font-size:26px;line-height:var(--line);margin:calc(var(--line)*.5) 0 0}
+h3::before{content:"✎ ";font-size:18px;color:var(--red)}
+.nav{display:flex;justify-content:space-between;gap:12px;font-family:var(--title);font-size:22px;line-height:var(--line)}
+.nav a{color:var(--red);text-decoration:none}
+.nav a:hover{text-decoration:underline wavy}
+.pagebreak{border-top:3px dashed var(--margin);margin:var(--line) 0;text-align:center;font-family:var(--title);color:var(--red);line-height:var(--line)}
+li.todo::before{content:"☐";color:var(--ink2)}
+a{color:var(--ink);text-decoration:underline dotted}
+
+details{margin:calc(var(--line)*.5) 0}
+summary{cursor:pointer;font-family:var(--title);font-size:22px;color:var(--red)}
+details>summary+*{margin-top:0}
+.fig{margin:var(--line) 0}
+ol.num{list-style:none;padding-left:38px}
+ol.num>li>.n{position:absolute;margin-left:-34px;font-weight:700;color:var(--red)}
+</style>
+</head>
+<body>
+<!-- One shared hand-drawn wobble filter; give every diagram stroke class="sk" -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <!-- userSpaceOnUse region: a % region collapses to nothing on perfectly straight lines (zero-height bbox) -->
+  <filter id="rough" filterUnits="userSpaceOnUse" x="-500" y="-500" width="3000" height="3000">
+    <feTurbulence type="fractalNoise" baseFrequency="0.03" numOctaves="2" seed="3" result="n"/>
+    <feDisplacementMap in="SourceGraphic" in2="n" scale="3"/>
+  </filter>
+  <marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+    <path d="M1 1 L9 5 L1 9" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+  </marker>
+</defs></svg>
+
+<main class="page">
+  <nav class="nav"><a href="ch13-disaster-recovery-backups-rto-rpo.notes.html">← Ch 13 — Disaster Recovery (Backups, RTO/RPO)</a><a href="index.notes.html">☰ Contents</a><a href="ch15-cloud-architecture.notes.html">Ch 15 — Cloud Architecture →</a></nav>
+  <div class="date">2026-10-10</div>
+  <h1><span class="u">Ch 14 — Security at the System Level</span></h1>
+  <p class="black">Chapter 14 — Security at the System Level</p>
+<p class="black"><b>Volume 4 — High-Level Design</b> · <a href="index.md">Contents</a> · ← <a href="ch13-disaster-recovery-backups-rto-rpo.notes.html">Chapter 13 — Disaster Recovery (Backups, RTO/RPO)</a> · Next → <a href="ch15-cloud-architecture.notes.html">Chapter 15 — Cloud Architecture</a></p>
+<h2>Concept</h2>
+<p>Zero-trust, IAM, secrets, encryption in transit/at rest, and blast-radius reduction.</p>
+<div class="box"><b>In one sentence:</b> system-level security assumes any component can be compromised, so every request is authenticated and authorized regardless of network location (zero trust), every identity gets only the permissions it needs, credentials are short-lived and rotated, data is encrypted everywhere, and the architecture is split so a breach in one part can't spread to the rest.</div>
+<p><b>Mental model — a modern office building.</b> The old model is a castle: a strong wall, and anyone inside is trusted. Zero trust is an office where your badge is checked at <i>every</i> door, each badge opens only the rooms your job needs, badges expire each evening, the safes are locked even inside locked rooms (encryption at rest), and fire doors divide the building so one fire can't burn it all down (blast radius).</p>
+<h3>Zero trust vs perimeter</h3>
+<div class="wrap"><table>
+<tr><th></th><th>Perimeter ("castle and moat")</th><th>Zero trust</th></tr>
+<tr><td>Trust based on</td><td>network location (inside the VPN = trusted)</td><td>verified identity + device + context, per request</td></tr>
+<tr><td>East-west traffic</td><td>often unauthenticated plaintext</td><td>mTLS with workload identities</td></tr>
+<tr><td>After a breach</td><td>the attacker moves laterally freely</td><td>each hop requires new authorization</td></tr>
+<tr><td>Access</td><td>broad network access (VPN)</td><td>per-application, least-privilege access (identity-aware proxies)</td></tr>
+</table></div>
+<h3>IAM principles</h3>
+<div class="wrap"><table>
+<tr><th>Principle</th><th>Practice</th></tr>
+<tr><td><b>Least privilege</b></td><td>grant specific actions on specific resources (<code>s3:GetObject</code> on <code>bucket/reports/*</code>), not <code>*</code></td></tr>
+<tr><td>Identities for workloads, not shared keys</td><td>IAM roles for services, Kubernetes service accounts → cloud roles (workload identity), SPIFFE IDs</td></tr>
+<tr><td><b>Short-lived credentials</b></td><td>STS tokens (15 min–1 h), OIDC federation for CI, Vault dynamic DB credentials</td></tr>
+<tr><td>Separation of duties</td><td>whoever deploys can't also approve their own access; break-glass accounts audited</td></tr>
+<tr><td>Policy as code</td><td>IAM in Terraform, reviewed; automated checks for wildcards and public access</td></tr>
+<tr><td>Continuous review</td><td>access analyzers; remove unused permissions (e.g. unused for 90 days)</td></tr>
+</table></div>
+<h3>Secrets at scale</h3>
+<div class="wrap"><table>
+<tr><th>Level</th><th>Approach</th></tr>
+<tr><td>Bad</td><td>secrets in code, images, env files in git, Slack</td></tr>
+<tr><td>OK</td><td>a secrets manager, read at startup, rotated manually</td></tr>
+<tr><td><b>Good</b></td><td>a secrets manager + automatic rotation + workload identity to fetch them (no bootstrap secret) + audit logs</td></tr>
+<tr><td>Best</td><td>no long-lived secrets at all: dynamic, per-instance credentials that expire (Vault DB engine, IAM auth to RDS)</td></tr>
+</table></div>
+<h3>Encryption</h3>
+<div class="wrap"><table>
+<tr><th>Where</th><th>How</th></tr>
+<tr><td><b>In transit</b></td><td>TLS 1.2+/1.3 at the edge; <b>mTLS</b> between services (a mesh or SPIFFE/SPIRE); TLS to databases</td></tr>
+<tr><td><b>At rest</b></td><td>disk/volume encryption (default on major clouds); database TDE; object storage SSE-KMS</td></tr>
+<tr><td><b>Envelope encryption</b></td><td>a KMS master key encrypts per-object data keys; data keys encrypt data. Rotating the master key doesn't re-encrypt all data; per-tenant keys enable crypto-shredding</td></tr>
+<tr><td>Application level</td><td>encrypt specific fields (national IDs, tokens) so even DB admins see ciphertext</td></tr>
+<tr><td>Key management</td><td>KMS/HSM; keys never leave; access logged; separate duties for key admins and data admins</td></tr>
+</table></div>
+<h3>Blast-radius reduction</h3>
+<ul>
+<li>Separate cloud <b>accounts/projects</b> per environment and per sensitive system (prod ≠ staging ≠ security tooling).</li>
+<li>Network segmentation: private subnets, security groups allowing only needed ports from needed sources, deny egress by default.</li>
+<li>Cell-based architecture: shards of users served by independent stacks.</li>
+<li>One service = one identity = its own permissions and secrets.</li>
+<li>Rate limits, quotas, and budgets so a compromised key can't do unlimited damage.</li>
+</ul>
+<div class="pagebreak">~ page 2 ~</div>
+<h2>Prereqs</h2>
+<ul>
+<li><a href="../volume-2-software-engineering/ch10-security-and-threat-modeling.notes.html">Vol 2 Ch 10 — Security &amp; Threat Modeling</a></li>
+</ul>
+<h2>Diagram</h2>
+<h3>A zero-trust architecture with identity-aware access and mTLS</h3>
+<figure>
+<svg viewBox="0 0 625 586" role="img" aria-label="Diagram 1 (redrawn from Mermaid)"><path class="sk" style="color:var(--ink2)" d="M135 74 C135 96, 187 96, 187 117" marker-end="url(#arr)"/><path class="sk" style="color:var(--ink2)" d="M187 190 C187 219, 213 219, 213 248" marker-end="url(#arr)"/><path class="sk" style="color:var(--ink2)" d="M316 68 C316 97, 420 97, 420 126" marker-end="url(#arr)"/><path class="sk" style="color:var(--ink2)" d="M420 181 C420 207, 372 207, 372 233" marker-end="url(#arr)"/><path class="sk" style="color:var(--ink2)" d="M372 306 C372 342, 361 342, 361 379" marker-end="url(#arr)"/><path class="sk red" style="color:var(--red);stroke-dasharray:7 6" d="M372 306 C372 340, 242 340, 242 375" marker-end="url(#arr)"/><path class="sk" style="color:var(--ink2)" d="M361 422 C361 458, 313 458, 313 495" marker-end="url(#arr)"/><path class="sk red" style="color:var(--red);stroke-dasharray:7 6" d="M494 74 C494 154, 372 154, 372 233" marker-end="url(#arr)"/><path class="sk red" style="color:var(--red);stroke-dasharray:7 6" d="M494 74 C494 226, 361 226, 361 379" marker-end="url(#arr)"/><rect x="279" y="324" width="175" height="36" rx="4" style="fill:#fdfbf4;stroke:none"/><text class="lbl g" style="font-size:14px" x="366" y="338" text-anchor="middle">mTLS + authz policy:</text><text class="lbl g" style="font-size:14px" x="366" y="354" text-anchor="middle">orders → payments ALLOWED</text><rect x="233" y="330" width="149" height="20" rx="4" style="fill:#fdfbf4;stroke:none"/><text class="lbl g" style="font-size:14px" x="307" y="344" text-anchor="middle">orders → hr-db DENIED</text><rect x="266" y="440" width="142" height="36" rx="4" style="fill:#fdfbf4;stroke:none"/><text class="lbl g" style="font-size:14px" x="337" y="454" text-anchor="middle">short-lived DB creds</text><text class="lbl g" style="font-size:14px" x="337" y="470" text-anchor="middle">from Vault (1 h)</text><rect class="sk" style="fill:#fdfbf4" x="22" y="22" width="226" height="52" rx="10"/><text class="lbl" style="font-size:15px" x="135" y="44" text-anchor="middle">employee laptop</text><text class="lbl" style="font-size:15px" x="135" y="62" text-anchor="middle">(managed device, SSO + MFA)</text><rect class="sk" style="fill:#fdfbf4" x="92" y="120" width="189" height="70" rx="10"/><text class="lbl" style="font-size:15px" x="187" y="142" text-anchor="middle">identity-aware proxy</text><text class="lbl" style="font-size:15px" x="187" y="160" text-anchor="middle">checks user + device +</text><text class="lbl" style="font-size:15px" x="187" y="178" text-anchor="middle">context</text><rect class="sk" style="fill:#fdfbf4" x="166" y="251" width="93" height="40" rx="10"/><text class="lbl" style="font-size:15px" x="213" y="276" text-anchor="middle">admin app</text><rect class="sk" style="fill:#fdfbf4" x="274" y="28" width="85" height="40" rx="10"/><text class="lbl" style="font-size:15px" x="316" y="53" text-anchor="middle">customer</text><rect class="sk" style="fill:#fdfbf4" x="307" y="129" width="226" height="52" rx="10"/><text class="lbl" style="font-size:15px" x="420" y="151" text-anchor="middle">CDN + WAF + API gateway</text><text class="lbl" style="font-size:15px" x="420" y="169" text-anchor="middle">(OAuth tokens, rate limits)</text><rect class="sk" style="fill:#fdfbf4" x="285" y="236" width="174" height="70" rx="10"/><text class="lbl" style="font-size:15px" x="372" y="258" text-anchor="middle">orders svc</text><text class="lbl" style="font-size:15px" x="372" y="276" text-anchor="middle">SPIFFE ID:</text><text class="lbl" style="font-size:15px" x="372" y="294" text-anchor="middle">spiffe://acme/orders</text><rect class="sk" style="fill:#fdfbf4" x="303" y="382" width="115" height="40" rx="10"/><text class="lbl" style="font-size:15px" x="361" y="407" text-anchor="middle">payments svc</text><path class="sk" style="fill:#e3f1d8" d="M207 386 A35 8 0 0 1 277 386 L277 418 A35 8 0 0 1 207 418 Z"/><path class="sk" d="M207 386 A35 8 0 0 0 277 386"/><text class="lbl" style="font-size:15px" x="242" y="407" text-anchor="middle">hr-db</text><path class="sk" style="fill:#e3f1d8" d="M214 506 A99 8 0 0 1 412 506 L412 556 A99 8 0 0 1 214 556 Z"/><path class="sk" d="M214 506 A99 8 0 0 0 412 506"/><text class="lbl" style="font-size:15px" x="313" y="527" text-anchor="middle">payments DB</text><text class="lbl" style="font-size:15px" x="313" y="545" text-anchor="middle">encrypted at rest (KMS)</text><rect class="sk" style="fill:#fdfbf4" x="385" y="22" width="218" height="52" rx="10"/><text class="lbl" style="font-size:15px" x="494" y="44" text-anchor="middle">SPIRE / mesh CA</text><text class="lbl" style="font-size:15px" x="494" y="62" text-anchor="middle">issues 1-hour certificates</text></svg>
+<figcaption>Fig 1: diagram redrawn by hand from the Mermaid source</figcaption>
+</figure>
+<h3>Blast radius: separate accounts and cells</h3>
+<pre class="code ascii"><code> organization
+ ├── account: security (logs, audit, backups — write-only from others)
+ ├── account: prod-payments      ← PCI scope, the smallest possible
+ ├── account: prod-core
+ │     ├── cell-1 (users 0–24%)
+ │     ├── cell-2 (users 25–49%)  a bad deploy or a compromise hits one cell, not everyone
+ │     └── …
+ ├── account: staging            no network path to prod; no prod data
+ └── account: sandbox</code></pre>
+<h3>Envelope encryption</h3>
+<pre class="code ascii"><code> KMS master key (never leaves the KMS/HSM)
+      │ encrypts
+      ▼
+ data key (random per object / per tenant) ──encrypts──► data
+ stored together:  [encrypted data key][ciphertext]
+ read: ask KMS to decrypt the data key (logged, IAM-checked) → decrypt the data in memory
+ delete a tenant's key → all their data becomes unreadable (crypto-shredding)</code></pre>
+<div class="pagebreak">~ page 3 ~</div>
+<h2>Example</h2>
+<span class="lang">json</span>
+<pre class="code"><code>{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "ReadOwnReports",
+      "Effect": "Allow",
+      "Action": ["s3:GetObject"],
+      "Resource": "arn:aws:s3:::acme-reports/tenant-*/reports/*"
+    },
+    {
+      "Sid": "DecryptWithReportsKeyOnly",
+      "Effect": "Allow",
+      "Action": ["kms:Decrypt"],
+      "Resource": "arn:aws:kms:eu-west-1:111122223333:key/5f1e…",
+      "Condition": { "StringEquals": { "kms:ViaService": "s3.eu-west-1.amazonaws.com" } }
+    }
+  ]
+}</code></pre>
+<span class="lang">yaml</span>
+<pre class="code"><code># Istio: require mTLS everywhere, and allow only orders → payments
+apiVersion: security.istio.io/v1beta1
+kind: PeerAuthentication
+metadata: { name: default, namespace: prod }
+spec: { mtls: { mode: STRICT } }
+---
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata: { name: payments-allow-orders, namespace: prod }
+spec:
+  selector: { matchLabels: { app: payments } }
+  action: ALLOW
+  rules:
+    - from: [{ source: { principals: ["cluster.local/ns/prod/sa/orders"] } }]
+      to:   [{ operation: { methods: ["POST"], paths: ["/charge"] } }]</code></pre>
+<span class="lang">bash</span>
+<pre class="code"><code># Vault: dynamic, short-lived database credentials
+vault write database/roles/payments-app \
+    db_name=payments \
+    creation_statements="CREATE ROLE \"{&#123;name}}\" LOGIN PASSWORD '{&#123;password}}' VALID UNTIL '{&#123;expiration}}'; \
+                         GRANT SELECT, INSERT ON ledger TO \"{&#123;name}}\";" \
+    default_ttl=1h max_ttl=4h
+vault read database/creds/payments-app      # username v-payments-8f3k…, a password, lease 1h</code></pre>
+<span class="lang">python</span>
+<pre class="code"><code># Envelope encryption with AWS KMS
+import boto3, os
+from cryptography.hazmat.primitives.ciphers.aead import AESGCM
+kms = boto3.client("kms")
+
+def encrypt(plaintext: bytes, key_id: str) -&gt; dict:
+    dk = kms.generate_data_key(KeyId=key_id, KeySpec="AES_256")
+    nonce = os.urandom(12)
+    ct = AESGCM(dk["Plaintext"]).encrypt(nonce, plaintext, None)
+    return {"edk": dk["CiphertextBlob"], "nonce": nonce, "ct": ct}    # the plaintext key is discarded
+
+def decrypt(blob: dict) -&gt; bytes:
+    key = kms.decrypt(CiphertextBlob=blob["edk"])["Plaintext"]        # IAM-checked, logged
+    return AESGCM(key).decrypt(blob["nonce"], blob["ct"], None)</code></pre>
+<h2>Exercises</h2>
+<ol class="num">
+<li><span class="n">1.</span>Design least-privilege IAM for a service.
+<details open><summary>Solution</summary>List exactly what the service does: reads objects under one prefix, writes to one queue, and decrypts with one KMS key. Grant only those actions on those ARNs, with conditions (region, VPC endpoint, tags). Give it its own role through workload identity (no access keys). Deny wildcards via policy checks in CI. Start from access logs (IAM Access Analyzer can generate a policy from CloudTrail) and review unused permissions quarterly.</details></li>
+<li><span class="n">2.</span>Encrypt data at rest and in transit.
+<details open><summary>Solution</summary>At rest: enable KMS encryption on volumes, the database, snapshots, and buckets (default-deny unencrypted uploads with a bucket policy); use envelope encryption at the application level for sensitive fields. In transit: TLS 1.3 at the edge with HSTS; mTLS between services (mesh or SPIRE); <code>sslmode=verify-full</code> to the database. Verify with scanners (e.g. <code>testssl.sh</code>) and config rules that alert on unencrypted resources.</details></li>
+<li><span class="n">3.</span>A CI job has an AWS access key with <code>AdministratorAccess</code> stored as a repo secret. List the risks and a fix.
+<details open><summary>Solution</summary>Risks: a long-lived key that anyone who can edit workflows (or a compromised action) can exfiltrate; unlimited blast radius across the account; no expiry. Fix: GitHub OIDC federation to a role that is assumable only from this repo and branch (via conditions), with least-privilege permissions for the deploy, and credentials that expire in minutes. Delete the key and review CloudTrail for its past use.</details></li>
+</ol>
+<div class="pagebreak">~ page 4 ~</div>
+<h2>Mini project</h2>
+<h3>A threat model + least-privilege IAM + encryption for a small system.</h3>
+<figure>
+<svg viewBox="0 0 596 632" role="img" aria-label="Diagram 2 (redrawn from Mermaid)"><path class="sk" style="color:var(--ink2)" d="M298 92 C298 114, 298 114, 298 135" marker-end="url(#arr)"/><path class="sk" style="color:var(--ink2)" d="M298 190 C298 216, 109 216, 109 242" marker-end="url(#arr)"/><path class="sk" style="color:var(--ink2)" d="M298 190 C298 212, 309 212, 309 233" marker-end="url(#arr)"/><path class="sk" style="color:var(--ink2)" d="M298 190 C298 216, 498 216, 498 242" marker-end="url(#arr)"/><path class="sk" style="color:var(--ink2)" d="M109 333 C109 359, 298 359, 298 385" marker-end="url(#arr)"/><path class="sk" style="color:var(--ink2)" d="M309 342 C309 364, 298 364, 298 385" marker-end="url(#arr)"/><path class="sk" style="color:var(--ink2)" d="M498 333 C498 359, 298 359, 298 385" marker-end="url(#arr)"/><path class="sk" style="color:var(--ink2)" d="M298 476 C298 498, 298 498, 298 519" marker-end="url(#arr)"/><rect class="sk" style="fill:#fdfbf4" x="203" y="22" width="189" height="70" rx="10"/><text class="lbl" style="font-size:15px" x="298" y="44" text-anchor="middle">small system:</text><text class="lbl" style="font-size:15px" x="298" y="62" text-anchor="middle">API → queue → worker →</text><text class="lbl" style="font-size:15px" x="298" y="80" text-anchor="middle">bucket + DB</text><rect class="sk" style="fill:#fdfbf4" x="203" y="138" width="189" height="52" rx="10"/><text class="lbl" style="font-size:15px" x="298" y="160" text-anchor="middle">threat model (STRIDE +</text><text class="lbl" style="font-size:15px" x="298" y="178" text-anchor="middle">trust boundaries)</text><rect class="sk" style="fill:#fdfbf4" x="22" y="245" width="174" height="88" rx="10"/><text class="lbl" style="font-size:15px" x="109" y="267" text-anchor="middle">one identity per</text><text class="lbl" style="font-size:15px" x="109" y="285" text-anchor="middle">component,</text><text class="lbl" style="font-size:15px" x="109" y="303" text-anchor="middle">least-privilege</text><text class="lbl" style="font-size:15px" x="109" y="321" text-anchor="middle">policies (Terraform)</text><rect class="sk" style="fill:#fdfbf4" x="222" y="236" width="174" height="106" rx="10"/><text class="lbl" style="font-size:15px" x="309" y="258" text-anchor="middle">KMS keys: bucket</text><text class="lbl" style="font-size:15px" x="309" y="276" text-anchor="middle">SSE-KMS,</text><text class="lbl" style="font-size:15px" x="309" y="294" text-anchor="middle">DB encryption,</text><text class="lbl" style="font-size:15px" x="309" y="312" text-anchor="middle">field-level envelope</text><text class="lbl" style="font-size:15px" x="309" y="330" text-anchor="middle">for PII</text><rect class="sk" style="fill:#fdfbf4" x="422" y="245" width="152" height="88" rx="10"/><text class="lbl" style="font-size:15px" x="498" y="267" text-anchor="middle">private subnets,</text><text class="lbl" style="font-size:15px" x="498" y="285" text-anchor="middle">security groups,</text><text class="lbl" style="font-size:15px" x="498" y="303" text-anchor="middle">VPC endpoints, no</text><text class="lbl" style="font-size:15px" x="498" y="321" text-anchor="middle">public DB</text><rect class="sk" style="fill:#fdfbf4" x="211" y="388" width="174" height="88" rx="10"/><text class="lbl" style="font-size:15px" x="298" y="410" text-anchor="middle">checks: checkov /</text><text class="lbl" style="font-size:15px" x="298" y="428" text-anchor="middle">tfsec in CI,</text><text class="lbl" style="font-size:15px" x="298" y="446" text-anchor="middle">IAM Access Analyzer,</text><text class="lbl" style="font-size:15px" x="298" y="464" text-anchor="middle">testssl</text><rect class="sk" style="fill:#fdfbf4" x="211" y="522" width="174" height="88" rx="10"/><text class="lbl" style="font-size:15px" x="298" y="544" text-anchor="middle">simulated compromise</text><text class="lbl" style="font-size:15px" x="298" y="562" text-anchor="middle">of the worker:</text><text class="lbl" style="font-size:15px" x="298" y="580" text-anchor="middle">what can it reach?</text><text class="lbl" style="font-size:15px" x="298" y="598" text-anchor="middle">(should be tiny)</text></svg>
+<figcaption>Fig 2: diagram redrawn by hand from the Mermaid source</figcaption>
+</figure>
+<h3>Steps</h3>
+<ol class="num">
+<li><span class="n">1.</span>Draw the system and its trust boundaries; list STRIDE threats per boundary.</li>
+<li><span class="n">2.</span>Terraform (on LocalStack or a sandbox account): a separate role for each component, with only the actions it needs.</li>
+<li><span class="n">3.</span>Encryption: KMS keys, bucket policy denying unencrypted uploads, DB encryption, and envelope encryption for one PII field.</li>
+<li><span class="n">4.</span>Networking: private subnets, security groups with specific sources, VPC endpoints instead of public egress.</li>
+<li><span class="n">5.</span>Policy checks in CI (<code>checkov</code>, <code>tfsec</code>) that fail on wildcards, public buckets, or missing encryption.</li>
+<li><span class="n">6.</span>"Assume breach" exercise: with the worker's credentials, list everything it can access; document the blast radius.</li>
+</ol>
+<div class="box"><b>Done when:</b> each component's reachable resources are exactly what it needs, CI blocks insecure changes, and the blast-radius write-up fits in a paragraph.</div>
+<h2>Design</h2>
+<h3>Design the security posture for a multi-service platform.</h3>
+<p>Requirements: ~40 microservices on Kubernetes across 3 environments; handles payments (PCI) and personal data (GDPR); 200 engineers; must pass SOC 2; must contain the impact of any single compromised service or credential.</p>
+<figure>
+<svg viewBox="0 0 640 873" role="img" aria-label="Diagram 3 (redrawn from Mermaid)"><g transform="scale(0.981)"><rect class="sk red" style="stroke-dasharray:8 6;stroke-width:2" x="163" y="68" width="238" height="334" rx="14"/><text class="lbl r" style="font-size:15px" x="175" y="87">Edge</text><rect class="sk red" style="stroke-dasharray:8 6;stroke-width:2" x="170" y="418" width="342" height="316" rx="14"/><text class="lbl r" style="font-size:15px" x="182" y="437">prod cluster (per environment account)</text><rect class="sk red" style="stroke-dasharray:8 6;stroke-width:2" x="265" y="611" width="218" height="249" rx="14"/><text class="lbl r" style="font-size:15px" x="277" y="630">PCI account (minimal scope)</text><path class="sk" style="color:var(--ink2)" d="M230 168 C230 224, 329 224, 329 279" marker-end="url(#arr)"/><path class="sk" style="color:var(--ink2)" d="M329 388 C329 416, 407 416, 407 445" marker-end="url(#arr)"/><path class="sk" style="color:var(--ink2)" d="M407 572 C407 600, 249 600, 249 629" marker-end="url(#arr)"/><path class="sk" style="color:var(--ink2)" d="M411 711 C411 744, 326 744, 326 777" marker-end="url(#arr)"/><path class="sk" style="color:var(--ink2)" d="M407 572 C407 605, 411 605, 411 638" marker-end="url(#arr)"/><path class="sk" style="color:var(--ink2)" d="M90 153 C90 230, 167 230, 167 306" marker-end="url(#arr)"/><path class="sk" style="color:var(--ink2)" d="M167 361 C167 408, 216 408, 216 454" marker-end="url(#arr)"/><path class="sk" style="color:var(--ink2)" d="M551 153 C551 217, 488 217, 488 281" marker-end="url(#arr)"/><path class="sk" style="color:var(--ink2)" d="M389 222 C389 318, 341 318, 341 415" marker-end="url(#arr)"/><rect x="368" y="595" width="83" height="20" rx="4" style="fill:#fdfbf4;stroke:none"/><text class="lbl g" style="font-size:14px" x="409" y="609" text-anchor="middle">tokens only</text><rect class="sk" style="fill:#fdfbf4" x="177" y="98" width="107" height="70" rx="10"/><text class="lbl" style="font-size:15px" x="230" y="120" text-anchor="middle">CDN + WAF +</text><text class="lbl" style="font-size:15px" x="230" y="138" text-anchor="middle">DDoS</text><text class="lbl" style="font-size:15px" x="230" y="156" text-anchor="middle">protection</text><rect class="sk" style="fill:#fdfbf4" x="272" y="282" width="115" height="106" rx="10"/><text class="lbl" style="font-size:15px" x="329" y="304" text-anchor="middle">API gateway:</text><text class="lbl" style="font-size:15px" x="329" y="322" text-anchor="middle">OAuth2/OIDC,</text><text class="lbl" style="font-size:15px" x="329" y="340" text-anchor="middle">rate limits,</text><text class="lbl" style="font-size:15px" x="329" y="358" text-anchor="middle">schema</text><text class="lbl" style="font-size:15px" x="329" y="376" text-anchor="middle">validation</text><rect class="sk" style="fill:#fdfbf4" x="317" y="448" width="181" height="124" rx="10"/><text class="lbl" style="font-size:15px" x="407" y="470" text-anchor="middle">services: mTLS</text><text class="lbl" style="font-size:15px" x="407" y="488" text-anchor="middle">via mesh,</text><text class="lbl" style="font-size:15px" x="407" y="506" text-anchor="middle">AuthorizationPolicies</text><text class="lbl" style="font-size:15px" x="407" y="524" text-anchor="middle">(deny by</text><text class="lbl" style="font-size:15px" x="407" y="542" text-anchor="middle">default),</text><text class="lbl" style="font-size:15px" x="407" y="560" text-anchor="middle">NetworkPolicies</text><rect class="sk" style="fill:#fdfbf4" x="184" y="632" width="130" height="88" rx="10"/><text class="lbl" style="font-size:15px" x="249" y="654" text-anchor="middle">Vault: dynamic</text><text class="lbl" style="font-size:15px" x="249" y="672" text-anchor="middle">DB creds,</text><text class="lbl" style="font-size:15px" x="249" y="690" text-anchor="middle">short-lived</text><text class="lbl" style="font-size:15px" x="249" y="708" text-anchor="middle">certs</text><rect class="sk" style="fill:#fdfbf4" x="354" y="641" width="115" height="70" rx="10"/><text class="lbl" style="font-size:15px" x="411" y="663" text-anchor="middle">card</text><text class="lbl" style="font-size:15px" x="411" y="681" text-anchor="middle">tokenization</text><text class="lbl" style="font-size:15px" x="411" y="699" text-anchor="middle">service</text><path class="sk" style="fill:#e3f1d8" d="M279 788 A47 8 0 0 1 374 788 L374 838 A47 8 0 0 1 279 838 Z"/><path class="sk" d="M279 788 A47 8 0 0 0 374 788"/><text class="lbl" style="font-size:15px" x="326" y="809" text-anchor="middle">card data</text><text class="lbl" style="font-size:15px" x="326" y="827" text-anchor="middle">(HSM/KMS)</text><rect class="sk" style="fill:#fdfbf4" x="44" y="113" width="93" height="40" rx="10"/><text class="lbl" style="font-size:15px" x="90" y="138" text-anchor="middle">engineers</text><rect class="sk" style="fill:#fdfbf4" x="102" y="309" width="130" height="52" rx="10"/><text class="lbl" style="font-size:15px" x="167" y="331" text-anchor="middle">SSO + MFA +</text><text class="lbl" style="font-size:15px" x="167" y="349" text-anchor="middle">device posture</text><rect class="sk" style="fill:#fdfbf4" x="154" y="457" width="122" height="106" rx="10"/><text class="lbl" style="font-size:15px" x="216" y="479" text-anchor="middle">just-in-time,</text><text class="lbl" style="font-size:15px" x="216" y="497" text-anchor="middle">time-boxed</text><text class="lbl" style="font-size:15px" x="216" y="515" text-anchor="middle">prod access</text><text class="lbl" style="font-size:15px" x="216" y="533" text-anchor="middle">(approved,</text><text class="lbl" style="font-size:15px" x="216" y="551" text-anchor="middle">logged)</text><rect class="sk" style="fill:#fdfbf4" x="494" y="113" width="115" height="40" rx="10"/><text class="lbl" style="font-size:15px" x="551" y="138" text-anchor="middle">all accounts</text><path class="sk" style="fill:#e3f1d8" d="M426 292 A62 8 0 0 1 551 292 L551 378 A62 8 0 0 1 426 378 Z"/><path class="sk" d="M426 292 A62 8 0 0 0 551 292"/><text class="lbl" style="font-size:15px" x="488" y="313" text-anchor="middle">central,</text><text class="lbl" style="font-size:15px" x="488" y="331" text-anchor="middle">immutable</text><text class="lbl" style="font-size:15px" x="488" y="349" text-anchor="middle">audit logs</text><text class="lbl" style="font-size:15px" x="488" y="367" text-anchor="middle">+ SIEM alerts</text><rect class="sk" style="fill:#fdfbf4" x="324" y="44" width="130" height="178" rx="10"/><text class="lbl" style="font-size:15px" x="389" y="66" text-anchor="middle">supply chain:</text><text class="lbl" style="font-size:15px" x="389" y="84" text-anchor="middle">signed images,</text><text class="lbl" style="font-size:15px" x="389" y="102" text-anchor="middle">admission</text><text class="lbl" style="font-size:15px" x="389" y="120" text-anchor="middle">control</text><text class="lbl" style="font-size:15px" x="389" y="138" text-anchor="middle">(verify</text><text class="lbl" style="font-size:15px" x="389" y="156" text-anchor="middle">signature),</text><text class="lbl" style="font-size:15px" x="389" y="174" text-anchor="middle">SBOM,</text><text class="lbl" style="font-size:15px" x="389" y="192" text-anchor="middle">dependency</text><text class="lbl" style="font-size:15px" x="389" y="210" text-anchor="middle">scanning</text></g></svg>
+<figcaption>Fig 3: diagram redrawn by hand from the Mermaid source</figcaption>
+</figure>
+<h3>Decisions to justify</h3>
+<ul>
+<li><b>Zero trust inside the cluster:</b> mesh mTLS with workload identities, and authorization policies that deny by default (service A may call only B's specific endpoints).</li>
+<li><b>Shrink PCI scope:</b> only a small tokenization service in a separate account ever sees card numbers; everything else handles tokens.</li>
+<li><b>No long-lived secrets:</b> workload identity → Vault or cloud roles; dynamic DB credentials; CI via OIDC.</li>
+<li><b>Human access:</b> SSO + MFA + managed devices; no standing prod access — just-in-time elevation with approval, time limits, and session recording.</li>
+<li><b>Blast radius:</b> an account per environment and per sensitive domain; per-service identities; cell-based deployment for the core; egress allow-lists.</li>
+<li><b>Supply chain:</b> only signed images from the internal registry are admitted (policy controller); SBOMs; dependency and image scanning in CI.</li>
+<li><b>Detect and respond:</b> central immutable audit logs, alerts on anomalous IAM or KMS use, and incident runbooks (<a href="../volume-2-software-engineering/ch15-incident-response-and-postmortems.notes.html">Vol 2 Ch 15</a>).</li>
+</ul>
+<div class="pagebreak">~ page 5 ~</div>
+<h2>Open source</h2>
+<ul>
+<li><a href="https://github.com/hashicorp/vault"><code>hashicorp/vault</code></a> — secrets engines (dynamic DB credentials, PKI, transit encryption-as-a-service), leases, and audit devices.</li>
+<li><a href="https://github.com/spiffe/spire"><code>spiffe/spire</code></a> — issues short-lived workload identities (X.509 SVIDs) based on attestation, the foundation for mTLS without shared secrets. See also Google's BeyondCorp papers on zero trust.</li>
+</ul>
+<h2>Interview</h2>
+<ol class="num">
+<li><span class="n">1.</span><b>"Zero trust — what changes?"</b>
+<details open><summary>Answer</summary>Network location stops granting trust. Every request — user-to-app and service-to-service — is authenticated with a strong identity (user + device posture, or a workload certificate), authorized against an explicit least-privilege policy, and encrypted, even inside the private network. VPN-style broad access is replaced by per-application, identity-aware access, with continuous verification and logging. The goal is that a single breached host or credential can't move laterally.</details></li>
+<li><span class="n">2.</span><b>"How do you manage secrets at scale?"</b>
+<details open><summary>Answer</summary>Centralize them in a secrets manager with fine-grained access and audit logs; give workloads identities (IAM roles, Kubernetes service accounts, SPIFFE) so they authenticate without a bootstrap secret; prefer dynamic, short-lived credentials generated on demand; rotate everything else automatically; never put secrets in code, images, or logs (scan for leaks); and scope each secret to one service so a leak has a small blast radius.</details></li>
+</ol>
+<div class="pagebreak">~ page 6 ~</div>
+<h2>Checklist</h2>
+<ul>
+<li class="todo">least privilege everywhere</li>
+<li class="todo">encrypt transit + rest</li>
+<li class="todo">rotate credentials automatically</li>
+</ul>
+  <nav class="nav"><a href="ch13-disaster-recovery-backups-rto-rpo.notes.html">← Ch 13 — Disaster Recovery (Backups, RTO/RPO)</a><a href="index.notes.html">☰ Contents</a><a href="ch15-cloud-architecture.notes.html">Ch 15 — Cloud Architecture →</a></nav>
+</main>
+</body>
+</html>

@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ch 36 — Binary, CPU, Registers, Cache &amp; Memory Hierarchy — Notes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;700&family=Kalam:wght@400;700&family=Patrick+Hand&display=swap" rel="stylesheet">
+<style>
+/* ===== Page tokens ===== */
+:root{
+  --line:32px;                 /* ruled-line spacing; every vertical size is a multiple */
+  --paper:#fdfbf4; --rule:#c9dcef; --margin:#e8a0a0;
+  --ink:#1f3a93;               /* blue pen (body) */
+  --ink2:#222;                 /* black pen (headings) */
+  --red:#c0392b; --green:#1e8449;
+  --hl-yellow:rgba(255,235,59,.55); --hl-pink:rgba(255,128,171,.45);
+  --hl-green:rgba(118,255,3,.35); --hl-blue:rgba(64,196,255,.35);
+  --sticky:#fff59d; --desk:#e9e4d8;
+  --hand:'Kalam','Patrick Hand','Comic Sans MS','Segoe Print','Bradley Hand',cursive;
+  --title:'Caveat','Kalam','Segoe Print','Bradley Hand',cursive;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){ --desk:#2b2b2b; }
+}
+:root[data-theme="dark"]{ --desk:#2b2b2b; }
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--desk);font-family:var(--hand);color:var(--ink);}
+
+/* ===== Notebook sheet ===== */
+.page{
+  position:relative; max-width:860px; margin:24px auto; padding:var(--line) 28px calc(var(--line)*2) 84px;
+  background:
+    linear-gradient(90deg,transparent 64px,var(--margin) 64px,var(--margin) 66px,transparent 66px),
+    repeating-linear-gradient(var(--paper) 0,var(--paper) calc(var(--line) - 1px),var(--rule) calc(var(--line) - 1px),var(--rule) var(--line));
+  background-color:var(--paper);
+  box-shadow:0 2px 6px rgba(0,0,0,.15),0 12px 28px rgba(0,0,0,.12);
+  font-size:20px; line-height:var(--line);
+}
+.page::before{ /* punched holes */
+  content:""; position:absolute; left:22px; top:0; bottom:0; width:18px;
+  background:radial-gradient(circle,var(--desk) 7px,transparent 8px) 0 40px/18px 220px repeat-y;
+}
+@media (max-width:600px){
+  .page{margin:0;padding-left:52px;padding-right:16px;font-size:18px;
+    background:
+      linear-gradient(90deg,transparent 40px,var(--margin) 40px,var(--margin) 42px,transparent 42px),
+      repeating-linear-gradient(var(--paper) 0,var(--paper) calc(var(--line) - 1px),var(--rule) calc(var(--line) - 1px),var(--rule) var(--line));
+    background-color:var(--paper);}
+  .page::before{left:10px;width:16px}
+}
+
+/* ===== Text (all margins are multiples of --line so text sits on the rules) ===== */
+.date{position:absolute;top:0;right:24px;font-family:var(--title);font-size:22px;color:var(--ink2);line-height:var(--line)}
+h1{font-family:var(--title);font-weight:700;color:var(--ink2);font-size:46px;line-height:calc(var(--line)*2);margin:0;transform:rotate(-1deg)}
+h1 .u{background:linear-gradient(transparent 62%,var(--hl-yellow) 62%,var(--hl-yellow) 92%,transparent 92%)}
+h2{font-family:var(--title);font-weight:700;color:var(--red);font-size:32px;line-height:calc(var(--line)*1.5);margin:calc(var(--line)*.5) 0 0}
+h2::before{content:"➤ ";font-size:22px}
+p,li{margin:0}
+ul,ol{margin:0;padding-left:28px}
+ul{list-style:none}
+ul>li::before{content:"–";position:absolute;margin-left:-20px}
+ul>li.star::before{content:"★";color:var(--red)}
+ul>li.arrow::before{content:"→"}
+ul>li.check::before{content:"✓";color:var(--green)}
+.gap{height:var(--line)}
+
+/* ===== Pen effects ===== */
+.hl{background:var(--hl-yellow);padding:0 3px;border-radius:3px 6px 4px 7px}
+.hl.pink{background:var(--hl-pink)} .hl.green{background:var(--hl-green)} .hl.blue{background:var(--hl-blue)}
+.red{color:var(--red)} .green{color:var(--green)} .black{color:var(--ink2)}
+.ul{text-decoration:underline wavy var(--red);text-underline-offset:5px}
+.circ{border:2px solid var(--red);border-radius:50% 45% 55% 48%;padding:0 6px}
+.strike{text-decoration:line-through 2px var(--red)}
+.term{font-weight:700;color:var(--ink2)}
+.box{display:flow-root;border:2.5px solid var(--ink2);border-radius:4px 10px 6px 12px;padding:calc(var(--line)*.5 - 2.5px) 14px;margin:calc(var(--line)*.5) 0;transform:rotate(-.4deg);background:rgba(255,255,255,.35)}
+.box.red{border-color:var(--red)}
+.formula{font-family:var(--title);font-size:28px;text-align:center;color:var(--ink2)}
+
+/* sticky note */
+.sticky{float:right;width:min(250px,42%);margin:0 0 var(--line) 20px;padding:var(--line) 16px;background:var(--sticky);
+  color:#333;transform:rotate(2.2deg);box-shadow:2px 4px 8px rgba(0,0,0,.18);font-size:18px}
+.sticky b{font-family:var(--title);font-size:24px;color:var(--red)}
+@media (max-width:600px){.sticky{float:none;width:auto;margin:var(--line) 0}}
+
+/* margin annotation (lives in the red margin) */
+.side{position:absolute;left:4px;width:58px;text-align:center;font-family:var(--title);font-size:17px;line-height:18px;color:var(--red);transform:rotate(-8deg)}
+@media (max-width:600px){.side{display:none}}
+
+/* two-column notes */
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:0 28px}
+@media (max-width:600px){.cols{grid-template-columns:1fr}}
+
+/* diagrams */
+figure{margin:var(--line) 0;text-align:center}
+figure svg{width:100%;max-width:640px;height:auto;overflow:visible}
+figcaption{font-family:var(--title);font-size:20px;color:var(--ink2)}
+/* phones: keep labels readable — diagram scrolls inside its own box instead of shrinking */
+@media (max-width:600px){figure{overflow-x:auto}figure svg{min-width:520px}}
+.sk{fill:none;stroke:var(--ink2);stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round;filter:url(#rough)}
+.sk.blue{stroke:var(--ink)} .sk.red{stroke:var(--red)} .sk.green{stroke:var(--green)}
+.lbl{font-family:var(--hand);font-size:17px;fill:var(--ink)}
+.lbl.b{font-weight:700;fill:var(--ink2)} .lbl.r{fill:var(--red)} .lbl.g{fill:var(--green)}
+
+/* table */
+.wrap{overflow-x:auto}
+table{border-collapse:collapse;margin:calc(var(--line)*.5) 0;min-width:100%}
+th,td{border:2px solid var(--ink2);padding:0 10px;text-align:left;vertical-align:top}
+th{font-family:var(--title);font-size:24px;color:var(--ink2)}
+
+@media print{body{background:#fff}.page{box-shadow:none;margin:0}.page::before{display:none}}
+
+/* ===== Added for long chapter notes ===== */
+pre.code{font-family:Consolas,'Courier New',monospace;font-size:14px;line-height:var(--line);color:var(--ink);background:rgba(255,255,255,.45);
+  border-left:4px solid var(--red);margin:calc(var(--line)*.5) 0;padding:0 12px;overflow-x:auto;white-space:pre}
+pre.code.ascii{border-left-color:var(--green)}
+code{font-family:Consolas,'Courier New',monospace;font-size:.82em;background:rgba(0,0,0,.06);padding:0 3px;border-radius:3px}
+pre.code code{background:none;padding:0;font-size:inherit}
+.lang{font-family:var(--title);font-size:18px;color:var(--red)}
+h3{font-family:var(--title);font-weight:700;color:var(--ink2);font-size:26px;line-height:var(--line);margin:calc(var(--line)*.5) 0 0}
+h3::before{content:"✎ ";font-size:18px;color:var(--red)}
+.nav{display:flex;justify-content:space-between;gap:12px;font-family:var(--title);font-size:22px;line-height:var(--line)}
+.nav a{color:var(--red);text-decoration:none}
+.nav a:hover{text-decoration:underline wavy}
+.pagebreak{border-top:3px dashed var(--margin);margin:var(--line) 0;text-align:center;font-family:var(--title);color:var(--red);line-height:var(--line)}
+li.todo::before{content:"☐";color:var(--ink2)}
+a{color:var(--ink);text-decoration:underline dotted}
+</style>
+</head>
+<body>
+<!-- One shared hand-drawn wobble filter; give every diagram stroke class="sk" -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <!-- userSpaceOnUse region: a % region collapses to nothing on perfectly straight lines (zero-height bbox) -->
+  <filter id="rough" filterUnits="userSpaceOnUse" x="-500" y="-500" width="3000" height="3000">
+    <feTurbulence type="fractalNoise" baseFrequency="0.03" numOctaves="2" seed="3" result="n"/>
+    <feDisplacementMap in="SourceGraphic" in2="n" scale="3"/>
+  </filter>
+  <marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+    <path d="M1 1 L9 5 L1 9" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+  </marker>
+</defs></svg>
+
+<main class="page">
+  <nav class="nav"><a href="ch35-dynamic-programming-greedy-divide-and-conquer-sliding.notes.html">← Ch 35 — Dynamic Programming, Greedy, Divide &amp; Conquer, Sliding Window &amp; Two Pointers</a><a href="index.notes.html">☰ Contents</a><a href="ch37-instruction-cycle-pipelining-simd-and-virtual-memory.notes.html">Ch 37 — Instruction Cycle, Pipelining, SIMD &amp; Virtual Memory →</a></nav>
+  <div class="date">2026-10-10</div>
+  <h1><span class="u">Ch 36 — Binary, CPU, Registers, Cache &amp; Memory Hierarchy</span></h1>
+  <p class="black">Chapter 36 — Binary, CPU, Registers, Cache &amp; Memory Hierarchy</p>
+  <p class="black"><b>Volume 1 — Computer Science Foundations</b> · <a href="index.md">Contents</a> · ← <a href="ch35-dynamic-programming-greedy-divide-and-conquer-sliding.notes.html">Chapter 35 — Dynamic Programming, Greedy, Divide &amp; Conquer, Sliding Window &amp; Two Pointers</a> · Next → <a href="ch37-instruction-cycle-pipelining-simd-and-virtual-memory.notes.html">Chapter 37 — Instruction Cycle, Pipelining, SIMD &amp; Virtual Memory</a></p>
+  <h2>Concept</h2>
+  <p>Binary and number representation (two's complement, floats); CPU registers; cache levels and the memory hierarchy.</p>
+  <div class="box"><b>In one sentence:</b> everything in a computer is bits; the CPU computes only on a handful of tiny, ultra-fast registers; and because main memory is ~100× slower than the CPU, a ladder of caches keeps recently used data close — so <i>how</i> you walk through memory often matters more than how many instructions you run.</div>
+  <p><b>Mental model — a chef's kitchen.</b> Registers are the chef's hands. L1 cache is the cutting board. L2 is the counter. L3 is the kitchen shelf. RAM is the pantry down the hall. The SSD is the grocery store across town. A good chef brings a whole crate from the pantry at once (a cache line) and uses everything in it before walking back.</p>
+  <h3>Number representation</h3>
+  <div class="wrap"><table>
+<tr><th>Format</th><th>Example</th><th>Notes</th></tr>
+<tr><td>Unsigned binary</td><td><code>1011₂ = 8 + 2 + 1 = 11</code></td><td>n bits hold 0 … 2ⁿ − 1</td></tr>
+<tr><td>Hex</td><td><code>0xFF = 255</code>, <code>0x1F = 31</code></td><td>each hex digit is 4 bits</td></tr>
+<tr><td>Two's complement (signed)</td><td><code>−1 = 1111 1111</code> (8-bit)</td><td>range −2ⁿ⁻¹ … 2ⁿ⁻¹ − 1; addition hardware works unchanged</td></tr>
+<tr><td>Negate x</td><td>invert all bits, add 1</td><td><code>5 = 0000 0101</code> → <code>1111 1010</code> → <code>1111 1011 = −5</code></td></tr>
+<tr><td>IEEE-754 float</td><td>sign, exponent, mantissa</td><td>see <a href="ch15-correctness-traps.notes.html">Ch 15</a></td></tr>
+<tr><td>Endianness</td><td><code>0x12345678</code> stored as <code>78 56 34 12</code> (little-endian, x86/ARM)</td><td>matters in network protocols and binary files</td></tr>
+</table></div>
+  <h3>CPU basics</h3>
+  <div class="wrap"><table>
+<tr><th>Part</th><th>Role</th></tr>
+<tr><td>Registers</td><td>a few dozen named slots (x86-64: <code>rax</code>, <code>rbx</code>, … 16 general-purpose; ARM64: 31) holding the values being computed right now</td></tr>
+<tr><td>ALU</td><td>does arithmetic and logic on registers</td></tr>
+<tr><td>Control unit</td><td>fetches and decodes instructions</td></tr>
+<tr><td>Program counter (PC/RIP)</td><td>address of the next instruction</td></tr>
+<tr><td>Stack pointer (SP/RSP)</td><td>top of the current stack (<a href="ch12-memory-stack-heap-ownership-and-garbage-collection.notes.html">Ch 12</a>)</td></tr>
+<tr><td>Cores</td><td>independent CPUs on one chip, each with its own registers and L1/L2</td></tr>
+</table></div>
+  <h3>The memory hierarchy (typical, 2020s desktop)</h3>
+  <div class="wrap"><table>
+<tr><th>Level</th><th>Size</th><th>Latency</th><th>≈ CPU cycles</th></tr>
+<tr><td>Registers</td><td>~1 KB</td><td>&lt; 0.3 ns</td><td>1</td></tr>
+<tr><td>L1 cache (per core)</td><td>32–64 KB</td><td>~1 ns</td><td>4</td></tr>
+<tr><td>L2 cache (per core)</td><td>256 KB – 2 MB</td><td>~3–4 ns</td><td>12</td></tr>
+<tr><td>L3 cache (shared)</td><td>8–64 MB</td><td>~10–15 ns</td><td>40</td></tr>
+<tr><td>RAM (DRAM)</td><td>8–512 GB</td><td>~80–100 ns</td><td>300</td></tr>
+<tr><td>NVMe SSD</td><td>TBs</td><td>~20–100 µs</td><td>100,000</td></tr>
+<tr><td>HDD</td><td>TBs</td><td>~5–10 ms</td><td>30,000,000</td></tr>
+<tr><td>Network, same datacenter</td><td>—</td><td>~0.5 ms</td><td>1,500,000</td></tr>
+</table></div>
+  <p><b>Cache lines and locality</b> — memory moves in <b>64-byte cache lines</b>, never single bytes.</p>
+  <ul>
+<li><b>Spatial locality:</b> using <code>a[i]</code> makes <code>a[i+1]</code> cheap (same line).</li>
+<li><b>Temporal locality:</b> using x again soon hits the cache.</li>
+<li><b>False sharing:</b> two cores writing <i>different</i> variables on the <i>same</i> line fight over it — a big hidden slowdown in multithreaded code.</li>
+</ul>
+  <h2>Prereqs</h2>
+  <ul>
+<li><a href="../volume-0-math/ch01-logic-and-boolean-algebra.notes.html">Vol 0 Ch 1 — Logic &amp; Boolean Algebra</a></li>
+</ul>
+  <h2>Diagram</h2>
+  <h3>The memory-hierarchy pyramid</h3>
+  <pre class="code ascii"><code>                    ╱╲
+                   ╱  ╲         registers      &lt; 1 ns      bytes
+                  ╱────╲
+                 ╱  L1  ╲       ~1 ns          64 KB
+                ╱────────╲
+               ╱    L2    ╲     ~4 ns          1 MB
+              ╱────────────╲
+             ╱      L3      ╲   ~12 ns         32 MB
+            ╱────────────────╲
+           ╱       RAM        ╲  ~100 ns       64 GB
+          ╱────────────────────╲
+         ╱     SSD / network    ╲  ~50 µs+     TBs
+        ╱────────────────────────╲
+     faster, smaller, costlier ▲ │ ▼ slower, bigger, cheaper
+</code></pre>
+  <h3>A cache hit vs a miss</h3>
+  <figure>
+<svg viewBox="0 0 660 612" style="max-width:660px" role="img" aria-label="A cache hit vs a miss"><path class="sk" d="M70 46 L70 598" style="stroke-dasharray:6 7;stroke-width:1.6"/><path class="sk" d="M200 46 L200 598" style="stroke-dasharray:6 7;stroke-width:1.6"/><path class="sk" d="M330 46 L330 598" style="stroke-dasharray:6 7;stroke-width:1.6"/><path class="sk" d="M460 46 L460 598" style="stroke-dasharray:6 7;stroke-width:1.6"/><path class="sk" d="M590 46 L590 598" style="stroke-dasharray:6 7;stroke-width:1.6"/><rect class="sk" x="12" y="10" width="116" height="36" rx="8" style="fill:#fdfbf4"/><text class="lbl b" x="70" y="34" text-anchor="middle">CPU</text><rect class="sk" x="142" y="10" width="116" height="36" rx="8" style="fill:#fdfbf4"/><text class="lbl b" x="200" y="34" text-anchor="middle">L1</text><rect class="sk" x="272" y="10" width="116" height="36" rx="8" style="fill:#fdfbf4"/><text class="lbl b" x="330" y="34" text-anchor="middle">L2</text><rect class="sk" x="402" y="10" width="116" height="36" rx="8" style="fill:#fdfbf4"/><text class="lbl b" x="460" y="34" text-anchor="middle">L3</text><rect class="sk" x="532" y="10" width="116" height="36" rx="8" style="fill:#fdfbf4"/><text class="lbl b" x="590" y="34" text-anchor="middle">RAM</text><rect x="91" y="75" width="87" height="22" style="fill:var(--paper);stroke:none"/><text class="lbl" x="135" y="92" text-anchor="middle">load a[0]</text><path class="sk blue" d="M70 104 L196 104" style="color:var(--ink)" marker-end="url(#arr)"/><rect x="113" y="135" width="43" height="22" style="fill:var(--paper);stroke:none"/><text class="lbl" x="135" y="152" text-anchor="middle">miss</text><path class="sk blue" d="M200 164 L74 164" style="color:var(--ink);stroke-dasharray:7 6" marker-end="url(#arr)"/><rect x="243" y="195" width="43" height="22" style="fill:var(--paper);stroke:none"/><text class="lbl" x="265" y="212" text-anchor="middle">miss</text><path class="sk blue" d="M200 224 L326 224" style="color:var(--ink)" marker-end="url(#arr)"/><rect x="373" y="255" width="43" height="22" style="fill:var(--paper);stroke:none"/><text class="lbl" x="395" y="272" text-anchor="middle">miss</text><path class="sk blue" d="M330 284 L456 284" style="color:var(--ink)" marker-end="url(#arr)"/><rect x="424" y="315" width="202" height="22" style="fill:var(--paper);stroke:none"/><text class="lbl" x="525" y="332" text-anchor="middle">fetch the 64-byte line</text><rect x="477" y="337" width="96" height="22" style="fill:var(--paper);stroke:none"/><text class="lbl" x="525" y="354" text-anchor="middle">(a[0..15])</text><path class="sk blue" d="M460 366 L586 366" style="color:var(--ink)" marker-end="url(#arr)"/><rect x="295" y="397" width="70" height="22" style="fill:var(--paper);stroke:none"/><text class="lbl" x="330" y="414" text-anchor="middle">~100 ns</text><path class="sk blue" d="M590 426 L74 426" style="color:var(--ink);stroke-dasharray:7 6" marker-end="url(#arr)"/><rect x="91" y="457" width="87" height="22" style="fill:var(--paper);stroke:none"/><text class="lbl" x="135" y="474" text-anchor="middle">load a[1]</text><path class="sk blue" d="M70 486 L196 486" style="color:var(--ink)" marker-end="url(#arr)"/><rect x="25" y="517" width="219" height="22" style="fill:var(--paper);stroke:none"/><text class="lbl" x="135" y="534" text-anchor="middle">HIT (~1 ns) — already in</text><rect x="74" y="539" width="122" height="22" style="fill:var(--paper);stroke:none"/><text class="lbl" x="135" y="556" text-anchor="middle">the same line</text><path class="sk blue" d="M200 568 L74 568" style="color:var(--ink);stroke-dasharray:7 6" marker-end="url(#arr)"/></svg>
+<figcaption>Fig 1: A cache hit vs a miss (redrawn from the chapter diagram)</figcaption>
+</figure>
+  <h3>Row-major vs column-major traversal of a 2D array</h3>
+  <pre class="code ascii"><code> memory layout (row-major, as in C and NumPy):  [r0c0 r0c1 r0c2 r0c3 | r1c0 r1c1 …]
+
+ row by row  →→→→  sequential: 1 miss per 16 ints   ✅ fast
+ col by col  ↓↓↓↓  jumps a full row each step: a miss almost every access   ❌ slow
+</code></pre>
+  <h3>Two's complement on an 8-bit wheel</h3>
+  <pre class="code ascii"><code>            0000 0000 = 0
+   1111 1111 = −1       0000 0001 = 1
+ 1000 0000 = −128  ←→  0111 1111 = 127
+      (adding 1 to 127 wraps to −128)
+</code></pre>
+  <div class="pagebreak">~ page 2 ~</div>
+  <h2>Example</h2>
+  <span class="lang">python</span>
+<pre class="code"><code>print(bin(11), hex(255), int("1011", 2))     # 0b1011 0xff 11
+print((-1).to_bytes(4, "little", signed=True).hex())    # ffffffff
+print((5).to_bytes(2, "big").hex(), (5).to_bytes(2, "little").hex())   # 0005 0500
+
+def twos_complement(x, bits=8):
+    return format(x &amp; ((1 &lt;&lt; bits) - 1), f"0{bits}b")
+print(twos_complement(-5), twos_complement(127), twos_complement(-128))
+# 11111011 01111111 10000000
+</code></pre>
+  <span class="lang">python</span>
+<pre class="code"><code>import numpy as np, time
+a = np.random.rand(4000, 4000)               # row-major (C order)
+
+t = time.perf_counter(); s = sum(a[i, :].sum() for i in range(4000)); t_rows = time.perf_counter() - t
+t = time.perf_counter(); s = sum(a[:, j].sum() for j in range(4000)); t_cols = time.perf_counter() - t
+print(f"rows {t_rows:.2f}s  cols {t_cols:.2f}s")   # columns are several times slower
+</code></pre>
+  <span class="lang">c</span>
+<pre class="code"><code>// The same effect in C — identical work, very different speed
+for (int i = 0; i &lt; N; i++)          // fast: walks memory in order
+    for (int j = 0; j &lt; N; j++)
+        sum += m[i][j];
+
+for (int j = 0; j &lt; N; j++)          // slow: strides N*4 bytes per step
+    for (int i = 0; i &lt; N; i++)
+        sum += m[i][j];
+</code></pre>
+  <h2>Exercises</h2>
+  <ol style="list-style:none;padding-left:0">
+<li>1. Convert an int to two's complement bytes.
+<div class="box"><b>Solution</b> −300 in 16 bits: 300 = <code>0000 0001 0010 1100</code>; invert → <code>1111 1110 1101 0011</code>; add 1 → <code>1111 1110 1101 0100</code> = <code>0xFED4</code>. Little-endian bytes: <code>D4 FE</code>. Check with <code>(-300).to_bytes(2, "little", signed=True).hex()</code>.</div></li>
+<li>2. Explain why a row-major loop is faster than column-major.
+<div class="box"><b>Solution</b> In row-major layout, consecutive elements of a row are adjacent in memory. Walking a row uses all 16 ints of each 64-byte cache line, and the prefetcher streams the next lines. Walking a column jumps a whole row (e.g. 16 KB) per step, so almost every access is a cache miss and a TLB miss too.</div></li>
+<li>3. Two threads increment <code>counters[0]</code> and <code>counters[1]</code> in a tight loop. Why is it slow, and how do you fix it?
+<div class="box"><b>Solution</b> False sharing: both counters sit on one cache line, so each write invalidates the other core's copy. Pad each counter to its own 64-byte line (<code>#[repr(align(64))]</code>, <code>alignas(64)</code>), or keep per-thread local counters and combine them at the end.</div></li>
+</ol>
+  <h2>Mini project</h2>
+  <p><b>A tiny instruction-set simulator with registers and a simulated cache.</b></p>
+  <figure>
+<svg viewBox="0 0 558 570" style="max-width:558px" role="img" aria-label="A tiny instruction-set simulator with registers and a simulated cache."><g transform="translate(117,0)"><path class="sk blue" d="M101 134 C 101 167, 101 167, 101 200" style="color:var(--ink)" marker-end="url(#arr)"/><path class="sk blue" d="M88 280 C 88 318, 4 318, 4 357" style="color:var(--ink)" marker-end="url(#arr)"/><path class="sk blue" d="M114 280 C 114 313, 232 313, 232 346" style="color:var(--ink)" marker-end="url(#arr)"/><path class="sk blue" d="M219 426 C 219 459, 119 459, 119 492" style="color:var(--ink)" marker-end="url(#arr)"/><path class="sk blue" d="M245 426 C 245 459, 320 459, 320 492" style="color:var(--ink)" marker-end="url(#arr)"/><rect class="sk" x="18" y="10" width="167" height="124" rx="10" style="fill:#fdfbf4"/><rect class="sk" x="18" y="200" width="167" height="80" rx="10" style="fill:#fdfbf4"/><rect class="sk" x="-97" y="357" width="202" height="58" rx="10" style="fill:#fdfbf4"/><rect class="sk" x="135" y="346" width="193" height="80" rx="10" style="fill:#fdfbf4"/><rect class="sk" x="48" y="492" width="140" height="58" rx="10" style="fill:#fdfbf4"/><rect class="sk" x="219" y="492" width="202" height="58" rx="10" style="fill:#fdfbf4"/><text class="lbl b" x="101" y="34" text-anchor="middle">program:</text><text class="lbl b" x="101" y="56" text-anchor="middle">LOAD r1, [addr]</text><text class="lbl b" x="101" y="78" text-anchor="middle">ADD r1, r2</text><text class="lbl b" x="101" y="100" text-anchor="middle">STORE [addr], r1</text><text class="lbl b" x="101" y="122" text-anchor="middle">JNZ r3, loop</text><text class="lbl b" x="101" y="224" text-anchor="middle">CPU loop:</text><text class="lbl b" x="101" y="246" text-anchor="middle">fetch → decode →</text><text class="lbl b" x="101" y="268" text-anchor="middle">execute</text><text class="lbl b" x="4" y="381" text-anchor="middle">registers r0–r7, PC,</text><text class="lbl b" x="4" y="403" text-anchor="middle">flags</text><text class="lbl b" x="232" y="370" text-anchor="middle">cache: 8 lines × 64</text><text class="lbl b" x="232" y="392" text-anchor="middle">B,</text><text class="lbl b" x="232" y="414" text-anchor="middle">direct-mapped</text><text class="lbl b" x="119" y="516" text-anchor="middle">memory: 64 KB</text><text class="lbl b" x="119" y="538" text-anchor="middle">bytearray</text><text class="lbl b" x="320" y="516" text-anchor="middle">stats: hits, misses,</text><text class="lbl b" x="320" y="538" text-anchor="middle">hit rate</text></g></svg>
+<figcaption>Fig 2: A tiny instruction-set simulator with registers and a simulated cache. (redrawn from the chapter diagram)</figcaption>
+</figure>
+  <h3>Steps</h3>
+  <ol style="list-style:none;padding-left:0">
+<li>1. Define ~8 instructions (<code>LOAD</code>, <code>STORE</code>, <code>ADD</code>, <code>SUB</code>, <code>MOV</code>, <code>JMP</code>, <code>JNZ</code>, <code>HALT</code>) and a tiny assembler from text.</li>
+<li>2. A CPU loop with 8 registers, a PC, and a zero flag.</li>
+<li>3. A direct-mapped cache: address → (tag, index, offset); on a miss, load the whole 64-byte line and count it.</li>
+<li>4. Programs: sum an array row-wise vs column-wise, and a linked-list walk; compare hit rates.</li>
+<li>5. Bonus: make the cache 2-way set-associative with LRU and compare.</li>
+</ol>
+  <div class="box"><b>Done when:</b> the simulator shows a &gt;90% hit rate for sequential access and a much lower one for strided access on the same data.</div>
+  <div class="pagebreak">~ page 3 ~</div>
+  <h2>Open source</h2>
+  <ul>
+<li>[<code>riscv</code>](https://github.com/riscv) specs — <code>riscv-isa-manual</code>: RISC-V is a clean, open ISA; the base integer set is ~40 instructions and readable in an afternoon.</li>
+<li>[<code>rpjohnst/decs</code>](https://github.com/rpjohnst/decs) (educational CPU simulator) — see also <i>Computer Systems: A Programmer's Perspective</i> chapter 6 for the classic treatment of caches.</li>
+</ul>
+  <h2>Interview</h2>
+  <ol style="list-style:none;padding-left:0">
+<li>1. <b>"Why is L1 cache tiny but critical?"</b>
+<div class="box"><b>Answer</b> It must answer in ~4 cycles, and speed falls as size grows: longer wires, bigger lookup structures, more power. So it's kept at ~32–64 KB per core. Most loads hit L1 thanks to locality, so its hit rate dominates performance; every miss costs 3× (L2) to 100× (RAM) more.</div></li>
+<li>2. <b>"What is a cache line?"</b>
+<div class="box"><b>Answer</b> The unit of transfer between memory and cache, usually 64 bytes. Loading one byte brings its whole line into cache. That's why sequential access is fast (spatial locality), why struct layout matters, and why two cores writing to one line cause false sharing.</div></li>
+</ol>
+  <h2>Checklist</h2>
+  <ul>
+<li class="todo">encode two's complement</li>
+<li class="todo">name each memory tier's latency class</li>
+<li class="todo">exploit cache locality</li>
+</ul>
+  <p class="black"><a href="index.md">Contents</a> · ← <a href="ch35-dynamic-programming-greedy-divide-and-conquer-sliding.notes.html">Chapter 35 — Dynamic Programming, Greedy, Divide &amp; Conquer, Sliding Window &amp; Two Pointers</a> · Next → <a href="ch37-instruction-cycle-pipelining-simd-and-virtual-memory.notes.html">Chapter 37 — Instruction Cycle, Pipelining, SIMD &amp; Virtual Memory</a></p>
+  <nav class="nav"><a href="ch35-dynamic-programming-greedy-divide-and-conquer-sliding.notes.html">← Ch 35 — Dynamic Programming, Greedy, Divide &amp; Conquer, Sliding Window &amp; Two Pointers</a><a href="index.notes.html">☰ Contents</a><a href="ch37-instruction-cycle-pipelining-simd-and-virtual-memory.notes.html">Ch 37 — Instruction Cycle, Pipelining, SIMD &amp; Virtual Memory →</a></nav>
+</main>
+</body>
+</html>

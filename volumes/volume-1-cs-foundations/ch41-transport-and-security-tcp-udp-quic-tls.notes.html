@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ch 41 — Transport &amp; Security: TCP, UDP, QUIC, TLS &amp; HTTPS — Notes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;700&family=Kalam:wght@400;700&family=Patrick+Hand&display=swap" rel="stylesheet">
+<style>
+/* ===== Page tokens ===== */
+:root{
+  --line:32px;                 /* ruled-line spacing; every vertical size is a multiple */
+  --paper:#fdfbf4; --rule:#c9dcef; --margin:#e8a0a0;
+  --ink:#1f3a93;               /* blue pen (body) */
+  --ink2:#222;                 /* black pen (headings) */
+  --red:#c0392b; --green:#1e8449;
+  --hl-yellow:rgba(255,235,59,.55); --hl-pink:rgba(255,128,171,.45);
+  --hl-green:rgba(118,255,3,.35); --hl-blue:rgba(64,196,255,.35);
+  --sticky:#fff59d; --desk:#e9e4d8;
+  --hand:'Kalam','Patrick Hand','Comic Sans MS','Segoe Print','Bradley Hand',cursive;
+  --title:'Caveat','Kalam','Segoe Print','Bradley Hand',cursive;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){ --desk:#2b2b2b; }
+}
+:root[data-theme="dark"]{ --desk:#2b2b2b; }
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--desk);font-family:var(--hand);color:var(--ink);}
+
+/* ===== Notebook sheet ===== */
+.page{
+  position:relative; max-width:860px; margin:24px auto; padding:var(--line) 28px calc(var(--line)*2) 84px;
+  background:
+    linear-gradient(90deg,transparent 64px,var(--margin) 64px,var(--margin) 66px,transparent 66px),
+    repeating-linear-gradient(var(--paper) 0,var(--paper) calc(var(--line) - 1px),var(--rule) calc(var(--line) - 1px),var(--rule) var(--line));
+  background-color:var(--paper);
+  box-shadow:0 2px 6px rgba(0,0,0,.15),0 12px 28px rgba(0,0,0,.12);
+  font-size:20px; line-height:var(--line);
+}
+.page::before{ /* punched holes */
+  content:""; position:absolute; left:22px; top:0; bottom:0; width:18px;
+  background:radial-gradient(circle,var(--desk) 7px,transparent 8px) 0 40px/18px 220px repeat-y;
+}
+@media (max-width:600px){
+  .page{margin:0;padding-left:52px;padding-right:16px;font-size:18px;
+    background:
+      linear-gradient(90deg,transparent 40px,var(--margin) 40px,var(--margin) 42px,transparent 42px),
+      repeating-linear-gradient(var(--paper) 0,var(--paper) calc(var(--line) - 1px),var(--rule) calc(var(--line) - 1px),var(--rule) var(--line));
+    background-color:var(--paper);}
+  .page::before{left:10px;width:16px}
+}
+
+/* ===== Text (all margins are multiples of --line so text sits on the rules) ===== */
+.date{position:absolute;top:0;right:24px;font-family:var(--title);font-size:22px;color:var(--ink2);line-height:var(--line)}
+h1{font-family:var(--title);font-weight:700;color:var(--ink2);font-size:46px;line-height:calc(var(--line)*2);margin:0;transform:rotate(-1deg)}
+h1 .u{background:linear-gradient(transparent 62%,var(--hl-yellow) 62%,var(--hl-yellow) 92%,transparent 92%)}
+h2{font-family:var(--title);font-weight:700;color:var(--red);font-size:32px;line-height:calc(var(--line)*1.5);margin:calc(var(--line)*.5) 0 0}
+h2::before{content:"➤ ";font-size:22px}
+p,li{margin:0}
+ul,ol{margin:0;padding-left:28px}
+ul{list-style:none}
+ul>li::before{content:"–";position:absolute;margin-left:-20px}
+ul>li.star::before{content:"★";color:var(--red)}
+ul>li.arrow::before{content:"→"}
+ul>li.check::before{content:"✓";color:var(--green)}
+.gap{height:var(--line)}
+
+/* ===== Pen effects ===== */
+.hl{background:var(--hl-yellow);padding:0 3px;border-radius:3px 6px 4px 7px}
+.hl.pink{background:var(--hl-pink)} .hl.green{background:var(--hl-green)} .hl.blue{background:var(--hl-blue)}
+.red{color:var(--red)} .green{color:var(--green)} .black{color:var(--ink2)}
+.ul{text-decoration:underline wavy var(--red);text-underline-offset:5px}
+.circ{border:2px solid var(--red);border-radius:50% 45% 55% 48%;padding:0 6px}
+.strike{text-decoration:line-through 2px var(--red)}
+.term{font-weight:700;color:var(--ink2)}
+.box{display:flow-root;border:2.5px solid var(--ink2);border-radius:4px 10px 6px 12px;padding:calc(var(--line)*.5 - 2.5px) 14px;margin:calc(var(--line)*.5) 0;transform:rotate(-.4deg);background:rgba(255,255,255,.35)}
+.box.red{border-color:var(--red)}
+.formula{font-family:var(--title);font-size:28px;text-align:center;color:var(--ink2)}
+
+/* sticky note */
+.sticky{float:right;width:min(250px,42%);margin:0 0 var(--line) 20px;padding:var(--line) 16px;background:var(--sticky);
+  color:#333;transform:rotate(2.2deg);box-shadow:2px 4px 8px rgba(0,0,0,.18);font-size:18px}
+.sticky b{font-family:var(--title);font-size:24px;color:var(--red)}
+@media (max-width:600px){.sticky{float:none;width:auto;margin:var(--line) 0}}
+
+/* margin annotation (lives in the red margin) */
+.side{position:absolute;left:4px;width:58px;text-align:center;font-family:var(--title);font-size:17px;line-height:18px;color:var(--red);transform:rotate(-8deg)}
+@media (max-width:600px){.side{display:none}}
+
+/* two-column notes */
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:0 28px}
+@media (max-width:600px){.cols{grid-template-columns:1fr}}
+
+/* diagrams */
+figure{margin:var(--line) 0;text-align:center}
+figure svg{width:100%;max-width:640px;height:auto;overflow:visible}
+figcaption{font-family:var(--title);font-size:20px;color:var(--ink2)}
+/* phones: keep labels readable — diagram scrolls inside its own box instead of shrinking */
+@media (max-width:600px){figure{overflow-x:auto}figure svg{min-width:520px}}
+.sk{fill:none;stroke:var(--ink2);stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round;filter:url(#rough)}
+.sk.blue{stroke:var(--ink)} .sk.red{stroke:var(--red)} .sk.green{stroke:var(--green)}
+.lbl{font-family:var(--hand);font-size:17px;fill:var(--ink)}
+.lbl.b{font-weight:700;fill:var(--ink2)} .lbl.r{fill:var(--red)} .lbl.g{fill:var(--green)}
+
+/* table */
+.wrap{overflow-x:auto}
+table{border-collapse:collapse;margin:calc(var(--line)*.5) 0;min-width:100%}
+th,td{border:2px solid var(--ink2);padding:0 10px;text-align:left;vertical-align:top}
+th{font-family:var(--title);font-size:24px;color:var(--ink2)}
+
+@media print{body{background:#fff}.page{box-shadow:none;margin:0}.page::before{display:none}}
+
+/* ===== Added for long chapter notes ===== */
+pre.code{font-family:Consolas,'Courier New',monospace;font-size:14px;line-height:var(--line);color:var(--ink);background:rgba(255,255,255,.45);
+  border-left:4px solid var(--red);margin:calc(var(--line)*.5) 0;padding:0 12px;overflow-x:auto;white-space:pre}
+pre.code.ascii{border-left-color:var(--green)}
+code{font-family:Consolas,'Courier New',monospace;font-size:.82em;background:rgba(0,0,0,.06);padding:0 3px;border-radius:3px}
+pre.code code{background:none;padding:0;font-size:inherit}
+.lang{font-family:var(--title);font-size:18px;color:var(--red)}
+h3{font-family:var(--title);font-weight:700;color:var(--ink2);font-size:26px;line-height:var(--line);margin:calc(var(--line)*.5) 0 0}
+h3::before{content:"✎ ";font-size:18px;color:var(--red)}
+.nav{display:flex;justify-content:space-between;gap:12px;font-family:var(--title);font-size:22px;line-height:var(--line)}
+.nav a{color:var(--red);text-decoration:none}
+.nav a:hover{text-decoration:underline wavy}
+.pagebreak{border-top:3px dashed var(--margin);margin:var(--line) 0;text-align:center;font-family:var(--title);color:var(--red);line-height:var(--line)}
+li.todo::before{content:"☐";color:var(--ink2)}
+a{color:var(--ink);text-decoration:underline dotted}
+</style>
+</head>
+<body>
+<!-- One shared hand-drawn wobble filter; give every diagram stroke class="sk" -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <!-- userSpaceOnUse region: a % region collapses to nothing on perfectly straight lines (zero-height bbox) -->
+  <filter id="rough" filterUnits="userSpaceOnUse" x="-500" y="-500" width="3000" height="3000">
+    <feTurbulence type="fractalNoise" baseFrequency="0.03" numOctaves="2" seed="3" result="n"/>
+    <feDisplacementMap in="SourceGraphic" in2="n" scale="3"/>
+  </filter>
+  <marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+    <path d="M1 1 L9 5 L1 9" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+  </marker>
+</defs></svg>
+
+<main class="page">
+  <nav class="nav"><a href="ch40-networking-fundamentals-osi-tcp-ip-ip-ports.notes.html">← Ch 40 — Networking Fundamentals: OSI, TCP/IP, IP, Ports, DNS &amp; NAT</a><a href="index.notes.html">☰ Contents</a><a href="ch42-http-rest-graphql-and-json-rpc.notes.html">Ch 42 — HTTP, REST, GraphQL &amp; JSON-RPC →</a></nav>
+  <div class="date">2026-10-10</div>
+  <h1><span class="u">Ch 41 — Transport &amp; Security: TCP, UDP, QUIC, TLS &amp; HTTPS</span></h1>
+  <p class="black">Volume 1 — Computer Science Foundations · <a href="index.md">Contents</a> · ← <a href="ch40-networking-fundamentals-osi-tcp-ip-ip-ports.notes.html">Chapter 40 — Networking Fundamentals: OSI, TCP/IP, IP, Ports, DNS &amp; NAT</a> · Next → <a href="ch42-http-rest-graphql-and-json-rpc.notes.html">Chapter 42 — HTTP, REST, GraphQL &amp; JSON-RPC</a></p>
+  <h2>Concept</h2>
+  <p>TCP (handshake, reliability, flow/congestion control), UDP, QUIC; TLS handshake and HTTPS.</p>
+  <div class="box"><b>In one sentence:</b> TCP turns an unreliable network into a reliable, ordered byte stream; UDP just sends datagrams and hopes; QUIC rebuilds TCP's reliability plus TLS encryption on top of UDP so connections start faster; and TLS makes any of them private and authenticated.</div>
+  <div class="box red"><b>Mental model — phone call vs postcards vs sealed courier.</b> TCP is a phone call: you dial and confirm ("hello?" "hello!"), then talk, and if something is garbled you ask again. UDP is postcards: fast and cheap, no confirmation, some get lost. TLS is a sealed envelope with a notarized ID card, so only the right person can read it, and you know who sent it.</div>
+  <h3>TCP vs UDP vs QUIC</h3>
+  <div class="wrap"><table>
+<tr><th></th><th>TCP</th><th>UDP</th><th>QUIC (HTTP/3)</th></tr>
+<tr><td>Connection setup</td><td>3-way handshake (1 RTT) + TLS (1 RTT)</td><td>none</td><td>1 RTT including TLS 1.3; 0-RTT on resume</td></tr>
+<tr><td>Reliable, ordered</td><td>yes (one stream)</td><td>no</td><td>yes, <b>per stream</b></td></tr>
+<tr><td>Head-of-line blocking</td><td>yes: one lost packet stalls everything</td><td>n/a</td><td>no across streams</td></tr>
+<tr><td>Encryption</td><td>separate (TLS)</td><td>separate (DTLS)</td><td>built in, mandatory</td></tr>
+<tr><td>Connection migration (Wi-Fi → 4G)</td><td>breaks (4-tuple changes)</td><td>n/a</td><td>survives (connection IDs)</td></tr>
+<tr><td>Implemented in</td><td>the kernel</td><td>the kernel</td><td>user space libraries</td></tr>
+<tr><td>Use for</td><td>web (HTTP/1.1, /2), databases, SSH</td><td>DNS, VoIP, games, video, metrics</td><td>HTTP/3, modern mobile and web</td></tr>
+</table></div>
+  <h3>How TCP achieves reliability</h3>
+  <div class="wrap"><table>
+<tr><th>Mechanism</th><th>Purpose</th></tr>
+<tr><td>Sequence numbers</td><td>order bytes; detect gaps and duplicates</td></tr>
+<tr><td>ACKs (cumulative, plus SACK)</td><td>tell the sender what arrived</td></tr>
+<tr><td>Retransmission on timeout / 3 duplicate ACKs</td><td>resend lost data</td></tr>
+<tr><td>Checksums</td><td>detect corruption</td></tr>
+<tr><td><b>Flow control</b> (receive window)</td><td>don't overwhelm the <i>receiver</i></td></tr>
+<tr><td><b>Congestion control</b> (cwnd: slow start, AIMD, CUBIC, BBR)</td><td>don't overwhelm the <i>network</i></td></tr>
+</table></div>
+  <p><b>Congestion control in one picture:</b> start small and double each RTT (slow start) until loss or a threshold; then grow by 1 per RTT; on loss, cut sharply. BBR instead models bottleneck bandwidth and RTT directly.</p>
+  <h3>What TLS guarantees</h3>
+  <div class="wrap"><table>
+<tr><th>Guarantee</th><th>How</th></tr>
+<tr><td><b>Confidentiality</b></td><td>symmetric encryption (AES-GCM, ChaCha20-Poly1305) with keys from an ephemeral (EC)DHE exchange → forward secrecy</td></tr>
+<tr><td><b>Integrity</b></td><td>AEAD tags: tampering is detected</td></tr>
+<tr><td><b>Authentication</b> (of the server; optionally the client with mTLS)</td><td>an X.509 certificate chain signed by a trusted CA, and a matching hostname</td></tr>
+<tr><td>Does <b>not</b> hide</td><td>IP addresses, timing, sizes, and (without ECH) the server name (SNI)</td></tr>
+</table></div>
+  <h2>Prereqs</h2>
+  <ul>
+<li><a href="ch40-networking-fundamentals-osi-tcp-ip-ip-ports.notes.html">Chapter 40 — Networking Fundamentals: OSI, TCP/IP, IP, Ports, DNS &amp; NAT</a></li>
+</ul>
+  <div class="pagebreak">~ page 2 ~</div>
+  <h2>Diagram</h2>
+  <h3>TCP 3-way handshake and TLS 1.3 handshake</h3>
+  <figure>
+<svg viewBox="0 0 640 572" role="img" aria-label="sequence diagram: Client, Server">
+<path class="sk" d="M110 50 L110 564" style="stroke-dasharray:6 6;opacity:.7"/>
+<path class="sk" d="M530 50 L530 564" style="stroke-dasharray:6 6;opacity:.7"/>
+<rect class="sk" x="71" y="6" width="77" height="40" rx="10" style="fill:#fdfbf4;"/>
+<text class="lbl b" x="110" y="33" text-anchor="middle" style="font-size:15px">Client</text>
+<rect class="sk" x="491" y="6" width="77" height="40" rx="10" style="fill:#fdfbf4;"/>
+<text class="lbl b" x="530" y="33" text-anchor="middle" style="font-size:15px">Server</text>
+<rect class="sk" x="75" y="78" width="490" height="32" rx="6" style="fill:#fff3b0"/>
+<text class="lbl r" x="320" y="97" text-anchor="middle" style="font-size:15px">TCP (1 RTT)</text>
+<text class="lbl" x="320" y="147" text-anchor="middle" style="font-size:15px">SYN seq=x</text>
+<path class="sk blue" d="M113 162 L527 162" style="color:var(--ink);" marker-end="url(#arr)"/>
+<text class="lbl" x="320" y="199" text-anchor="middle" style="font-size:15px">SYN-ACK seq=y ack=x+1</text>
+<path class="sk blue" d="M527 214 L113 214" style="color:var(--ink);stroke-dasharray:7 5;" marker-end="url(#arr)"/>
+<text class="lbl" x="320" y="251" text-anchor="middle" style="font-size:15px">ACK ack=y+1</text>
+<path class="sk blue" d="M113 266 L527 266" style="color:var(--ink);" marker-end="url(#arr)"/>
+<rect class="sk" x="75" y="286" width="490" height="32" rx="6" style="fill:#fff3b0"/>
+<text class="lbl r" x="320" y="305" text-anchor="middle" style="font-size:15px">TLS 1.3 (1 RTT)</text>
+<text class="lbl" x="320" y="355" text-anchor="middle" style="font-size:15px">ClientHello (supported ciphers, key share, SNI)</text>
+<path class="sk blue" d="M113 370 L527 370" style="color:var(--ink);" marker-end="url(#arr)"/>
+<text class="lbl" x="320" y="407" text-anchor="middle" style="font-size:15px">ServerHello (key share) + {Certificate, CertificateVerify,</text>
+<text class="lbl" x="320" y="427" text-anchor="middle" style="font-size:15px">Finished} encrypted</text>
+<path class="sk blue" d="M527 442 L113 442" style="color:var(--ink);stroke-dasharray:7 5;" marker-end="url(#arr)"/>
+<text class="lbl" x="320" y="479" text-anchor="middle" style="font-size:15px">{Finished} + first HTTP request (encrypted)</text>
+<path class="sk blue" d="M113 494 L527 494" style="color:var(--ink);" marker-end="url(#arr)"/>
+<text class="lbl" x="320" y="531" text-anchor="middle" style="font-size:15px">HTTP response</text>
+<path class="sk blue" d="M527 546 L113 546" style="color:var(--ink);stroke-dasharray:7 5;" marker-end="url(#arr)"/>
+</svg>
+<figcaption>Fig 1: TCP 3-way handshake (1 RTT) then TLS 1.3 handshake (1 RTT)</figcaption>
+</figure>
+  <h3>Round trips before the first byte of data</h3>
+  <pre class="code ascii"><code> TCP + TLS 1.2   ├─TCP─┤├──TLS──┤├──TLS──┤ data      3 RTT
+ TCP + TLS 1.3   ├─TCP─┤├──TLS──┤ data               2 RTT
+ QUIC            ├─QUIC+TLS─┤ data                   1 RTT
+ QUIC 0-RTT      data (on resume)                    0 RTT
+ at 100 ms RTT, going from 3 RTT to 1 RTT saves 200 ms on every new connection</code></pre>
+  <h3>Head-of-line blocking</h3>
+  <pre class="code ascii"><code> TCP (HTTP/2): one byte stream   [s1][s2][s3 LOST][s1][s2] → everything waits for s3's resend
+ QUIC:         separate streams  s1: ■■■■  s2: ■■■■  s3: ■ ✗ ■ (only s3 waits)</code></pre>
+  <h3>A certificate chain</h3>
+  <pre class="code ascii"><code> [Root CA]  (in your OS / browser trust store, self-signed)
+     │ signs
+ [Intermediate CA]  (sent by the server)
+     │ signs
+ [example.com leaf cert]  SAN: example.com, www.example.com · valid 90 days · public key
+ client checks: each signature, expiry dates, hostname ∈ SAN, revocation (OCSP stapling)</code></pre>
+  <div class="pagebreak">~ page 3 ~</div>
+  <h2>Example</h2>
+  <span class="lang">bash</span>
+<pre class="code"><code># A TCP server and client in two terminals
+nc -l 9000                       # server
+nc localhost 9000                # client: type lines and watch them arrive
+
+# Watch the handshake
+sudo tcpdump -i lo -nn 'tcp port 9000 and (tcp[tcpflags] &amp; (tcp-syn|tcp-fin) != 0)'
+# … Flags [S]  … Flags [S.]  … Flags [.]   ← SYN, SYN-ACK, ACK
+
+# Inspect a TLS chain and the negotiated parameters
+openssl s_client -connect example.com:443 -servername example.com &lt;/dev/null 2&gt;/dev/null \
+  | grep -E 'subject=|issuer=|Protocol|Cipher'
+curl -sv --http3 https://cloudflare.com -o /dev/null 2&gt;&amp;1 | grep -i 'http/3\|alpn'
+ss -ti dst example.com          # live TCP info: rtt, cwnd, retransmits</code></pre>
+  <span class="lang">python</span>
+<pre class="code"><code>import socket, ssl
+ctx = ssl.create_default_context()                 # verifies the chain and hostname by default
+with socket.create_connection(("example.com", 443)) as raw:
+    with ctx.wrap_socket(raw, server_hostname="example.com") as tls:
+        print(tls.version(), tls.cipher()[0])      # TLSv1.3 TLS_AES_256_GCM_SHA384
+        print(tls.getpeercert()["subject"])
+        tls.sendall(b"GET / HTTP/1.1\r\nHost: example.com\r\nConnection: close\r\n\r\n")
+        print(tls.recv(64))</code></pre>
+  <h2>Exercises</h2>
+  <ol style="list-style:none;padding-left:0">
+<li>1. Explain TCP's reliability mechanisms.
+<div class="box"><b>Solution</b>
+<p>Every byte has a sequence number. The receiver ACKs the next byte it expects (plus SACK blocks for out-of-order data). The sender keeps unacked data and retransmits it on a timeout (RTO computed from measured RTT) or after 3 duplicate ACKs (fast retransmit). Checksums catch corruption. The receive window gives flow control, and the congestion window limits in-flight data to what the network can take.</p></div></li>
+<li>2. Walk through a TLS 1.3 handshake.
+<div class="box"><b>Solution</b>
+<p>ClientHello: versions, cipher suites, a guessed (EC)DHE key share, and SNI. ServerHello: the chosen suite and its key share — both sides now derive handshake keys. The server sends, encrypted, its Certificate, a CertificateVerify signature proving it owns the private key, and Finished (a MAC over the transcript). The client verifies the chain, hostname, and signature, then sends Finished. Application keys are derived and data flows. One round trip.</p></div></li>
+<li>3. Why do video calls use UDP rather than TCP?
+<div class="box"><b>Solution</b>
+<p>A late frame is useless, so retransmitting it (as TCP must) only adds delay and stalls later frames through head-of-line blocking. Over UDP (RTP/WebRTC) the app can drop or conceal lost packets and adapt its bitrate itself.</p></div></li>
+</ol>
+  <div class="pagebreak">~ page 4 ~</div>
+  <h2>Mini project</h2>
+  <h3>A minimal TCP echo server and a TLS-terminating proxy.</h3>
+  <figure>
+<svg viewBox="0 0 660 340" role="img" aria-label="client to your TLS proxy on 8443, then plain TCP on 9000 to the echo server; the proxy also logs client IP, TLS version, cipher, bytes each way">
+
+<path class="sk blue" d="M170 79 L170 131" style="color:var(--ink);" marker-end="url(#arr)"/>
+<path class="sk blue" d="M298 170 L426 170" style="color:var(--ink);" marker-end="url(#arr)"/>
+<path class="sk blue" d="M170 209 L170 261" style="color:var(--ink);" marker-end="url(#arr)"/>
+<rect class="sk" x="59" y="21" width="223" height="57" rx="10"/>
+<text class="lbl b" x="170" y="47" text-anchor="middle" style="font-size:15px">client</text>
+<text class="lbl b" x="170" y="67" text-anchor="middle" style="font-size:15px">openssl s_client / curl</text>
+<rect class="sk green" x="42" y="131" width="257" height="78" rx="10"/>
+<text class="lbl g" x="170" y="156" text-anchor="middle" style="font-size:15px">your proxy</text>
+<text class="lbl g" x="170" y="177" text-anchor="middle" style="font-size:15px">ssl.wrap_socket server-side</text>
+<text class="lbl g" x="170" y="198" text-anchor="middle" style="font-size:15px">self-signed cert (mkcert)</text>
+<rect class="sk" x="426" y="141" width="197" height="57" rx="10"/>
+<text class="lbl b" x="525" y="167" text-anchor="middle" style="font-size:15px">echo server</text>
+<text class="lbl b" x="525" y="187" text-anchor="middle" style="font-size:15px">asyncio.start_server</text>
+<rect class="sk red" x="37" y="261" width="265" height="57" rx="10"/>
+<text class="lbl r" x="170" y="287" text-anchor="middle" style="font-size:15px">log: client IP, TLS version,</text>
+<text class="lbl r" x="170" y="307" text-anchor="middle" style="font-size:15px">cipher, bytes each way</text>
+<rect x="128" y="94" width="85" height="22" rx="4" style="fill:#fdfbf4;opacity:.92;stroke:none"/>
+<text class="lbl r" x="170" y="109" text-anchor="middle" style="font-size:15px">TLS :8443</text>
+<rect x="320" y="150" width="85" height="42" rx="4" style="fill:#fdfbf4;opacity:.92;stroke:none"/>
+<text class="lbl r" x="362" y="165" text-anchor="middle" style="font-size:15px">plain</text>
+<text class="lbl r" x="362" y="184" text-anchor="middle" style="font-size:15px">TCP :9000</text>
+
+</svg>
+<figcaption>Fig 2: mini project architecture: client, TLS-terminating proxy, echo server, log</figcaption>
+</figure>
+  <h3>Steps</h3>
+  <ol style="list-style:none;padding-left:0">
+<li>1. Echo server with <code>asyncio.start_server</code>: read a line, write it back; handle many clients.</li>
+<li>2. Generate a local CA and certificate with <code>mkcert</code> (or <code>openssl</code>).</li>
+<li>3. The proxy accepts TLS on 8443, opens plain TCP to 9000, and pumps bytes both ways concurrently until either side closes.</li>
+<li>4. Log TLS version, cipher, and byte counts per connection.</li>
+<li>5. Test with <code>openssl s_client -connect localhost:8443</code>; then enable client certificates (mTLS) and reject clients without one.</li>
+</ol>
+  <div class="box"><b>Done when:</b> 100 concurrent TLS clients echo correctly through the proxy, and a client without a certificate is refused in mTLS mode.</div>
+  <h2>Open source</h2>
+  <ul>
+<li><a href="https://github.com/quinn-rs/quinn"><code>quinn-rs/quinn</code></a> (QUIC) — a QUIC implementation in Rust; the <code>quinn-proto</code> crate is a pure state machine with no I/O, great for reading.</li>
+<li><a href="https://github.com/openssl/openssl"><code>openssl/openssl</code></a> — <code>ssl/statem/</code> holds the TLS handshake state machines; <code>openssl s_client</code> and <code>x509</code> are daily debugging tools.</li>
+</ul>
+  <h2>Interview</h2>
+  <ol style="list-style:none;padding-left:0">
+<li>1. <h3>"TCP vs UDP — when each?"</h3>
+<div class="box"><b>Answer</b>
+<p>TCP when you need every byte, in order: web, APIs, databases, file transfer, SSH. UDP when timeliness beats completeness or you want your own reliability logic: real-time audio and video, games, DNS, telemetry, and QUIC itself. UDP has no handshake and no head-of-line blocking, but also no congestion control unless you add it.</p></div></li>
+<li>2. <h3>"Why is QUIC faster than TCP+TLS?"</h3>
+<div class="box"><b>Answer</b>
+<p>It merges the transport and TLS 1.3 handshakes into one round trip (0-RTT on resume), removes head-of-line blocking between streams, survives network changes through connection IDs, and lives in user space so it can improve quickly (better loss recovery and congestion control). The gains are largest on high-latency or lossy mobile networks.</p></div></li>
+</ol>
+  <h2>Checklist</h2>
+  <ul>
+<li class="todo">draw the handshakes</li>
+<li class="todo">explain congestion control</li>
+<li class="todo">know TLS's guarantees</li>
+</ul>
+  <p class="black"><a href="index.md">Contents</a> · ← <a href="ch40-networking-fundamentals-osi-tcp-ip-ip-ports.notes.html">Chapter 40 — Networking Fundamentals: OSI, TCP/IP, IP, Ports, DNS &amp; NAT</a> · Next → <a href="ch42-http-rest-graphql-and-json-rpc.notes.html">Chapter 42 — HTTP, REST, GraphQL &amp; JSON-RPC</a></p>
+  <nav class="nav"><a href="ch40-networking-fundamentals-osi-tcp-ip-ip-ports.notes.html">← Ch 40 — Networking Fundamentals: OSI, TCP/IP, IP, Ports, DNS &amp; NAT</a><a href="index.notes.html">☰ Contents</a><a href="ch42-http-rest-graphql-and-json-rpc.notes.html">Ch 42 — HTTP, REST, GraphQL &amp; JSON-RPC →</a></nav>
+</main>
+</body>
+</html>

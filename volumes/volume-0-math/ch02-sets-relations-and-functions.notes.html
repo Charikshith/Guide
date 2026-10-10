@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ch 2 — Sets, Relations &amp; Functions — Notes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;700&family=Kalam:wght@400;700&family=Patrick+Hand&display=swap" rel="stylesheet">
+<style>
+/* ===== Page tokens ===== */
+:root{
+  --line:32px;                 /* ruled-line spacing; every vertical size is a multiple */
+  --paper:#fdfbf4; --rule:#c9dcef; --margin:#e8a0a0;
+  --ink:#1f3a93;               /* blue pen (body) */
+  --ink2:#222;                 /* black pen (headings) */
+  --red:#c0392b; --green:#1e8449;
+  --hl-yellow:rgba(255,235,59,.55); --hl-pink:rgba(255,128,171,.45);
+  --hl-green:rgba(118,255,3,.35); --hl-blue:rgba(64,196,255,.35);
+  --sticky:#fff59d; --desk:#e9e4d8;
+  --hand:'Kalam','Patrick Hand','Comic Sans MS','Segoe Print','Bradley Hand',cursive;
+  --title:'Caveat','Kalam','Segoe Print','Bradley Hand',cursive;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){ --desk:#2b2b2b; }
+}
+:root[data-theme="dark"]{ --desk:#2b2b2b; }
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--desk);font-family:var(--hand);color:var(--ink);}
+
+/* ===== Notebook sheet ===== */
+.page{
+  position:relative; max-width:860px; margin:24px auto; padding:var(--line) 28px calc(var(--line)*2) 84px;
+  background:
+    linear-gradient(90deg,transparent 64px,var(--margin) 64px,var(--margin) 66px,transparent 66px),
+    repeating-linear-gradient(var(--paper) 0,var(--paper) calc(var(--line) - 1px),var(--rule) calc(var(--line) - 1px),var(--rule) var(--line));
+  background-color:var(--paper);
+  box-shadow:0 2px 6px rgba(0,0,0,.15),0 12px 28px rgba(0,0,0,.12);
+  font-size:20px; line-height:var(--line);
+}
+.page::before{ /* punched holes */
+  content:""; position:absolute; left:22px; top:0; bottom:0; width:18px;
+  background:radial-gradient(circle,var(--desk) 7px,transparent 8px) 0 40px/18px 220px repeat-y;
+}
+@media (max-width:600px){
+  .page{margin:0;padding-left:52px;padding-right:16px;font-size:18px;
+    background:
+      linear-gradient(90deg,transparent 40px,var(--margin) 40px,var(--margin) 42px,transparent 42px),
+      repeating-linear-gradient(var(--paper) 0,var(--paper) calc(var(--line) - 1px),var(--rule) calc(var(--line) - 1px),var(--rule) var(--line));
+    background-color:var(--paper);}
+  .page::before{left:10px;width:16px}
+}
+
+/* ===== Text (all margins are multiples of --line so text sits on the rules) ===== */
+.date{position:absolute;top:0;right:24px;font-family:var(--title);font-size:22px;color:var(--ink2);line-height:var(--line)}
+h1{font-family:var(--title);font-weight:700;color:var(--ink2);font-size:46px;line-height:calc(var(--line)*2);margin:0;transform:rotate(-1deg)}
+h1 .u{background:linear-gradient(transparent 62%,var(--hl-yellow) 62%,var(--hl-yellow) 92%,transparent 92%)}
+h2{font-family:var(--title);font-weight:700;color:var(--red);font-size:32px;line-height:calc(var(--line)*1.5);margin:calc(var(--line)*.5) 0 0}
+h2::before{content:"➤ ";font-size:22px}
+p,li{margin:0}
+ul,ol{margin:0;padding-left:28px}
+ul{list-style:none}
+ul>li::before{content:"–";position:absolute;margin-left:-20px}
+ul>li.star::before{content:"★";color:var(--red)}
+ul>li.arrow::before{content:"→"}
+ul>li.check::before{content:"✓";color:var(--green)}
+.gap{height:var(--line)}
+
+/* ===== Pen effects ===== */
+.hl{background:var(--hl-yellow);padding:0 3px;border-radius:3px 6px 4px 7px}
+.hl.pink{background:var(--hl-pink)} .hl.green{background:var(--hl-green)} .hl.blue{background:var(--hl-blue)}
+.red{color:var(--red)} .green{color:var(--green)} .black{color:var(--ink2)}
+.ul{text-decoration:underline wavy var(--red);text-underline-offset:5px}
+.circ{border:2px solid var(--red);border-radius:50% 45% 55% 48%;padding:0 6px}
+.strike{text-decoration:line-through 2px var(--red)}
+.term{font-weight:700;color:var(--ink2)}
+.box{display:flow-root;border:2.5px solid var(--ink2);border-radius:4px 10px 6px 12px;padding:calc(var(--line)*.5 - 2.5px) 14px;margin:calc(var(--line)*.5) 0;transform:rotate(-.4deg);background:rgba(255,255,255,.35)}
+.box.red{border-color:var(--red)}
+.formula{font-family:var(--title);font-size:28px;text-align:center;color:var(--ink2)}
+
+/* sticky note */
+.sticky{float:right;width:min(250px,42%);margin:0 0 var(--line) 20px;padding:var(--line) 16px;background:var(--sticky);
+  color:#333;transform:rotate(2.2deg);box-shadow:2px 4px 8px rgba(0,0,0,.18);font-size:18px}
+.sticky b{font-family:var(--title);font-size:24px;color:var(--red)}
+@media (max-width:600px){.sticky{float:none;width:auto;margin:var(--line) 0}}
+
+/* margin annotation (lives in the red margin) */
+.side{position:absolute;left:4px;width:58px;text-align:center;font-family:var(--title);font-size:17px;line-height:18px;color:var(--red);transform:rotate(-8deg)}
+@media (max-width:600px){.side{display:none}}
+
+/* two-column notes */
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:0 28px}
+@media (max-width:600px){.cols{grid-template-columns:1fr}}
+
+/* diagrams */
+figure{margin:var(--line) 0;text-align:center}
+figure svg{width:100%;max-width:640px;height:auto;overflow:visible}
+figcaption{font-family:var(--title);font-size:20px;color:var(--ink2)}
+/* phones: keep labels readable — diagram scrolls inside its own box instead of shrinking */
+@media (max-width:600px){figure{overflow-x:auto}figure svg{min-width:520px}}
+.sk{fill:none;stroke:var(--ink2);stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round;filter:url(#rough)}
+.sk.blue{stroke:var(--ink)} .sk.red{stroke:var(--red)} .sk.green{stroke:var(--green)}
+.lbl{font-family:var(--hand);font-size:17px;fill:var(--ink)}
+.lbl.b{font-weight:700;fill:var(--ink2)} .lbl.r{fill:var(--red)} .lbl.g{fill:var(--green)}
+
+/* table */
+.wrap{overflow-x:auto}
+table{border-collapse:collapse;margin:calc(var(--line)*.5) 0;min-width:100%}
+th,td{border:2px solid var(--ink2);padding:0 10px;text-align:left;vertical-align:top}
+th{font-family:var(--title);font-size:24px;color:var(--ink2)}
+
+@media print{body{background:#fff}.page{box-shadow:none;margin:0}.page::before{display:none}}
+
+/* ===== Added for long chapter notes ===== */
+pre.code{font-family:Consolas,'Courier New',monospace;font-size:14px;line-height:var(--line);color:var(--ink);background:rgba(255,255,255,.45);
+  border-left:4px solid var(--red);margin:calc(var(--line)*.5) 0;padding:0 12px;overflow-x:auto;white-space:pre}
+pre.code.ascii{border-left-color:var(--green)}
+code{font-family:Consolas,'Courier New',monospace;font-size:.82em;background:rgba(0,0,0,.06);padding:0 3px;border-radius:3px}
+pre.code code{background:none;padding:0;font-size:inherit}
+.lang{font-family:var(--title);font-size:18px;color:var(--red)}
+h3{font-family:var(--title);font-weight:700;color:var(--ink2);font-size:26px;line-height:var(--line);margin:calc(var(--line)*.5) 0 0}
+h3::before{content:"✎ ";font-size:18px;color:var(--red)}
+.nav{display:flex;justify-content:space-between;gap:12px;font-family:var(--title);font-size:22px;line-height:var(--line)}
+.nav a{color:var(--red);text-decoration:none}
+.nav a:hover{text-decoration:underline wavy}
+.pagebreak{border-top:3px dashed var(--margin);margin:var(--line) 0;text-align:center;font-family:var(--title);color:var(--red);line-height:var(--line)}
+li.todo::before{content:"☐";color:var(--ink2)}
+a{color:var(--ink);text-decoration:underline dotted}
+</style>
+</head>
+<body>
+<!-- One shared hand-drawn wobble filter; give every diagram stroke class="sk" -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <!-- userSpaceOnUse region: a % region collapses to nothing on perfectly straight lines (zero-height bbox) -->
+  <filter id="rough" filterUnits="userSpaceOnUse" x="-500" y="-500" width="3000" height="3000">
+    <feTurbulence type="fractalNoise" baseFrequency="0.03" numOctaves="2" seed="3" result="n"/>
+    <feDisplacementMap in="SourceGraphic" in2="n" scale="3"/>
+  </filter>
+  <marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+    <path d="M1 1 L9 5 L1 9" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+  </marker>
+</defs></svg>
+
+<main class="page">
+  <nav class="nav"><a href="ch01-logic-and-boolean-algebra.notes.html">← Ch 1 — Logic &amp; Boolean Algebra</a><a href="index.notes.html">☰ Contents</a><a href="ch03-combinatorics-and-counting.notes.html">Ch 3 — Combinatorics &amp; Counting →</a></nav>
+  <div class="date">2026-10-10</div>
+  <h1><span class="u">Ch 2 — Sets, Relations &amp; Functions</span></h1>
+  <p class="black">Volume 0 — Math &amp; Mental Models · <a href="index.md">Contents</a> · ← <a href="ch01-logic-and-boolean-algebra.notes.html">Chapter 1 — Logic &amp; Boolean Algebra</a> · Next → <a href="ch03-combinatorics-and-counting.notes.html">Chapter 3 — Combinatorics &amp; Counting</a></p>
+
+  <p class="black">Chapter 2 — Sets, Relations &amp; Functions</p>
+
+  <h2>Concept</h2>
+  <p>Sets, subsets, unions/intersections/differences, Cartesian products; relations (reflexive/symmetric/transitive); functions (injective/surjective/bijective).</p>
+  <div class="box"><b>In one sentence:</b> a set is a bag of unique things, a relation is a list of pairs saying "these two are connected", and a function is a relation where every input gets exactly one output.</div>
+
+  <p><b>Mental model — guest lists.</b> Two parties each have a guest list (sets). People on <i>both</i> lists are the intersection. Everyone invited <i>anywhere</i> is the union. "Who knows whom" is a relation. "Which seat each guest gets" is a function — every guest gets one seat.</p>
+
+  <h3>Set operations</h3>
+  <div class="wrap"><table>
+    <tr><th>Operation</th><th>Symbol</th><th>Python</th><th>Meaning</th></tr>
+    <tr><td>Union</td><td><code>A ∪ B</code></td><td><code>a | b</code></td><td>in A or B</td></tr>
+    <tr><td>Intersection</td><td><code>A ∩ B</code></td><td><code>a &amp; b</code></td><td>in both</td></tr>
+    <tr><td>Difference</td><td><code>A − B</code></td><td><code>a - b</code></td><td>in A, not in B</td></tr>
+    <tr><td>Symmetric difference</td><td><code>A △ B</code></td><td><code>a ^ b</code></td><td>in exactly one</td></tr>
+    <tr><td>Subset</td><td><code>A ⊆ B</code></td><td><code>a &lt;= b</code></td><td>every element of A is in B</td></tr>
+    <tr><td>Cartesian product</td><td><code>A × B</code></td><td><code>itertools.product(a, b)</code></td><td>all ordered pairs <code>(x, y)</code></td></tr>
+    <tr><td>Cardinality</td><td><code>|A|</code></td><td><code>len(a)</code></td><td>how many elements</td></tr>
+  </table></div>
+
+  <h3>Relation properties</h3>
+  <p>(a relation <code>R</code> on a set <code>S</code> is a set of pairs from <code>S × S</code>)</p>
+  <div class="wrap"><table>
+    <tr><th>Property</th><th>Rule</th><th>Example that has it</th></tr>
+    <tr><td>Reflexive</td><td>every <code>x R x</code></td><td><code>≤</code>, "same birthday as"</td></tr>
+    <tr><td>Symmetric</td><td><code>x R y ⇒ y R x</code></td><td>"is sibling of", "="</td></tr>
+    <tr><td>Antisymmetric</td><td><code>x R y ∧ y R x ⇒ x = y</code></td><td><code>≤</code>, "divides" (on positives)</td></tr>
+    <tr><td>Transitive</td><td><code>x R y ∧ y R z ⇒ x R z</code></td><td><code>&lt;</code>, "is ancestor of"</td></tr>
+  </table></div>
+  <ul>
+    <li class="star"><span class="term">Equivalence relation</span> = reflexive + symmetric + transitive. It splits a set into groups (equivalence classes). Example: "same remainder mod 3".</li>
+    <li class="star"><span class="term">Partial order</span> = reflexive + antisymmetric + transitive. Example: <code>⊆</code> on sets, task dependencies.</li>
+  </ul>
+
+  <h3>Function types — <code>f: A → B</code></h3>
+  <div class="wrap"><table>
+    <tr><th>Type</th><th>Rule</th><th>Picture</th></tr>
+    <tr><td>Injective (one-to-one)</td><td>different inputs → different outputs</td><td>no two arrows land on the same target</td></tr>
+    <tr><td>Surjective (onto)</td><td>every target is hit</td><td>no target left empty</td></tr>
+    <tr><td>Bijective</td><td>both</td><td>perfect pairing; has an inverse</td></tr>
+  </table></div>
+  <aside class="sticky"><b>Mnemonic!</b><br>Injective = no collisions. Surjective = no leftovers. Bijective = both.</aside>
+  <div class="gap"></div>
+
+  <div class="pagebreak">~ page 2 ~</div>
+
+  <h2>Prereqs</h2>
+  <ul>
+    <li><a href="ch01-logic-and-boolean-algebra.notes.html">Chapter 1 — Logic &amp; Boolean Algebra</a></li>
+  </ul>
+
+  <h2>Diagram</h2>
+  <h3>Two overlapping sets</h3>
+<pre class="code ascii"><code>        A = {1, 2, 3, 4}          B = {3, 4, 5}
+     ╭───────────────╮
+     │   1      ╭────┼──────────╮
+     │     2    │ 3  │          │
+     │          │ 4  │    5     │
+     ╰──────────┼────╯          │
+                ╰───────────────╯
+   A − B = {1,2}   A ∩ B = {3,4}   B − A = {5}
+   A ∪ B = {1,2,3,4,5}</code></pre>
+
+  <h3>Arrow diagrams of functions</h3>
+<pre class="code ascii"><code> Injective, not surjective     Surjective, not injective      Bijective
+   A        B                    A        B                    A        B
+   1 ─────► a                    1 ─────► a                    1 ─────► a
+   2 ─────► b                    2 ──┐                         2 ─────► b
+   3 ─────► c                        └──► a  (shared)          3 ─────► c
+            d  (never hit)       3 ─────► b</code></pre>
+
+  <h3>Is it a function? A decision flow</h3>
+  <figure>
+    <svg viewBox="0 0 640 660" role="img" aria-label="Decision flow: relation from A to B; if some input has no output it is not a function; if some input has two outputs it is not a function; otherwise it is a function; then check distinct outputs for injective, every B element hit for surjective, both gives bijective">
+      <rect class="sk" x="130" y="15" width="240" height="44" rx="10"/>
+      <text class="lbl b" x="250" y="43" text-anchor="middle">Relation from A to B</text>
+      <path class="sk blue" d="M250 59 L250 80" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk" d="M250 80 L390 120 L250 160 L110 120 Z"/>
+      <text class="lbl b" x="250" y="116" text-anchor="middle">Every input in A</text>
+      <text class="lbl b" x="250" y="136" text-anchor="middle">has an output?</text>
+      <path class="sk red" d="M390 120 L468 120" style="color:var(--red)" marker-end="url(#arr)"/>
+      <text class="lbl r" x="428" y="108" text-anchor="middle">no</text>
+      <rect class="sk red" x="470" y="95" width="160" height="50" rx="10"/>
+      <text class="lbl r" x="550" y="126" text-anchor="middle">Not a function</text>
+      <path class="sk blue" d="M250 160 L250 185" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <text class="lbl g" x="285" y="178" text-anchor="middle">yes</text>
+      <path class="sk" d="M250 185 L390 225 L250 265 L110 225 Z"/>
+      <text class="lbl b" x="250" y="221" text-anchor="middle">Any input with</text>
+      <text class="lbl b" x="250" y="241" text-anchor="middle">two outputs?</text>
+      <path class="sk red" d="M390 225 C 470 228, 550 200, 550 147" style="color:var(--red)" marker-end="url(#arr)"/>
+      <text class="lbl r" x="470" y="262" text-anchor="middle">yes</text>
+      <path class="sk blue" d="M250 265 L250 305" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <text class="lbl g" x="278" y="290" text-anchor="middle">no</text>
+      <rect class="sk green" x="150" y="307" width="200" height="44" rx="10"/>
+      <text class="lbl g" x="250" y="335" text-anchor="middle">Function</text>
+      <path class="sk blue" d="M205 351 C 190 370, 160 372, 150 392" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M295 351 C 320 370, 480 362, 500 392" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk" d="M150 392 L280 432 L150 472 L20 432 Z"/>
+      <text class="lbl b" x="150" y="438" text-anchor="middle">Outputs all distinct?</text>
+      <path class="sk" d="M500 392 L630 432 L500 472 L370 432 Z"/>
+      <text class="lbl b" x="500" y="438" text-anchor="middle">Every B element hit?</text>
+      <path class="sk blue" d="M150 472 L150 510" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <text class="lbl g" x="178" y="497" text-anchor="middle">yes</text>
+      <path class="sk blue" d="M500 472 L500 510" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <text class="lbl g" x="528" y="497" text-anchor="middle">yes</text>
+      <rect class="sk green" x="70" y="512" width="160" height="44" rx="10"/>
+      <text class="lbl g" x="150" y="540" text-anchor="middle">Injective</text>
+      <rect class="sk green" x="420" y="512" width="160" height="44" rx="10"/>
+      <text class="lbl g" x="500" y="540" text-anchor="middle">Surjective</text>
+      <path class="sk blue" d="M150 556 C 150 582, 200 600, 213 608" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M500 556 C 500 582, 440 600, 427 608" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <rect class="sk green" x="215" y="598" width="210" height="44" rx="10"/>
+      <text class="lbl g" x="320" y="626" text-anchor="middle">Both → Bijective</text>
+    </svg>
+    <figcaption>Fig 1: is it a function? then injective / surjective / bijective</figcaption>
+  </figure>
+
+  <div class="pagebreak">~ page 3 ~</div>
+
+  <h2>Example</h2>
+  <span class="lang">python</span>
+<pre class="code"><code>print(set("mississippi"))            # {'m', 'i', 's', 'p'} — duplicates vanish
+
+a, b = {1, 2, 3, 4}, {3, 4, 5}
+print(a | b, a &amp; b, a - b, a ^ b)    # {1,2,3,4,5} {3,4} {1,2} {1,2,5}
+
+# Inclusion–exclusion, checked
+assert len(a | b) == len(a) + len(b) - len(a &amp; b)
+
+# A bijection: each key maps to one value, each value comes from one key
+code = {"red": 1, "green": 2, "blue": 3}
+inverse = {v: k for k, v in code.items()}
+assert len(inverse) == len(code)     # no collisions → injective, so invertible</code></pre>
+
+  <h3>Checking relation properties by brute force</h3>
+  <span class="lang">python</span>
+<pre class="code"><code>S = range(1, 7)
+divides = {(x, y) for x in S for y in S if y % x == 0}
+
+reflexive  = all((x, x) in divides for x in S)
+symmetric  = all((y, x) in divides for (x, y) in divides)
+transitive = all((x, z) in divides
+                 for (x, y) in divides for (y2, z) in divides if y == y2)
+print(reflexive, symmetric, transitive)   # True False True → a partial order</code></pre>
+
+  <p><b>Why sets give O(1) membership</b> — a <code>set</code> is a hash table. <code>x in s</code> hashes <code>x</code>, jumps to one bucket, and checks only what is there, instead of scanning every element like a <code>list</code> does.</p>
+<pre class="code ascii"><code> x in list:  [7, 3, 9, 1, 4, ...]  → check 1, 2, 3, ... n items    O(n)
+ x in set:   hash(4) % 8 = 5  → bucket[5] → found                   O(1) average</code></pre>
+
+  <h2>Exercises</h2>
+  <ol style="list-style:none;padding-left:0">
+    <li>1. Prove <code>|A ∪ B| = |A| + |B| − |A ∩ B|</code>.
+      <div class="box"><b>Solution</b>
+        <p>Split <code>A ∪ B</code> into three disjoint parts: <code>A − B</code>, <code>A ∩ B</code>, <code>B − A</code>. Then <code>|A| = |A − B| + |A ∩ B|</code> and <code>|B| = |B − A| + |A ∩ B|</code>. Adding gives <code>|A| + |B| = |A ∪ B| + |A ∩ B|</code>, because the overlap is counted twice. Rearrange.</p>
+      </div></li>
+    <li>2. Which relation properties does "divides" have on integers?
+      <div class="box"><b>Solution</b>
+        <p>On positive integers: reflexive (<code>x | x</code>), antisymmetric (<code>x | y</code> and <code>y | x</code> ⇒ <code>x = y</code>), transitive. Not symmetric (<code>2 | 4</code> but <code>4 ∤ 2</code>). So it is a partial order. On all integers antisymmetry fails, since <code>2 | −2</code> and <code>−2 | 2</code>.</p>
+      </div></li>
+    <li>3. Is <code>f(x) = x²</code> from integers to integers injective? Surjective? What if the domain is non-negative integers?
+      <div class="box"><b>Solution</b> On all integers: not injective (<code>f(2) = f(−2)</code>), not surjective (3 is never hit). On non-negative integers: injective, still not surjective.</div></li>
+  </ol>
+
+  <div class="pagebreak">~ page 4 ~</div>
+
+  <h2>Mini project</h2>
+  <p><b>A set-operations calculator with a visualization of two overlapping sets.</b></p>
+  <figure>
+    <svg viewBox="0 0 640 330" role="img" aria-label="Pipeline: input A = 1,2,3,4 / B = 3,4,5 to parse into sets to compute union, intersection, difference, symmetric difference, subset; then draw Venn regions and print table">
+      <rect class="sk" x="140" y="15" width="360" height="44" rx="10"/>
+      <text class="lbl b" x="320" y="43" text-anchor="middle">input: A = 1,2,3,4 / B = 3,4,5</text>
+      <path class="sk blue" d="M320 59 L320 95" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <rect class="sk" x="220" y="97" width="200" height="44" rx="10"/>
+      <text class="lbl b" x="320" y="125" text-anchor="middle">Parse into sets</text>
+      <path class="sk blue" d="M320 141 L320 175" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <rect class="sk" x="190" y="177" width="260" height="44" rx="10"/>
+      <text class="lbl b" x="320" y="205" text-anchor="middle">compute ∪ ∩ − △ ⊆</text>
+      <path class="sk blue" d="M270 221 C 250 240, 200 245, 180 265" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M370 221 C 390 240, 440 245, 460 265" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <rect class="sk green" x="60" y="267" width="220" height="44" rx="10"/>
+      <text class="lbl g" x="170" y="295" text-anchor="middle">Draw Venn regions</text>
+      <rect class="sk green" x="360" y="267" width="220" height="44" rx="10"/>
+      <text class="lbl g" x="470" y="295" text-anchor="middle">Print table</text>
+    </svg>
+    <figcaption>Fig 2: set-operations calculator pipeline</figcaption>
+  </figure>
+
+  <h3>Steps</h3>
+  <ol style="list-style:none;padding-left:0">
+    <li>1. Read two comma-separated lists from the user.</li>
+    <li>2. Compute union, intersection, both differences, symmetric difference, and subset checks.</li>
+    <li>3. Draw a text Venn diagram that places each element in its region (only A, both, only B).</li>
+    <li>4. Bonus: use <code>matplotlib_venn</code> to draw real circles.</li>
+  </ol>
+  <div class="box"><b>Done when:</b> for any two inputs, the counts in each Venn region add up to <code>|A ∪ B|</code>.</div>
+
+  <h2>Open source</h2>
+  <ul>
+    <li><a href="https://github.com/python/cpython"><code>python/cpython</code></a> — Python's built-in <code>set</code>/<code>frozenset</code>. Read <code>Objects/setobject.c</code>: look at <code>set_add_entry</code> for hashing and probing, and <code>set_intersection</code> for how it loops over the <i>smaller</i> set.</li>
+  </ul>
+
+  <h2>Interview</h2>
+  <ol style="list-style:none;padding-left:0">
+    <li>1. <b>"What's the difference between a function and a relation?"</b>
+      <div class="box"><b>Answer</b> A relation is any set of pairs. A function is a relation where every input appears exactly once as the first element of a pair. So every function is a relation, but not every relation is a function.</div></li>
+    <li>2. <b>"Give an example of a relation that's symmetric but not transitive."</b>
+      <div class="box"><b>Answer</b> "Is a friend of": Alice–Bob and Bob–Carol are friends, but Alice and Carol may not be. Another: "differs by exactly 1" on integers, since 1~2 and 2~3 but not 1~3.</div></li>
+  </ol>
+
+  <h2>Checklist</h2>
+  <ul>
+    <li class="todo">state the inclusion-exclusion principle</li>
+    <li class="todo">classify a relation's properties</li>
+    <li class="todo">explain why hash sets give O(1) membership</li>
+  </ul>
+  <div class="gap"></div>
+  <p class="black"><a href="index.md">Contents</a> · ← <a href="ch01-logic-and-boolean-algebra.notes.html">Chapter 1 — Logic &amp; Boolean Algebra</a> · Next → <a href="ch03-combinatorics-and-counting.notes.html">Chapter 3 — Combinatorics &amp; Counting</a></p>
+
+  <nav class="nav"><a href="ch01-logic-and-boolean-algebra.notes.html">← Ch 1 — Logic &amp; Boolean Algebra</a><a href="index.notes.html">☰ Contents</a><a href="ch03-combinatorics-and-counting.notes.html">Ch 3 — Combinatorics &amp; Counting →</a></nav>
+</main>
+</body>
+</html>

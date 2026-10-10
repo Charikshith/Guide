@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ch 9 — Hexagonal Architecture (Ports &amp; Adapters) — Notes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;700&family=Kalam:wght@400;700&family=Patrick+Hand&display=swap" rel="stylesheet">
+<style>
+/* ===== Page tokens ===== */
+:root{
+  --line:32px;                 /* ruled-line spacing; every vertical size is a multiple */
+  --paper:#fdfbf4; --rule:#c9dcef; --margin:#e8a0a0;
+  --ink:#1f3a93;               /* blue pen (body) */
+  --ink2:#222;                 /* black pen (headings) */
+  --red:#c0392b; --green:#1e8449;
+  --hl-yellow:rgba(255,235,59,.55); --hl-pink:rgba(255,128,171,.45);
+  --hl-green:rgba(118,255,3,.35); --hl-blue:rgba(64,196,255,.35);
+  --sticky:#fff59d; --desk:#e9e4d8;
+  --hand:'Kalam','Patrick Hand','Comic Sans MS','Segoe Print','Bradley Hand',cursive;
+  --title:'Caveat','Kalam','Segoe Print','Bradley Hand',cursive;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){ --desk:#2b2b2b; }
+}
+:root[data-theme="dark"]{ --desk:#2b2b2b; }
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--desk);font-family:var(--hand);color:var(--ink);}
+
+/* ===== Notebook sheet ===== */
+.page{
+  position:relative; max-width:860px; margin:24px auto; padding:var(--line) 28px calc(var(--line)*2) 84px;
+  background:
+    linear-gradient(90deg,transparent 64px,var(--margin) 64px,var(--margin) 66px,transparent 66px),
+    repeating-linear-gradient(var(--paper) 0,var(--paper) calc(var(--line) - 1px),var(--rule) calc(var(--line) - 1px),var(--rule) var(--line));
+  background-color:var(--paper);
+  box-shadow:0 2px 6px rgba(0,0,0,.15),0 12px 28px rgba(0,0,0,.12);
+  font-size:20px; line-height:var(--line);
+}
+.page::before{ /* punched holes */
+  content:""; position:absolute; left:22px; top:0; bottom:0; width:18px;
+  background:radial-gradient(circle,var(--desk) 7px,transparent 8px) 0 40px/18px 220px repeat-y;
+}
+@media (max-width:600px){
+  .page{margin:0;padding-left:52px;padding-right:16px;font-size:18px;
+    background:
+      linear-gradient(90deg,transparent 40px,var(--margin) 40px,var(--margin) 42px,transparent 42px),
+      repeating-linear-gradient(var(--paper) 0,var(--paper) calc(var(--line) - 1px),var(--rule) calc(var(--line) - 1px),var(--rule) var(--line));
+    background-color:var(--paper);}
+  .page::before{left:10px;width:16px}
+}
+
+/* ===== Text (all margins are multiples of --line so text sits on the rules) ===== */
+.date{position:absolute;top:0;right:24px;font-family:var(--title);font-size:22px;color:var(--ink2);line-height:var(--line)}
+h1{font-family:var(--title);font-weight:700;color:var(--ink2);font-size:46px;line-height:calc(var(--line)*2);margin:0;transform:rotate(-1deg)}
+h1 .u{background:linear-gradient(transparent 62%,var(--hl-yellow) 62%,var(--hl-yellow) 92%,transparent 92%)}
+h2{font-family:var(--title);font-weight:700;color:var(--red);font-size:32px;line-height:calc(var(--line)*1.5);margin:calc(var(--line)*.5) 0 0}
+h2::before{content:"➤ ";font-size:22px}
+p,li{margin:0}
+ul,ol{margin:0;padding-left:28px}
+ul{list-style:none}
+ul>li::before{content:"–";position:absolute;margin-left:-20px}
+ul>li.star::before{content:"★";color:var(--red)}
+ul>li.arrow::before{content:"→"}
+ul>li.check::before{content:"✓";color:var(--green)}
+.gap{height:var(--line)}
+
+/* ===== Pen effects ===== */
+.hl{background:var(--hl-yellow);padding:0 3px;border-radius:3px 6px 4px 7px}
+.hl.pink{background:var(--hl-pink)} .hl.green{background:var(--hl-green)} .hl.blue{background:var(--hl-blue)}
+.red{color:var(--red)} .green{color:var(--green)} .black{color:var(--ink2)}
+.ul{text-decoration:underline wavy var(--red);text-underline-offset:5px}
+.circ{border:2px solid var(--red);border-radius:50% 45% 55% 48%;padding:0 6px}
+.strike{text-decoration:line-through 2px var(--red)}
+.term{font-weight:700;color:var(--ink2)}
+.box{display:flow-root;border:2.5px solid var(--ink2);border-radius:4px 10px 6px 12px;padding:calc(var(--line)*.5 - 2.5px) 14px;margin:calc(var(--line)*.5) 0;transform:rotate(-.4deg);background:rgba(255,255,255,.35)}
+.box.red{border-color:var(--red)}
+.formula{font-family:var(--title);font-size:28px;text-align:center;color:var(--ink2)}
+
+/* sticky note */
+.sticky{float:right;width:min(250px,42%);margin:0 0 var(--line) 20px;padding:var(--line) 16px;background:var(--sticky);
+  color:#333;transform:rotate(2.2deg);box-shadow:2px 4px 8px rgba(0,0,0,.18);font-size:18px}
+.sticky b{font-family:var(--title);font-size:24px;color:var(--red)}
+@media (max-width:600px){.sticky{float:none;width:auto;margin:var(--line) 0}}
+
+/* margin annotation (lives in the red margin) */
+.side{position:absolute;left:4px;width:58px;text-align:center;font-family:var(--title);font-size:17px;line-height:18px;color:var(--red);transform:rotate(-8deg)}
+@media (max-width:600px){.side{display:none}}
+
+/* two-column notes */
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:0 28px}
+@media (max-width:600px){.cols{grid-template-columns:1fr}}
+
+/* diagrams */
+figure{margin:var(--line) 0;text-align:center}
+figure svg{width:100%;max-width:640px;height:auto;overflow:visible}
+figcaption{font-family:var(--title);font-size:20px;color:var(--ink2)}
+/* phones: keep labels readable — diagram scrolls inside its own box instead of shrinking */
+@media (max-width:600px){figure{overflow-x:auto}figure svg{min-width:520px}}
+.sk{fill:none;stroke:var(--ink2);stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round;filter:url(#rough)}
+.sk.blue{stroke:var(--ink)} .sk.red{stroke:var(--red)} .sk.green{stroke:var(--green)}
+.lbl{font-family:var(--hand);font-size:17px;fill:var(--ink)}
+.lbl.b{font-weight:700;fill:var(--ink2)} .lbl.r{fill:var(--red)} .lbl.g{fill:var(--green)}
+
+/* table */
+.wrap{overflow-x:auto}
+table{border-collapse:collapse;margin:calc(var(--line)*.5) 0;min-width:100%}
+th,td{border:2px solid var(--ink2);padding:0 10px;text-align:left;vertical-align:top}
+th{font-family:var(--title);font-size:24px;color:var(--ink2)}
+
+@media print{body{background:#fff}.page{box-shadow:none;margin:0}.page::before{display:none}}
+
+/* ===== Added for long chapter notes ===== */
+pre.code{font-family:Consolas,'Courier New',monospace;font-size:14px;line-height:var(--line);color:var(--ink);background:rgba(255,255,255,.45);
+  border-left:4px solid var(--red);margin:calc(var(--line)*.5) 0;padding:0 12px;overflow-x:auto;white-space:pre}
+pre.code.ascii{border-left-color:var(--green)}
+code{font-family:Consolas,'Courier New',monospace;font-size:.82em;background:rgba(0,0,0,.06);padding:0 3px;border-radius:3px}
+pre.code code{background:none;padding:0;font-size:inherit}
+.lang{font-family:var(--title);font-size:18px;color:var(--red)}
+h3{font-family:var(--title);font-weight:700;color:var(--ink2);font-size:26px;line-height:var(--line);margin:calc(var(--line)*.5) 0 0}
+h3::before{content:"✎ ";font-size:18px;color:var(--red)}
+.nav{display:flex;justify-content:space-between;gap:12px;font-family:var(--title);font-size:22px;line-height:var(--line)}
+.nav a{color:var(--red);text-decoration:none}
+.nav a:hover{text-decoration:underline wavy}
+.pagebreak{border-top:3px dashed var(--margin);margin:var(--line) 0;text-align:center;font-family:var(--title);color:var(--red);line-height:var(--line)}
+li.todo::before{content:"☐";color:var(--ink2)}
+a{color:var(--ink);text-decoration:underline dotted}
+</style>
+</head>
+<body>
+<!-- One shared hand-drawn wobble filter; give every diagram stroke class="sk" -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <!-- userSpaceOnUse region: a % region collapses to nothing on perfectly straight lines (zero-height bbox) -->
+  <filter id="rough" filterUnits="userSpaceOnUse" x="-500" y="-500" width="3000" height="3000">
+    <feTurbulence type="fractalNoise" baseFrequency="0.03" numOctaves="2" seed="3" result="n"/>
+    <feDisplacementMap in="SourceGraphic" in2="n" scale="3"/>
+  </filter>
+  <marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+    <path d="M1 1 L9 5 L1 9" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+  </marker>
+</defs></svg>
+
+<main class="page">
+  <nav class="nav"><a href="ch08-clean-architecture.notes.html">← Ch 8 — Clean Architecture</a><a href="index.notes.html">☰ Contents</a><a href="ch10-domain-driven-design-tactical.notes.html">Ch 10 — Domain-Driven Design (Tactical) →</a></nav>
+  <div class="date">2026-10-10</div>
+  <h1><span class="u">Ch 9 — Hexagonal Architecture (Ports &amp; Adapters)</span></h1>
+  <p class="black">Chapter 9 — Hexagonal Architecture (Ports &amp; Adapters)</p>
+<p class="black"><b>Volume 3 — Low-Level Design</b> · <a href="index.md">Contents</a> · ← <a href="ch08-clean-architecture.notes.html">Chapter 8 — Clean Architecture</a> · Next → <a href="ch10-domain-driven-design-tactical.notes.html">Chapter 10 — Domain-Driven Design (Tactical)</a></p>
+<h2>Concept</h2>
+<p>Ports (the contract) and adapters (the implementations) around a core; driving vs driven sides.</p>
+<div class="box"><b>In one sentence:</b> put the application core in the middle, let it talk to the outside world only through <i>ports</i> (interfaces it defines), and plug in <i>adapters</i> for each technology — the ones that call the core on one side (web, CLI, tests) and the ones the core calls on the other (DB, payments, email).</div>
+<p><b>Mental model — a game console.</b> The console (core) has standard ports: controller ports on the front, HDMI and network ports on the back. Any controller brand, any TV, any router works if its plug fits the port. You can test the console with a fake controller and a fake screen on a workbench. The shape is a hexagon only to suggest "many sides, many ports" — the number six means nothing.</p>
+<h3>Driving vs driven</h3>
+<div class="wrap"><table>
+<tr><th></th><th>Driving (primary) side</th><th>Driven (secondary) side</th></tr>
+<tr><td>Who starts the conversation</td><td>the outside world calls the core</td><td>the core calls the outside world</td></tr>
+<tr><td>Port</td><td>a <b>use-case interface</b> the core offers (<code>PayInvoice.execute</code>)</td><td>an <b>SPI interface</b> the core needs (<code>PaymentGateway.charge</code>)</td></tr>
+<tr><td>Adapters</td><td>REST controller, CLI, gRPC handler, message consumer, <b>test harness</b></td><td>Postgres repository, Stripe client, SMTP mailer, S3 storage, <b>fakes</b></td></tr>
+<tr><td>Direction of dependency</td><td>adapter → port (the adapter depends on the core)</td><td>adapter → port (the adapter implements the core's interface)</td></tr>
+</table></div>
+<p>Both kinds of adapters depend on the core, never the reverse.</p>
+<h3>Ports &amp; adapters vs Clean Architecture</h3>
+<div class="wrap"><table>
+<tr><th></th><th>Hexagonal (Cockburn, 2005)</th><th>Clean Architecture (Martin, 2012)</th></tr>
+<tr><td>Core idea</td><td>inside vs outside, connected by ports</td><td>concentric rings with the dependency rule</td></tr>
+<tr><td>Layers inside the core</td><td>not prescribed</td><td>entities vs use cases, explicitly</td></tr>
+<tr><td>Emphasis</td><td>symmetry: every external actor (even tests) is just an adapter</td><td>layer responsibilities and the direction of dependencies</td></tr>
+<tr><td>Compatible?</td><td colspan="2">yes — Clean Architecture is essentially hexagonal plus a layered core; Onion Architecture is similar too</td></tr>
+</table></div>
+<p><b>How it helps testing</b> — the tests are just another driving adapter, and fakes are just other driven adapters. You can run the whole core — every use case — with in-memory adapters in milliseconds, then run a small set of <i>adapter contract tests</i> against the real technologies.</p>
+<p><b>Design a good port</b> — speak the <i>domain's</i> language (<code>charge(Money, CardToken) -&gt; ChargeId</code>), not the vendor's (<code>PaymentIntent.create(amount, currency, confirm=True)</code>); keep it small; return domain types or domain errors (<code>PaymentDeclined</code>), never vendor exceptions.</p>
+<aside class="sticky" style="float:none;width:min(440px,100%);margin:32px 0"><b>Driving vs driven!</b><br>Driving side: the outside world <b>calls</b> the core. Driven side: the core <b>calls</b> the outside world. Both kinds of adapters depend on the core.</aside>
+<h2>Prereqs</h2>
+<ul>
+  <li><a href="ch08-clean-architecture.notes.html">Chapter 8 — Clean Architecture</a></li>
+</ul>
+<div class="pagebreak">~ page 2 ~</div>
+<h2>Diagram</h2>
+<h3>A hexagon with driving adapters on the left, driven adapters on the right</h3>
+<figure>
+<svg viewBox="0 0 660 560" role="img" aria-label="Hexagonal diagram: driving adapters (REST, CLI, queue consumer, test harness) call port PayInvoice; core use cases and domain call ports PaymentGateway, InvoiceRepository, Notifier; driven adapters implement those ports">
+<rect class="sk " x="7.0" y="10.5" width="589.0" height="85.0" rx="14" style="stroke-dasharray:8 6;stroke-width:2"/>
+<text class="lbl r" x="19.0" y="29.5" style="font-size:14px;font-weight:700">driving adapters</text>
+<rect class="sk " x="14.0" y="118.0" width="632.0" height="232.0" rx="14" style="stroke-dasharray:8 6;stroke-width:2"/>
+<text class="lbl r" x="26.0" y="137.0" style="font-size:14px;font-weight:700">application core</text>
+<rect class="sk " x="14.0" y="385.0" width="632.0" height="160.0" rx="14" style="stroke-dasharray:8 6;stroke-width:2"/>
+<text class="lbl r" x="26.0" y="404.0" style="font-size:14px;font-weight:700">driven adapters</text>
+<rect class="sk" x="23.0" y="44.5" width="144.0" height="35.0" rx="10"/>
+<text class="lbl" x="95.0" y="67.0" text-anchor="middle" style="font-size:14px">REST controller</text>
+<rect class="sk" x="190.0" y="44.5" width="70.0" height="35.0" rx="10"/>
+<text class="lbl" x="225.0" y="67.0" text-anchor="middle" style="font-size:14px">CLI</text>
+<rect class="sk" x="292.0" y="44.5" width="136.0" height="35.0" rx="10"/>
+<text class="lbl" x="360.0" y="67.0" text-anchor="middle" style="font-size:14px">queue consumer</text>
+<rect class="sk" x="460.0" y="44.5" width="120.0" height="35.0" rx="10"/>
+<text class="lbl" x="520.0" y="67.0" text-anchor="middle" style="font-size:14px">test harness</text>
+<rect class="sk" x="254.0" y="157.5" width="152.0" height="35.0" rx="15.9"/>
+<text class="lbl" x="330.0" y="180.0" text-anchor="middle" style="font-size:14px">port: PayInvoice</text>
+<rect class="sk" x="246.0" y="222.5" width="168.0" height="35.0" rx="10"/>
+<text class="lbl" x="330.0" y="245.0" text-anchor="middle" style="font-size:14px">use cases + domain</text>
+<rect class="sk" x="28.0" y="292.5" width="184.0" height="35.0" rx="15.9"/>
+<text class="lbl" x="120.0" y="315.0" text-anchor="middle" style="font-size:14px">port: PaymentGateway</text>
+<rect class="sk" x="230.0" y="292.5" width="208.0" height="35.0" rx="15.9"/>
+<text class="lbl" x="334.0" y="315.0" text-anchor="middle" style="font-size:14px">port: InvoiceRepository</text>
+<rect class="sk" x="456.0" y="292.5" width="136.0" height="35.0" rx="15.9"/>
+<text class="lbl" x="524.0" y="315.0" text-anchor="middle" style="font-size:14px">port: Notifier</text>
+<rect class="sk" x="16.0" y="414.5" width="128.0" height="35.0" rx="10"/>
+<text class="lbl" x="80.0" y="437.0" text-anchor="middle" style="font-size:14px">StripeGateway</text>
+<rect class="sk" x="164.0" y="414.5" width="112.0" height="35.0" rx="10"/>
+<text class="lbl" x="220.0" y="437.0" text-anchor="middle" style="font-size:14px">FakeGateway</text>
+<rect class="sk" x="464.0" y="414.5" width="120.0" height="35.0" rx="10"/>
+<text class="lbl" x="524.0" y="437.0" text-anchor="middle" style="font-size:14px">SmtpNotifier</text>
+<rect class="sk" x="147.0" y="484.5" width="176.0" height="35.0" rx="10"/>
+<text class="lbl" x="235.0" y="507.0" text-anchor="middle" style="font-size:14px">PostgresInvoiceRepo</text>
+<rect class="sk" x="352.0" y="484.5" width="176.0" height="35.0" rx="10"/>
+<text class="lbl" x="440.0" y="507.0" text-anchor="middle" style="font-size:14px">InMemoryInvoiceRepo</text>
+<path class="sk blue" d="M131.4 79.5 Q 209.9 123.9 293.6 157.5" style="color:var(--ink)" marker-end="url(#arr)"/>
+<path class="sk blue" d="M241.3 79.5 Q 273.1 122.6 313.7 157.5" style="color:var(--ink)" marker-end="url(#arr)"/>
+<path class="sk blue" d="M355.4 79.5 Q 339.2 117.0 334.6 157.5" style="color:var(--ink)" marker-end="url(#arr)"/>
+<path class="sk blue" d="M490.6 79.5 Q 421.9 113.3 359.4 157.5" style="color:var(--ink)" marker-end="url(#arr)"/>
+<path class="sk blue" d="M330.0 192.5 Q 324.0 207.5 330.0 222.5" style="color:var(--ink)" marker-end="url(#arr)"/>
+<path class="sk blue" d="M277.5 257.5 Q 223.1 269.3 172.5 292.5" style="color:var(--ink)" marker-end="url(#arr)"/>
+<path class="sk blue" d="M331.0 257.5 Q 326.0 275.3 333.0 292.5" style="color:var(--ink)" marker-end="url(#arr)"/>
+<path class="sk blue" d="M378.5 257.5 Q 425.0 280.6 475.5 292.5" style="color:var(--ink)" marker-end="url(#arr)"/>
+<path class="sk red" d="M85.7 414.5 Q 105.7 372.9 114.3 327.5" style="color:var(--red);stroke-dasharray:7 5" marker-end="url(#arr)"/>
+<text class="lbl r" x="78.0" y="380.0" text-anchor="middle" style="font-size:13px;paint-order:stroke;stroke:#fdfbf4;stroke-width:5px;stroke-linejoin:round">implements</text>
+<path class="sk red" d="M205.7 414.5 Q 174.6 367.2 134.3 327.5" style="color:var(--red);stroke-dasharray:7 5" marker-end="url(#arr)"/>
+<text class="lbl r" x="205.0" y="380.0" text-anchor="middle" style="font-size:13px;paint-order:stroke;stroke:#fdfbf4;stroke-width:5px;stroke-linejoin:round">implements</text>
+<path class="sk red" d="M244.0 484.5 Q 289.8 408.7 325.0 327.5" style="color:var(--red);stroke-dasharray:7 5" marker-end="url(#arr)"/>
+<text class="lbl r" x="250.0" y="410.0" text-anchor="middle" style="font-size:13px;paint-order:stroke;stroke:#fdfbf4;stroke-width:5px;stroke-linejoin:round">implements</text>
+<path class="sk red" d="M430.3 484.5 Q 392.3 403.1 343.7 327.5" style="color:var(--red);stroke-dasharray:7 5" marker-end="url(#arr)"/>
+<text class="lbl r" x="425.0" y="410.0" text-anchor="middle" style="font-size:13px;paint-order:stroke;stroke:#fdfbf4;stroke-width:5px;stroke-linejoin:round">implements</text>
+<path class="sk red" d="M524.0 414.5 Q 530.0 371.0 524.0 327.5" style="color:var(--red);stroke-dasharray:7 5" marker-end="url(#arr)"/>
+<text class="lbl r" x="566.0" y="380.0" text-anchor="middle" style="font-size:13px;paint-order:stroke;stroke:#fdfbf4;stroke-width:5px;stroke-linejoin:round">implements</text>
+</svg>
+<figcaption>Fig: driving adapters on top call the core; driven adapters at the bottom implement the ports the core defines (the original layout runs left to right)</figcaption>
+</figure>
+<pre class="code ascii"><code>            ╱‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾╲
+   REST ──►╱   port: PayInvoice   ╲──► port: PaymentGateway ──► Stripe | Fake
+   CLI  ──►   ┌────────────────┐    ──► port: InvoiceRepo    ──► Postgres | Memory
+   Test ──►╲  │ core (domain)  │  ╱ ──► port: Notifier       ──► SMTP | Spy
+            ╲ └────────────────┘ ╱
+             ╲__________________╱
+   left: things that CALL the core      right: things the core CALLS</code></pre>
+<h3>The same core, two configurations</h3>
+<pre class="code ascii"><code> production:   REST → PayInvoice → StripeGateway + PostgresRepo + SmtpNotifier
+ test:         pytest → PayInvoice → FakeGateway + InMemoryRepo + SpyNotifier   (no network, ~1 ms)</code></pre>
+<div class="pagebreak">~ page 3 ~</div>
+<h2>Example</h2>
+<span class="lang">python</span>
+<pre class="code"><code>from dataclasses import dataclass
+from typing import Protocol
+
+# ---- core: domain types + ports --------------------------------------------
+@dataclass(frozen=True)
+class Money:
+    cents: int
+    currency: str
+
+class PaymentDeclined(Exception):
+    """A domain error — adapters translate vendor errors into this."""
+
+class PaymentGateway(Protocol):                    # driven port, in the domain's language
+    def charge(self, amount: Money, card_token: str) -&gt; str: ...
+
+@dataclass
+class Invoice:
+    id: str
+    amount: Money
+    paid: bool = False
+    charge_id: str | None = None
+
+class InvoiceRepository(Protocol):
+    def get(self, invoice_id: str) -&gt; Invoice: ...
+    def save(self, invoice: Invoice) -&gt; None: ...
+
+class PayInvoice:                                   # driving port = this use case's API
+    def __init__(self, invoices: InvoiceRepository, payments: PaymentGateway):
+        self.invoices, self.payments = invoices, payments
+    def execute(self, invoice_id: str, card_token: str) -&gt; str:
+        inv = self.invoices.get(invoice_id)
+        if inv.paid:
+            return inv.charge_id                    # idempotent: paying twice is a no-op
+        inv.charge_id = self.payments.charge(inv.amount, card_token)
+        inv.paid = True
+        self.invoices.save(inv)
+        return inv.charge_id
+
+# ---- driven adapters ---------------------------------------------------------
+class FakeGateway:
+    def __init__(self, decline_tokens=()): self.decline, self.charges = set(decline_tokens), []
+    def charge(self, amount, card_token):
+        if card_token in self.decline: raise PaymentDeclined(card_token)
+        self.charges.append((amount, card_token)); return f"ch_{len(self.charges)}"
+
+class StripeGateway:
+    def __init__(self, stripe): self.stripe = stripe          # the real SDK, injected
+    def charge(self, amount, card_token):
+        try:
+            pi = self.stripe.PaymentIntent.create(amount=amount.cents, currency=amount.currency.lower(),
+                                                  payment_method=card_token, confirm=True)
+        except self.stripe.error.CardError as e:
+            raise PaymentDeclined(str(e)) from e              # vendor error → domain error
+        return pi.id
+
+class InMemoryInvoices:
+    def __init__(self, *invoices): self.rows = {i.id: i for i in invoices}
+    def get(self, invoice_id): return self.rows[invoice_id]
+    def save(self, invoice): self.rows[invoice.id] = invoice
+
+# ---- test: the core with fake adapters, no network -------------------------------
+gw = FakeGateway(decline_tokens={"tok_declined"})
+repo = InMemoryInvoices(Invoice("inv-1", Money(4200, "EUR")), Invoice("inv-2", Money(99, "EUR")))
+pay = PayInvoice(repo, gw)
+print(pay.execute("inv-1", "tok_visa"), pay.execute("inv-1", "tok_visa"), len(gw.charges))   # ch_1 ch_1 1
+try:
+    pay.execute("inv-2", "tok_declined")
+except PaymentDeclined:
+    print("declined; paid =", repo.get("inv-2").paid)          # declined; paid = False</code></pre>
+<h2>Exercises</h2>
+<ol style="list-style:none;padding-left:0">
+  <li>1. Define a port and two adapters.
+      <div class="box"><b>Solution</b> <code>ExchangeRates.rate(src, dst) -&gt; Decimal</code> as the port. Adapter 1: an HTTP client for a rates API with caching and timeouts, translating HTTP failures into <code>RatesUnavailable</code>. Adapter 2: <code>FixedRates({("EUR","USD"): Decimal("1.08")})</code> for tests and local development. The core only imports the port.</div></li>
+  <li>2. Test the core with a fake adapter, no network.
+      <div class="box"><b>Solution</b> See the example: build <code>PayInvoice</code> with <code>FakeGateway</code> and <code>InMemoryInvoices</code>, and test happy paths, declines, and idempotency. Add a pytest socket blocker (<code>pytest-socket</code>) to prove no test opens a connection.</div></li>
+  <li>3. Your port is <code>create_payment_intent(amount, currency, confirm, payment_method_types)</code>. What's wrong with it?
+      <div class="box"><b>Solution</b> It mirrors the vendor's API, so the core depends on Stripe's model and switching vendors means changing the core. Define the port by what the <i>domain</i> needs (<code>charge(Money, CardToken) -&gt; ChargeId</code>, raising <code>PaymentDeclined</code>), and let the adapter do the translation.</div></li>
+</ol>
+<div class="pagebreak">~ page 4 ~</div>
+<h2>Mini project</h2>
+<h3>A payments component with a real and fake gateway adapter.</h3>
+<figure>
+<svg viewBox="0 0 660 380" role="img" aria-label="Mini project: REST and CLI call PayInvoice and RefundPayment use cases; the use cases depend on the PaymentGateway port, implemented by StripeGateway and FakeGateway; contract tests run against both">
+<rect class="sk" x="15.0" y="18.0" width="160.0" height="54.0" rx="10"/>
+<text class="lbl" x="95.0" y="40.5" text-anchor="middle" style="font-size:14px">REST: POST<tspan x="95.0" dy="19">/invoices/:id/pay</tspan></text>
+<rect class="sk" x="19.0" y="103.0" width="152.0" height="54.0" rx="10"/>
+<text class="lbl" x="95.0" y="125.5" text-anchor="middle" style="font-size:14px">CLI: pay-invoice<tspan x="95.0" dy="19">ID TOKEN</tspan></text>
+<rect class="sk" x="226.0" y="51.5" width="128.0" height="73.0" rx="10"/>
+<text class="lbl" x="290.0" y="74.0" text-anchor="middle" style="font-size:14px">PayInvoice /<tspan x="290.0" dy="19">RefundPayment</tspan><tspan x="290.0" dy="19">(core)</tspan></text>
+<rect class="sk" x="222.0" y="188.0" width="136.0" height="54.0" rx="24.5"/>
+<text class="lbl" x="290.0" y="210.5" text-anchor="middle" style="font-size:14px">PaymentGateway<tspan x="290.0" dy="19">port</tspan></text>
+<rect class="sk" x="382.0" y="29.0" width="216.0" height="92.0" rx="10"/>
+<text class="lbl" x="490.0" y="51.5" text-anchor="middle" style="font-size:14px">StripeGateway<tspan x="490.0" dy="19">(test mode keys)</tspan><tspan x="490.0" dy="19">timeouts, error mapping,</tspan><tspan x="490.0" dy="19">idempotency keys</tspan></text>
+<rect class="sk" x="406.0" y="168.5" width="168.0" height="73.0" rx="10"/>
+<text class="lbl" x="490.0" y="191.0" text-anchor="middle" style="font-size:14px">FakeGateway<tspan x="490.0" dy="19">scripted declines,</tspan><tspan x="490.0" dy="19">latency, outages</tspan></text>
+<rect class="sk" x="394.0" y="283.5" width="192.0" height="73.0" rx="10"/>
+<text class="lbl" x="490.0" y="306.0" text-anchor="middle" style="font-size:14px">contract tests:<tspan x="490.0" dy="19">one suite, run</tspan><tspan x="490.0" dy="19">against both adapters</tspan></text>
+<path class="sk blue" d="M175.0 62.6 Q 199.2 74.1 226.0 73.9" style="color:var(--ink)" marker-end="url(#arr)"/>
+<path class="sk blue" d="M171.0 113.6 Q 199.8 113.6 226.0 101.8" style="color:var(--ink)" marker-end="url(#arr)"/>
+<path class="sk blue" d="M290.0 124.5 Q 284.0 156.2 290.0 188.0" style="color:var(--ink)" marker-end="url(#arr)"/>
+<path class="sk blue" d="M328.6 188.0 Q 379.9 159.4 424.3 121.0" style="color:var(--ink);stroke-dasharray:7 5" marker-end="url(#arr)"/>
+<path class="sk blue" d="M358.0 211.6 Q 382.3 216.4 406.0 209.2" style="color:var(--ink);stroke-dasharray:7 5" marker-end="url(#arr)"/>
+<path class="sk blue" d="M490.0 283.5 Q 496.0 262.5 490.0 241.5" style="color:var(--ink)" marker-end="url(#arr)"/>
+<path class="sk blue" d="M586.0 320.0 L625.0 320.0 L625.0 75.0 L598.0 75.0" style="color:var(--ink)" marker-end="url(#arr)"/>
+</svg>
+<figcaption>Fig: one contract-test suite runs against the real and the fake gateway adapter</figcaption>
+</figure>
+<h3>Steps</h3>
+<ol style="list-style:none;padding-left:0">
+  <li>1. Core: <code>Invoice</code>, <code>Money</code>, <code>PayInvoice</code>, and <code>RefundPayment</code> use cases with domain errors.</li>
+  <li>2. Driving adapters: a FastAPI route and a CLI command that call the same use cases.</li>
+  <li>3. Driven adapters: a <code>StripeGateway</code> using Stripe <i>test mode</i> (or a local stub server), plus a <code>FakeGateway</code> with scriptable behaviors.</li>
+  <li>4. One contract-test suite parameterized over both gateways (charge, decline, refund, idempotent retry).</li>
+  <li>5. Unit-test all core behaviors with the fake only; run the real adapter's contract tests separately.</li>
+</ol>
+<div class="box"><b>Done when:</b> the core suite runs in under a second with no network, both adapters pass the same contract tests, and swapping gateways is one line in the composition root.</div>
+<h2>Open source</h2>
+<ul>
+  <li><a href="https://github.com/thombergs/buckpal"><code>thombergs/buckpal</code></a> (Spring hexagonal example) — a small banking app from the book <i>Get Your Hands Dirty on Clean Architecture</i>: <code>application/port/in</code> (driving ports), <code>application/port/out</code> (driven ports), and <code>adapter/in</code> and <code>adapter/out</code>. Also read Alistair Cockburn's original "Hexagonal Architecture" article.</li>
+</ul>
+<h2>Interview</h2>
+<ol style="list-style:none;padding-left:0">
+  <li>1. <b>"Ports &amp; adapters vs clean architecture?"</b>
+      <div class="box"><b>Answer</b> Hexagonal splits the world into an inside (the application) and an outside, connected only through ports, with adapters for each technology on the driving and driven sides — it doesn't prescribe layers inside the core. Clean Architecture keeps that idea and adds explicit inner rings (entities, then use cases) with the dependency rule. They're compatible; many codebases are both.</div></li>
+  <li>2. <b>"How does hexagonal help testing?"</b>
+      <div class="box"><b>Answer</b> Tests are just another driving adapter calling the use-case ports, and every external dependency is behind a driven port that can take a fake. So all business behavior can be tested fast, deterministically, and without infrastructure. Real adapters are then verified separately with contract and integration tests, which keeps the slow tests few and focused.</div></li>
+</ol>
+<h2>Checklist</h2>
+<ul>
+  <li class="todo">define explicit ports</li>
+  <li class="todo">implement adapters outside the core</li>
+  <li class="todo">swap adapters without touching the core</li>
+</ul>
+<p class="black"><a href="index.md">Contents</a> · ← <a href="ch08-clean-architecture.notes.html">Chapter 8 — Clean Architecture</a> · Next → <a href="ch10-domain-driven-design-tactical.notes.html">Chapter 10 — Domain-Driven Design (Tactical)</a></p>
+  <nav class="nav"><a href="ch08-clean-architecture.notes.html">← Ch 8 — Clean Architecture</a><a href="index.notes.html">☰ Contents</a><a href="ch10-domain-driven-design-tactical.notes.html">Ch 10 — Domain-Driven Design (Tactical) →</a></nav>
+</main>
+</body>
+</html>

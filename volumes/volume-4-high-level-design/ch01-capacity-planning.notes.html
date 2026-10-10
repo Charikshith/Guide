@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ch 1 — Capacity Planning — Notes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;700&family=Kalam:wght@400;700&family=Patrick+Hand&display=swap" rel="stylesheet">
+<style>
+/* ===== Page tokens ===== */
+:root{
+  --line:32px;                 /* ruled-line spacing; every vertical size is a multiple */
+  --paper:#fdfbf4; --rule:#c9dcef; --margin:#e8a0a0;
+  --ink:#1f3a93;               /* blue pen (body) */
+  --ink2:#222;                 /* black pen (headings) */
+  --red:#c0392b; --green:#1e8449;
+  --hl-yellow:rgba(255,235,59,.55); --hl-pink:rgba(255,128,171,.45);
+  --hl-green:rgba(118,255,3,.35); --hl-blue:rgba(64,196,255,.35);
+  --sticky:#fff59d; --desk:#e9e4d8;
+  --hand:'Kalam','Patrick Hand','Comic Sans MS','Segoe Print','Bradley Hand',cursive;
+  --title:'Caveat','Kalam','Segoe Print','Bradley Hand',cursive;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){ --desk:#2b2b2b; }
+}
+:root[data-theme="dark"]{ --desk:#2b2b2b; }
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--desk);font-family:var(--hand);color:var(--ink);}
+
+/* ===== Notebook sheet ===== */
+.page{
+  position:relative; max-width:860px; margin:24px auto; padding:var(--line) 28px calc(var(--line)*2) 84px;
+  background:
+    linear-gradient(90deg,transparent 64px,var(--margin) 64px,var(--margin) 66px,transparent 66px),
+    repeating-linear-gradient(var(--paper) 0,var(--paper) calc(var(--line) - 1px),var(--rule) calc(var(--line) - 1px),var(--rule) var(--line));
+  background-color:var(--paper);
+  box-shadow:0 2px 6px rgba(0,0,0,.15),0 12px 28px rgba(0,0,0,.12);
+  font-size:20px; line-height:var(--line);
+}
+.page::before{ /* punched holes */
+  content:""; position:absolute; left:22px; top:0; bottom:0; width:18px;
+  background:radial-gradient(circle,var(--desk) 7px,transparent 8px) 0 40px/18px 220px repeat-y;
+}
+@media (max-width:600px){
+  .page{margin:0;padding-left:52px;padding-right:16px;font-size:18px;
+    background:
+      linear-gradient(90deg,transparent 40px,var(--margin) 40px,var(--margin) 42px,transparent 42px),
+      repeating-linear-gradient(var(--paper) 0,var(--paper) calc(var(--line) - 1px),var(--rule) calc(var(--line) - 1px),var(--rule) var(--line));
+    background-color:var(--paper);}
+  .page::before{left:10px;width:16px}
+}
+
+/* ===== Text (all margins are multiples of --line so text sits on the rules) ===== */
+.date{position:absolute;top:0;right:24px;font-family:var(--title);font-size:22px;color:var(--ink2);line-height:var(--line)}
+h1{font-family:var(--title);font-weight:700;color:var(--ink2);font-size:46px;line-height:calc(var(--line)*2);margin:0;transform:rotate(-1deg)}
+h1 .u{background:linear-gradient(transparent 62%,var(--hl-yellow) 62%,var(--hl-yellow) 92%,transparent 92%)}
+h2{font-family:var(--title);font-weight:700;color:var(--red);font-size:32px;line-height:calc(var(--line)*1.5);margin:calc(var(--line)*.5) 0 0}
+h2::before{content:"➤ ";font-size:22px}
+p,li{margin:0}
+ul,ol{margin:0;padding-left:28px}
+ul{list-style:none}
+ul>li::before{content:"–";position:absolute;margin-left:-20px}
+ul>li.star::before{content:"★";color:var(--red)}
+ul>li.arrow::before{content:"→"}
+ul>li.check::before{content:"✓";color:var(--green)}
+.gap{height:var(--line)}
+
+/* ===== Pen effects ===== */
+.hl{background:var(--hl-yellow);padding:0 3px;border-radius:3px 6px 4px 7px}
+.hl.pink{background:var(--hl-pink)} .hl.green{background:var(--hl-green)} .hl.blue{background:var(--hl-blue)}
+.red{color:var(--red)} .green{color:var(--green)} .black{color:var(--ink2)}
+.ul{text-decoration:underline wavy var(--red);text-underline-offset:5px}
+.circ{border:2px solid var(--red);border-radius:50% 45% 55% 48%;padding:0 6px}
+.strike{text-decoration:line-through 2px var(--red)}
+.term{font-weight:700;color:var(--ink2)}
+.box{display:flow-root;border:2.5px solid var(--ink2);border-radius:4px 10px 6px 12px;padding:calc(var(--line)*.5 - 2.5px) 14px;margin:calc(var(--line)*.5) 0;transform:rotate(-.4deg);background:rgba(255,255,255,.35)}
+.box.red{border-color:var(--red)}
+.formula{font-family:var(--title);font-size:28px;text-align:center;color:var(--ink2)}
+
+/* sticky note */
+.sticky{float:right;width:min(250px,42%);margin:0 0 var(--line) 20px;padding:var(--line) 16px;background:var(--sticky);
+  color:#333;transform:rotate(2.2deg);box-shadow:2px 4px 8px rgba(0,0,0,.18);font-size:18px}
+.sticky b{font-family:var(--title);font-size:24px;color:var(--red)}
+@media (max-width:600px){.sticky{float:none;width:auto;margin:var(--line) 0}}
+
+/* margin annotation (lives in the red margin) */
+.side{position:absolute;left:4px;width:58px;text-align:center;font-family:var(--title);font-size:17px;line-height:18px;color:var(--red);transform:rotate(-8deg)}
+@media (max-width:600px){.side{display:none}}
+
+/* two-column notes */
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:0 28px}
+@media (max-width:600px){.cols{grid-template-columns:1fr}}
+
+/* diagrams */
+figure{margin:var(--line) 0;text-align:center}
+figure svg{width:100%;max-width:640px;height:auto;overflow:visible}
+figcaption{font-family:var(--title);font-size:20px;color:var(--ink2)}
+/* phones: keep labels readable — diagram scrolls inside its own box instead of shrinking */
+@media (max-width:600px){figure{overflow-x:auto}figure svg{min-width:520px}}
+.sk{fill:none;stroke:var(--ink2);stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round;filter:url(#rough)}
+.sk.blue{stroke:var(--ink)} .sk.red{stroke:var(--red)} .sk.green{stroke:var(--green)}
+.lbl{font-family:var(--hand);font-size:17px;fill:var(--ink)}
+.lbl.b{font-weight:700;fill:var(--ink2)} .lbl.r{fill:var(--red)} .lbl.g{fill:var(--green)}
+
+/* table */
+.wrap{overflow-x:auto}
+table{border-collapse:collapse;margin:calc(var(--line)*.5) 0;min-width:100%}
+th,td{border:2px solid var(--ink2);padding:0 10px;text-align:left;vertical-align:top}
+th{font-family:var(--title);font-size:24px;color:var(--ink2)}
+
+@media print{body{background:#fff}.page{box-shadow:none;margin:0}.page::before{display:none}}
+
+/* ===== Added for long chapter notes ===== */
+pre.code{font-family:Consolas,'Courier New',monospace;font-size:14px;line-height:var(--line);color:var(--ink);background:rgba(255,255,255,.45);
+  border-left:4px solid var(--red);margin:calc(var(--line)*.5) 0;padding:0 12px;overflow-x:auto;white-space:pre}
+pre.code.ascii{border-left-color:var(--green)}
+code{font-family:Consolas,'Courier New',monospace;font-size:.82em;background:rgba(0,0,0,.06);padding:0 3px;border-radius:3px}
+pre.code code{background:none;padding:0;font-size:inherit}
+.lang{font-family:var(--title);font-size:18px;color:var(--red)}
+h3{font-family:var(--title);font-weight:700;color:var(--ink2);font-size:26px;line-height:var(--line);margin:calc(var(--line)*.5) 0 0}
+h3::before{content:"✎ ";font-size:18px;color:var(--red)}
+.nav{display:flex;justify-content:space-between;gap:12px;font-family:var(--title);font-size:22px;line-height:var(--line)}
+.nav a{color:var(--red);text-decoration:none}
+.nav a:hover{text-decoration:underline wavy}
+.pagebreak{border-top:3px dashed var(--margin);margin:var(--line) 0;text-align:center;font-family:var(--title);color:var(--red);line-height:var(--line)}
+li.todo::before{content:"☐";color:var(--ink2)}
+a{color:var(--ink);text-decoration:underline dotted}
+</style>
+</head>
+<body>
+<!-- One shared hand-drawn wobble filter; give every diagram stroke class="sk" -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <!-- userSpaceOnUse region: a % region collapses to nothing on perfectly straight lines (zero-height bbox) -->
+  <filter id="rough" filterUnits="userSpaceOnUse" x="-500" y="-500" width="3000" height="3000">
+    <feTurbulence type="fractalNoise" baseFrequency="0.03" numOctaves="2" seed="3" result="n"/>
+    <feDisplacementMap in="SourceGraphic" in2="n" scale="3"/>
+  </filter>
+  <marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+    <path d="M1 1 L9 5 L1 9" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+  </marker>
+</defs></svg>
+
+<main class="page">
+  <nav class="nav"><span></span><a href="index.notes.html">☰ Contents</a><a href="ch02-scalability-and-reliability-fundamentals.notes.html">Ch 2 — Scalability &amp; Reliability Fundamentals →</a></nav>
+  <div class="date">2026-10-10</div>
+  <h1><span class="u">Ch 1 — Capacity Planning</span></h1>
+    <p class="black">Volume 4 — High-Level Design · <a href="index.md">Contents</a> · Next → <a href="ch02-scalability-and-reliability-fundamentals.notes.html">Chapter 2 — Scalability &amp; Reliability Fundamentals</a></p>
+  <p class="black">Chapter 1 — Capacity Planning</p>
+
+  <h2>Concept</h2>
+  <p>QPS, latency percentiles (p50/p99), throughput, storage sizing, and translating requirements into hardware/tier estimates.</p>
+  <div class="box"><b>In one sentence:</b> capacity planning turns product numbers ("10 million daily users") into engineering numbers (requests per second, servers, terabytes, dollars) with quick, explicit, back-of-envelope math — sized for the <span class="hl">peak, not the average</span>.</div>
+
+  <p><b>Mental model — planning a wedding.</b> You know the guest count (DAU), how much each guest eats (requests per user), and that everyone arrives at dinner time (the peak). From that you work out tables (servers), food (storage), and budget (cost). You don't need the exact count to the plate — within 2× is enough to pick the right venue.</p>
+
+  <h3>Core quantities</h3>
+  <div class="wrap"><table>
+    <tr><th>Quantity</th><th>Formula / meaning</th></tr>
+    <tr><td>Average QPS</td><td><code>DAU × requests per user per day ÷ 86,400</code></td></tr>
+    <tr><td>Peak QPS</td><td><code>average × peak factor</code> (2–10×; 5× is a common assumption)</td></tr>
+    <tr><td>Read : write ratio</td><td>often 10:1 to 100:1 for consumer apps</td></tr>
+    <tr><td>Servers</td><td><code>peak QPS ÷ QPS per server</code>, then add headroom (target ~60–70% utilization) and N+2 for failures</td></tr>
+    <tr><td>Storage</td><td><code>items per day × bytes per item × retention days × replication factor</code></td></tr>
+    <tr><td>Bandwidth</td><td><code>QPS × response size</code></td></tr>
+    <tr><td>Throughput vs latency</td><td>requests/second the system handles vs how long one request takes</td></tr>
+  </table></div>
+
+  <aside class="sticky"><b>Exam tip!</b><br>Averages hide the tail. Report p50 + p99 (+ p99.9), size for peak.</aside>
+  <p><b>Latency percentiles</b> — the <i>p99</i> is the time under which 99% of requests finish. Averages hide the tail. With fan-out, the tail dominates: a page calling 100 services each with a 1% chance of being slow is slow ~63% of the time (<code>1 − 0.99¹⁰⁰</code>). Track <b>p50</b> (typical), <b>p99</b> (tail users feel), and <b>p99.9</b> for high-volume services.</p>
+
+  <h3>Numbers worth memorizing</h3>
+  <div class="wrap"><table>
+    <tr><th>Item</th><th>Value</th></tr>
+    <tr><td>Seconds per day</td><td>86,400 ≈ 10⁵</td></tr>
+    <tr><td>1 M requests/day</td><td>≈ 12 QPS</td></tr>
+    <tr><td>1 B requests/day</td><td>≈ 12,000 QPS</td></tr>
+    <tr><td>Memory read, 1 MB sequential</td><td>~3 µs (RAM), ~50 µs (SSD), ~1 ms (network in DC)</td></tr>
+    <tr><td>Round trip in a datacenter</td><td>~0.5 ms; cross-continent ~100–150 ms</td></tr>
+    <tr><td>One app server (typical web API)</td><td>~1,000 QPS (varies 100–10,000+)</td></tr>
+    <tr><td>One Postgres primary (simple queries)</td><td>~10k–50k QPS</td></tr>
+    <tr><td>Powers of 2</td><td>2¹⁰ ≈ 10³ (KB), 2²⁰ ≈ 10⁶ (MB), 2³⁰ ≈ 10⁹ (GB), 2⁴⁰ ≈ 10¹² (TB)</td></tr>
+  </table></div>
+
+  <div class="box red"><b>State assumptions explicitly.</b> Every estimate is only as good as its inputs. Write them down so others can challenge the right number.</div>
+
+  <div class="pagebreak">~ page 2 ~</div>
+
+  <h2>Prereqs</h2>
+  <ul>
+    <li><a href="../volume-1-cs-foundations/ch44-delivery-load-balancing-reverse-proxies-and-cdn.notes.html">Vol 1 Ch 44 — Delivery: Load Balancing, Reverse Proxies &amp; CDN</a></li>
+    <li><a href="../volume-2-software-engineering/ch09-performance-engineering.notes.html">Vol 2 Ch 9 — Performance Engineering</a></li>
+  </ul>
+
+  <h2>Diagram</h2>
+  <h3>A capacity worksheet: QPS → servers → storage → cost</h3>
+  <figure>
+    <svg viewBox="0 0 660 480" role="img" aria-label="Capacity worksheet flow: assumptions feed QPS, storage; QPS feeds servers and bandwidth; servers, storage and bandwidth feed cost per month">
+      <rect class="sk" x="20" y="20" width="270" height="86" rx="12"/>
+      <text class="lbl b" x="155" y="45" text-anchor="middle">assumptions</text>
+      <text class="lbl" x="155" y="67" text-anchor="middle">10 M DAU · 50 req/user/day</text>
+      <text class="lbl" x="155" y="89" text-anchor="middle">peak 5× · 1 KB response</text>
+      <rect class="sk" x="370" y="20" width="270" height="86" rx="12"/>
+      <text class="lbl b" x="505" y="52" text-anchor="middle">avg QPS ≈ 5,800</text>
+      <text class="lbl b" x="505" y="80" text-anchor="middle">peak QPS ≈ 29,000</text>
+      <path class="sk blue" d="M290 62 C 315 56, 345 56, 368 62" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <rect class="sk" x="20" y="190" width="270" height="62" rx="12"/>
+      <text class="lbl" x="155" y="215" text-anchor="middle">storage = writes/day × size</text>
+      <text class="lbl" x="155" y="239" text-anchor="middle">× retention × 3 replicas</text>
+      <path class="sk blue" d="M150 106 C 156 140, 146 160, 152 188" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <rect class="sk" x="410" y="170" width="230" height="104" rx="12"/>
+      <text class="lbl" x="525" y="194" text-anchor="middle">servers = 29,000 ÷ 1,000</text>
+      <text class="lbl" x="525" y="216" text-anchor="middle">≈ 29 → with 70% target</text>
+      <text class="lbl" x="525" y="238" text-anchor="middle">and N+2</text>
+      <text class="lbl b" x="525" y="260" text-anchor="middle">≈ 44</text>
+      <path class="sk blue" d="M520 106 C 526 130, 516 150, 522 168" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <rect class="sk" x="150" y="300" width="250" height="62" rx="12"/>
+      <text class="lbl" x="275" y="325" text-anchor="middle">bandwidth = 29,000 × 1 KB</text>
+      <text class="lbl" x="275" y="349" text-anchor="middle">≈ 29 MB/s ≈ 230 Mbit/s</text>
+      <path class="sk blue" d="M385 106 C 372 190, 330 250, 300 298" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <rect class="sk green" x="230" y="414" width="190" height="46" rx="12"/>
+      <text class="lbl g" x="325" y="443" text-anchor="middle">cost / month</text>
+      <path class="sk blue" d="M150 252 C 160 320, 220 380, 262 412" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M275 362 C 278 380, 276 396, 277 412" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M525 274 C 520 340, 470 390, 418 425" style="color:var(--ink)" marker-end="url(#arr)"/>
+    </svg>
+    <figcaption>Fig 1: the capacity worksheet — assumptions → QPS → servers / bandwidth, assumptions → storage, all → cost / month</figcaption>
+  </figure>
+
+  <h3>Average vs peak traffic over a day</h3>
+<pre class="code ascii"><code> QPS
+ 29k ┤                        ╭──╮              ← size for this
+     │                    ╭───╯  ╰──╮
+ 5.8k┤ ─ ─ ─ ─ ─ ─ ─ ─╭───╯─ ─ ─ ─ ─╰───╮─ ─ ─  average (misleading)
+     │ ╮          ╭───╯                 ╰───╮
+     │ ╰──────────╯                         ╰──
+     └──────────────────────────────────────────► hour
+       00   04   08   12   16   20   24</code></pre>
+
+  <h3>Percentiles on a latency distribution</h3>
+<pre class="code ascii"><code> requests
+   │ ▇
+   │ ██▇
+   │ ████▆
+   │ ██████▅▃▂▁▁      ▁           ▁
+   └─┬───────┬──────────┬───────────┬──► latency (ms)
+    p50=40  mean=55   p99=320    p99.9=900
+    "the average user" is fine; 1 in 100 waits 8× longer</code></pre>
+
+  <div class="pagebreak">~ page 3 ~</div>
+
+  <h2>Example</h2>
+  <p><b>Estimate servers for 10M DAU with 50 req/user/day and 1000 QPS/server</b></p>
+<pre class="code ascii"><code> requests/day = 10,000,000 × 50              = 500,000,000
+ average QPS  = 500,000,000 ÷ 86,400          ≈ 5,800
+ peak QPS     = 5,800 × 5                     ≈ 29,000
+ raw servers  = 29,000 ÷ 1,000                ≈ 29
+ headroom     = 29 ÷ 0.7 (run at 70%)         ≈ 42
+ redundancy   = + 2 (lose a node during a deploy or failure) ≈ 44 servers
+ spread over 3 availability zones             → 15 per zone (45)</code></pre>
+  <span class="lang">python</span>
+<pre class="code"><code>def plan(dau, req_per_user, peak=5, qps_per_server=1000, target_util=0.7, spare=2):
+    avg = dau * req_per_user / 86_400
+    peak_qps = avg * peak
+    servers = -(-peak_qps // (qps_per_server * target_util)) + spare   # ceiling
+    return round(avg), round(peak_qps), int(servers)
+
+print(plan(10_000_000, 50))        # (5787, 28935, 44)</code></pre>
+
+  <h2>Exercises</h2>
+  <ol style="list-style:none;padding-left:0">
+    <li>1. Size storage for a chat app (messages/user/day).
+      <div class="box"><b>Solution</b> Assume 50 M DAU × 40 messages/day × 200 bytes (text + metadata) = 400 GB/day ≈ 146 TB/year raw. ×3 replicas ≈ 440 TB/year. Media is stored separately in object storage and usually dominates; text is the small part. Add indexes (~30–50%) and plan tiering: recent months hot, older data cold.</div></li>
+    <li>2. Estimate peak QPS with a 5× daily peak factor.
+      <div class="box"><b>Solution</b> For 50 M DAU sending 40 messages: 2 B/day ÷ 86,400 ≈ 23,000 writes/s average, ≈ 116,000/s at a 5× peak. Each message is delivered to on average 1–2 recipients, so the fan-out read/push rate is higher. Size queues and connection servers for the peak.</div></li>
+    <li>3. A page calls 20 backend services in parallel. Each has a p99 of 100 ms. What fraction of page loads take ≥ 100 ms?
+      <div class="box"><b>Solution</b> <code>1 − 0.99²⁰ ≈ 18%</code>. Fan-out amplifies tail latency, which is why p99 per dependency matters, and why hedged requests and timeouts exist.</div></li>
+  </ol>
+
+  <div class="pagebreak">~ page 4 ~</div>
+
+  <h2>Mini project</h2>
+  <p><b>A capacity calculator that turns product assumptions into a resource plan.</b></p>
+  <figure>
+    <svg viewBox="0 0 660 400" role="img" aria-label="assumptions.yaml feeds a calculator which outputs QPS, nodes, storage, bandwidth and cost, and a sensitivity analysis">
+      <rect class="sk" x="15" y="100" width="225" height="170" rx="12"/>
+      <text class="lbl b" x="127" y="126" text-anchor="middle">assumptions.yaml</text>
+      <text class="lbl" x="127" y="150" text-anchor="middle">DAU, actions/user,</text>
+      <text class="lbl" x="127" y="172" text-anchor="middle">read:write,</text>
+      <text class="lbl" x="127" y="194" text-anchor="middle">object sizes,</text>
+      <text class="lbl" x="127" y="216" text-anchor="middle">retention,</text>
+      <text class="lbl" x="127" y="238" text-anchor="middle">peak factor, per-node</text>
+      <text class="lbl" x="127" y="260" text-anchor="middle">limits, prices</text>
+      <path class="sk blue" d="M240 185 C 255 183, 268 183, 280 185" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <rect class="sk red" x="282" y="150" width="104" height="70" rx="12"/>
+      <text class="lbl r" x="334" y="191" text-anchor="middle">calculator</text>
+      <rect class="sk" x="425" y="15" width="225" height="52" rx="10"/>
+      <text class="lbl" x="537" y="37" text-anchor="middle">QPS avg / peak</text>
+      <text class="lbl" x="537" y="58" text-anchor="middle">(reads, writes)</text>
+      <rect class="sk" x="425" y="85" width="225" height="52" rx="10"/>
+      <text class="lbl" x="537" y="117" text-anchor="middle">app, cache, DB nodes</text>
+      <rect class="sk" x="425" y="155" width="225" height="52" rx="10"/>
+      <text class="lbl" x="537" y="177" text-anchor="middle">storage per year</text>
+      <text class="lbl" x="537" y="198" text-anchor="middle">× replicas</text>
+      <rect class="sk" x="425" y="225" width="225" height="52" rx="10"/>
+      <text class="lbl" x="537" y="257" text-anchor="middle">bandwidth, monthly cost</text>
+      <rect class="sk green" x="425" y="295" width="225" height="84" rx="10"/>
+      <text class="lbl g" x="537" y="320" text-anchor="middle">sensitivity: which</text>
+      <text class="lbl g" x="537" y="342" text-anchor="middle">input moves the</text>
+      <text class="lbl g" x="537" y="364" text-anchor="middle">cost most?</text>
+      <path class="sk blue" d="M386 175 C 400 120, 405 70, 423 44" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M386 180 C 400 150, 405 130, 423 112" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M386 188 C 400 186, 408 184, 423 182" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M386 198 C 400 220, 408 240, 423 250" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M380 218 C 395 270, 405 320, 423 335" style="color:var(--ink)" marker-end="url(#arr)"/>
+    </svg>
+    <figcaption>Fig 2: the calculator — assumptions in, plan and sensitivity analysis out</figcaption>
+  </figure>
+
+  <h3>Steps</h3>
+  <ol style="list-style:none;padding-left:0">
+    <li>1. A YAML file of assumptions, with a comment on every number saying where it came from.</li>
+    <li>2. Compute reads/writes QPS (avg and peak), servers with headroom, storage over 1/3/5 years with replication, bandwidth, and cost.</li>
+    <li>3. Print a Markdown table plus the list of assumptions.</li>
+    <li>4. Sensitivity analysis: vary each input ±50% and show which changes the cost most.</li>
+    <li>5. Run it for two systems from this volume (URL shortener, chat).</li>
+  </ol>
+  <div class="box"><b>Done when:</b> changing one assumption reruns the whole plan, and the output lists every assumption next to the result.</div>
+
+  <div class="pagebreak">~ page 5 ~</div>
+
+  <h2>Design</h2>
+  <p><b>Design the data model and capacity plan for a URL shortener.</b></p>
+  <p>Requirements: 100 M new short URLs per month; 100:1 read:write; links kept 5 years; redirect p99 &lt; 50 ms.</p>
+  <figure>
+    <svg viewBox="0 0 660 470" role="img" aria-label="URL shortener architecture: users to CDN to load balancer to API; API reads Redis cache, on miss the KV store; API uses ID generator and emits click events to Kafka analytics">
+      <rect class="sk" x="15" y="20" width="100" height="50" rx="10"/>
+      <text class="lbl b" x="65" y="50" text-anchor="middle">users</text>
+      <path class="sk blue" d="M115 45 C 122 43, 130 43, 138 45" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <rect class="sk" x="140" y="15" width="250" height="60" rx="10"/>
+      <text class="lbl b" x="265" y="39" text-anchor="middle">CDN / edge</text>
+      <text class="lbl" x="265" y="62" text-anchor="middle">(cache popular redirects)</text>
+      <path class="sk blue" d="M390 45 C 398 43, 408 43, 428 45" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <rect class="sk" x="430" y="20" width="160" height="50" rx="10"/>
+      <text class="lbl b" x="510" y="50" text-anchor="middle">load balancer</text>
+      <path class="sk blue" d="M510 70 C 514 90, 506 105, 510 128" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <rect class="sk" x="370" y="130" width="270" height="70" rx="12"/>
+      <text class="lbl b" x="505" y="156" text-anchor="middle">redirect + create API</text>
+      <text class="lbl" x="505" y="180" text-anchor="middle">(stateless, N nodes)</text>
+      <rect class="sk" x="15" y="130" width="225" height="70" rx="12"/>
+      <text class="lbl b" x="127" y="156" text-anchor="middle">Redis cache</text>
+      <text class="lbl" x="127" y="180" text-anchor="middle">code → long URL</text>
+      <path class="sk blue" d="M368 165 C 330 163, 290 163, 242 165" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk red" d="M127 200 C 133 235, 121 255, 127 288" style="color:var(--red)" marker-end="url(#arr)"/>
+      <text class="lbl r" x="150" y="250">miss</text>
+      <rect class="sk" x="15" y="290" width="235" height="70" rx="12"/>
+      <text class="lbl b" x="132" y="316" text-anchor="middle">KV store / sharded DB</text>
+      <text class="lbl" x="132" y="340" text-anchor="middle">code PK</text>
+      <rect class="sk" x="285" y="280" width="190" height="90" rx="12"/>
+      <text class="lbl b" x="380" y="306" text-anchor="middle">ID generator</text>
+      <text class="lbl" x="380" y="330" text-anchor="middle">(counter ranges</text>
+      <text class="lbl" x="380" y="352" text-anchor="middle">per node → base62)</text>
+      <path class="sk blue" d="M440 200 C 425 235, 410 255, 395 278" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <rect class="sk" x="500" y="280" width="145" height="100" rx="12"/>
+      <text class="lbl" x="572" y="306" text-anchor="middle">click events</text>
+      <text class="lbl" x="572" y="330" text-anchor="middle">→ Kafka →</text>
+      <text class="lbl" x="572" y="354" text-anchor="middle">analytics</text>
+      <path class="sk blue" d="M570 200 C 575 235, 568 255, 572 278" style="color:var(--ink)" marker-end="url(#arr)"/>
+    </svg>
+    <figcaption>Fig 3: URL shortener — CDN, stateless API, Redis cache with KV store behind it, ID generator, click-event stream</figcaption>
+  </figure>
+
+  <h3>Capacity</h3>
+  <div class="wrap"><table>
+    <tr><th>Item</th><th>Estimate</th></tr>
+    <tr><td>Writes</td><td>100 M / month ≈ 39 QPS avg, ~200 peak</td></tr>
+    <tr><td>Reads</td><td>100 × writes ≈ 3,900 QPS avg, ~20,000 peak</td></tr>
+    <tr><td>URLs in 5 years</td><td>100 M × 60 = 6 B</td></tr>
+    <tr><td>Storage</td><td>6 B × ~500 B/row ≈ 3 TB (× 3 replicas ≈ 9 TB)</td></tr>
+    <tr><td>Code length</td><td>base62: 62⁷ ≈ 3.5 × 10¹² ≫ 6 B, so 7 characters is plenty</td></tr>
+    <tr><td>Cache</td><td>20% of links get 80% of traffic: hot set of ~20 M × 500 B ≈ 10 GB — fits in a small Redis cluster</td></tr>
+  </table></div>
+
+  <p><b>Data model:</b> <code>urls(code PK, long_url, owner_id, created_at, expires_at)</code>; <code>clicks</code> go to an event stream, not the hot table.</p>
+
+  <h3>Decisions to justify</h3>
+  <ul>
+    <li class="star"><b>ID generation:</b> a counter handed out in ranges per node, then base62-encoded, avoids collisions without a lookup; hashing the URL instead gives dedup but needs collision handling.</li>
+    <li class="star"><b>Storage choice:</b> access is purely by key, so a KV store (DynamoDB/Cassandra) or a sharded table keyed by <code>code</code> scales linearly.</li>
+    <li class="star"><b>301 vs 302:</b> 301 lets browsers cache the redirect (less load) but hides repeat clicks from analytics; 302 keeps analytics accurate.</li>
+    <li class="star"><b>Reads are cache-first,</b> so the DB sees only misses.</li>
+  </ul>
+
+  <h2>Open source</h2>
+  <ul>
+    <li><a href="https://github.com/donnemartin/system-design-primer"><code>donnemartin/system-design-primer</code></a> — the "Back-of-the-envelope calculations" section, latency numbers every programmer should know, and a worked Pastebin/URL-shortener design.</li>
+  </ul>
+
+  <h2>Interview</h2>
+  <ol style="list-style:none;padding-left:0">
+    <li>1. <b>"How do you estimate QPS from DAU?"</b>
+      <div class="box"><b>Answer</b> QPS ≈ DAU × actions per user per day ÷ 86,400 (about 10⁵). Split reads from writes by the expected ratio, multiply by a peak factor (2–10×, state which), and add headroom. Example: 10 M DAU × 50 requests ≈ 5,800 QPS average, ≈ 29,000 peak. Always state the assumptions so they can be challenged.</div></li>
+    <li>2. <b>"What percentile matters most for latency?"</b>
+      <div class="box"><b>Answer</b> Usually p99 (or p99.9 at high volume). The average hides the slow requests real users hit, and with fan-out one slow dependency makes many pages slow. Set SLOs on high percentiles, watch p50 for general speed, and never alert on the average alone.</div></li>
+  </ol>
+
+  <h2>Checklist</h2>
+  <ul>
+    <li class="todo">use back-of-envelope math</li>
+    <li class="todo">plan for peak, not average</li>
+    <li class="todo">state assumptions explicitly</li>
+  </ul>
+  <div class="gap"></div>
+  <p class="black"><a href="index.md">Contents</a> · Next → <a href="ch02-scalability-and-reliability-fundamentals.notes.html">Chapter 2 — Scalability &amp; Reliability Fundamentals</a></p>
+
+  <nav class="nav"><span></span><a href="index.notes.html">☰ Contents</a><a href="ch02-scalability-and-reliability-fundamentals.notes.html">Ch 2 — Scalability &amp; Reliability Fundamentals →</a></nav>
+</main>
+</body>
+</html>
