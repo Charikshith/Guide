@@ -1,0 +1,149 @@
+/* Handwritten notebook look (from the handwritten skill). Every vertical size is a multiple of --line. */
+:root{
+  --line:32px; --paper:#fdfbf4; --rule:#c9dcef; --margin:#e8a0a0;
+  --ink:#1f3a93; --ink2:#222; --red:#c0392b; --green:#1e8449;
+  --hl-yellow:rgba(255,235,59,.55);
+  --desk:#e9e4d8;
+  --hand:'Kalam','Patrick Hand','Comic Sans MS','Segoe Print','Bradley Hand',cursive;
+  --title:'Caveat','Kalam','Segoe Print','Bradley Hand',cursive;
+}
+@media (prefers-color-scheme:dark){ :root:not([data-theme="light"]){ --desk:#2b2b2b; } }
+:root[data-theme="dark"]{ --desk:#2b2b2b; }
+*,*::before,*::after{box-sizing:border-box}
+html{scroll-padding-top:64px}
+body{margin:0;background:var(--desk);font-family:var(--hand);color:var(--ink)}
+a{color:var(--ink);text-decoration:underline dotted}
+
+/* ===== one notebook sheet: contents in the left column, chapter on the right, same ruled paper ===== */
+.notebook{
+  position:relative;display:flex;align-items:stretch;max-width:1180px;margin:24px auto;padding:var(--line) 28px calc(var(--line)*2) 62px;
+  background:repeating-linear-gradient(var(--paper) 0,var(--paper) calc(var(--line) - 1px),var(--rule) calc(var(--line) - 1px),var(--rule) var(--line));
+  background-color:var(--paper);
+  box-shadow:0 2px 6px rgba(0,0,0,.15),0 12px 28px rgba(0,0,0,.12);
+  font-size:20px;line-height:var(--line);color:var(--ink);
+}
+.notebook::before{content:"";position:absolute;left:22px;top:0;bottom:0;width:18px;pointer-events:none;
+  background:radial-gradient(circle,var(--desk) 7px,transparent 8px) 0 40px/18px 220px repeat-y}
+main{flex:1;min-width:0;border-left:2px solid var(--margin);padding-left:22px}
+.page{font-size:20px;line-height:var(--line);color:var(--ink)}
+
+/* small pen buttons live on the blank first ruled line, like the date in the skill */
+.pen{position:absolute;top:0;height:var(--line);padding:0 10px;border:0;background:none;cursor:pointer;
+  font-family:var(--title);font-size:24px;line-height:var(--line);color:var(--red)}
+.pen:hover{background:var(--hl-yellow);border-radius:4px 8px 4px 8px}
+.pen.tl{left:10px;z-index:2} .pen.tr{right:18px}
+
+/* contents column (all rows are 32px so text sits on the rules; JS keeps it stuck in 32px steps) */
+#sidebar{width:262px;flex:none;align-self:flex-start;position:relative;overflow-y:auto;overflow-x:hidden;
+  padding:0 10px 0 4px;scrollbar-width:none;scroll-snap-type:y mandatory;font-size:17px;line-height:var(--line)}
+#sidebar::-webkit-scrollbar{display:none}
+#sidebar[hidden],html[data-nav="closed"] #sidebar{display:none}
+#sidebar>*{scroll-snap-align:start}
+#sidebar .vol{font-family:var(--title);font-weight:700;font-size:26px;color:var(--red);margin-top:var(--line)}
+#sidebar .part{font-family:var(--title);font-size:20px;color:var(--ink2)}
+#sidebar a{display:block;padding:0 6px;color:var(--ink);text-decoration:none;border-radius:4px 8px 4px 8px}
+#sidebar a:hover{background:var(--hl-yellow)}
+#sidebar a.home{font-family:var(--title);font-weight:700;font-size:24px;color:var(--ink2)}
+#sidebar a.todo{opacity:.55;font-style:italic}
+#sidebar a.active{background:var(--hl-yellow);font-weight:700;color:var(--ink2)}
+#sidebar a .done{color:var(--green);margin-right:4px}
+.filter{display:block;width:100%;height:var(--line);padding:0 6px;border:0;border-bottom:2px dashed var(--ink2);background:transparent;
+  color:var(--ink);font-family:var(--hand);font-size:16px;outline:0}
+.filter:focus{background:var(--hl-yellow)}
+.filter::placeholder{color:#7b86b4}
+
+/* ===== text (all margins are multiples of --line) ===== */
+.page h1{font-family:var(--title);font-weight:700;color:var(--ink2);font-size:46px;line-height:calc(var(--line)*2);margin:0 0 var(--line);transform:rotate(-1deg)}
+.page h1 .u{background:linear-gradient(transparent 62%,var(--hl-yellow) 62%,var(--hl-yellow) 92%,transparent 92%)}
+.page h2{font-family:var(--title);font-weight:700;color:var(--red);font-size:32px;line-height:calc(var(--line)*1.5);margin:var(--line) 0 calc(var(--line)*.5)}
+.page h2::before{content:"➤ ";font-size:22px}
+.page h3{font-family:var(--title);font-weight:700;color:var(--ink2);font-size:26px;line-height:var(--line);margin:var(--line) 0 0}
+.page h3::before{content:"✎ ";font-size:18px;color:var(--red)}
+.page h4,.page h5{font-family:var(--title);font-size:22px;line-height:var(--line);margin:0;color:var(--ink2)}
+.page p{margin:0 0 var(--line)}
+.page ul,.page ol{margin:0 0 var(--line);padding-left:28px}
+.page li>ul,.page li>ol{margin:0}
+.page ul{list-style:none}
+.page ul>li::before{content:"–";position:absolute;margin-left:-20px}
+.page li.ti::before{content:none}
+.page strong{color:var(--ink2)}
+.page hr{border:0;border-top:3px dashed var(--margin);margin:var(--line) 0;height:0}
+.page blockquote{margin:0 0 var(--line);padding:calc(var(--line)*.5 - 2px) 14px;border:2.5px solid var(--red);border-radius:4px 10px 6px 12px;background:rgba(255,255,255,.35)}
+.page blockquote p:last-child{margin:0}
+
+/* code stays verbatim; only the paper look changes */
+.page code{font-family:Consolas,'Courier New',monospace;font-size:.82em;background:rgba(0,0,0,.06);padding:0 3px;border-radius:3px}
+.page pre{font-family:Consolas,'Courier New',monospace;font-size:14px;line-height:var(--line);color:var(--ink);background:rgba(255,255,255,.45);
+  border-left:4px solid var(--red);margin:0 0 var(--line);padding:0 12px;overflow-x:auto;white-space:pre}
+.page pre code{background:none;padding:0;font-size:inherit}
+
+/* tables */
+.page table{border-collapse:collapse;display:block;overflow-x:auto;margin:0 0 var(--line)}
+.page th,.page td{border:2px solid var(--ink2);padding:0 10px;text-align:left;vertical-align:top}
+.page th{font-family:var(--title);font-size:24px;color:var(--ink2)}
+
+/* interview answers etc. */
+.page details{border:2.5px dashed var(--ink2);border-radius:4px 10px 6px 12px;padding:0 14px;margin:0 0 var(--line);background:rgba(255,255,255,.35)}
+.page details[open]{padding-bottom:var(--line)}
+.page summary{cursor:pointer;font-family:var(--title);font-weight:700;font-size:24px;color:var(--red)}
+.page details>p:last-child,.page details>ul:last-child,.page details>ol:last-child{margin-bottom:0}
+
+/* checklist */
+.page li input[type=checkbox]{width:18px;height:18px;margin:0 8px 0 -20px;vertical-align:-3px;accent-color:var(--green)}
+
+/* hand-drawn diagrams */
+.page figure{margin:0 0 var(--line);text-align:center}
+.page figure svg{width:100%;max-width:640px;height:auto;overflow:visible}
+.page figcaption{font-family:var(--title);font-size:20px;color:var(--ink2)}
+.page pre.mermaid{background:#fff;border-left:0;text-align:center;white-space:normal}
+.sk{fill:none;stroke:var(--ink2);stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round;filter:url(#rough)}
+.sk.blue{stroke:var(--ink)} .sk.red{stroke:var(--red)} .sk.green{stroke:var(--green)}
+.lbl{font-family:var(--hand);font-size:17px;fill:var(--ink)}
+.lbl.b{font-weight:700;fill:var(--ink2)} .lbl.r{fill:var(--red)} .lbl.g{fill:var(--green)}
+
+/* previous / next */
+.pager{display:flex;justify-content:space-between;gap:12px;margin-top:var(--line);font-family:var(--title);font-size:22px;line-height:var(--line)}
+.pager a{flex:1;color:var(--red);text-decoration:none}
+.pager a.next{text-align:right}
+.pager a:hover{text-decoration:underline wavy}
+.pager small{display:block;color:var(--ink);font-size:18px}
+
+/* home: one boxed section per volume */
+.home-vol{border:2.5px solid var(--ink2);border-radius:4px 10px 6px 12px;padding:calc(var(--line)*.5 - 2.5px) 16px;margin:0 0 var(--line);
+  background:rgba(255,255,255,.35)}
+.home-vol h2{margin:0}
+.home-vol h2 a{color:var(--red);text-decoration:none}
+.home-vol h2 a:hover{text-decoration:underline wavy}
+.home-vol .goal{margin:0}
+.home-vol .meta{margin:0;color:var(--ink2)}
+.home-vol .pg>.plabel{font-family:var(--title);font-size:22px;color:var(--ink2);margin-top:calc(var(--line)*.5);break-after:avoid}
+.home-vol ol{margin:0;padding:0;list-style:none;columns:2;column-gap:28px}
+.home-vol li{break-inside:avoid;padding-left:34px;text-indent:-34px}
+.home-vol li::before{content:none!important}
+.home-vol li a{text-decoration:none}
+.home-vol li a:hover{background:var(--hl-yellow)}
+.home-vol li .n{display:inline-block;width:30px;text-align:right;margin-right:4px;color:var(--red);text-indent:0}
+.home-vol li.todo a{opacity:.55;font-style:italic}
+.map-frame{display:block;width:100%;height:2300px;border:0;margin:0 0 var(--line)}
+@media (max-width:900px){.map-frame{height:3400px}}
+.bar{height:8px;border:2px solid var(--ink2);border-radius:6px;margin:0 0 var(--line);overflow:hidden}
+.bar i{display:block;height:100%;background:var(--green)}
+@media (max-width:700px){.home-vol ol{columns:1}}
+
+@media (max-width:900px){
+  /* phones/tablets: contents is a paper sheet that slides over the page */
+  #sidebar{position:fixed;left:0;top:0;bottom:0;height:auto!important;z-index:9;width:min(300px,86vw);padding:var(--line) 12px var(--line) 16px;
+    transform:translateX(-105%);transition:transform .2s;box-shadow:4px 0 14px rgba(0,0,0,.25);
+    background:repeating-linear-gradient(var(--paper) 0,var(--paper) calc(var(--line) - 1px),var(--rule) calc(var(--line) - 1px),var(--rule) var(--line));
+    background-color:var(--paper);border-right:2px solid var(--margin)}
+  html[data-nav="closed"] #sidebar{display:block}
+  body.nav-open #sidebar{transform:none}
+}
+@media (max-width:600px){
+  .notebook{margin:0;padding-left:40px;padding-right:12px;font-size:18px}
+  .notebook::before{left:10px;width:16px}
+  main{padding-left:12px}
+  .page{font-size:18px}
+  .page figure{overflow-x:auto}.page figure svg{min-width:520px}
+}
+@media print{body{background:#fff}.pen,#sidebar,.pager{display:none!important}.notebook{box-shadow:none;margin:0}.notebook::before{display:none}}

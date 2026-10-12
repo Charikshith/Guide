@@ -1,0 +1,303 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Trees, BST, Heap &amp; Trie · Guide</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;700&family=Kalam:wght@400;700&family=Patrick+Hand&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/style.css">
+<script>try{var t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t;var n=localStorage.getItem("nav");if(n)document.documentElement.dataset.nav=n;}catch(e){}</script>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <filter id="rough" filterUnits="userSpaceOnUse" x="-500" y="-500" width="3000" height="3000">
+    <feTurbulence type="fractalNoise" baseFrequency="0.03" numOctaves="2" seed="3" result="n"/>
+    <feDisplacementMap in="SourceGraphic" in2="n" scale="3"/>
+  </filter>
+  <marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+    <path d="M1 1 L9 5 L1 9" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+  </marker>
+</defs></svg>
+<div class="notebook" id="notebook">
+  <button id="menu" class="pen tl" aria-label="Show or hide contents" title="Show / hide contents">☰</button>
+  <button id="theme" class="pen tr" aria-label="Toggle theme" title="Light / dark desk">◐</button>
+  <nav id="sidebar" aria-label="Contents"></nav>
+  <main><article id="content" class="page">Loading…</article></main>
+</div>
+<script type="text/markdown" id="source"># Chapter 30 — Trees, BST, Heap & Trie
+
+> **Volume 1 — Computer Science Foundations** · [Contents](index.md) · ← [Chapter 29 — Basic Data Structures: Arrays, Linked Lists, Stack & Queue](ch29-basic-data-structures-arrays-linked-lists-stack.md) · Next → [Chapter 31 — Hash Tables & Graphs](ch31-hash-tables-and-graphs.md)
+
+---
+
+## Concept
+
+Tree terminology; binary search trees; heaps (priority queues); tries (prefix search).
+
+**In one sentence:** a tree is a hierarchy with one root; a BST keeps it sorted so you can search by halving, a heap keeps only the *smallest* item on top so you can always grab it fast, and a trie shares common prefixes so you can find all words starting with "ca" at once.
+
+**Mental model — three kinds of organizing.**
+
+* **BST** — a "guess the number" game: at each node, go left if smaller, right if bigger.
+* **Heap** — a company org chart where every boss earns more than their reports: the CEO (root) is always the max, but siblings aren't sorted.
+* **Trie** — a phone's contact search: typing `c`, `a`, `r` narrows the tree letter by letter.
+
+**Terminology**
+
+| Term | Meaning |
+|------|---------|
+| Root / leaf | top node / node with no children |
+| Parent / child / sibling | the obvious family relations |
+| Depth / height | edges from the root / longest path down to a leaf |
+| Binary tree | each node has ≤ 2 children |
+| Balanced | height is O(log n) (AVL, red-black trees guarantee it) |
+| Complete | every level full except the last, filled left to right (heaps) |
+
+**Comparison**
+
+| | BST (balanced) | Binary heap | Trie |
+|-|----------------|-------------|------|
+| Ordering rule | left < node < right | parent ≤ children (min-heap) | edges are characters |
+| Search a key | O(log n) | O(n) | O(L), L = key length |
+| Min / max | O(log n) | **O(1)** peek, O(log n) pop | — |
+| Insert | O(log n) | O(log n) | O(L) |
+| Sorted iteration | O(n) in-order | no | lexicographic via DFS |
+| Prefix queries | range scan | no | **O(L + results)** |
+| Typical use | ordered maps (`TreeMap`, `BTreeMap`), indexes | priority queues, schedulers, Dijkstra, top-k | autocomplete, routers, spell check, IP lookup |
+
+**Traversals (DFS orders)**
+
+| Order | Visit | Use |
+|-------|-------|-----|
+| Pre-order | node, left, right | copy / serialize a tree |
+| In-order | left, node, right | **BST → sorted order** |
+| Post-order | left, right, node | delete / evaluate expression trees |
+| Level-order (BFS) | level by level | shortest depth, printing by level |
+
+**Unbalanced BSTs degrade:** inserting 1, 2, 3, 4, 5 in order makes a "linked list" of height n, so search is O(n). Self-balancing trees rotate nodes to keep height O(log n).
+
+---
+
+## Prereqs
+
+* [Chapter 29 — Basic Data Structures: Arrays, Linked Lists, Stack & Queue](ch29-basic-data-structures-arrays-linked-lists-stack.md)
+
+---
+
+## Diagram
+
+**A balanced BST** — searching for 6: 8 → 3 → 6, three comparisons.
+
+```mermaid
+graph TD
+    A((8)) --> B((3))
+    A --> C((10))
+    B --> D((1))
+    B --> E((6))
+    C --> F((9))
+    C --> G((14))
+    E --> H((4))
+    E --> I((7))
+```
+
+In-order traversal: 1, 3, 4, 6, 7, 8, 9, 10, 14 — sorted.
+
+**Unbalanced BST after inserting 1..5 in order**
+
+```
+ 1
+  ╲
+   2
+    ╲
+     3          height 5 = n → search is O(n)
+      ╲
+       4
+        ╲
+         5
+```
+
+**A min-heap as a tree and as an array**
+
+```
+            1                 index:  0  1  2  3  4  5  6
+          ╱   ╲               value:  1  3  2  7  4  5  6
+         3     2
+        ╱ ╲   ╱ ╲             children of i: 2i+1, 2i+2
+       7   4 5   6            parent of i:   (i-1)//2
+ no pointers needed — the shape is implied by the index
+```
+
+**Heap push: sift up**
+
+```
+ push 0 at index 7 (child of 7):  [1,3,2,7,4,5,6,0]
+ 0 < 7 → swap                    [1,3,2,0,4,5,6,7]
+ 0 < 3 → swap                    [1,0,2,3,4,5,6,7]
+ 0 < 1 → swap                    [0,1,2,3,4,5,6,7]   done: O(log n) swaps
+```
+
+**A trie of: car, cart, cat, dog**
+
+```mermaid
+graph TD
+    R(( )) --> C((c))
+    R --> D((d))
+    C --> CA((a))
+    CA --> CAR(("r ✓"))
+    CA --> CAT(("t ✓"))
+    CAR --> CART(("t ✓"))
+    D --> DO((o))
+    DO --> DOG(("g ✓"))
+```
+
+`✓` marks the end of a word. Autocomplete `"ca"`: walk c → a, then collect everything below: car, cart, cat.
+
+---
+
+## Example
+
+```python
+import heapq
+
+h = []
+for x in [5, 1, 8, 3]:
+    heapq.heappush(h, x)
+print(heapq.heappop(h), h[0])          # 1 3  (pop min, peek next min)
+print(heapq.nsmallest(2, [9, 4, 7, 1]))  # [1, 4]
+
+nums = [9, 4, 7, 1, 8]
+heapq.heapify(nums)                     # O(n), not O(n log n)
+
+class BST:
+    class Node:
+        __slots__ = ("key", "left", "right")
+        def __init__(self, key): self.key, self.left, self.right = key, None, None
+
+    def __init__(self): self.root = None
+
+    def insert(self, key):
+        def _ins(n):
+            if n is None: return BST.Node(key)
+            if key < n.key: n.left = _ins(n.left)
+            elif key > n.key: n.right = _ins(n.right)
+            return n
+        self.root = _ins(self.root)
+
+    def search(self, key):
+        n = self.root
+        while n and n.key != key:
+            n = n.left if key < n.key else n.right
+        return n is not None
+
+    def inorder(self):
+        def _walk(n):
+            if n:
+                yield from _walk(n.left); yield n.key; yield from _walk(n.right)
+        return list(_walk(self.root))
+
+t = BST()
+for k in [8, 3, 10, 1, 6, 14, 4, 7]:
+    t.insert(k)
+print(t.search(6), t.search(5), t.inorder())   # True False [1, 3, 4, 6, 7, 8, 10, 14]
+```
+
+```python
+class Trie:
+    def __init__(self): self.root = {}
+    def insert(self, word):
+        node = self.root
+        for ch in word:
+            node = node.setdefault(ch, {})
+        node["$"] = True                       # end-of-word marker
+    def complete(self, prefix):
+        node = self.root
+        for ch in prefix:
+            if ch not in node: return []
+            node = node[ch]
+        out, stack = [], [(node, prefix)]
+        while stack:
+            n, word = stack.pop()
+            if "$" in n: out.append(word)
+            stack.extend((child, word + ch) for ch, child in n.items() if ch != "$")
+        return sorted(out)
+
+tr = Trie()
+for w in ["car", "cart", "cat", "dog"]:
+    tr.insert(w)
+print(tr.complete("ca"))                         # ['car', 'cart', 'cat']
+```
+
+---
+
+## Exercises
+
+1. Implement BST insert/search/delete.
+
+   <details><summary>Solution</summary>Insert and search are above. Delete has three cases: (a) a leaf → remove it; (b) one child → replace the node with its child; (c) two children → copy the in-order successor's key (the minimum of the right subtree) into the node, then delete the successor from the right subtree.</details>
+
+2. Build a trie and autocomplete a prefix.
+
+   <details><summary>Solution</summary>See <code>Trie</code> above. Extensions: store a count per node for "how many words have this prefix" in O(L), and rank completions by frequency with a small heap.</details>
+
+3. Why is `heapify` O(n) and not O(n log n)?
+
+   <details><summary>Solution</summary>It sifts down from the last parent to the root. Most nodes are near the bottom and sift only a little: n/4 nodes move ≤1 level, n/8 move ≤2, and so on. The sum Σ n·k/2^(k+1) converges to O(n).</details>
+
+---
+
+## Mini project
+
+**A URL router or autocomplete engine backed by a trie.**
+
+```mermaid
+flowchart LR
+    ROUTES["GET /users/:id<br/>GET /users/:id/orders<br/>GET /health"] --> T["segment trie<br/>users → :id → orders"]
+    REQ["GET /users/42/orders"] --> M["match segment by segment<br/>static beats :param"] --> H["handler + params {id: 42}"]
+```
+
+**Steps (router version)**
+
+1. Split paths into segments; each trie node has static children, one `:param` child, and an optional handler per HTTP method.
+2. Match request paths segment by segment, preferring static over param; collect params into a dict.
+3. Return 404 (no path) vs 405 (path exists, method doesn't).
+4. Benchmark 1,000 routes: trie lookup vs trying 1,000 regexes in a loop.
+
+**Done when:** matching is O(segments), independent of the number of routes, and static routes always win over params.
+
+---
+
+## Open source
+
+* [`python/cpython`](https://github.com/python/cpython) `heapq` — `Lib/heapq.py` is a readable pure-Python heap (`_siftdown`, `_siftup`); the comments explain why `heapify` is linear.
+* See also [`julienschmidt/httprouter`](https://github.com/julienschmidt/httprouter) — a radix-tree (compressed trie) HTTP router in Go.
+
+---
+
+## Interview
+
+1. **"Heap vs BST?"**
+   <details><summary>Answer</summary>A heap only guarantees the min (or max) is at the root: O(1) peek, O(log n) push/pop, no efficient search or sorted iteration, and it is compact as an array. A balanced BST keeps full order: O(log n) search, insert, delete, min, max, successor, and range queries. Use a heap for priority queues; use a BST for ordered maps.</details>
+
+2. **"Why is a BST O(n) when unbalanced?"**
+   <details><summary>Answer</summary>Operations take O(height). Inserting sorted data sends every key to the same side, making a chain of height n. Self-balancing trees (AVL, red-black) or B-trees rotate or split nodes to keep the height O(log n).</details>
+
+---
+
+## Checklist
+
+- [ ] traverse pre/in/post-order
+- [ ] heapify in O(n)
+- [ ] autocomplete with a trie
+
+---
+
+> [Contents](index.md) · ← [Chapter 29 — Basic Data Structures: Arrays, Linked Lists, Stack & Queue](ch29-basic-data-structures-arrays-linked-lists-stack.md) · Next → [Chapter 31 — Hash Tables & Graphs](ch31-hash-tables-and-graphs.md)
+</script>
+<script type="application/json" id="figs">["<figure>\n    <svg viewBox=\"0 0 640 300\" role=\"img\" aria-label=\"Balanced BST: root 8 with children 3 and 10; 3 has children 1 and 6; 10 has children 9 and 14; 6 has children 4 and 7. The search path 8, 3, 6 is highlighted.\">\n      <path class=\"sk red\" d=\"M300 50 L202 99\" style=\"color:var(--red)\" marker-end=\"url(#arr)\"/>\n      <path class=\"sk\" d=\"M340 50 L438 99\" marker-end=\"url(#arr)\" style=\"color:var(--ink2)\"/>\n      <path class=\"sk\" d=\"M164 126 L128 162\" marker-end=\"url(#arr)\" style=\"color:var(--ink2)\"/>\n      <path class=\"sk red\" d=\"M196 126 L232 162\" style=\"color:var(--red)\" marker-end=\"url(#arr)\"/>\n      <path class=\"sk\" d=\"M447 128 L424 160\" marker-end=\"url(#arr)\" style=\"color:var(--ink2)\"/>\n      <path class=\"sk\" d=\"M474 127 L504 161\" marker-end=\"url(#arr)\" style=\"color:var(--ink2)\"/>\n      <path class=\"sk\" d=\"M240 200 L226 228\" marker-end=\"url(#arr)\" style=\"color:var(--ink2)\"/>\n      <path class=\"sk\" d=\"M260 200 L274 228\" marker-end=\"url(#arr)\" style=\"color:var(--ink2)\"/>\n      <circle class=\"sk red\" cx=\"320\" cy=\"40\" r=\"22\" style=\"fill:var(--hl-pink)\"/>\n      <text class=\"lbl b\" x=\"320\" y=\"46\" text-anchor=\"middle\">8<\/text>\n      <circle class=\"sk red\" cx=\"180\" cy=\"110\" r=\"22\" style=\"fill:var(--hl-pink)\"/>\n      <text class=\"lbl b\" x=\"180\" y=\"116\" text-anchor=\"middle\">3<\/text>\n      <circle class=\"sk\" cx=\"460\" cy=\"110\" r=\"22\"/>\n      <text class=\"lbl b\" x=\"460\" y=\"116\" text-anchor=\"middle\">10<\/text>\n      <circle class=\"sk\" cx=\"110\" cy=\"180\" r=\"22\"/>\n      <text class=\"lbl b\" x=\"110\" y=\"186\" text-anchor=\"middle\">1<\/text>\n      <circle class=\"sk red\" cx=\"250\" cy=\"180\" r=\"22\" style=\"fill:var(--hl-pink)\"/>\n      <text class=\"lbl b\" x=\"250\" y=\"186\" text-anchor=\"middle\">6<\/text>\n      <circle class=\"sk\" cx=\"410\" cy=\"180\" r=\"22\"/>\n      <text class=\"lbl b\" x=\"410\" y=\"186\" text-anchor=\"middle\">9<\/text>\n      <circle class=\"sk\" cx=\"520\" cy=\"180\" r=\"22\"/>\n      <text class=\"lbl b\" x=\"520\" y=\"186\" text-anchor=\"middle\">14<\/text>\n      <circle class=\"sk\" cx=\"215\" cy=\"250\" r=\"22\"/>\n      <text class=\"lbl b\" x=\"215\" y=\"256\" text-anchor=\"middle\">4<\/text>\n      <circle class=\"sk\" cx=\"285\" cy=\"250\" r=\"22\"/>\n      <text class=\"lbl b\" x=\"285\" y=\"256\" text-anchor=\"middle\">7<\/text>\n      <text class=\"lbl r\" x=\"560\" y=\"70\" text-anchor=\"middle\" style=\"font-size:15px\">search 6:<\/text>\n      <text class=\"lbl r\" x=\"560\" y=\"90\" text-anchor=\"middle\" style=\"font-size:15px\">8 \u2192 3 \u2192 6<\/text>\n    <\/svg>\n    <figcaption>Fig 1: a balanced BST; the red path is the search for 6<\/figcaption>\n  <\/figure>", "<figure>\n    <svg viewBox=\"0 0 640 350\" role=\"img\" aria-label=\"Trie: empty root with branches c and d; c to a; a to r (end of word) and t (end of word); r to t (end of word, cart); d to o to g (end of word)\">\n      <path class=\"sk\" d=\"M301 46 L222 92\" marker-end=\"url(#arr)\" style=\"color:var(--ink2)\"/>\n      <path class=\"sk\" d=\"M339 46 L458 92\" marker-end=\"url(#arr)\" style=\"color:var(--ink2)\"/>\n      <path class=\"sk\" d=\"M200 127 L200 148\" marker-end=\"url(#arr)\" style=\"color:var(--ink2)\"/>\n      <path class=\"sk\" d=\"M186 192 L156 227\" marker-end=\"url(#arr)\" style=\"color:var(--ink2)\"/>\n      <path class=\"sk\" d=\"M214 192 L244 227\" marker-end=\"url(#arr)\" style=\"color:var(--ink2)\"/>\n      <path class=\"sk\" d=\"M140 270 L140 290\" marker-end=\"url(#arr)\" style=\"color:var(--ink2)\"/>\n      <path class=\"sk\" d=\"M480 127 L480 148\" marker-end=\"url(#arr)\" style=\"color:var(--ink2)\"/>\n      <path class=\"sk\" d=\"M480 197 L480 218\" marker-end=\"url(#arr)\" style=\"color:var(--ink2)\"/>\n      <circle class=\"sk\" cx=\"320\" cy=\"35\" r=\"20\" style=\"stroke-dasharray:5 4\"/>\n      <circle class=\"sk\" cx=\"200\" cy=\"105\" r=\"22\"/>\n      <text class=\"lbl b\" x=\"200\" y=\"111\" text-anchor=\"middle\">c<\/text>\n      <circle class=\"sk\" cx=\"480\" cy=\"105\" r=\"22\"/>\n      <text class=\"lbl b\" x=\"480\" y=\"111\" text-anchor=\"middle\">d<\/text>\n      <circle class=\"sk\" cx=\"200\" cy=\"175\" r=\"22\"/>\n      <text class=\"lbl b\" x=\"200\" y=\"181\" text-anchor=\"middle\">a<\/text>\n      <circle class=\"sk\" cx=\"480\" cy=\"175\" r=\"22\"/>\n      <text class=\"lbl b\" x=\"480\" y=\"181\" text-anchor=\"middle\">o<\/text>\n      <circle class=\"sk green\" cx=\"140\" cy=\"245\" r=\"26\" style=\"fill:var(--hl-green)\"/>\n      <text class=\"lbl g\" x=\"140\" y=\"251\" text-anchor=\"middle\">r \u2713<\/text>\n      <circle class=\"sk green\" cx=\"260\" cy=\"245\" r=\"26\" style=\"fill:var(--hl-green)\"/>\n      <text class=\"lbl g\" x=\"260\" y=\"251\" text-anchor=\"middle\">t \u2713<\/text>\n      <circle class=\"sk green\" cx=\"480\" cy=\"245\" r=\"26\" style=\"fill:var(--hl-green)\"/>\n      <text class=\"lbl g\" x=\"480\" y=\"251\" text-anchor=\"middle\">g \u2713<\/text>\n      <circle class=\"sk green\" cx=\"140\" cy=\"315\" r=\"26\" style=\"fill:var(--hl-green)\"/>\n      <text class=\"lbl g\" x=\"140\" y=\"321\" text-anchor=\"middle\">t \u2713<\/text>\n      <text class=\"lbl r\" x=\"185\" y=\"319\" style=\"font-size:15px\">cart<\/text>\n      <text class=\"lbl r\" x=\"295\" y=\"249\" style=\"font-size:15px\">cat<\/text>\n      <text class=\"lbl r\" x=\"105\" y=\"215\" text-anchor=\"end\" style=\"font-size:15px\">car<\/text>\n      <text class=\"lbl r\" x=\"515\" y=\"249\" style=\"font-size:15px\">dog<\/text>\n    <\/svg>\n    <figcaption>Fig 2: a trie of car, cart, cat, dog (\u2713 marks the end of a word)<\/figcaption>\n  <\/figure>", "<figure>\n    <svg viewBox=\"0 0 640 260\" role=\"img\" aria-label=\"Routes GET /users/:id, GET /users/:id/orders, GET /health build a segment trie users, :id, orders. A request GET /users/42/orders is matched segment by segment (static beats :param), giving a handler plus params id 42.\">\n      <rect class=\"sk\" x=\"10\" y=\"20\" width=\"250\" height=\"84\" rx=\"10\"/>\n      <text class=\"lbl b\" x=\"135\" y=\"45\" text-anchor=\"middle\" style=\"font-size:14px\">GET /users/:id<\/text>\n      <text class=\"lbl b\" x=\"135\" y=\"65\" text-anchor=\"middle\" style=\"font-size:14px\">GET /users/:id/orders<\/text>\n      <text class=\"lbl b\" x=\"135\" y=\"85\" text-anchor=\"middle\" style=\"font-size:14px\">GET /health<\/text>\n      <path class=\"sk blue\" d=\"M260 62 L326 62\" style=\"color:var(--ink)\" marker-end=\"url(#arr)\"/>\n      <rect class=\"sk green\" x=\"330\" y=\"35\" width=\"300\" height=\"54\" rx=\"10\" style=\"fill:var(--hl-green)\"/>\n      <text class=\"lbl g\" x=\"480\" y=\"58\" text-anchor=\"middle\" style=\"font-size:14px\">segment trie<\/text>\n      <text class=\"lbl g\" x=\"480\" y=\"78\" text-anchor=\"middle\" style=\"font-size:14px\">users \u2192 :id \u2192 orders<\/text>\n      <rect class=\"sk\" x=\"10\" y=\"160\" width=\"210\" height=\"44\" rx=\"10\"/>\n      <text class=\"lbl b\" x=\"115\" y=\"188\" text-anchor=\"middle\" style=\"font-size:14px\">GET /users/42/orders<\/text>\n      <path class=\"sk blue\" d=\"M220 182 L246 182\" style=\"color:var(--ink)\" marker-end=\"url(#arr)\"/>\n      <rect class=\"sk\" x=\"250\" y=\"150\" width=\"200\" height=\"64\" rx=\"10\"/>\n      <text class=\"lbl b\" x=\"350\" y=\"176\" text-anchor=\"middle\" style=\"font-size:13px\">match segment by segment<\/text>\n      <text class=\"lbl\" x=\"350\" y=\"198\" text-anchor=\"middle\" style=\"font-size:13px\">static beats :param<\/text>\n      <path class=\"sk blue\" d=\"M450 182 L476 182\" style=\"color:var(--ink)\" marker-end=\"url(#arr)\"/>\n      <rect class=\"sk green\" x=\"480\" y=\"150\" width=\"150\" height=\"64\" rx=\"10\" style=\"fill:var(--hl-green)\"/>\n      <text class=\"lbl g\" x=\"555\" y=\"176\" text-anchor=\"middle\" style=\"font-size:13px\">handler + params<\/text>\n      <text class=\"lbl g\" x=\"555\" y=\"198\" text-anchor=\"middle\" style=\"font-size:13px\">{id: 42}<\/text>\n    <\/svg>\n    <figcaption>Fig 3: routes are compiled into a trie; each request walks it one segment at a time<\/figcaption>\n  <\/figure>"]</script>
+<script>window.GUIDE = { root: "../../", page: "volumes/volume-1-cs-foundations/ch30-trees-bst-heap-and-trie.html", nav: [{"title": "Volume 0 \u2014 Math & Mental Models", "goal": "The math the rest of the book silently assumes. Load-bearing for algorithms (Vol 1 Part 4) and all of AI (Vol 5).", "index": "volumes/volume-0-math/index.html", "chapters": [{"n": 1, "title": "Logic & Boolean Algebra", "part": null, "md": "volumes/volume-0-math/ch01-logic-and-boolean-algebra.md", "page": "volumes/volume-0-math/ch01-logic-and-boolean-algebra.html", "exists": true}, {"n": 2, "title": "Sets, Relations & Functions", "part": null, "md": "volumes/volume-0-math/ch02-sets-relations-and-functions.md", "page": "volumes/volume-0-math/ch02-sets-relations-and-functions.html", "exists": true}, {"n": 3, "title": "Combinatorics & Counting", "part": null, "md": "volumes/volume-0-math/ch03-combinatorics-and-counting.md", "page": "volumes/volume-0-math/ch03-combinatorics-and-counting.html", "exists": true}, {"n": 4, "title": "Graph Theory Foundations", "part": null, "md": "volumes/volume-0-math/ch04-graph-theory-foundations.md", "page": "volumes/volume-0-math/ch04-graph-theory-foundations.html", "exists": true}, {"n": 5, "title": "Proof by Induction", "part": null, "md": "volumes/volume-0-math/ch05-proof-by-induction.md", "page": "volumes/volume-0-math/ch05-proof-by-induction.html", "exists": true}, {"n": 6, "title": "Asymptotic Notation (Big-O, \u0398, \u03a9)", "part": null, "md": "volumes/volume-0-math/ch06-asymptotic-notation-big-o.md", "page": "volumes/volume-0-math/ch06-asymptotic-notation-big-o.html", "exists": true}, {"n": 7, "title": "Time/Space Complexity & Amortized Analysis", "part": null, "md": "volumes/volume-0-math/ch07-time-space-complexity-and-amortized-analysis.md", "page": "volumes/volume-0-math/ch07-time-space-complexity-and-amortized-analysis.html", "exists": true}, {"n": 8, "title": "Probability, Distributions & Bayes", "part": null, "md": "volumes/volume-0-math/ch08-probability-distributions-and-bayes.md", "page": "volumes/volume-0-math/ch08-probability-distributions-and-bayes.html", "exists": true}, {"n": 9, "title": "Linear Algebra for AI", "part": null, "md": "volumes/volume-0-math/ch09-linear-algebra-for-ai.md", "page": "volumes/volume-0-math/ch09-linear-algebra-for-ai.html", "exists": true}]}, {"title": "Volume 1 \u2014 Computer Science Foundations", "goal": "Understand how computers work from the hardware up to applications.", "index": "volumes/volume-1-cs-foundations/index.html", "chapters": [{"n": 1, "title": "Variables, Data Types & Operators", "part": "Programming Fundamentals", "md": "volumes/volume-1-cs-foundations/ch01-variables-data-types-and-operators.md", "page": "volumes/volume-1-cs-foundations/ch01-variables-data-types-and-operators.html", "exists": true}, {"n": 2, "title": "Control Flow", "part": "Programming Fundamentals", "md": "volumes/volume-1-cs-foundations/ch02-control-flow.md", "page": "volumes/volume-1-cs-foundations/ch02-control-flow.html", "exists": true}, {"n": 3, "title": "Functions, Parameters, Return Values, Scope & Namespaces", "part": "Programming Fundamentals", "md": "volumes/volume-1-cs-foundations/ch03-functions-parameters-return-values-scope-and-namespaces.md", "page": "volumes/volume-1-cs-foundations/ch03-functions-parameters-return-values-scope-and-namespaces.html", "exists": true}, {"n": 4, "title": "Built-in Data Structures", "part": "Programming Fundamentals", "md": "volumes/volume-1-cs-foundations/ch04-built-in-data-structures.md", "page": "volumes/volume-1-cs-foundations/ch04-built-in-data-structures.html", "exists": true}, {"n": 5, "title": "Modules, Packages, Imports & Dependency Management", "part": "Programming Fundamentals", "md": "volumes/volume-1-cs-foundations/ch05-modules-packages-imports-and-dependency-management.md", "page": "volumes/volume-1-cs-foundations/ch05-modules-packages-imports-and-dependency-management.html", "exists": true}, {"n": 6, "title": "Error Handling", "part": "Programming Fundamentals", "md": "volumes/volume-1-cs-foundations/ch06-error-handling.md", "page": "volumes/volume-1-cs-foundations/ch06-error-handling.html", "exists": true}, {"n": 7, "title": "File I/O", "part": "Programming Fundamentals", "md": "volumes/volume-1-cs-foundations/ch07-file-i-o.md", "page": "volumes/volume-1-cs-foundations/ch07-file-i-o.html", "exists": true}, {"n": 8, "title": "Data Formats (Text): JSON, CSV, XML, YAML, TOML", "part": "Programming Fundamentals", "md": "volumes/volume-1-cs-foundations/ch08-data-formats-text-json-csv-xml-yaml.md", "page": "volumes/volume-1-cs-foundations/ch08-data-formats-text-json-csv-xml-yaml.html", "exists": true}, {"n": 9, "title": "Character Encoding & Binary Serialization", "part": "Programming Fundamentals", "md": "volumes/volume-1-cs-foundations/ch09-character-encoding-and-binary-serialization.md", "page": "volumes/volume-1-cs-foundations/ch09-character-encoding-and-binary-serialization.html", "exists": true}, {"n": 10, "title": "Generics, Traits, Interfaces & Abstract Classes", "part": "Programming Fundamentals", "md": "volumes/volume-1-cs-foundations/ch10-generics-traits-interfaces-and-abstract-classes.md", "page": "volumes/volume-1-cs-foundations/ch10-generics-traits-interfaces-and-abstract-classes.html", "exists": true}, {"n": 11, "title": "Advanced Language Features", "part": "Programming Fundamentals", "md": "volumes/volume-1-cs-foundations/ch11-advanced-language-features.md", "page": "volumes/volume-1-cs-foundations/ch11-advanced-language-features.html", "exists": true}, {"n": 12, "title": "Memory: Stack, Heap, Ownership & Garbage Collection", "part": "Programming Fundamentals", "md": "volumes/volume-1-cs-foundations/ch12-memory-stack-heap-ownership-and-garbage-collection.md", "page": "volumes/volume-1-cs-foundations/ch12-memory-stack-heap-ownership-and-garbage-collection.html", "exists": true}, {"n": 13, "title": "Concurrency: Threads, Processes, Async, Futures & Coroutines", "part": "Programming Fundamentals", "md": "volumes/volume-1-cs-foundations/ch13-concurrency-threads-processes-async-futures-and-coroutines.md", "page": "volumes/volume-1-cs-foundations/ch13-concurrency-threads-processes-async-futures-and-coroutines.html", "exists": true}, {"n": 14, "title": "Programming Paradigms", "part": "Programming Fundamentals", "md": "volumes/volume-1-cs-foundations/ch14-programming-paradigms.md", "page": "volumes/volume-1-cs-foundations/ch14-programming-paradigms.html", "exists": true}, {"n": 15, "title": "Correctness Traps", "part": "Programming Fundamentals", "md": "volumes/volume-1-cs-foundations/ch15-correctness-traps.md", "page": "volumes/volume-1-cs-foundations/ch15-correctness-traps.html", "exists": true}, {"n": 16, "title": "Linux: Filesystem, Shell, Bash, Permissions, Users & Groups", "part": "Developer Environment", "md": "volumes/volume-1-cs-foundations/ch16-linux-filesystem-shell-bash-permissions-users-and.md", "page": "volumes/volume-1-cs-foundations/ch16-linux-filesystem-shell-bash-permissions-users-and.html", "exists": true}, {"n": 17, "title": "Linux: Processes, Signals, Services, systemd, SSH, Cron & Networking", "part": "Developer Environment", "md": "volumes/volume-1-cs-foundations/ch17-linux-processes-signals-services-systemd-ssh-cron.md", "page": "volumes/volume-1-cs-foundations/ch17-linux-processes-signals-services-systemd-ssh-cron.html", "exists": true}, {"n": 18, "title": "Terminal Tools: grep, sed, awk, jq, curl, wget, find, xargs, tmux, rsync", "part": "Developer Environment", "md": "volumes/volume-1-cs-foundations/ch18-terminal-tools-grep-sed-awk-jq-curl.md", "page": "volumes/volume-1-cs-foundations/ch18-terminal-tools-grep-sed-awk-jq-curl.html", "exists": true}, {"n": 19, "title": "Git: Branching, Merge, Rebase & Cherry-Pick", "part": "Developer Environment", "md": "volumes/volume-1-cs-foundations/ch19-git-branching-merge-rebase-and-cherry-pick.md", "page": "volumes/volume-1-cs-foundations/ch19-git-branching-merge-rebase-and-cherry-pick.html", "exists": true}, {"n": 20, "title": "Git: Tags, Stash, Hooks & Internals", "part": "Developer Environment", "md": "volumes/volume-1-cs-foundations/ch20-git-tags-stash-hooks-and-internals.md", "page": "volumes/volume-1-cs-foundations/ch20-git-tags-stash-hooks-and-internals.html", "exists": true}, {"n": 21, "title": "Build Systems & Package Management", "part": "Developer Environment", "md": "volumes/volume-1-cs-foundations/ch21-build-systems-and-package-management.md", "page": "volumes/volume-1-cs-foundations/ch21-build-systems-and-package-management.html", "exists": true}, {"n": 22, "title": "Clean Code & Refactoring", "part": "Software Engineering Fundamentals", "md": "volumes/volume-1-cs-foundations/ch22-clean-code-and-refactoring.md", "page": "volumes/volume-1-cs-foundations/ch22-clean-code-and-refactoring.html", "exists": true}, {"n": 23, "title": "Documentation, ADRs & READMEs", "part": "Software Engineering Fundamentals", "md": "volumes/volume-1-cs-foundations/ch23-documentation-adrs-and-readmes.md", "page": "volumes/volume-1-cs-foundations/ch23-documentation-adrs-and-readmes.html", "exists": true}, {"n": 24, "title": "Logging", "part": "Software Engineering Fundamentals", "md": "volumes/volume-1-cs-foundations/ch24-logging.md", "page": "volumes/volume-1-cs-foundations/ch24-logging.html", "exists": true}, {"n": 25, "title": "Configuration & Secrets Management", "part": "Software Engineering Fundamentals", "md": "volumes/volume-1-cs-foundations/ch25-configuration-and-secrets-management.md", "page": "volumes/volume-1-cs-foundations/ch25-configuration-and-secrets-management.html", "exists": true}, {"n": 26, "title": "Testing: Unit, Integration, Mocking & Coverage", "part": "Software Engineering Fundamentals", "md": "volumes/volume-1-cs-foundations/ch26-testing-unit-integration-mocking-and-coverage.md", "page": "volumes/volume-1-cs-foundations/ch26-testing-unit-integration-mocking-and-coverage.html", "exists": true}, {"n": 27, "title": "Debugging & Profiling", "part": "Software Engineering Fundamentals", "md": "volumes/volume-1-cs-foundations/ch27-debugging-and-profiling.md", "page": "volumes/volume-1-cs-foundations/ch27-debugging-and-profiling.html", "exists": true}, {"n": 28, "title": "Static Analysis: Linters, Formatters & Type Checkers", "part": "Software Engineering Fundamentals", "md": "volumes/volume-1-cs-foundations/ch28-static-analysis-linters-formatters-and-type-checkers.md", "page": "volumes/volume-1-cs-foundations/ch28-static-analysis-linters-formatters-and-type-checkers.html", "exists": true}, {"n": 29, "title": "Basic Data Structures: Arrays, Linked Lists, Stack & Queue", "part": "Data Structures & Algorithms", "md": "volumes/volume-1-cs-foundations/ch29-basic-data-structures-arrays-linked-lists-stack.md", "page": "volumes/volume-1-cs-foundations/ch29-basic-data-structures-arrays-linked-lists-stack.html", "exists": true}, {"n": 30, "title": "Trees, BST, Heap & Trie", "part": "Data Structures & Algorithms", "md": "volumes/volume-1-cs-foundations/ch30-trees-bst-heap-and-trie.md", "page": "volumes/volume-1-cs-foundations/ch30-trees-bst-heap-and-trie.html", "exists": true}, {"n": 31, "title": "Hash Tables & Graphs", "part": "Data Structures & Algorithms", "md": "volumes/volume-1-cs-foundations/ch31-hash-tables-and-graphs.md", "page": "volumes/volume-1-cs-foundations/ch31-hash-tables-and-graphs.html", "exists": true}, {"n": 32, "title": "Advanced Structures: Segment Tree, Fenwick Tree & Union-Find", "part": "Data Structures & Algorithms", "md": "volumes/volume-1-cs-foundations/ch32-advanced-structures-segment-tree-fenwick-tree-and.md", "page": "volumes/volume-1-cs-foundations/ch32-advanced-structures-segment-tree-fenwick-tree-and.html", "exists": true}, {"n": 33, "title": "Sorting, Searching & Binary Search", "part": "Data Structures & Algorithms", "md": "volumes/volume-1-cs-foundations/ch33-sorting-searching-and-binary-search.md", "page": "volumes/volume-1-cs-foundations/ch33-sorting-searching-and-binary-search.html", "exists": true}, {"n": 34, "title": "Graph Algorithms: DFS, BFS, Topological Sort & Backtracking", "part": "Data Structures & Algorithms", "md": "volumes/volume-1-cs-foundations/ch34-graph-algorithms-dfs-bfs-topological-sort-and.md", "page": "volumes/volume-1-cs-foundations/ch34-graph-algorithms-dfs-bfs-topological-sort-and.html", "exists": true}, {"n": 35, "title": "Dynamic Programming, Greedy, Divide & Conquer, Sliding Window & Two Pointers", "part": "Data Structures & Algorithms", "md": "volumes/volume-1-cs-foundations/ch35-dynamic-programming-greedy-divide-and-conquer-sliding.md", "page": "volumes/volume-1-cs-foundations/ch35-dynamic-programming-greedy-divide-and-conquer-sliding.html", "exists": true}, {"n": 36, "title": "Binary, CPU, Registers, Cache & Memory Hierarchy", "part": "Computer Architecture", "md": "volumes/volume-1-cs-foundations/ch36-binary-cpu-registers-cache-and-memory-hierarchy.md", "page": "volumes/volume-1-cs-foundations/ch36-binary-cpu-registers-cache-and-memory-hierarchy.html", "exists": true}, {"n": 37, "title": "Instruction Cycle, Pipelining, SIMD & Virtual Memory", "part": "Computer Architecture", "md": "volumes/volume-1-cs-foundations/ch37-instruction-cycle-pipelining-simd-and-virtual-memory.md", "page": "volumes/volume-1-cs-foundations/ch37-instruction-cycle-pipelining-simd-and-virtual-memory.html", "exists": true}, {"n": 38, "title": "OS: Processes, Threads, Scheduling, Synchronization & Deadlocks", "part": "Operating Systems", "md": "volumes/volume-1-cs-foundations/ch38-os-processes-threads-scheduling-synchronization-and-deadlocks.md", "page": "volumes/volume-1-cs-foundations/ch38-os-processes-threads-scheduling-synchronization-and-deadlocks.html", "exists": true}, {"n": 39, "title": "OS: Memory Management, File Systems, System Calls & IPC", "part": "Operating Systems", "md": "volumes/volume-1-cs-foundations/ch39-os-memory-management-file-systems-system-calls.md", "page": "volumes/volume-1-cs-foundations/ch39-os-memory-management-file-systems-system-calls.html", "exists": true}, {"n": 40, "title": "Networking Fundamentals: OSI, TCP/IP, IP, Ports, DNS & NAT", "part": "Networking", "md": "volumes/volume-1-cs-foundations/ch40-networking-fundamentals-osi-tcp-ip-ip-ports.md", "page": "volumes/volume-1-cs-foundations/ch40-networking-fundamentals-osi-tcp-ip-ip-ports.html", "exists": true}, {"n": 41, "title": "Transport & Security: TCP, UDP, QUIC, TLS & HTTPS", "part": "Networking", "md": "volumes/volume-1-cs-foundations/ch41-transport-and-security-tcp-udp-quic-tls.md", "page": "volumes/volume-1-cs-foundations/ch41-transport-and-security-tcp-udp-quic-tls.html", "exists": true}, {"n": 42, "title": "HTTP, REST, GraphQL & JSON-RPC", "part": "Networking", "md": "volumes/volume-1-cs-foundations/ch42-http-rest-graphql-and-json-rpc.md", "page": "volumes/volume-1-cs-foundations/ch42-http-rest-graphql-and-json-rpc.html", "exists": true}, {"n": 43, "title": "WebSockets, gRPC, MQTT & SSE", "part": "Networking", "md": "volumes/volume-1-cs-foundations/ch43-websockets-grpc-mqtt-and-sse.md", "page": "volumes/volume-1-cs-foundations/ch43-websockets-grpc-mqtt-and-sse.html", "exists": true}, {"n": 44, "title": "Delivery: Load Balancing, Reverse Proxies & CDN", "part": "Networking", "md": "volumes/volume-1-cs-foundations/ch44-delivery-load-balancing-reverse-proxies-and-cdn.md", "page": "volumes/volume-1-cs-foundations/ch44-delivery-load-balancing-reverse-proxies-and-cdn.html", "exists": true}, {"n": 45, "title": "SQL & the Relational Model", "part": "Databases", "md": "volumes/volume-1-cs-foundations/ch45-sql-and-the-relational-model.md", "page": "volumes/volume-1-cs-foundations/ch45-sql-and-the-relational-model.html", "exists": true}, {"n": 46, "title": "Schema Design, Normalization & Indexing", "part": "Databases", "md": "volumes/volume-1-cs-foundations/ch46-schema-design-normalization-and-indexing.md", "page": "volumes/volume-1-cs-foundations/ch46-schema-design-normalization-and-indexing.html", "exists": true}, {"n": 47, "title": "ACID, Transactions & Isolation", "part": "Databases", "md": "volumes/volume-1-cs-foundations/ch47-acid-transactions-and-isolation.md", "page": "volumes/volume-1-cs-foundations/ch47-acid-transactions-and-isolation.html", "exists": true}, {"n": 48, "title": "NoSQL: MongoDB, Cassandra & DynamoDB", "part": "Databases", "md": "volumes/volume-1-cs-foundations/ch48-nosql-mongodb-cassandra-and-dynamodb.md", "page": "volumes/volume-1-cs-foundations/ch48-nosql-mongodb-cassandra-and-dynamodb.html", "exists": true}, {"n": 49, "title": "Redis, Elasticsearch, Neo4j & Vector Databases", "part": "Databases", "md": "volumes/volume-1-cs-foundations/ch49-redis-elasticsearch-neo4j-and-vector-databases.md", "page": "volumes/volume-1-cs-foundations/ch49-redis-elasticsearch-neo4j-and-vector-databases.html", "exists": true}, {"n": 50, "title": "CAP, Consistency & Consensus", "part": "Distributed Systems", "md": "volumes/volume-1-cs-foundations/ch50-cap-consistency-and-consensus.md", "page": "volumes/volume-1-cs-foundations/ch50-cap-consistency-and-consensus.html", "exists": true}, {"n": 51, "title": "Replication, Sharding, Raft & Paxos", "part": "Distributed Systems", "md": "volumes/volume-1-cs-foundations/ch51-replication-sharding-raft-and-paxos.md", "page": "volumes/volume-1-cs-foundations/ch51-replication-sharding-raft-and-paxos.html", "exists": true}, {"n": 52, "title": "Event Sourcing & CQRS (Distributed View)", "part": "Distributed Systems", "md": "volumes/volume-1-cs-foundations/ch52-event-sourcing-and-cqrs-distributed-view.md", "page": "volumes/volume-1-cs-foundations/ch52-event-sourcing-and-cqrs-distributed-view.html", "exists": true}, {"n": 53, "title": "ETL/ELT, Batch & Stream Processing", "part": "Data Engineering", "md": "volumes/volume-1-cs-foundations/ch53-etl-elt-batch-and-stream-processing.md", "page": "volumes/volume-1-cs-foundations/ch53-etl-elt-batch-and-stream-processing.html", "exists": true}, {"n": 54, "title": "Data Lakes, Warehouses & Orchestration", "part": "Data Engineering", "md": "volumes/volume-1-cs-foundations/ch54-data-lakes-warehouses-and-orchestration.md", "page": "volumes/volume-1-cs-foundations/ch54-data-lakes-warehouses-and-orchestration.html", "exists": true}, {"n": 55, "title": "Containers: Docker, Kubernetes & Helm", "part": "Cloud & Ops", "md": "volumes/volume-1-cs-foundations/ch55-containers-docker-kubernetes-and-helm.md", "page": "volumes/volume-1-cs-foundations/ch55-containers-docker-kubernetes-and-helm.html", "exists": true}, {"n": 56, "title": "IaC: Terraform, State & Config Drift", "part": "Cloud & Ops", "md": "volumes/volume-1-cs-foundations/ch56-iac-terraform-state-and-config-drift.md", "page": "volumes/volume-1-cs-foundations/ch56-iac-terraform-state-and-config-drift.html", "exists": true}, {"n": 57, "title": "CI/CD & GitHub Actions", "part": "Cloud & Ops", "md": "volumes/volume-1-cs-foundations/ch57-ci-cd-and-github-actions.md", "page": "volumes/volume-1-cs-foundations/ch57-ci-cd-and-github-actions.html", "exists": true}, {"n": 58, "title": "Observability: Logs, Metrics, Traces & OpenTelemetry", "part": "Cloud & Ops", "md": "volumes/volume-1-cs-foundations/ch58-observability-logs-metrics-traces-and-opentelemetry.md", "page": "volumes/volume-1-cs-foundations/ch58-observability-logs-metrics-traces-and-opentelemetry.html", "exists": true}, {"n": 59, "title": "Cost Awareness in the Cloud", "part": "Cloud & Ops", "md": "volumes/volume-1-cs-foundations/ch59-cost-awareness-in-the-cloud.md", "page": "volumes/volume-1-cs-foundations/ch59-cost-awareness-in-the-cloud.html", "exists": true}]}, {"title": "Volume 2 \u2014 Software Engineering", "goal": "Everything beyond writing code that ships and survives production.", "index": "volumes/volume-2-software-engineering/index.html", "chapters": [{"n": 1, "title": "Professional Git Workflow", "part": null, "md": "volumes/volume-2-software-engineering/ch01-professional-git-workflow.md", "page": "volumes/volume-2-software-engineering/ch01-professional-git-workflow.html", "exists": true}, {"n": 2, "title": "Monorepos", "part": null, "md": "volumes/volume-2-software-engineering/ch02-monorepos.md", "page": "volumes/volume-2-software-engineering/ch02-monorepos.html", "exists": true}, {"n": 3, "title": "Dependency Injection & Inversion of Control", "part": null, "md": "volumes/volume-2-software-engineering/ch03-dependency-injection-and-inversion-of-control.md", "page": "volumes/volume-2-software-engineering/ch03-dependency-injection-and-inversion-of-control.html", "exists": true}, {"n": 4, "title": "The Testing Pyramid & Test Strategy", "part": null, "md": "volumes/volume-2-software-engineering/ch04-the-testing-pyramid-and-test-strategy.md", "page": "volumes/volume-2-software-engineering/ch04-the-testing-pyramid-and-test-strategy.html", "exists": true}, {"n": 5, "title": "CI/CD", "part": null, "md": "volumes/volume-2-software-engineering/ch05-ci-cd.md", "page": "volumes/volume-2-software-engineering/ch05-ci-cd.html", "exists": true}, {"n": 6, "title": "Packaging & Release Engineering", "part": null, "md": "volumes/volume-2-software-engineering/ch06-packaging-and-release-engineering.md", "page": "volumes/volume-2-software-engineering/ch06-packaging-and-release-engineering.html", "exists": true}, {"n": 7, "title": "Code Reviews", "part": null, "md": "volumes/volume-2-software-engineering/ch07-code-reviews.md", "page": "volumes/volume-2-software-engineering/ch07-code-reviews.html", "exists": true}, {"n": 8, "title": "Static Analysis & Type Safety at Scale", "part": null, "md": "volumes/volume-2-software-engineering/ch08-static-analysis-and-type-safety-at-scale.md", "page": "volumes/volume-2-software-engineering/ch08-static-analysis-and-type-safety-at-scale.html", "exists": true}, {"n": 9, "title": "Performance Engineering", "part": null, "md": "volumes/volume-2-software-engineering/ch09-performance-engineering.md", "page": "volumes/volume-2-software-engineering/ch09-performance-engineering.html", "exists": true}, {"n": 10, "title": "Security & Threat Modeling", "part": null, "md": "volumes/volume-2-software-engineering/ch10-security-and-threat-modeling.md", "page": "volumes/volume-2-software-engineering/ch10-security-and-threat-modeling.html", "exists": true}, {"n": 11, "title": "Licensing & OSS Compliance", "part": null, "md": "volumes/volume-2-software-engineering/ch11-licensing-and-oss-compliance.md", "page": "volumes/volume-2-software-engineering/ch11-licensing-and-oss-compliance.html", "exists": true}, {"n": 12, "title": "API Design & Versioning", "part": null, "md": "volumes/volume-2-software-engineering/ch12-api-design-and-versioning.md", "page": "volumes/volume-2-software-engineering/ch12-api-design-and-versioning.html", "exists": true}, {"n": 13, "title": "Documentation as a System", "part": null, "md": "volumes/volume-2-software-engineering/ch13-documentation-as-a-system.md", "page": "volumes/volume-2-software-engineering/ch13-documentation-as-a-system.html", "exists": true}, {"n": 14, "title": "Observability: Logs, Metrics & Traces", "part": null, "md": "volumes/volume-2-software-engineering/ch14-observability-logs-metrics-and-traces.md", "page": "volumes/volume-2-software-engineering/ch14-observability-logs-metrics-and-traces.html", "exists": true}, {"n": 15, "title": "Incident Response & Postmortems", "part": null, "md": "volumes/volume-2-software-engineering/ch15-incident-response-and-postmortems.md", "page": "volumes/volume-2-software-engineering/ch15-incident-response-and-postmortems.html", "exists": true}, {"n": 16, "title": "Production Debugging", "part": null, "md": "volumes/volume-2-software-engineering/ch16-production-debugging.md", "page": "volumes/volume-2-software-engineering/ch16-production-debugging.html", "exists": true}]}, {"title": "Volume 3 \u2014 Low-Level Design", "goal": "Design clean, correct, maintainable components. Requires Volume 2.", "index": "volumes/volume-3-low-level-design/index.html", "chapters": [{"n": 1, "title": "OOP Fundamentals", "part": null, "md": "volumes/volume-3-low-level-design/ch01-oop-fundamentals.md", "page": "volumes/volume-3-low-level-design/ch01-oop-fundamentals.html", "exists": true}, {"n": 2, "title": "SOLID Principles", "part": null, "md": "volumes/volume-3-low-level-design/ch02-solid-principles.md", "page": "volumes/volume-3-low-level-design/ch02-solid-principles.html", "exists": true}, {"n": 3, "title": "Design Principles (Cohesion, Coupling, YAGNI, DRY, KISS)", "part": null, "md": "volumes/volume-3-low-level-design/ch03-design-principles-cohesion-coupling-yagni-dry-kiss.md", "page": "volumes/volume-3-low-level-design/ch03-design-principles-cohesion-coupling-yagni-dry-kiss.html", "exists": true}, {"n": 4, "title": "UML & Diagramming", "part": null, "md": "volumes/volume-3-low-level-design/ch04-uml-and-diagramming.md", "page": "volumes/volume-3-low-level-design/ch04-uml-and-diagramming.html", "exists": true}, {"n": 5, "title": "GoF Creational Patterns", "part": null, "md": "volumes/volume-3-low-level-design/ch05-gof-creational-patterns.md", "page": "volumes/volume-3-low-level-design/ch05-gof-creational-patterns.html", "exists": true}, {"n": 6, "title": "GoF Structural Patterns", "part": null, "md": "volumes/volume-3-low-level-design/ch06-gof-structural-patterns.md", "page": "volumes/volume-3-low-level-design/ch06-gof-structural-patterns.html", "exists": true}, {"n": 7, "title": "GoF Behavioral Patterns", "part": null, "md": "volumes/volume-3-low-level-design/ch07-gof-behavioral-patterns.md", "page": "volumes/volume-3-low-level-design/ch07-gof-behavioral-patterns.html", "exists": true}, {"n": 8, "title": "Clean Architecture", "part": null, "md": "volumes/volume-3-low-level-design/ch08-clean-architecture.md", "page": "volumes/volume-3-low-level-design/ch08-clean-architecture.html", "exists": true}, {"n": 9, "title": "Hexagonal Architecture (Ports & Adapters)", "part": null, "md": "volumes/volume-3-low-level-design/ch09-hexagonal-architecture-ports-and-adapters.md", "page": "volumes/volume-3-low-level-design/ch09-hexagonal-architecture-ports-and-adapters.html", "exists": true}, {"n": 10, "title": "Domain-Driven Design (Tactical)", "part": null, "md": "volumes/volume-3-low-level-design/ch10-domain-driven-design-tactical.md", "page": "volumes/volume-3-low-level-design/ch10-domain-driven-design-tactical.html", "exists": true}, {"n": 11, "title": "Repository Pattern & Data Mapping", "part": null, "md": "volumes/volume-3-low-level-design/ch11-repository-pattern-and-data-mapping.md", "page": "volumes/volume-3-low-level-design/ch11-repository-pattern-and-data-mapping.html", "exists": true}, {"n": 12, "title": "Event Bus, CQRS & Event Sourcing", "part": null, "md": "volumes/volume-3-low-level-design/ch12-event-bus-cqrs-and-event-sourcing.md", "page": "volumes/volume-3-low-level-design/ch12-event-bus-cqrs-and-event-sourcing.html", "exists": true}, {"n": 13, "title": "Concurrency Patterns & Thread Safety", "part": null, "md": "volumes/volume-3-low-level-design/ch13-concurrency-patterns-and-thread-safety.md", "page": "volumes/volume-3-low-level-design/ch13-concurrency-patterns-and-thread-safety.html", "exists": true}, {"n": 14, "title": "Resilience Patterns (Idempotency, Retries, Backoff, Circuit Breakers)", "part": null, "md": "volumes/volume-3-low-level-design/ch14-resilience-patterns-idempotency-retries-backoff-circuit-breakers.md", "page": "volumes/volume-3-low-level-design/ch14-resilience-patterns-idempotency-retries-backoff-circuit-breakers.html", "exists": true}]}, {"title": "Volume 4 \u2014 High-Level Design", "goal": "Design systems that scale and stay reliable. Requires Volume 1 (Parts 7\u20139) and Volume 3.", "index": "volumes/volume-4-high-level-design/index.html", "chapters": [{"n": 1, "title": "Approaching a System Design Problem", "part": null, "md": "volumes/volume-4-high-level-design/ch01-approaching-a-system-design-problem.md", "page": "volumes/volume-4-high-level-design/ch01-approaching-a-system-design-problem.html", "exists": true}, {"n": 2, "title": "Capacity Planning", "part": null, "md": "volumes/volume-4-high-level-design/ch02-capacity-planning.md", "page": "volumes/volume-4-high-level-design/ch02-capacity-planning.html", "exists": true}, {"n": 3, "title": "Scalability & Reliability Fundamentals", "part": null, "md": "volumes/volume-4-high-level-design/ch03-scalability-and-reliability-fundamentals.md", "page": "volumes/volume-4-high-level-design/ch03-scalability-and-reliability-fundamentals.html", "exists": true}, {"n": 4, "title": "Distributed Systems Patterns", "part": null, "md": "volumes/volume-4-high-level-design/ch04-distributed-systems-patterns.md", "page": "volumes/volume-4-high-level-design/ch04-distributed-systems-patterns.html", "exists": true}, {"n": 5, "title": "Proxies, Gateways, Web Servers & Storage Types", "part": null, "md": "volumes/volume-4-high-level-design/ch05-proxies-gateways-web-servers-and-storage-types.md", "page": "volumes/volume-4-high-level-design/ch05-proxies-gateways-web-servers-and-storage-types.html", "exists": true}, {"n": 6, "title": "Load Balancing", "part": null, "md": "volumes/volume-4-high-level-design/ch06-load-balancing.md", "page": "volumes/volume-4-high-level-design/ch06-load-balancing.html", "exists": true}, {"n": 7, "title": "Caching Strategies", "part": null, "md": "volumes/volume-4-high-level-design/ch07-caching-strategies.md", "page": "volumes/volume-4-high-level-design/ch07-caching-strategies.html", "exists": true}, {"n": 8, "title": "Rate Limiting, Throttling & Backpressure", "part": null, "md": "volumes/volume-4-high-level-design/ch08-rate-limiting-throttling-and-backpressure.md", "page": "volumes/volume-4-high-level-design/ch08-rate-limiting-throttling-and-backpressure.html", "exists": true}, {"n": 9, "title": "Message Queues & Streaming (Kafka, SQS, Pub/Sub)", "part": null, "md": "volumes/volume-4-high-level-design/ch09-message-queues-and-streaming-kafka-sqs-pub.md", "page": "volumes/volume-4-high-level-design/ch09-message-queues-and-streaming-kafka-sqs-pub.html", "exists": true}, {"n": 10, "title": "Service Mesh & Service Discovery", "part": null, "md": "volumes/volume-4-high-level-design/ch10-service-mesh-and-service-discovery.md", "page": "volumes/volume-4-high-level-design/ch10-service-mesh-and-service-discovery.html", "exists": true}, {"n": 11, "title": "Database Scaling", "part": null, "md": "volumes/volume-4-high-level-design/ch11-database-scaling.md", "page": "volumes/volume-4-high-level-design/ch11-database-scaling.html", "exists": true}, {"n": 12, "title": "Event-Driven Systems", "part": null, "md": "volumes/volume-4-high-level-design/ch12-event-driven-systems.md", "page": "volumes/volume-4-high-level-design/ch12-event-driven-systems.html", "exists": true}, {"n": 13, "title": "Cloud Design Patterns", "part": null, "md": "volumes/volume-4-high-level-design/ch13-cloud-design-patterns.md", "page": "volumes/volume-4-high-level-design/ch13-cloud-design-patterns.html", "exists": true}, {"n": 14, "title": "CDN, Edge & Geo-Distribution", "part": null, "md": "volumes/volume-4-high-level-design/ch14-cdn-edge-and-geo-distribution.md", "page": "volumes/volume-4-high-level-design/ch14-cdn-edge-and-geo-distribution.html", "exists": true}, {"n": 15, "title": "Multi-Tenancy", "part": null, "md": "volumes/volume-4-high-level-design/ch15-multi-tenancy.md", "page": "volumes/volume-4-high-level-design/ch15-multi-tenancy.html", "exists": true}, {"n": 16, "title": "Performance Antipatterns & Monitoring", "part": null, "md": "volumes/volume-4-high-level-design/ch16-performance-antipatterns-and-monitoring.md", "page": "volumes/volume-4-high-level-design/ch16-performance-antipatterns-and-monitoring.html", "exists": true}, {"n": 17, "title": "Disaster Recovery (Backups, RTO/RPO)", "part": null, "md": "volumes/volume-4-high-level-design/ch17-disaster-recovery-backups-rto-rpo.md", "page": "volumes/volume-4-high-level-design/ch17-disaster-recovery-backups-rto-rpo.html", "exists": true}, {"n": 18, "title": "Security at the System Level", "part": null, "md": "volumes/volume-4-high-level-design/ch18-security-at-the-system-level.md", "page": "volumes/volume-4-high-level-design/ch18-security-at-the-system-level.html", "exists": true}, {"n": 19, "title": "Cloud Architecture", "part": null, "md": "volumes/volume-4-high-level-design/ch19-cloud-architecture.md", "page": "volumes/volume-4-high-level-design/ch19-cloud-architecture.html", "exists": true}, {"n": 20, "title": "Cost & Capacity Economics", "part": null, "md": "volumes/volume-4-high-level-design/ch20-cost-and-capacity-economics.md", "page": "volumes/volume-4-high-level-design/ch20-cost-and-capacity-economics.html", "exists": true}, {"n": 21, "title": "The 30-System Design Portfolio", "part": null, "md": "volumes/volume-4-high-level-design/ch21-the-30-system-design-portfolio.md", "page": "volumes/volume-4-high-level-design/ch21-the-30-system-design-portfolio.html", "exists": true}]}, {"title": "Volume 5 \u2014 AI Systems Engineering", "goal": "Where all previous knowledge converges. Requires Volume 0 (linear algebra, probability) and Volume 1 (encoding, Ch 9).", "index": "volumes/volume-5-ai-systems/index.html", "chapters": [{"n": 1, "title": "LLM Internals", "part": null, "md": "volumes/volume-5-ai-systems/ch01-llm-internals.md", "page": "volumes/volume-5-ai-systems/ch01-llm-internals.html", "exists": true}, {"n": 2, "title": "Tokenization", "part": null, "md": "volumes/volume-5-ai-systems/ch02-tokenization.md", "page": "volumes/volume-5-ai-systems/ch02-tokenization.html", "exists": true}, {"n": 3, "title": "Transformers", "part": null, "md": "volumes/volume-5-ai-systems/ch03-transformers.md", "page": "volumes/volume-5-ai-systems/ch03-transformers.html", "exists": true}, {"n": 4, "title": "Inference & Serving", "part": null, "md": "volumes/volume-5-ai-systems/ch04-inference-and-serving.md", "page": "volumes/volume-5-ai-systems/ch04-inference-and-serving.html", "exists": true}, {"n": 5, "title": "Quantization & Efficiency", "part": null, "md": "volumes/volume-5-ai-systems/ch05-quantization-and-efficiency.md", "page": "volumes/volume-5-ai-systems/ch05-quantization-and-efficiency.html", "exists": true}, {"n": 6, "title": "Prompt Engineering & Structured Output", "part": null, "md": "volumes/volume-5-ai-systems/ch06-prompt-engineering-and-structured-output.md", "page": "volumes/volume-5-ai-systems/ch06-prompt-engineering-and-structured-output.html", "exists": true}, {"n": 7, "title": "Fine-Tuning, LoRA & PEFT", "part": null, "md": "volumes/volume-5-ai-systems/ch07-fine-tuning-lora-and-peft.md", "page": "volumes/volume-5-ai-systems/ch07-fine-tuning-lora-and-peft.html", "exists": true}, {"n": 8, "title": "Alignment, RLHF & Guardrails", "part": null, "md": "volumes/volume-5-ai-systems/ch08-alignment-rlhf-and-guardrails.md", "page": "volumes/volume-5-ai-systems/ch08-alignment-rlhf-and-guardrails.html", "exists": true}, {"n": 9, "title": "Embeddings & RAG", "part": null, "md": "volumes/volume-5-ai-systems/ch09-embeddings-and-rag.md", "page": "volumes/volume-5-ai-systems/ch09-embeddings-and-rag.html", "exists": true}, {"n": 10, "title": "Vector Databases", "part": null, "md": "volumes/volume-5-ai-systems/ch10-vector-databases.md", "page": "volumes/volume-5-ai-systems/ch10-vector-databases.html", "exists": true}, {"n": 11, "title": "Agent Frameworks & Tool Use", "part": null, "md": "volumes/volume-5-ai-systems/ch11-agent-frameworks-and-tool-use.md", "page": "volumes/volume-5-ai-systems/ch11-agent-frameworks-and-tool-use.html", "exists": true}, {"n": 12, "title": "Agent Memory", "part": null, "md": "volumes/volume-5-ai-systems/ch12-agent-memory.md", "page": "volumes/volume-5-ai-systems/ch12-agent-memory.html", "exists": true}, {"n": 13, "title": "MCP & A2A", "part": null, "md": "volumes/volume-5-ai-systems/ch13-mcp-and-a2a.md", "page": "volumes/volume-5-ai-systems/ch13-mcp-and-a2a.html", "exists": true}, {"n": 14, "title": "Multi-Agent Systems", "part": null, "md": "volumes/volume-5-ai-systems/ch14-multi-agent-systems.md", "page": "volumes/volume-5-ai-systems/ch14-multi-agent-systems.html", "exists": true}, {"n": 15, "title": "Voice Agents", "part": null, "md": "volumes/volume-5-ai-systems/ch15-voice-agents.md", "page": "volumes/volume-5-ai-systems/ch15-voice-agents.html", "exists": true}, {"n": 16, "title": "AI Observability", "part": null, "md": "volumes/volume-5-ai-systems/ch16-ai-observability.md", "page": "volumes/volume-5-ai-systems/ch16-ai-observability.html", "exists": true}, {"n": 17, "title": "Evaluation", "part": null, "md": "volumes/volume-5-ai-systems/ch17-evaluation.md", "page": "volumes/volume-5-ai-systems/ch17-evaluation.html", "exists": true}, {"n": 18, "title": "Cost & Latency Optimization", "part": null, "md": "volumes/volume-5-ai-systems/ch18-cost-and-latency-optimization.md", "page": "volumes/volume-5-ai-systems/ch18-cost-and-latency-optimization.html", "exists": true}, {"n": 19, "title": "AI Security", "part": null, "md": "volumes/volume-5-ai-systems/ch19-ai-security.md", "page": "volumes/volume-5-ai-systems/ch19-ai-security.html", "exists": true}, {"n": 20, "title": "GPU Infrastructure & the AI OS", "part": null, "md": "volumes/volume-5-ai-systems/ch20-gpu-infrastructure-and-the-ai-os.md", "page": "volumes/volume-5-ai-systems/ch20-gpu-infrastructure-and-the-ai-os.html", "exists": true}]}] };</script>
+<script src="https://cdn.jsdelivr.net/npm/marked@15/marked.min.js"></script>
+<script src="../../assets/app.js"></script>
+</body>
+</html>

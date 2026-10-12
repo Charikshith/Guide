@@ -1,0 +1,511 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Performance Antipatterns &amp; Monitoring · Guide</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;700&family=Kalam:wght@400;700&family=Patrick+Hand&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/style.css">
+<script>try{var t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t;var n=localStorage.getItem("nav");if(n)document.documentElement.dataset.nav=n;}catch(e){}</script>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <filter id="rough" filterUnits="userSpaceOnUse" x="-500" y="-500" width="3000" height="3000">
+    <feTurbulence type="fractalNoise" baseFrequency="0.03" numOctaves="2" seed="3" result="n"/>
+    <feDisplacementMap in="SourceGraphic" in2="n" scale="3"/>
+  </filter>
+  <marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+    <path d="M1 1 L9 5 L1 9" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+  </marker>
+</defs></svg>
+<div class="notebook" id="notebook">
+  <button id="menu" class="pen tl" aria-label="Show or hide contents" title="Show / hide contents">☰</button>
+  <button id="theme" class="pen tr" aria-label="Toggle theme" title="Light / dark desk">◐</button>
+  <nav id="sidebar" aria-label="Contents"></nav>
+  <main><article id="content" class="page">Loading…</article></main>
+</div>
+<script type="text/markdown" id="source"># Chapter 16 — Performance Antipatterns & Monitoring
+
+> **Volume 4 — High-Level Design** · [Contents](index.md) · ← [Chapter 15 — Multi-Tenancy](ch15-multi-tenancy.md) · Next → [Chapter 17 — Disaster Recovery (Backups, RTO/RPO)](ch17-disaster-recovery-backups-rto-rpo.md)
+
+---
+
+## Concept
+
+The ten classic performance antipatterns, the bulkhead fix, and the five kinds of monitoring: health, availability, performance, security, usage.
+
+**In one sentence:** most slow or fragile systems are slow in one of ten well-known ways, and you only find which one by instrumenting the system (metrics, logs, traces), watching the right signals, and alerting on user-visible symptoms rather than every internal blip.
+
+**Mental model — a restaurant kitchen.** An antipattern is a kitchen habit that works at lunch for four tables and collapses at dinner for forty: one cook doing every dish (busy frontend), a trip to the market for each egg (chatty I/O), buying the whole cow to use one steak (extraneous fetching). Monitoring is the pass where the head chef sees ticket times, which stations are backed up, and whether the fridge is still cold — and the alarm should ring when customers wait too long, not whenever a pan clatters.
+
+### Part 1 — Performance antipatterns
+
+These ten come from the Azure Architecture Center's performance antipatterns catalogue: recurring mistakes that are invisible at low load and dominate at scale.
+
+**1. Busy Database**
+
+* **Symptom and cause:** DB CPU and I/O saturate while app servers idle, because too much work (formatting, business logic in stored procedures, heavy reports on the primary) runs inside the database.
+* **Detect:** high DB CPU with low app CPU; slow-query log; long statements in `pg_stat_activity`.
+* **Fix:** move formatting and logic to the app tier, send reports to read replicas ([Ch 11](ch11-database-scaling.md)), cache hot results ([Ch 7](ch07-caching-strategies.md)).
+
+**2. Busy Frontend**
+
+* **Symptom and cause:** request threads are all occupied, so even trivial requests queue, because CPU-heavy or long work (image resizing, PDF generation) runs on the threads that serve users.
+* **Detect:** high CPU on web nodes, worker-pool saturation, cheap endpoints slow only while expensive ones run.
+* **Fix:** return `202 Accepted`, enqueue the job ([Ch 9](ch09-message-queues-and-streaming-kafka-sqs-pub.md)) and process it on a separate worker pool.
+
+**3. Chatty I/O**
+
+* **Symptom and cause:** latency is the sum of round trips, not of work, because of N+1 queries, one HTTP call per item or one write per row.
+* **Detect:** traces showing a "comb" of short spans; query count per request; call rate to a dependency far above the user request rate.
+* **Fix:** batch, join or use `IN (...)`, paginate, offer coarser endpoints, prefetch or cache.
+
+```python
+# BAD: 1 + N queries
+orders = db.query("SELECT * FROM orders WHERE user_id = %s", uid)
+for o in orders:
+    o.items = db.query("SELECT * FROM items WHERE order_id = %s", o.id)
+
+# GOOD: 2 queries total
+orders = db.query("SELECT * FROM orders WHERE user_id = %s", uid)
+items = db.query("SELECT * FROM items WHERE order_id = ANY(%s)", [o.id for o in orders])
+```
+
+**4. Extraneous Fetching**
+
+* **Symptom and cause:** high bandwidth, memory and DB I/O for little output, because of `SELECT *`, filtering a whole table in the app, or no pagination.
+* **Detect:** rows fetched vs rows used; response sizes in traces; egress per request.
+* **Fix:** select only needed columns, filter and aggregate in the query, paginate, use covering indexes.
+
+```python
+# BAD: pull everything, filter in memory
+recent = [r for r in db.query("SELECT * FROM events") if r.ts > cutoff][:50]
+# GOOD: let the database do it
+recent = db.query("SELECT id, ts, kind FROM events WHERE ts > %s ORDER BY ts DESC LIMIT 50", cutoff)
+```
+
+**5. Improper Instantiation**
+
+* **Symptom and cause:** socket exhaustion, a TLS handshake on every call, memory churn, because shareable objects (HTTP clients, DB connections, compiled regexes) are created per request.
+* **Detect:** many `TIME_WAIT` sockets, connections near limits, high connect time in traces.
+* **Fix:** create once and reuse (singletons, dependency injection, pools, keep-alive).
+
+```python
+# BAD: a new client (new TCP + TLS handshake) per call
+def get_price(sku): return requests.get(f"https://prices.internal/{sku}").json()
+# GOOD: one pooled session per process
+session = requests.Session()
+def get_price(sku): return session.get(f"https://prices.internal/{sku}", timeout=2).json()
+```
+
+**6. Monolithic Persistence**
+
+* **Symptom and cause:** one database is too slow for search, too costly for blobs and too contended for sessions, because every kind of data lives in one store.
+* **Detect:** wildly different access patterns inside one cluster; one workload's spikes slow another's.
+* **Fix:** polyglot persistence: relational for transactions, object storage for blobs, a search engine for text, a cache for sessions. The cost is more systems to run and keep consistent ([Ch 12](ch12-event-driven-systems.md)).
+
+**7. No Caching**
+
+* **Symptom and cause:** identical expensive reads repeat and hammer the database or an upstream API, because there is no cache or its hit ratio is near zero (bad keys or TTLs).
+* **Detect:** cache hit ratio; identical queries in the slow-query log; high read QPS on rarely changing data.
+* **Fix:** cache at the right layer (CDN, app, Redis), choose the pattern and TTL deliberately, protect against stampedes ([Ch 7](ch07-caching-strategies.md)).
+
+**8. Noisy Neighbor**
+
+* **Symptom and cause:** one tenant, job or service degrades everyone sharing a resource, because shared pools, CPUs, disks or queues have no per-tenant limit.
+* **Detect:** per-tenant breakdown of latency and resource use; one tenant's spikes correlating with others' errors.
+* **Fix:** quotas and rate limits ([Ch 8](ch08-rate-limiting-throttling-and-backpressure.md)), [multi-tenancy isolation](ch15-multi-tenancy.md), and bulkheads (below).
+
+**9. Retry Storm**
+
+* **Symptom and cause:** a brief dependency blip becomes a long outage, because clients retry at once, without backoff, jitter or a budget, often at several layers.
+* **Detect:** request rate to a dependency exceeds user request rate; synchronized retry waves right after errors begin.
+* **Fix:** timeouts, exponential backoff with jitter, retry budgets, retry at one layer, circuit breakers, idempotency ([Vol 3 Ch 14](../volume-3-low-level-design/ch14-resilience-patterns-idempotency-retries-backoff-circuit-breakers.md)).
+
+```
+ retry amplification: 3 layers, each makes up to 3 attempts
+ client ──×3──► gateway ──×3──► service ──×3──► database (already failing)
+ one user request can become 3 × 3 × 3 = 27 database attempts
+```
+
+**10. Synchronous I/O**
+
+* **Symptom and cause:** low CPU but high latency and low throughput, because calling threads block on network or disk and a small pool caps concurrency.
+* **Detect:** worker pool fully busy with idle CPU; threads parked in socket reads in a thread dump.
+* **Fix:** async/non-blocking I/O, a sized pool for blocking calls, and run independent calls concurrently.
+
+```python
+# BAD: sequential (latency = a + b + c)
+user = fetch_user(uid); orders = fetch_orders(uid); recs = fetch_recs(uid)
+# GOOD: concurrent (latency ≈ max(a, b, c))
+user, orders, recs = await asyncio.gather(fetch_user(uid), fetch_orders(uid), fetch_recs(uid))
+```
+
+**Summary**
+
+| Antipattern | Typical symptom | Usual cause | Main fix |
+|-------------|-----------------|-------------|----------|
+| Busy Database | DB CPU/I/O saturated | logic and formatting in the DB | move work to app tier, replicas, cache |
+| Busy Frontend | request threads exhausted | heavy work on request threads | queue + background workers |
+| Chatty I/O | latency = sum of round trips | N+1, one call per item | batch, join, coarser APIs |
+| Extraneous Fetching | high bandwidth and memory | `SELECT *`, filter in app | project, filter in query, paginate |
+| Improper Instantiation | socket exhaustion, handshakes | new client per request | reuse pooled clients |
+| Monolithic Persistence | one store fits no workload | everything in one database | polyglot persistence |
+| No Caching | repeated identical reads | no cache, or bad keys/TTLs | layered caching |
+| Noisy Neighbor | one tenant hurts others | shared resource, no limits | quotas, isolation, bulkheads |
+| Retry Storm | blip becomes outage | immediate unbounded retries | backoff + jitter + budget + breaker |
+| Synchronous I/O | idle CPU, low throughput | blocking calls on few threads | async, concurrency |
+
+### Bulkhead
+
+**Bulkhead** — named after the watertight compartments of a ship's hull: partition resources so a failure or overload in one compartment cannot sink the rest. It is the structural fix for noisy neighbors and cascading failure: give each tenant, endpoint or dependency its own pool (threads, connections, semaphore permits, queue slots) with a hard cap.
+
+| Variant | Isolates | Example |
+|---------|----------|---------|
+| Semaphore bulkhead | concurrent calls | max 20 in-flight calls to the payments API |
+| Thread-pool bulkhead | threads plus a queue | a separate pool per downstream dependency |
+| Connection-pool partition | DB connections | reporting gets 5 connections, checkout gets 30 |
+| Per-tenant / per-tier | tenant traffic | premium and free tenants on separate pools or cells |
+| Deployment-level | whole stacks | separate clusters or cells per region or customer group |
+
+Combine it with timeouts and a circuit breaker ([Vol 3 Ch 14](../volume-3-low-level-design/ch14-resilience-patterns-idempotency-retries-backoff-circuit-breakers.md)); per-tenant limits are in [Ch 8](ch08-rate-limiting-throttling-and-backpressure.md) and [Ch 15](ch15-multi-tenancy.md). The cost is lower utilization: idle capacity in one compartment cannot be lent to another.
+
+### Part 2 — Monitoring
+
+Each kind of monitoring answers a different question.
+
+| Kind | Question it answers | Example signals | Typical tools |
+|------|---------------------|-----------------|---------------|
+| Health monitoring | Is each component alive and able to serve? | liveness/readiness probes, dependency checks, restarts | Kubernetes probes, load balancer health checks |
+| Availability monitoring | Can users actually reach and use it? | synthetic checks from outside, success ratio, uptime vs SLO | `blackbox_exporter`, uptime services |
+| Performance monitoring | How fast and how efficiently? | latency percentiles, throughput, saturation, queue depth, cache hit ratio | Prometheus + Grafana, APM, traces |
+| Security monitoring | Is something hostile or unexpected happening? | failed logins, permission denials, unusual egress, audit-log anomalies | SIEM, audit logs, Falco |
+| Usage monitoring | What do users do, and what does it cost? | active users, feature adoption, requests per tenant, quota use | product analytics, billing metering |
+
+**Health endpoint monitoring.** Expose cheap HTTP endpoints that monitors and orchestrators poll.
+
+| Probe | Question | On failure | Should check |
+|-------|----------|------------|--------------|
+| Liveness (`/healthz`) | Is the process stuck and in need of a restart? | restart the container | only the process itself, never dependencies |
+| Readiness (`/readyz`) | Can this instance take traffic right now? | remove from the load balancer, do not restart | warm-up done, critical dependencies reachable |
+| Startup | Has a slow-starting app finished booting? | hold off the other probes | initialization |
+
+Gotcha: if liveness checks the database, a database outage restarts every pod at once and turns a partial failure into a total one. Keep health checks cheap and fast, and separate from deep dependency checks.
+
+### Part 3 — Instrumentation, visualization and alerting
+
+**Instrumentation** means emitting metrics, logs and traces ([Vol 1 Ch 58](../volume-1-cs-foundations/ch58-observability-logs-metrics-traces-and-opentelemetry.md), [Vol 2 Ch 14](../volume-2-software-engineering/ch14-observability-logs-metrics-and-traces.md); using them in an incident: [Vol 2 Ch 16](../volume-2-software-engineering/ch16-production-debugging.md)) — not repeated here.
+
+| Method | For | Signals |
+|--------|-----|---------|
+| RED | request-driven services | **R**ate, **E**rrors, **D**uration |
+| USE | resources (CPU, disk, pools, queues) | **U**tilization, **S**aturation, **E**rrors |
+| Four golden signals (Google SRE) | any user-facing system | latency, traffic, errors, saturation |
+
+Rules: counters for events, gauges for current values, histograms for latency (percentiles can be computed from buckets and aggregated across instances); label only by low-cardinality dimensions (route template, status code), never user ID or raw URL — every distinct label combination is a new time series.
+
+**Visualization.** A dashboard answers "is it healthy?" in five seconds: SLIs on top (success rate, p99), then RED per service, then USE per resource, with deploy markers; link panels to runbooks and traces.
+
+**Alerting** — alert on symptoms, investigate causes.
+
+| Practice | Why |
+|----------|-----|
+| Symptom alerts page, cause alerts only inform | "error rate above SLO" matters to users; "CPU 85%" may not |
+| Every page is actionable and urgent | otherwise it is noise |
+| SLO-based, multi-window burn-rate alerts | catch fast burns quickly and slow burns before the budget is gone |
+| Route by severity and ownership | page for urgent, ticket for slow, dashboard for informational |
+
+**Alert fatigue** — too many low-value alerts train people to ignore pages, so a real one is missed. Delete or demote alerts nobody acts on, group and deduplicate (Alertmanager), add `for:` durations, and review pages in every post-incident review.
+
+**Burn rate** = error rate ÷ (1 − SLO); 1 uses the error budget exactly over the SLO window. For a 30-day window the Google SRE Workbook suggests paging at 14.4× over 1 hour (2% of budget) and 6× over 6 hours (5%), and a ticket at 1× over 3 days (10%), each paired with a window about 1/12 as long so the alert clears quickly.
+
+```yaml
+# 99.9% SLO: page on fast burn (14.4 x budget) over 1h AND 5m
+- alert: HighErrorBudgetBurn
+  expr: |
+    ( sum(rate(http_requests_total{code=~"5.."}[1h])) / sum(rate(http_requests_total[1h])) ) > (14.4 * 0.001)
+    and
+    ( sum(rate(http_requests_total{code=~"5.."}[5m])) / sum(rate(http_requests_total[5m])) ) > (14.4 * 0.001)
+  labels: { severity: page }
+```
+
+---
+
+## Prereqs
+
+* [Vol 1 Ch 58 — Observability: Logs, Metrics, Traces & OpenTelemetry](../volume-1-cs-foundations/ch58-observability-logs-metrics-traces-and-opentelemetry.md)
+* [Vol 2 Ch 14 — Observability: Logs, Metrics & Traces](../volume-2-software-engineering/ch14-observability-logs-metrics-and-traces.md)
+* [Vol 2 Ch 16 — Production Debugging](../volume-2-software-engineering/ch16-production-debugging.md)
+* [Vol 3 Ch 14 — Resilience Patterns: Idempotency, Retries, Backoff & Circuit Breakers](../volume-3-low-level-design/ch14-resilience-patterns-idempotency-retries-backoff-circuit-breakers.md)
+* [Ch 8 — Rate Limiting, Throttling & Backpressure](ch08-rate-limiting-throttling-and-backpressure.md)
+* [Ch 15 — Multi-Tenancy](ch15-multi-tenancy.md)
+
+---
+
+## Diagram
+
+**Bulkhead: one pool per dependency or tenant**
+
+```mermaid
+flowchart LR
+    CL["clients"] --> GW["service"]
+    GW --> PA["pool A: checkout<br/>30 permits"]
+    GW --> PB["pool B: search<br/>10 permits"]
+    GW --> PC["pool C: reports<br/>5 permits"]
+    PA --> D1[("orders DB")]
+    PB --> D2["search cluster"]
+    PC --> D3[("replica")]
+    PC -. "slow, exhausted:<br/>only reports fail" .-> GW
+```
+
+**The five kinds of monitoring**
+
+```mermaid
+flowchart TB
+    SYS["running system"] --> H["health: alive and ready?"]
+    SYS --> A["availability: reachable by users?"]
+    SYS --> P["performance: fast enough?"]
+    SYS --> S["security: anything hostile?"]
+    SYS --> U["usage: who uses what?"]
+    H --> OPS["on-call / orchestrator"]
+    A --> OPS
+    P --> OPS
+    S --> SEC["security team"]
+    U --> PROD["product / finance"]
+```
+
+---
+
+## Example
+
+A dependency-free Python service with `/healthz` (liveness), `/readyz` (readiness) and `/metrics` in the Prometheus text format, with a counter and a histogram.
+
+```python
+# app.py  --  python app.py   (stdlib only, Python 3.9+)
+import random, threading, time
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+
+LOCK = threading.Lock()
+BUCKETS = [0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1.0, 2.5]
+REQS = {}        # (route, code) -> count                      (counter)
+HIST = {}        # route -> [bucket counts..., +Inf, sum]      (histogram)
+STATE = {"started": time.time(), "db_up": True}
+
+def observe(route, code, secs):
+    with LOCK:
+        REQS[(route, code)] = REQS.get((route, code), 0) + 1
+        h = HIST.setdefault(route, [0] * (len(BUCKETS) + 1) + [0.0])
+        for i, b in enumerate(BUCKETS):
+            if secs <= b:
+                h[i] += 1
+                break
+        else:
+            h[len(BUCKETS)] += 1            # +Inf bucket
+        h[-1] += secs
+
+def render_metrics():
+    out = ["# TYPE http_requests_total counter"]
+    with LOCK:
+        for (route, code), n in sorted(REQS.items()):
+            out.append(f'http_requests_total{{route="{route}",code="{code}"}} {n}')
+        out.append("# TYPE http_request_duration_seconds histogram")
+        for route, h in sorted(HIST.items()):
+            cum = 0
+            for i, b in enumerate(BUCKETS):
+                cum += h[i]
+                out.append(f'http_request_duration_seconds_bucket{{route="{route}",le="{b}"}} {cum}')
+            cum += h[len(BUCKETS)]
+            out.append(f'http_request_duration_seconds_bucket{{route="{route}",le="+Inf"}} {cum}')
+            out.append(f'http_request_duration_seconds_sum{{route="{route}"}} {h[-1]:.6f}')
+            out.append(f'http_request_duration_seconds_count{{route="{route}"}} {cum}')
+    return "\n".join(out) + "\n"
+
+class Handler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        t0, route = time.perf_counter(), self.path.split("?")[0]
+        if route == "/healthz":                      # liveness: process only, no dependencies
+            code, body = 200, "ok\n"
+        elif route == "/readyz":                     # readiness: warm-up done and DB reachable
+            warm = time.time() - STATE["started"] > 2
+            code = 200 if warm and STATE["db_up"] else 503
+            body = f"warm={warm} db={STATE['db_up']}\n"
+        elif route == "/metrics":
+            code, body = 200, render_metrics()
+        elif route == "/_toggle_db":                 # demo only: simulate a dependency outage
+            STATE["db_up"] = not STATE["db_up"]
+            code, body = 200, f"db_up={STATE['db_up']}\n"
+        elif route == "/work":
+            time.sleep(random.expovariate(1 / 0.05))            # ~50 ms mean latency
+            code, body = (500, "boom\n") if random.random() < 0.05 else (200, "done\n")
+        else:
+            route, code, body = "other", 404, "not found\n"     # fixed label: no cardinality blow-up
+        data = body.encode()
+        self.send_response(code)
+        self.send_header("Content-Length", str(len(data)))
+        self.end_headers()
+        self.wfile.write(data)
+        if route != "/metrics":
+            observe(route, code, time.perf_counter() - t0)
+
+    def log_message(self, *args):                    # keep the console quiet
+        pass
+
+if __name__ == "__main__":
+    ThreadingHTTPServer(("0.0.0.0", 8000), Handler).serve_forever()
+```
+
+```bash
+python app.py &
+curl -i localhost:8000/healthz            # 200 ok
+curl -i localhost:8000/readyz             # 503 for the first 2 s, then 200
+for i in $(seq 1 50); do curl -s localhost:8000/work > /dev/null; done
+curl -s localhost:8000/metrics | head -20
+curl localhost:8000/_toggle_db; curl -i localhost:8000/readyz   # 503: pulled from rotation, not restarted
+```
+
+```promql
+# p99 latency per route, aggregated across instances
+histogram_quantile(0.99, sum by (route, le) (rate(http_request_duration_seconds_bucket[5m])))
+# error ratio (the SLI)
+sum(rate(http_requests_total{code=~"5.."}[5m])) / sum(rate(http_requests_total[5m]))
+```
+
+```python
+# Bulkhead: cap concurrent calls per dependency; reject fast instead of queueing forever
+import threading
+
+class BulkheadFull(Exception): pass
+
+class Bulkhead:
+    def __init__(self, name: str, max_concurrent: int, wait: float = 0.05):
+        self.name, self.wait = name, wait
+        self.sem = threading.BoundedSemaphore(max_concurrent)
+
+    def call(self, fn, *args, **kwargs):
+        if not self.sem.acquire(timeout=self.wait):
+            raise BulkheadFull(self.name)          # caller falls back or returns 503
+        try:
+            return fn(*args, **kwargs)
+        finally:
+            self.sem.release()
+
+reports = Bulkhead("reports-db", max_concurrent=5)
+checkout = Bulkhead("orders-db", max_concurrent=30)
+# A flood of slow report queries fills only the 5 report permits; checkout keeps its 30.
+```
+
+---
+
+## Exercises
+
+1. An endpoint takes 900 ms; the trace shows 120 sequential spans of 5 ms each to the same database. Which antipattern, and what is the fix?
+
+   <details><summary>Solution</summary>Chatty I/O (N+1): 120 × ~5 ms ≈ 600 ms of round trips. Replace the loop with one or two batched queries (a join or <code>IN</code> list) and add a per-request query-count metric so regressions are visible.</details>
+
+2. A dependency has a 30-second outage, and when it recovers it is knocked over again repeatedly for ten minutes. Why, and what do you change?
+
+   <details><summary>Solution</summary>A retry storm: clients, at several layers, retry immediately, so the recovering service gets far more than normal load. Add timeouts, exponential backoff with full jitter, a retry budget, retries at one layer only, a circuit breaker, and load shedding at the dependency.</details>
+
+3. Your liveness probe runs <code>SELECT 1</code> against the database, and your SLO is 99.9% with a measured 0.5% error ratio over the last hour. What can go wrong with the probe, and what is the burn rate?
+
+   <details><summary>Solution</summary>When the database is slow or down, every pod fails liveness and restarts together, removing all capacity: keep liveness to the process and put dependency checks in readiness. Burn rate = 0.5% ÷ (1 − 0.999 = 0.1%) = 5, a slow-burn (ticket-level) rate below the 14.4× fast-burn page threshold.</details>
+
+---
+
+## Mini project
+
+**A service with health endpoints, metrics, dashboards and SLO alerts, run locally.**
+
+**Steps**
+
+1. Run the Example service, Prometheus, Alertmanager and Grafana with Docker Compose.
+2. Build a Grafana dashboard: request rate, error ratio, p50/p95/p99 from the histogram, and a readiness panel.
+3. Add the burn-rate alert and a "readiness down for 2 min" alert; send them to a webhook that prints them.
+4. Write a load generator and a fault injector (extra latency, 5xx rate, `/_toggle_db`).
+5. Reproduce a retry storm with a naive client, then fix it with backoff, jitter and a bulkhead, and compare the graphs.
+
+**Done when:** injected faults fire exactly the intended alerts (and no others), the dashboard shows the before/after of the retry-storm fix, and each alert links to a short runbook.
+
+---
+
+## Design
+
+**Design a metrics and alerting pipeline for a company with about 300 services.**
+
+Requirements: collect metrics from all services and hosts, dashboards in under a second, alert evaluation every 15–60 seconds, a page within about 2 minutes of an SLO burn, 15 days at full resolution and 13 months downsampled, survive the loss of a zone, and no single team's metrics may break the system.
+
+```mermaid
+flowchart LR
+    S["services + exporters<br/>(300 services)"] --> SH["Prometheus shards<br/>per team / region, HA pairs"]
+    SH --> RW["remote write"]
+    RW --> LT[("long-term store<br/>Thanos / Mimir / VictoriaMetrics")]
+    SH --> RU["alert rules"]
+    RU --> AM["Alertmanager cluster (3)"]
+    AM --> PG["pager"]
+    AM --> CHAT["chat / tickets"]
+    LT --> Q["query layer"]
+    Q --> GRF["Grafana"]
+    LT --> SLO["SLO rules<br/>burn-rate"]
+    SLO --> AM
+```
+
+**Capacity (all numbers are assumptions for illustration):** 300 services × 10 instances = 3,000 targets × 500 series each = 1.5M active series. At a 15 s scrape interval that is 1.5M ÷ 15 = 100k samples/s. Prometheus documentation cites roughly 1–2 bytes per sample after compression, so 100k × 86,400 ≈ 8.6B samples/day ≈ 9–17 GB/day; 15 days ≈ 130–260 GB before replication. About 6 Prometheus shards gives roughly 250k series each. Downsampling to 5-minute resolution cuts the sample count by 20× (5 min ÷ 15 s). Alertmanager's problem is grouping and routing, not volume.
+
+**Decisions to justify**
+
+* **Pull vs push:** pull (scrape) gives a free "up" signal and central control; push (OpenTelemetry Collector, remote write) suits short-lived jobs and firewalled networks.
+* **Shard by team or region, HA pairs:** limits blast radius; per-target sample limits stop one bad release from taking down all metrics.
+* **Cardinality governance:** label allow-lists, per-service series budgets, alerts on series growth. Cardinality, not request volume, usually breaks metrics systems.
+* **Alert from SLOs:** one SLO spec per service generates the burn-rate rules, so every team gets the same tested alerts.
+* **Watch the watcher:** a dead-man's-switch alert that always fires and pages if it stops arriving, plus an external probe, so a broken pipeline is not silent.
+* **Routing:** page only on SLO symptoms; group by service, inhibit cause alerts while a symptom alert fires; tickets for the rest.
+
+---
+
+## Open source
+
+* [`prometheus/prometheus`](https://github.com/prometheus/prometheus) — pull-based metrics collection, TSDB, PromQL and alert rule evaluation.
+* [`prometheus/alertmanager`](https://github.com/prometheus/alertmanager) — grouping, deduplication, inhibition, silencing and routing of alerts.
+* [`grafana/grafana`](https://github.com/grafana/grafana) — dashboards and visualization over many data sources.
+* [`prometheus/blackbox_exporter`](https://github.com/prometheus/blackbox_exporter) — probes HTTP, TCP and ICMP endpoints from outside for availability monitoring.
+* [`thanos-io/thanos`](https://github.com/thanos-io/thanos) and [`VictoriaMetrics/VictoriaMetrics`](https://github.com/VictoriaMetrics/VictoriaMetrics) — long-term, horizontally scalable storage for Prometheus-style metrics.
+* [`open-telemetry/opentelemetry-collector`](https://github.com/open-telemetry/opentelemetry-collector) — vendor-neutral pipeline for receiving, processing and exporting metrics, logs and traces.
+* [`resilience4j/resilience4j`](https://github.com/resilience4j/resilience4j) — bulkhead, circuit breaker, retry and rate limiter for the JVM.
+
+---
+
+## Interview
+
+1. **"A service is slow but its CPU is low. What do you check?"**
+   <details><summary>Answer</summary>Low CPU with high latency means waiting, not computing. Look in traces for time spent on downstream calls (chatty or synchronous I/O, serial calls that could run concurrently), pool and queue saturation (USE), lock contention and dependency latency. Compare p50 with p99, and check recent deploys and per-tenant breakdowns for a noisy neighbor.</details>
+
+2. **"What is a retry storm and how do you prevent it?"**
+   <details><summary>Answer</summary>Clients retry failed calls immediately and at several layers, multiplying load on a struggling dependency (3 layers × 3 attempts = 27×), so a short blip becomes a sustained outage. Prevent it with timeouts, exponential backoff with jitter, retry budgets, retrying at one layer, circuit breakers, idempotent operations, and server-side load shedding with <code>Retry-After</code>.</details>
+
+3. **"Liveness vs readiness, and how do you avoid alert fatigue?"**
+   <details><summary>Answer</summary>Liveness asks "restart this process?" and checks only the process; readiness asks "send it traffic now?" and may check warm-up and critical dependencies, removing the instance from rotation without restarting it. For alerting, page only on user-visible SLO symptoms with multi-window burn-rate alerts, keep cause metrics on dashboards, give every page a runbook, group and inhibit in Alertmanager, and delete alerts that never lead to action.</details>
+
+---
+
+## Checklist
+
+- [ ] can name the ten performance antipatterns and the symptom of each
+- [ ] every outbound call has a timeout, backoff with jitter and a retry budget
+- [ ] shared resources are partitioned with bulkheads or quotas
+- [ ] liveness checks the process only; readiness checks dependencies
+- [ ] every service exposes RED metrics with low-cardinality labels
+- [ ] pages are SLO burn-rate alerts; every page has a runbook
+- [ ] the monitoring pipeline itself is monitored (dead-man's switch)
+
+---
+
+> [Contents](index.md) · ← [Chapter 15 — Multi-Tenancy](ch15-multi-tenancy.md) · Next → [Chapter 17 — Disaster Recovery (Backups, RTO/RPO)](ch17-disaster-recovery-backups-rto-rpo.md)
+</script>
+<script type="application/json" id="figs">["<figure>\n    <svg viewBox=\"0 0 660 410\" role=\"img\" aria-label=\"Bulkhead: clients call a service which uses three separate pools: pool A checkout with 30 permits to the orders DB, pool B search with 10 permits to the search cluster, pool C reports with 5 permits to a replica; when pool C is slow and exhausted, only reports fail (dotted arrow back to the service)\">\n<rect class=\"sk\" x=\"15\" y=\"150\" width=\"100\" height=\"50\" rx=\"10\"/>\n<text class=\"lbl b\" x=\"65.0\" y=\"180.0\" text-anchor=\"middle\" style=\"font-size:15px\">clients<\/text>\n<path class=\"sk blue\" d=\"M115 175 C 125 173, 133 173, 148 175\" style=\"color:var(--ink)\" marker-end=\"url(#arr)\"/>\n<rect class=\"sk\" x=\"150\" y=\"150\" width=\"110\" height=\"50\" rx=\"10\"/>\n<text class=\"lbl b\" x=\"205.0\" y=\"180.0\" text-anchor=\"middle\" style=\"font-size:15px\">service<\/text>\n<path class=\"sk blue\" d=\"M260 160 C 285 120, 290 75, 308 58\" style=\"color:var(--ink)\" marker-end=\"url(#arr)\"/>\n<path class=\"sk blue\" d=\"M260 175 C 275 177, 290 179, 308 180\" style=\"color:var(--ink)\" marker-end=\"url(#arr)\"/>\n<path class=\"sk blue\" d=\"M260 190 C 285 240, 290 290, 308 306\" style=\"color:var(--ink)\" marker-end=\"url(#arr)\"/>\n<rect class=\"sk\" x=\"310\" y=\"20\" width=\"170\" height=\"66\" rx=\"10\"/>\n<text class=\"lbl b\" x=\"395.0\" y=\"48.0\" text-anchor=\"middle\" style=\"font-size:15px\">pool A: checkout<\/text>\n<text class=\"lbl\" x=\"395.0\" y=\"68.0\" text-anchor=\"middle\" style=\"font-size:15px\">30 permits<\/text>\n<rect class=\"sk\" x=\"310\" y=\"150\" width=\"170\" height=\"66\" rx=\"10\"/>\n<text class=\"lbl b\" x=\"395.0\" y=\"178.0\" text-anchor=\"middle\" style=\"font-size:15px\">pool B: search<\/text>\n<text class=\"lbl\" x=\"395.0\" y=\"198.0\" text-anchor=\"middle\" style=\"font-size:15px\">10 permits<\/text>\n<rect class=\"sk red\" x=\"310\" y=\"280\" width=\"170\" height=\"66\" rx=\"10\"/>\n<text class=\"lbl r\" x=\"395.0\" y=\"308.0\" text-anchor=\"middle\" style=\"font-size:15px\">pool C: reports<\/text>\n<text class=\"lbl r\" x=\"395.0\" y=\"328.0\" text-anchor=\"middle\" style=\"font-size:15px\">5 permits<\/text>\n<path class=\"sk blue\" d=\"M480 53 C 495 53, 505 53, 518 53\" style=\"color:var(--ink)\" marker-end=\"url(#arr)\"/>\n<path class=\"sk blue\" d=\"M480 183 C 495 183, 505 183, 518 183\" style=\"color:var(--ink)\" marker-end=\"url(#arr)\"/>\n<path class=\"sk blue\" d=\"M480 313 C 495 313, 505 313, 518 313\" style=\"color:var(--ink)\" marker-end=\"url(#arr)\"/>\n<rect class=\"sk\" x=\"520\" y=\"28\" width=\"125\" height=\"50\" rx=\"10\"/>\n<text class=\"lbl b\" x=\"582.5\" y=\"58.0\" text-anchor=\"middle\" style=\"font-size:15px\">orders DB<\/text>\n<rect class=\"sk\" x=\"520\" y=\"158\" width=\"125\" height=\"50\" rx=\"10\"/>\n<text class=\"lbl b\" x=\"582.5\" y=\"188.0\" text-anchor=\"middle\" style=\"font-size:15px\">search cluster<\/text>\n<rect class=\"sk\" x=\"520\" y=\"288\" width=\"125\" height=\"50\" rx=\"10\"/>\n<text class=\"lbl b\" x=\"582.5\" y=\"318.0\" text-anchor=\"middle\" style=\"font-size:15px\">replica<\/text>\n<path class=\"sk red\" d=\"M360 348 C 330 395, 205 385, 205 203\" style=\"stroke-dasharray:6 5;color:var(--red)\" marker-end=\"url(#arr)\"/>\n<text class=\"lbl r\" x=\"15\" y=\"372\" text-anchor=\"start\" style=\"font-size:15px\">slow, exhausted:<\/text>\n<text class=\"lbl r\" x=\"15\" y=\"394\" text-anchor=\"start\" style=\"font-size:15px\">only reports fail<\/text>\n    <\/svg>\n    <figcaption>Fig 1: bulkhead \u2014 one capped pool per dependency or tenant; the slow reports pool is exhausted but checkout and search are unaffected<\/figcaption>\n  <\/figure>", "<figure>\n    <svg viewBox=\"0 0 660 360\" role=\"img\" aria-label=\"Running system feeds five monitoring kinds: health (alive and ready?), availability (reachable by users?), performance (fast enough?), security (anything hostile?), usage (who uses what?). Health, availability and performance go to on-call / orchestrator; security goes to the security team; usage goes to product / finance\">\n<rect class=\"sk\" x=\"230\" y=\"10\" width=\"200\" height=\"50\" rx=\"10\"/>\n<text class=\"lbl b\" x=\"330.0\" y=\"40.0\" text-anchor=\"middle\" style=\"font-size:15px\">running system<\/text>\n<rect class=\"sk\" x=\"20\" y=\"110\" width=\"108\" height=\"64\" rx=\"10\"/>\n<text class=\"lbl b\" x=\"74.0\" y=\"137.0\" text-anchor=\"middle\" style=\"font-size:15px\">health<\/text>\n<text class=\"lbl\" x=\"74.0\" y=\"157.0\" text-anchor=\"middle\" style=\"font-size:15px\">up + ready?<\/text>\n<path class=\"sk blue\" d=\"M330 60 C 74 85, 74 90, 74 108\" style=\"color:var(--ink)\" marker-end=\"url(#arr)\"/>\n<rect class=\"sk\" x=\"148\" y=\"110\" width=\"108\" height=\"64\" rx=\"10\"/>\n<text class=\"lbl b\" x=\"202.0\" y=\"137.0\" text-anchor=\"middle\" style=\"font-size:15px\">availability<\/text>\n<text class=\"lbl\" x=\"202.0\" y=\"157.0\" text-anchor=\"middle\" style=\"font-size:15px\">reachable?<\/text>\n<path class=\"sk blue\" d=\"M330 60 C 202 85, 202 90, 202 108\" style=\"color:var(--ink)\" marker-end=\"url(#arr)\"/>\n<rect class=\"sk\" x=\"276\" y=\"110\" width=\"108\" height=\"64\" rx=\"10\"/>\n<text class=\"lbl b\" x=\"330.0\" y=\"137.0\" text-anchor=\"middle\" style=\"font-size:15px\">performance<\/text>\n<text class=\"lbl\" x=\"330.0\" y=\"157.0\" text-anchor=\"middle\" style=\"font-size:15px\">fast enough?<\/text>\n<path class=\"sk blue\" d=\"M330 60 C 330 85, 330 90, 330 108\" style=\"color:var(--ink)\" marker-end=\"url(#arr)\"/>\n<rect class=\"sk\" x=\"404\" y=\"110\" width=\"108\" height=\"64\" rx=\"10\"/>\n<text class=\"lbl b\" x=\"458.0\" y=\"137.0\" text-anchor=\"middle\" style=\"font-size:15px\">security<\/text>\n<text class=\"lbl\" x=\"458.0\" y=\"157.0\" text-anchor=\"middle\" style=\"font-size:15px\">hostile?<\/text>\n<path class=\"sk blue\" d=\"M330 60 C 458 85, 458 90, 458 108\" style=\"color:var(--ink)\" marker-end=\"url(#arr)\"/>\n<rect class=\"sk\" x=\"532\" y=\"110\" width=\"108\" height=\"64\" rx=\"10\"/>\n<text class=\"lbl b\" x=\"586.0\" y=\"137.0\" text-anchor=\"middle\" style=\"font-size:15px\">usage<\/text>\n<text class=\"lbl\" x=\"586.0\" y=\"157.0\" text-anchor=\"middle\" style=\"font-size:15px\">who uses it?<\/text>\n<path class=\"sk blue\" d=\"M330 60 C 586 85, 586 90, 586 108\" style=\"color:var(--ink)\" marker-end=\"url(#arr)\"/>\n<rect class=\"sk green\" x=\"20\" y=\"290\" width=\"300\" height=\"50\" rx=\"10\"/>\n<text class=\"lbl g\" x=\"170.0\" y=\"320.0\" text-anchor=\"middle\" style=\"font-size:15px\">on-call / orchestrator<\/text>\n<rect class=\"sk green\" x=\"350\" y=\"290\" width=\"130\" height=\"50\" rx=\"10\"/>\n<text class=\"lbl g\" x=\"415.0\" y=\"320.0\" text-anchor=\"middle\" style=\"font-size:15px\">security team<\/text>\n<rect class=\"sk green\" x=\"510\" y=\"290\" width=\"135\" height=\"50\" rx=\"10\"/>\n<text class=\"lbl g\" x=\"577.5\" y=\"310.0\" text-anchor=\"middle\" style=\"font-size:15px\">product /<\/text>\n<text class=\"lbl g\" x=\"577.5\" y=\"330.0\" text-anchor=\"middle\" style=\"font-size:15px\">finance<\/text>\n<path class=\"sk green\" d=\"M74 174 C 74 215, 90 250, 90 288\" style=\"color:var(--green)\" marker-end=\"url(#arr)\"/>\n<path class=\"sk green\" d=\"M202 174 C 202 215, 170 250, 170 288\" style=\"color:var(--green)\" marker-end=\"url(#arr)\"/>\n<path class=\"sk green\" d=\"M330 174 C 330 215, 250 250, 250 288\" style=\"color:var(--green)\" marker-end=\"url(#arr)\"/>\n<path class=\"sk green\" d=\"M458 174 C 450 215, 420 250, 415 288\" style=\"color:var(--green)\" marker-end=\"url(#arr)\"/>\n<path class=\"sk green\" d=\"M586 174 C 586 215, 580 250, 577 288\" style=\"color:var(--green)\" marker-end=\"url(#arr)\"/>\n    <\/svg>\n    <figcaption>Fig 2: the five kinds of monitoring and who consumes each \u2014 health, availability and performance to on-call; security to the security team; usage to product and finance<\/figcaption>\n  <\/figure>", "<figure>\n    <svg viewBox=\"0 0 660 480\" role=\"img\" aria-label=\"Metrics pipeline: services and exporters (300 services) are scraped by Prometheus shards (per team or region, HA pairs); remote write sends data to a long-term store (Thanos, Mimir or VictoriaMetrics); Prometheus alert rules go to an Alertmanager cluster of 3 which sends pages to a pager and chat or tickets; the long-term store feeds a query layer and Grafana, and SLO burn-rate rules which feed Alertmanager\">\n<rect class=\"sk\" x=\"15\" y=\"30\" width=\"150\" height=\"70\" rx=\"10\"/>\n<text class=\"lbl b\" x=\"90.0\" y=\"50.0\" text-anchor=\"middle\" style=\"font-size:15px\">services +<\/text>\n<text class=\"lbl\" x=\"90.0\" y=\"70.0\" text-anchor=\"middle\" style=\"font-size:15px\">exporters<\/text>\n<text class=\"lbl\" x=\"90.0\" y=\"90.0\" text-anchor=\"middle\" style=\"font-size:15px\">(300 services)<\/text>\n<path class=\"sk blue\" d=\"M165 65 C 180 64, 197 64, 213 65\" style=\"color:var(--ink)\" marker-end=\"url(#arr)\"/>\n<rect class=\"sk\" x=\"215\" y=\"20\" width=\"200\" height=\"90\" rx=\"10\"/>\n<text class=\"lbl b\" x=\"315.0\" y=\"50.0\" text-anchor=\"middle\" style=\"font-size:15px\">Prometheus shards<\/text>\n<text class=\"lbl\" x=\"315.0\" y=\"70.0\" text-anchor=\"middle\" style=\"font-size:15px\">per team / region,<\/text>\n<text class=\"lbl\" x=\"315.0\" y=\"90.0\" text-anchor=\"middle\" style=\"font-size:15px\">HA pairs<\/text>\n<path class=\"sk blue\" d=\"M415 60 C 430 58, 448 58, 463 60\" style=\"color:var(--ink)\" marker-end=\"url(#arr)\"/>\n<rect class=\"sk\" x=\"465\" y=\"40\" width=\"130\" height=\"40\" rx=\"10\"/>\n<text class=\"lbl b\" x=\"530.0\" y=\"65.0\" text-anchor=\"middle\" style=\"font-size:15px\">remote write<\/text>\n<path class=\"sk blue\" d=\"M530 80 C 532 95, 528 105, 530 118\" style=\"color:var(--ink)\" marker-end=\"url(#arr)\"/>\n<rect class=\"sk\" x=\"470\" y=\"120\" width=\"170\" height=\"72\" rx=\"10\"/>\n<text class=\"lbl b\" x=\"555.0\" y=\"141.0\" text-anchor=\"middle\" style=\"font-size:15px\">long-term store<\/text>\n<text class=\"lbl\" x=\"555.0\" y=\"161.0\" text-anchor=\"middle\" style=\"font-size:15px\">Thanos / Mimir /<\/text>\n<text class=\"lbl\" x=\"555.0\" y=\"181.0\" text-anchor=\"middle\" style=\"font-size:15px\">VictoriaMetrics<\/text>\n<path class=\"sk blue\" d=\"M315 110 C 318 130, 312 150, 315 178\" style=\"color:var(--ink)\" marker-end=\"url(#arr)\"/>\n<rect class=\"sk\" x=\"215\" y=\"180\" width=\"200\" height=\"50\" rx=\"10\"/>\n<text class=\"lbl b\" x=\"315.0\" y=\"210.0\" text-anchor=\"middle\" style=\"font-size:15px\">alert rules<\/text>\n<path class=\"sk blue\" d=\"M315 230 C 318 250, 312 270, 315 288\" style=\"color:var(--ink)\" marker-end=\"url(#arr)\"/>\n<rect class=\"sk red\" x=\"215\" y=\"290\" width=\"200\" height=\"60\" rx=\"10\"/>\n<text class=\"lbl r\" x=\"315.0\" y=\"315.0\" text-anchor=\"middle\" style=\"font-size:15px\">Alertmanager<\/text>\n<text class=\"lbl r\" x=\"315.0\" y=\"335.0\" text-anchor=\"middle\" style=\"font-size:15px\">cluster (3)<\/text>\n<path class=\"sk red\" d=\"M260 350 C 230 375, 150 385, 120 398\" style=\"color:var(--red)\" marker-end=\"url(#arr)\"/>\n<path class=\"sk red\" d=\"M330 350 C 332 370, 328 385, 330 398\" style=\"color:var(--red)\" marker-end=\"url(#arr)\"/>\n<rect class=\"sk red\" x=\"15\" y=\"400\" width=\"150\" height=\"44\" rx=\"10\"/>\n<text class=\"lbl r\" x=\"90.0\" y=\"427.0\" text-anchor=\"middle\" style=\"font-size:15px\">pager<\/text>\n<rect class=\"sk red\" x=\"235\" y=\"400\" width=\"190\" height=\"44\" rx=\"10\"/>\n<text class=\"lbl r\" x=\"330.0\" y=\"427.0\" text-anchor=\"middle\" style=\"font-size:15px\">chat / tickets<\/text>\n<path class=\"sk blue\" d=\"M555 192 C 558 205, 552 215, 555 228\" style=\"color:var(--ink)\" marker-end=\"url(#arr)\"/>\n<rect class=\"sk\" x=\"470\" y=\"230\" width=\"170\" height=\"50\" rx=\"10\"/>\n<text class=\"lbl b\" x=\"555.0\" y=\"250.0\" text-anchor=\"middle\" style=\"font-size:15px\">SLO rules<\/text>\n<text class=\"lbl\" x=\"555.0\" y=\"270.0\" text-anchor=\"middle\" style=\"font-size:15px\">burn-rate<\/text>\n<path class=\"sk green\" d=\"M470 262 C 445 262, 432 290, 417 305\" style=\"color:var(--green)\" marker-end=\"url(#arr)\"/>\n<path class=\"sk blue\" d=\"M640 160 C 658 200, 658 310, 642 350\" style=\"color:var(--ink)\" marker-end=\"url(#arr)\"/>\n<rect class=\"sk\" x=\"470\" y=\"330\" width=\"170\" height=\"44\" rx=\"10\"/>\n<text class=\"lbl b\" x=\"555.0\" y=\"357.0\" text-anchor=\"middle\" style=\"font-size:15px\">query layer<\/text>\n<path class=\"sk blue\" d=\"M555 374 C 558 390, 552 405, 555 418\" style=\"color:var(--ink)\" marker-end=\"url(#arr)\"/>\n<rect class=\"sk green\" x=\"470\" y=\"420\" width=\"170\" height=\"44\" rx=\"10\"/>\n<text class=\"lbl g\" x=\"555.0\" y=\"447.0\" text-anchor=\"middle\" style=\"font-size:15px\">Grafana<\/text>\n    <\/svg>\n    <figcaption>Fig 3: metrics and alerting pipeline \u2014 scrape, remote write to long-term storage, alert rules and SLO burn-rate rules into Alertmanager, dashboards via the query layer<\/figcaption>\n  <\/figure>"]</script>
+<script>window.GUIDE = { root: "../../", page: "volumes/volume-4-high-level-design/ch16-performance-antipatterns-and-monitoring.html", nav: [{"title": "Volume 0 \u2014 Math & Mental Models", "goal": "The math the rest of the book silently assumes. Load-bearing for algorithms (Vol 1 Part 4) and all of AI (Vol 5).", "index": "volumes/volume-0-math/index.html", "chapters": [{"n": 1, "title": "Logic & Boolean Algebra", "part": null, "md": "volumes/volume-0-math/ch01-logic-and-boolean-algebra.md", "page": "volumes/volume-0-math/ch01-logic-and-boolean-algebra.html", "exists": true}, {"n": 2, "title": "Sets, Relations & Functions", "part": null, "md": "volumes/volume-0-math/ch02-sets-relations-and-functions.md", "page": "volumes/volume-0-math/ch02-sets-relations-and-functions.html", "exists": true}, {"n": 3, "title": "Combinatorics & Counting", "part": null, "md": "volumes/volume-0-math/ch03-combinatorics-and-counting.md", "page": "volumes/volume-0-math/ch03-combinatorics-and-counting.html", "exists": true}, {"n": 4, "title": "Graph Theory Foundations", "part": null, "md": "volumes/volume-0-math/ch04-graph-theory-foundations.md", "page": "volumes/volume-0-math/ch04-graph-theory-foundations.html", "exists": true}, {"n": 5, "title": "Proof by Induction", "part": null, "md": "volumes/volume-0-math/ch05-proof-by-induction.md", "page": "volumes/volume-0-math/ch05-proof-by-induction.html", "exists": true}, {"n": 6, "title": "Asymptotic Notation (Big-O, \u0398, \u03a9)", "part": null, "md": "volumes/volume-0-math/ch06-asymptotic-notation-big-o.md", "page": "volumes/volume-0-math/ch06-asymptotic-notation-big-o.html", "exists": true}, {"n": 7, "title": "Time/Space Complexity & Amortized Analysis", "part": null, "md": "volumes/volume-0-math/ch07-time-space-complexity-and-amortized-analysis.md", "page": "volumes/volume-0-math/ch07-time-space-complexity-and-amortized-analysis.html", "exists": true}, {"n": 8, "title": "Probability, Distributions & Bayes", "part": null, "md": "volumes/volume-0-math/ch08-probability-distributions-and-bayes.md", "page": "volumes/volume-0-math/ch08-probability-distributions-and-bayes.html", "exists": true}, {"n": 9, "title": "Linear Algebra for AI", "part": null, "md": "volumes/volume-0-math/ch09-linear-algebra-for-ai.md", "page": "volumes/volume-0-math/ch09-linear-algebra-for-ai.html", "exists": true}]}, {"title": "Volume 1 \u2014 Computer Science Foundations", "goal": "Understand how computers work from the hardware up to applications.", "index": "volumes/volume-1-cs-foundations/index.html", "chapters": [{"n": 1, "title": "Variables, Data Types & Operators", "part": "Programming Fundamentals", "md": "volumes/volume-1-cs-foundations/ch01-variables-data-types-and-operators.md", "page": "volumes/volume-1-cs-foundations/ch01-variables-data-types-and-operators.html", "exists": true}, {"n": 2, "title": "Control Flow", "part": "Programming Fundamentals", "md": "volumes/volume-1-cs-foundations/ch02-control-flow.md", "page": "volumes/volume-1-cs-foundations/ch02-control-flow.html", "exists": true}, {"n": 3, "title": "Functions, Parameters, Return Values, Scope & Namespaces", "part": "Programming Fundamentals", "md": "volumes/volume-1-cs-foundations/ch03-functions-parameters-return-values-scope-and-namespaces.md", "page": "volumes/volume-1-cs-foundations/ch03-functions-parameters-return-values-scope-and-namespaces.html", "exists": true}, {"n": 4, "title": "Built-in Data Structures", "part": "Programming Fundamentals", "md": "volumes/volume-1-cs-foundations/ch04-built-in-data-structures.md", "page": "volumes/volume-1-cs-foundations/ch04-built-in-data-structures.html", "exists": true}, {"n": 5, "title": "Modules, Packages, Imports & Dependency Management", "part": "Programming Fundamentals", "md": "volumes/volume-1-cs-foundations/ch05-modules-packages-imports-and-dependency-management.md", "page": "volumes/volume-1-cs-foundations/ch05-modules-packages-imports-and-dependency-management.html", "exists": true}, {"n": 6, "title": "Error Handling", "part": "Programming Fundamentals", "md": "volumes/volume-1-cs-foundations/ch06-error-handling.md", "page": "volumes/volume-1-cs-foundations/ch06-error-handling.html", "exists": true}, {"n": 7, "title": "File I/O", "part": "Programming Fundamentals", "md": "volumes/volume-1-cs-foundations/ch07-file-i-o.md", "page": "volumes/volume-1-cs-foundations/ch07-file-i-o.html", "exists": true}, {"n": 8, "title": "Data Formats (Text): JSON, CSV, XML, YAML, TOML", "part": "Programming Fundamentals", "md": "volumes/volume-1-cs-foundations/ch08-data-formats-text-json-csv-xml-yaml.md", "page": "volumes/volume-1-cs-foundations/ch08-data-formats-text-json-csv-xml-yaml.html", "exists": true}, {"n": 9, "title": "Character Encoding & Binary Serialization", "part": "Programming Fundamentals", "md": "volumes/volume-1-cs-foundations/ch09-character-encoding-and-binary-serialization.md", "page": "volumes/volume-1-cs-foundations/ch09-character-encoding-and-binary-serialization.html", "exists": true}, {"n": 10, "title": "Generics, Traits, Interfaces & Abstract Classes", "part": "Programming Fundamentals", "md": "volumes/volume-1-cs-foundations/ch10-generics-traits-interfaces-and-abstract-classes.md", "page": "volumes/volume-1-cs-foundations/ch10-generics-traits-interfaces-and-abstract-classes.html", "exists": true}, {"n": 11, "title": "Advanced Language Features", "part": "Programming Fundamentals", "md": "volumes/volume-1-cs-foundations/ch11-advanced-language-features.md", "page": "volumes/volume-1-cs-foundations/ch11-advanced-language-features.html", "exists": true}, {"n": 12, "title": "Memory: Stack, Heap, Ownership & Garbage Collection", "part": "Programming Fundamentals", "md": "volumes/volume-1-cs-foundations/ch12-memory-stack-heap-ownership-and-garbage-collection.md", "page": "volumes/volume-1-cs-foundations/ch12-memory-stack-heap-ownership-and-garbage-collection.html", "exists": true}, {"n": 13, "title": "Concurrency: Threads, Processes, Async, Futures & Coroutines", "part": "Programming Fundamentals", "md": "volumes/volume-1-cs-foundations/ch13-concurrency-threads-processes-async-futures-and-coroutines.md", "page": "volumes/volume-1-cs-foundations/ch13-concurrency-threads-processes-async-futures-and-coroutines.html", "exists": true}, {"n": 14, "title": "Programming Paradigms", "part": "Programming Fundamentals", "md": "volumes/volume-1-cs-foundations/ch14-programming-paradigms.md", "page": "volumes/volume-1-cs-foundations/ch14-programming-paradigms.html", "exists": true}, {"n": 15, "title": "Correctness Traps", "part": "Programming Fundamentals", "md": "volumes/volume-1-cs-foundations/ch15-correctness-traps.md", "page": "volumes/volume-1-cs-foundations/ch15-correctness-traps.html", "exists": true}, {"n": 16, "title": "Linux: Filesystem, Shell, Bash, Permissions, Users & Groups", "part": "Developer Environment", "md": "volumes/volume-1-cs-foundations/ch16-linux-filesystem-shell-bash-permissions-users-and.md", "page": "volumes/volume-1-cs-foundations/ch16-linux-filesystem-shell-bash-permissions-users-and.html", "exists": true}, {"n": 17, "title": "Linux: Processes, Signals, Services, systemd, SSH, Cron & Networking", "part": "Developer Environment", "md": "volumes/volume-1-cs-foundations/ch17-linux-processes-signals-services-systemd-ssh-cron.md", "page": "volumes/volume-1-cs-foundations/ch17-linux-processes-signals-services-systemd-ssh-cron.html", "exists": true}, {"n": 18, "title": "Terminal Tools: grep, sed, awk, jq, curl, wget, find, xargs, tmux, rsync", "part": "Developer Environment", "md": "volumes/volume-1-cs-foundations/ch18-terminal-tools-grep-sed-awk-jq-curl.md", "page": "volumes/volume-1-cs-foundations/ch18-terminal-tools-grep-sed-awk-jq-curl.html", "exists": true}, {"n": 19, "title": "Git: Branching, Merge, Rebase & Cherry-Pick", "part": "Developer Environment", "md": "volumes/volume-1-cs-foundations/ch19-git-branching-merge-rebase-and-cherry-pick.md", "page": "volumes/volume-1-cs-foundations/ch19-git-branching-merge-rebase-and-cherry-pick.html", "exists": true}, {"n": 20, "title": "Git: Tags, Stash, Hooks & Internals", "part": "Developer Environment", "md": "volumes/volume-1-cs-foundations/ch20-git-tags-stash-hooks-and-internals.md", "page": "volumes/volume-1-cs-foundations/ch20-git-tags-stash-hooks-and-internals.html", "exists": true}, {"n": 21, "title": "Build Systems & Package Management", "part": "Developer Environment", "md": "volumes/volume-1-cs-foundations/ch21-build-systems-and-package-management.md", "page": "volumes/volume-1-cs-foundations/ch21-build-systems-and-package-management.html", "exists": true}, {"n": 22, "title": "Clean Code & Refactoring", "part": "Software Engineering Fundamentals", "md": "volumes/volume-1-cs-foundations/ch22-clean-code-and-refactoring.md", "page": "volumes/volume-1-cs-foundations/ch22-clean-code-and-refactoring.html", "exists": true}, {"n": 23, "title": "Documentation, ADRs & READMEs", "part": "Software Engineering Fundamentals", "md": "volumes/volume-1-cs-foundations/ch23-documentation-adrs-and-readmes.md", "page": "volumes/volume-1-cs-foundations/ch23-documentation-adrs-and-readmes.html", "exists": true}, {"n": 24, "title": "Logging", "part": "Software Engineering Fundamentals", "md": "volumes/volume-1-cs-foundations/ch24-logging.md", "page": "volumes/volume-1-cs-foundations/ch24-logging.html", "exists": true}, {"n": 25, "title": "Configuration & Secrets Management", "part": "Software Engineering Fundamentals", "md": "volumes/volume-1-cs-foundations/ch25-configuration-and-secrets-management.md", "page": "volumes/volume-1-cs-foundations/ch25-configuration-and-secrets-management.html", "exists": true}, {"n": 26, "title": "Testing: Unit, Integration, Mocking & Coverage", "part": "Software Engineering Fundamentals", "md": "volumes/volume-1-cs-foundations/ch26-testing-unit-integration-mocking-and-coverage.md", "page": "volumes/volume-1-cs-foundations/ch26-testing-unit-integration-mocking-and-coverage.html", "exists": true}, {"n": 27, "title": "Debugging & Profiling", "part": "Software Engineering Fundamentals", "md": "volumes/volume-1-cs-foundations/ch27-debugging-and-profiling.md", "page": "volumes/volume-1-cs-foundations/ch27-debugging-and-profiling.html", "exists": true}, {"n": 28, "title": "Static Analysis: Linters, Formatters & Type Checkers", "part": "Software Engineering Fundamentals", "md": "volumes/volume-1-cs-foundations/ch28-static-analysis-linters-formatters-and-type-checkers.md", "page": "volumes/volume-1-cs-foundations/ch28-static-analysis-linters-formatters-and-type-checkers.html", "exists": true}, {"n": 29, "title": "Basic Data Structures: Arrays, Linked Lists, Stack & Queue", "part": "Data Structures & Algorithms", "md": "volumes/volume-1-cs-foundations/ch29-basic-data-structures-arrays-linked-lists-stack.md", "page": "volumes/volume-1-cs-foundations/ch29-basic-data-structures-arrays-linked-lists-stack.html", "exists": true}, {"n": 30, "title": "Trees, BST, Heap & Trie", "part": "Data Structures & Algorithms", "md": "volumes/volume-1-cs-foundations/ch30-trees-bst-heap-and-trie.md", "page": "volumes/volume-1-cs-foundations/ch30-trees-bst-heap-and-trie.html", "exists": true}, {"n": 31, "title": "Hash Tables & Graphs", "part": "Data Structures & Algorithms", "md": "volumes/volume-1-cs-foundations/ch31-hash-tables-and-graphs.md", "page": "volumes/volume-1-cs-foundations/ch31-hash-tables-and-graphs.html", "exists": true}, {"n": 32, "title": "Advanced Structures: Segment Tree, Fenwick Tree & Union-Find", "part": "Data Structures & Algorithms", "md": "volumes/volume-1-cs-foundations/ch32-advanced-structures-segment-tree-fenwick-tree-and.md", "page": "volumes/volume-1-cs-foundations/ch32-advanced-structures-segment-tree-fenwick-tree-and.html", "exists": true}, {"n": 33, "title": "Sorting, Searching & Binary Search", "part": "Data Structures & Algorithms", "md": "volumes/volume-1-cs-foundations/ch33-sorting-searching-and-binary-search.md", "page": "volumes/volume-1-cs-foundations/ch33-sorting-searching-and-binary-search.html", "exists": true}, {"n": 34, "title": "Graph Algorithms: DFS, BFS, Topological Sort & Backtracking", "part": "Data Structures & Algorithms", "md": "volumes/volume-1-cs-foundations/ch34-graph-algorithms-dfs-bfs-topological-sort-and.md", "page": "volumes/volume-1-cs-foundations/ch34-graph-algorithms-dfs-bfs-topological-sort-and.html", "exists": true}, {"n": 35, "title": "Dynamic Programming, Greedy, Divide & Conquer, Sliding Window & Two Pointers", "part": "Data Structures & Algorithms", "md": "volumes/volume-1-cs-foundations/ch35-dynamic-programming-greedy-divide-and-conquer-sliding.md", "page": "volumes/volume-1-cs-foundations/ch35-dynamic-programming-greedy-divide-and-conquer-sliding.html", "exists": true}, {"n": 36, "title": "Binary, CPU, Registers, Cache & Memory Hierarchy", "part": "Computer Architecture", "md": "volumes/volume-1-cs-foundations/ch36-binary-cpu-registers-cache-and-memory-hierarchy.md", "page": "volumes/volume-1-cs-foundations/ch36-binary-cpu-registers-cache-and-memory-hierarchy.html", "exists": true}, {"n": 37, "title": "Instruction Cycle, Pipelining, SIMD & Virtual Memory", "part": "Computer Architecture", "md": "volumes/volume-1-cs-foundations/ch37-instruction-cycle-pipelining-simd-and-virtual-memory.md", "page": "volumes/volume-1-cs-foundations/ch37-instruction-cycle-pipelining-simd-and-virtual-memory.html", "exists": true}, {"n": 38, "title": "OS: Processes, Threads, Scheduling, Synchronization & Deadlocks", "part": "Operating Systems", "md": "volumes/volume-1-cs-foundations/ch38-os-processes-threads-scheduling-synchronization-and-deadlocks.md", "page": "volumes/volume-1-cs-foundations/ch38-os-processes-threads-scheduling-synchronization-and-deadlocks.html", "exists": true}, {"n": 39, "title": "OS: Memory Management, File Systems, System Calls & IPC", "part": "Operating Systems", "md": "volumes/volume-1-cs-foundations/ch39-os-memory-management-file-systems-system-calls.md", "page": "volumes/volume-1-cs-foundations/ch39-os-memory-management-file-systems-system-calls.html", "exists": true}, {"n": 40, "title": "Networking Fundamentals: OSI, TCP/IP, IP, Ports, DNS & NAT", "part": "Networking", "md": "volumes/volume-1-cs-foundations/ch40-networking-fundamentals-osi-tcp-ip-ip-ports.md", "page": "volumes/volume-1-cs-foundations/ch40-networking-fundamentals-osi-tcp-ip-ip-ports.html", "exists": true}, {"n": 41, "title": "Transport & Security: TCP, UDP, QUIC, TLS & HTTPS", "part": "Networking", "md": "volumes/volume-1-cs-foundations/ch41-transport-and-security-tcp-udp-quic-tls.md", "page": "volumes/volume-1-cs-foundations/ch41-transport-and-security-tcp-udp-quic-tls.html", "exists": true}, {"n": 42, "title": "HTTP, REST, GraphQL & JSON-RPC", "part": "Networking", "md": "volumes/volume-1-cs-foundations/ch42-http-rest-graphql-and-json-rpc.md", "page": "volumes/volume-1-cs-foundations/ch42-http-rest-graphql-and-json-rpc.html", "exists": true}, {"n": 43, "title": "WebSockets, gRPC, MQTT & SSE", "part": "Networking", "md": "volumes/volume-1-cs-foundations/ch43-websockets-grpc-mqtt-and-sse.md", "page": "volumes/volume-1-cs-foundations/ch43-websockets-grpc-mqtt-and-sse.html", "exists": true}, {"n": 44, "title": "Delivery: Load Balancing, Reverse Proxies & CDN", "part": "Networking", "md": "volumes/volume-1-cs-foundations/ch44-delivery-load-balancing-reverse-proxies-and-cdn.md", "page": "volumes/volume-1-cs-foundations/ch44-delivery-load-balancing-reverse-proxies-and-cdn.html", "exists": true}, {"n": 45, "title": "SQL & the Relational Model", "part": "Databases", "md": "volumes/volume-1-cs-foundations/ch45-sql-and-the-relational-model.md", "page": "volumes/volume-1-cs-foundations/ch45-sql-and-the-relational-model.html", "exists": true}, {"n": 46, "title": "Schema Design, Normalization & Indexing", "part": "Databases", "md": "volumes/volume-1-cs-foundations/ch46-schema-design-normalization-and-indexing.md", "page": "volumes/volume-1-cs-foundations/ch46-schema-design-normalization-and-indexing.html", "exists": true}, {"n": 47, "title": "ACID, Transactions & Isolation", "part": "Databases", "md": "volumes/volume-1-cs-foundations/ch47-acid-transactions-and-isolation.md", "page": "volumes/volume-1-cs-foundations/ch47-acid-transactions-and-isolation.html", "exists": true}, {"n": 48, "title": "NoSQL: MongoDB, Cassandra & DynamoDB", "part": "Databases", "md": "volumes/volume-1-cs-foundations/ch48-nosql-mongodb-cassandra-and-dynamodb.md", "page": "volumes/volume-1-cs-foundations/ch48-nosql-mongodb-cassandra-and-dynamodb.html", "exists": true}, {"n": 49, "title": "Redis, Elasticsearch, Neo4j & Vector Databases", "part": "Databases", "md": "volumes/volume-1-cs-foundations/ch49-redis-elasticsearch-neo4j-and-vector-databases.md", "page": "volumes/volume-1-cs-foundations/ch49-redis-elasticsearch-neo4j-and-vector-databases.html", "exists": true}, {"n": 50, "title": "CAP, Consistency & Consensus", "part": "Distributed Systems", "md": "volumes/volume-1-cs-foundations/ch50-cap-consistency-and-consensus.md", "page": "volumes/volume-1-cs-foundations/ch50-cap-consistency-and-consensus.html", "exists": true}, {"n": 51, "title": "Replication, Sharding, Raft & Paxos", "part": "Distributed Systems", "md": "volumes/volume-1-cs-foundations/ch51-replication-sharding-raft-and-paxos.md", "page": "volumes/volume-1-cs-foundations/ch51-replication-sharding-raft-and-paxos.html", "exists": true}, {"n": 52, "title": "Event Sourcing & CQRS (Distributed View)", "part": "Distributed Systems", "md": "volumes/volume-1-cs-foundations/ch52-event-sourcing-and-cqrs-distributed-view.md", "page": "volumes/volume-1-cs-foundations/ch52-event-sourcing-and-cqrs-distributed-view.html", "exists": true}, {"n": 53, "title": "ETL/ELT, Batch & Stream Processing", "part": "Data Engineering", "md": "volumes/volume-1-cs-foundations/ch53-etl-elt-batch-and-stream-processing.md", "page": "volumes/volume-1-cs-foundations/ch53-etl-elt-batch-and-stream-processing.html", "exists": true}, {"n": 54, "title": "Data Lakes, Warehouses & Orchestration", "part": "Data Engineering", "md": "volumes/volume-1-cs-foundations/ch54-data-lakes-warehouses-and-orchestration.md", "page": "volumes/volume-1-cs-foundations/ch54-data-lakes-warehouses-and-orchestration.html", "exists": true}, {"n": 55, "title": "Containers: Docker, Kubernetes & Helm", "part": "Cloud & Ops", "md": "volumes/volume-1-cs-foundations/ch55-containers-docker-kubernetes-and-helm.md", "page": "volumes/volume-1-cs-foundations/ch55-containers-docker-kubernetes-and-helm.html", "exists": true}, {"n": 56, "title": "IaC: Terraform, State & Config Drift", "part": "Cloud & Ops", "md": "volumes/volume-1-cs-foundations/ch56-iac-terraform-state-and-config-drift.md", "page": "volumes/volume-1-cs-foundations/ch56-iac-terraform-state-and-config-drift.html", "exists": true}, {"n": 57, "title": "CI/CD & GitHub Actions", "part": "Cloud & Ops", "md": "volumes/volume-1-cs-foundations/ch57-ci-cd-and-github-actions.md", "page": "volumes/volume-1-cs-foundations/ch57-ci-cd-and-github-actions.html", "exists": true}, {"n": 58, "title": "Observability: Logs, Metrics, Traces & OpenTelemetry", "part": "Cloud & Ops", "md": "volumes/volume-1-cs-foundations/ch58-observability-logs-metrics-traces-and-opentelemetry.md", "page": "volumes/volume-1-cs-foundations/ch58-observability-logs-metrics-traces-and-opentelemetry.html", "exists": true}, {"n": 59, "title": "Cost Awareness in the Cloud", "part": "Cloud & Ops", "md": "volumes/volume-1-cs-foundations/ch59-cost-awareness-in-the-cloud.md", "page": "volumes/volume-1-cs-foundations/ch59-cost-awareness-in-the-cloud.html", "exists": true}]}, {"title": "Volume 2 \u2014 Software Engineering", "goal": "Everything beyond writing code that ships and survives production.", "index": "volumes/volume-2-software-engineering/index.html", "chapters": [{"n": 1, "title": "Professional Git Workflow", "part": null, "md": "volumes/volume-2-software-engineering/ch01-professional-git-workflow.md", "page": "volumes/volume-2-software-engineering/ch01-professional-git-workflow.html", "exists": true}, {"n": 2, "title": "Monorepos", "part": null, "md": "volumes/volume-2-software-engineering/ch02-monorepos.md", "page": "volumes/volume-2-software-engineering/ch02-monorepos.html", "exists": true}, {"n": 3, "title": "Dependency Injection & Inversion of Control", "part": null, "md": "volumes/volume-2-software-engineering/ch03-dependency-injection-and-inversion-of-control.md", "page": "volumes/volume-2-software-engineering/ch03-dependency-injection-and-inversion-of-control.html", "exists": true}, {"n": 4, "title": "The Testing Pyramid & Test Strategy", "part": null, "md": "volumes/volume-2-software-engineering/ch04-the-testing-pyramid-and-test-strategy.md", "page": "volumes/volume-2-software-engineering/ch04-the-testing-pyramid-and-test-strategy.html", "exists": true}, {"n": 5, "title": "CI/CD", "part": null, "md": "volumes/volume-2-software-engineering/ch05-ci-cd.md", "page": "volumes/volume-2-software-engineering/ch05-ci-cd.html", "exists": true}, {"n": 6, "title": "Packaging & Release Engineering", "part": null, "md": "volumes/volume-2-software-engineering/ch06-packaging-and-release-engineering.md", "page": "volumes/volume-2-software-engineering/ch06-packaging-and-release-engineering.html", "exists": true}, {"n": 7, "title": "Code Reviews", "part": null, "md": "volumes/volume-2-software-engineering/ch07-code-reviews.md", "page": "volumes/volume-2-software-engineering/ch07-code-reviews.html", "exists": true}, {"n": 8, "title": "Static Analysis & Type Safety at Scale", "part": null, "md": "volumes/volume-2-software-engineering/ch08-static-analysis-and-type-safety-at-scale.md", "page": "volumes/volume-2-software-engineering/ch08-static-analysis-and-type-safety-at-scale.html", "exists": true}, {"n": 9, "title": "Performance Engineering", "part": null, "md": "volumes/volume-2-software-engineering/ch09-performance-engineering.md", "page": "volumes/volume-2-software-engineering/ch09-performance-engineering.html", "exists": true}, {"n": 10, "title": "Security & Threat Modeling", "part": null, "md": "volumes/volume-2-software-engineering/ch10-security-and-threat-modeling.md", "page": "volumes/volume-2-software-engineering/ch10-security-and-threat-modeling.html", "exists": true}, {"n": 11, "title": "Licensing & OSS Compliance", "part": null, "md": "volumes/volume-2-software-engineering/ch11-licensing-and-oss-compliance.md", "page": "volumes/volume-2-software-engineering/ch11-licensing-and-oss-compliance.html", "exists": true}, {"n": 12, "title": "API Design & Versioning", "part": null, "md": "volumes/volume-2-software-engineering/ch12-api-design-and-versioning.md", "page": "volumes/volume-2-software-engineering/ch12-api-design-and-versioning.html", "exists": true}, {"n": 13, "title": "Documentation as a System", "part": null, "md": "volumes/volume-2-software-engineering/ch13-documentation-as-a-system.md", "page": "volumes/volume-2-software-engineering/ch13-documentation-as-a-system.html", "exists": true}, {"n": 14, "title": "Observability: Logs, Metrics & Traces", "part": null, "md": "volumes/volume-2-software-engineering/ch14-observability-logs-metrics-and-traces.md", "page": "volumes/volume-2-software-engineering/ch14-observability-logs-metrics-and-traces.html", "exists": true}, {"n": 15, "title": "Incident Response & Postmortems", "part": null, "md": "volumes/volume-2-software-engineering/ch15-incident-response-and-postmortems.md", "page": "volumes/volume-2-software-engineering/ch15-incident-response-and-postmortems.html", "exists": true}, {"n": 16, "title": "Production Debugging", "part": null, "md": "volumes/volume-2-software-engineering/ch16-production-debugging.md", "page": "volumes/volume-2-software-engineering/ch16-production-debugging.html", "exists": true}]}, {"title": "Volume 3 \u2014 Low-Level Design", "goal": "Design clean, correct, maintainable components. Requires Volume 2.", "index": "volumes/volume-3-low-level-design/index.html", "chapters": [{"n": 1, "title": "OOP Fundamentals", "part": null, "md": "volumes/volume-3-low-level-design/ch01-oop-fundamentals.md", "page": "volumes/volume-3-low-level-design/ch01-oop-fundamentals.html", "exists": true}, {"n": 2, "title": "SOLID Principles", "part": null, "md": "volumes/volume-3-low-level-design/ch02-solid-principles.md", "page": "volumes/volume-3-low-level-design/ch02-solid-principles.html", "exists": true}, {"n": 3, "title": "Design Principles (Cohesion, Coupling, YAGNI, DRY, KISS)", "part": null, "md": "volumes/volume-3-low-level-design/ch03-design-principles-cohesion-coupling-yagni-dry-kiss.md", "page": "volumes/volume-3-low-level-design/ch03-design-principles-cohesion-coupling-yagni-dry-kiss.html", "exists": true}, {"n": 4, "title": "UML & Diagramming", "part": null, "md": "volumes/volume-3-low-level-design/ch04-uml-and-diagramming.md", "page": "volumes/volume-3-low-level-design/ch04-uml-and-diagramming.html", "exists": true}, {"n": 5, "title": "GoF Creational Patterns", "part": null, "md": "volumes/volume-3-low-level-design/ch05-gof-creational-patterns.md", "page": "volumes/volume-3-low-level-design/ch05-gof-creational-patterns.html", "exists": true}, {"n": 6, "title": "GoF Structural Patterns", "part": null, "md": "volumes/volume-3-low-level-design/ch06-gof-structural-patterns.md", "page": "volumes/volume-3-low-level-design/ch06-gof-structural-patterns.html", "exists": true}, {"n": 7, "title": "GoF Behavioral Patterns", "part": null, "md": "volumes/volume-3-low-level-design/ch07-gof-behavioral-patterns.md", "page": "volumes/volume-3-low-level-design/ch07-gof-behavioral-patterns.html", "exists": true}, {"n": 8, "title": "Clean Architecture", "part": null, "md": "volumes/volume-3-low-level-design/ch08-clean-architecture.md", "page": "volumes/volume-3-low-level-design/ch08-clean-architecture.html", "exists": true}, {"n": 9, "title": "Hexagonal Architecture (Ports & Adapters)", "part": null, "md": "volumes/volume-3-low-level-design/ch09-hexagonal-architecture-ports-and-adapters.md", "page": "volumes/volume-3-low-level-design/ch09-hexagonal-architecture-ports-and-adapters.html", "exists": true}, {"n": 10, "title": "Domain-Driven Design (Tactical)", "part": null, "md": "volumes/volume-3-low-level-design/ch10-domain-driven-design-tactical.md", "page": "volumes/volume-3-low-level-design/ch10-domain-driven-design-tactical.html", "exists": true}, {"n": 11, "title": "Repository Pattern & Data Mapping", "part": null, "md": "volumes/volume-3-low-level-design/ch11-repository-pattern-and-data-mapping.md", "page": "volumes/volume-3-low-level-design/ch11-repository-pattern-and-data-mapping.html", "exists": true}, {"n": 12, "title": "Event Bus, CQRS & Event Sourcing", "part": null, "md": "volumes/volume-3-low-level-design/ch12-event-bus-cqrs-and-event-sourcing.md", "page": "volumes/volume-3-low-level-design/ch12-event-bus-cqrs-and-event-sourcing.html", "exists": true}, {"n": 13, "title": "Concurrency Patterns & Thread Safety", "part": null, "md": "volumes/volume-3-low-level-design/ch13-concurrency-patterns-and-thread-safety.md", "page": "volumes/volume-3-low-level-design/ch13-concurrency-patterns-and-thread-safety.html", "exists": true}, {"n": 14, "title": "Resilience Patterns (Idempotency, Retries, Backoff, Circuit Breakers)", "part": null, "md": "volumes/volume-3-low-level-design/ch14-resilience-patterns-idempotency-retries-backoff-circuit-breakers.md", "page": "volumes/volume-3-low-level-design/ch14-resilience-patterns-idempotency-retries-backoff-circuit-breakers.html", "exists": true}]}, {"title": "Volume 4 \u2014 High-Level Design", "goal": "Design systems that scale and stay reliable. Requires Volume 1 (Parts 7\u20139) and Volume 3.", "index": "volumes/volume-4-high-level-design/index.html", "chapters": [{"n": 1, "title": "Approaching a System Design Problem", "part": null, "md": "volumes/volume-4-high-level-design/ch01-approaching-a-system-design-problem.md", "page": "volumes/volume-4-high-level-design/ch01-approaching-a-system-design-problem.html", "exists": true}, {"n": 2, "title": "Capacity Planning", "part": null, "md": "volumes/volume-4-high-level-design/ch02-capacity-planning.md", "page": "volumes/volume-4-high-level-design/ch02-capacity-planning.html", "exists": true}, {"n": 3, "title": "Scalability & Reliability Fundamentals", "part": null, "md": "volumes/volume-4-high-level-design/ch03-scalability-and-reliability-fundamentals.md", "page": "volumes/volume-4-high-level-design/ch03-scalability-and-reliability-fundamentals.html", "exists": true}, {"n": 4, "title": "Distributed Systems Patterns", "part": null, "md": "volumes/volume-4-high-level-design/ch04-distributed-systems-patterns.md", "page": "volumes/volume-4-high-level-design/ch04-distributed-systems-patterns.html", "exists": true}, {"n": 5, "title": "Proxies, Gateways, Web Servers & Storage Types", "part": null, "md": "volumes/volume-4-high-level-design/ch05-proxies-gateways-web-servers-and-storage-types.md", "page": "volumes/volume-4-high-level-design/ch05-proxies-gateways-web-servers-and-storage-types.html", "exists": true}, {"n": 6, "title": "Load Balancing", "part": null, "md": "volumes/volume-4-high-level-design/ch06-load-balancing.md", "page": "volumes/volume-4-high-level-design/ch06-load-balancing.html", "exists": true}, {"n": 7, "title": "Caching Strategies", "part": null, "md": "volumes/volume-4-high-level-design/ch07-caching-strategies.md", "page": "volumes/volume-4-high-level-design/ch07-caching-strategies.html", "exists": true}, {"n": 8, "title": "Rate Limiting, Throttling & Backpressure", "part": null, "md": "volumes/volume-4-high-level-design/ch08-rate-limiting-throttling-and-backpressure.md", "page": "volumes/volume-4-high-level-design/ch08-rate-limiting-throttling-and-backpressure.html", "exists": true}, {"n": 9, "title": "Message Queues & Streaming (Kafka, SQS, Pub/Sub)", "part": null, "md": "volumes/volume-4-high-level-design/ch09-message-queues-and-streaming-kafka-sqs-pub.md", "page": "volumes/volume-4-high-level-design/ch09-message-queues-and-streaming-kafka-sqs-pub.html", "exists": true}, {"n": 10, "title": "Service Mesh & Service Discovery", "part": null, "md": "volumes/volume-4-high-level-design/ch10-service-mesh-and-service-discovery.md", "page": "volumes/volume-4-high-level-design/ch10-service-mesh-and-service-discovery.html", "exists": true}, {"n": 11, "title": "Database Scaling", "part": null, "md": "volumes/volume-4-high-level-design/ch11-database-scaling.md", "page": "volumes/volume-4-high-level-design/ch11-database-scaling.html", "exists": true}, {"n": 12, "title": "Event-Driven Systems", "part": null, "md": "volumes/volume-4-high-level-design/ch12-event-driven-systems.md", "page": "volumes/volume-4-high-level-design/ch12-event-driven-systems.html", "exists": true}, {"n": 13, "title": "Cloud Design Patterns", "part": null, "md": "volumes/volume-4-high-level-design/ch13-cloud-design-patterns.md", "page": "volumes/volume-4-high-level-design/ch13-cloud-design-patterns.html", "exists": true}, {"n": 14, "title": "CDN, Edge & Geo-Distribution", "part": null, "md": "volumes/volume-4-high-level-design/ch14-cdn-edge-and-geo-distribution.md", "page": "volumes/volume-4-high-level-design/ch14-cdn-edge-and-geo-distribution.html", "exists": true}, {"n": 15, "title": "Multi-Tenancy", "part": null, "md": "volumes/volume-4-high-level-design/ch15-multi-tenancy.md", "page": "volumes/volume-4-high-level-design/ch15-multi-tenancy.html", "exists": true}, {"n": 16, "title": "Performance Antipatterns & Monitoring", "part": null, "md": "volumes/volume-4-high-level-design/ch16-performance-antipatterns-and-monitoring.md", "page": "volumes/volume-4-high-level-design/ch16-performance-antipatterns-and-monitoring.html", "exists": true}, {"n": 17, "title": "Disaster Recovery (Backups, RTO/RPO)", "part": null, "md": "volumes/volume-4-high-level-design/ch17-disaster-recovery-backups-rto-rpo.md", "page": "volumes/volume-4-high-level-design/ch17-disaster-recovery-backups-rto-rpo.html", "exists": true}, {"n": 18, "title": "Security at the System Level", "part": null, "md": "volumes/volume-4-high-level-design/ch18-security-at-the-system-level.md", "page": "volumes/volume-4-high-level-design/ch18-security-at-the-system-level.html", "exists": true}, {"n": 19, "title": "Cloud Architecture", "part": null, "md": "volumes/volume-4-high-level-design/ch19-cloud-architecture.md", "page": "volumes/volume-4-high-level-design/ch19-cloud-architecture.html", "exists": true}, {"n": 20, "title": "Cost & Capacity Economics", "part": null, "md": "volumes/volume-4-high-level-design/ch20-cost-and-capacity-economics.md", "page": "volumes/volume-4-high-level-design/ch20-cost-and-capacity-economics.html", "exists": true}, {"n": 21, "title": "The 30-System Design Portfolio", "part": null, "md": "volumes/volume-4-high-level-design/ch21-the-30-system-design-portfolio.md", "page": "volumes/volume-4-high-level-design/ch21-the-30-system-design-portfolio.html", "exists": true}]}, {"title": "Volume 5 \u2014 AI Systems Engineering", "goal": "Where all previous knowledge converges. Requires Volume 0 (linear algebra, probability) and Volume 1 (encoding, Ch 9).", "index": "volumes/volume-5-ai-systems/index.html", "chapters": [{"n": 1, "title": "LLM Internals", "part": null, "md": "volumes/volume-5-ai-systems/ch01-llm-internals.md", "page": "volumes/volume-5-ai-systems/ch01-llm-internals.html", "exists": true}, {"n": 2, "title": "Tokenization", "part": null, "md": "volumes/volume-5-ai-systems/ch02-tokenization.md", "page": "volumes/volume-5-ai-systems/ch02-tokenization.html", "exists": true}, {"n": 3, "title": "Transformers", "part": null, "md": "volumes/volume-5-ai-systems/ch03-transformers.md", "page": "volumes/volume-5-ai-systems/ch03-transformers.html", "exists": true}, {"n": 4, "title": "Inference & Serving", "part": null, "md": "volumes/volume-5-ai-systems/ch04-inference-and-serving.md", "page": "volumes/volume-5-ai-systems/ch04-inference-and-serving.html", "exists": true}, {"n": 5, "title": "Quantization & Efficiency", "part": null, "md": "volumes/volume-5-ai-systems/ch05-quantization-and-efficiency.md", "page": "volumes/volume-5-ai-systems/ch05-quantization-and-efficiency.html", "exists": true}, {"n": 6, "title": "Prompt Engineering & Structured Output", "part": null, "md": "volumes/volume-5-ai-systems/ch06-prompt-engineering-and-structured-output.md", "page": "volumes/volume-5-ai-systems/ch06-prompt-engineering-and-structured-output.html", "exists": true}, {"n": 7, "title": "Fine-Tuning, LoRA & PEFT", "part": null, "md": "volumes/volume-5-ai-systems/ch07-fine-tuning-lora-and-peft.md", "page": "volumes/volume-5-ai-systems/ch07-fine-tuning-lora-and-peft.html", "exists": true}, {"n": 8, "title": "Alignment, RLHF & Guardrails", "part": null, "md": "volumes/volume-5-ai-systems/ch08-alignment-rlhf-and-guardrails.md", "page": "volumes/volume-5-ai-systems/ch08-alignment-rlhf-and-guardrails.html", "exists": true}, {"n": 9, "title": "Embeddings & RAG", "part": null, "md": "volumes/volume-5-ai-systems/ch09-embeddings-and-rag.md", "page": "volumes/volume-5-ai-systems/ch09-embeddings-and-rag.html", "exists": true}, {"n": 10, "title": "Vector Databases", "part": null, "md": "volumes/volume-5-ai-systems/ch10-vector-databases.md", "page": "volumes/volume-5-ai-systems/ch10-vector-databases.html", "exists": true}, {"n": 11, "title": "Agent Frameworks & Tool Use", "part": null, "md": "volumes/volume-5-ai-systems/ch11-agent-frameworks-and-tool-use.md", "page": "volumes/volume-5-ai-systems/ch11-agent-frameworks-and-tool-use.html", "exists": true}, {"n": 12, "title": "Agent Memory", "part": null, "md": "volumes/volume-5-ai-systems/ch12-agent-memory.md", "page": "volumes/volume-5-ai-systems/ch12-agent-memory.html", "exists": true}, {"n": 13, "title": "MCP & A2A", "part": null, "md": "volumes/volume-5-ai-systems/ch13-mcp-and-a2a.md", "page": "volumes/volume-5-ai-systems/ch13-mcp-and-a2a.html", "exists": true}, {"n": 14, "title": "Multi-Agent Systems", "part": null, "md": "volumes/volume-5-ai-systems/ch14-multi-agent-systems.md", "page": "volumes/volume-5-ai-systems/ch14-multi-agent-systems.html", "exists": true}, {"n": 15, "title": "Voice Agents", "part": null, "md": "volumes/volume-5-ai-systems/ch15-voice-agents.md", "page": "volumes/volume-5-ai-systems/ch15-voice-agents.html", "exists": true}, {"n": 16, "title": "AI Observability", "part": null, "md": "volumes/volume-5-ai-systems/ch16-ai-observability.md", "page": "volumes/volume-5-ai-systems/ch16-ai-observability.html", "exists": true}, {"n": 17, "title": "Evaluation", "part": null, "md": "volumes/volume-5-ai-systems/ch17-evaluation.md", "page": "volumes/volume-5-ai-systems/ch17-evaluation.html", "exists": true}, {"n": 18, "title": "Cost & Latency Optimization", "part": null, "md": "volumes/volume-5-ai-systems/ch18-cost-and-latency-optimization.md", "page": "volumes/volume-5-ai-systems/ch18-cost-and-latency-optimization.html", "exists": true}, {"n": 19, "title": "AI Security", "part": null, "md": "volumes/volume-5-ai-systems/ch19-ai-security.md", "page": "volumes/volume-5-ai-systems/ch19-ai-security.html", "exists": true}, {"n": 20, "title": "GPU Infrastructure & the AI OS", "part": null, "md": "volumes/volume-5-ai-systems/ch20-gpu-infrastructure-and-the-ai-os.md", "page": "volumes/volume-5-ai-systems/ch20-gpu-infrastructure-and-the-ai-os.html", "exists": true}]}] };</script>
+<script src="https://cdn.jsdelivr.net/npm/marked@15/marked.min.js"></script>
+<script src="../../assets/app.js"></script>
+</body>
+</html>

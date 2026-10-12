@@ -1,0 +1,445 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Approaching a System Design Problem · Guide</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;700&family=Kalam:wght@400;700&family=Patrick+Hand&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/style.css">
+<script>try{var t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t;var n=localStorage.getItem("nav");if(n)document.documentElement.dataset.nav=n;}catch(e){}</script>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <filter id="rough" filterUnits="userSpaceOnUse" x="-500" y="-500" width="3000" height="3000">
+    <feTurbulence type="fractalNoise" baseFrequency="0.03" numOctaves="2" seed="3" result="n"/>
+    <feDisplacementMap in="SourceGraphic" in2="n" scale="3"/>
+  </filter>
+  <marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+    <path d="M1 1 L9 5 L1 9" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+  </marker>
+</defs></svg>
+<div class="notebook" id="notebook">
+  <button id="menu" class="pen tl" aria-label="Show or hide contents" title="Show / hide contents">☰</button>
+  <button id="theme" class="pen tr" aria-label="Toggle theme" title="Light / dark desk">◐</button>
+  <nav id="sidebar" aria-label="Contents"></nav>
+  <main><article id="content" class="page">Loading…</article></main>
+</div>
+<script type="text/markdown" id="source"># Chapter 1 — Approaching a System Design Problem
+
+> **Volume 4 — High-Level Design** · [Contents](index.md) · Next → [Chapter 2 — Capacity Planning](ch02-capacity-planning.md)
+
+---
+
+## Concept
+
+What system design is, how HLD differs from LLD, and a repeatable method — requirements, estimates, API, data, architecture, deep dive, trade-offs — for starting any design problem.
+
+**In one sentence:** system design is deciding, before and while you build, which components a system has, how they talk, where data lives, and which trade-offs you accept so that it meets its requirements at the scale and cost you can afford.
+
+**Mental model — city planning vs building plans.** HLD is the city plan: roads, districts, power and water, how many people each can serve. LLD is the blueprint of one building: rooms, doors, wiring. You cannot draw a good building without knowing the district it sits in, and a city plan with no building constraints cannot be built. Most design failures come from skipping the plan, not from a bad blueprint.
+
+### What system design is, and why it matters
+
+* **Definition:** the process of defining architecture, components, interfaces, and data for a system so that it satisfies stated requirements. It produces decisions and diagrams, not code.
+* **Why it matters:** the expensive mistakes are structural (wrong data store, no partitioning story, a single point of failure, a chatty service boundary). They are cheap to change on a whiteboard and costly after launch — migrations, rewrites, outages.
+* **Where it sits in the SDLC:** after requirements and analysis, before implementation; it is revisited every iteration, and revised by what testing and operations teach you.
+* **System analysis vs system design:**
+
+| | System analysis | System design |
+|---|-----------------|---------------|
+| Question | **What** must the system do, and for whom? | **How** will it do it? |
+| Input | stakeholders, existing processes, pain points | the agreed requirements and constraints |
+| Output | requirements, use cases, scope, acceptance criteria | architecture, APIs, data model, deployment plan |
+| Typical owner | product / business analyst with engineering | architects and engineers |
+
+### HLD vs LLD
+
+| | High-Level Design (HLD) | Low-Level Design (LLD) |
+|---|-------------------------|------------------------|
+| Scope | whole system or a group of services | one service, module, or class group |
+| Question | which components, what data stores, how they communicate and scale | which classes, methods, patterns, schemas, algorithms |
+| Artifacts | architecture diagram, API list, data-flow diagram, capacity estimate, tech choices, trade-off notes (ADRs) | class and sequence diagrams, detailed schema, interface signatures, state machines, pseudo-code |
+| Audience | architects, tech leads, product, other teams | the engineers who implement it |
+| Needs knowledge of | networking, databases, caching, queues, consistency, cloud | OOP, SOLID, design patterns, UML, concurrency |
+| Failure if skipped | system cannot meet scale, availability, or cost goals | code is rigid, untestable, hard to change |
+
+Where to go: LLD is Volume 3 ([Ch 1 OOP](../volume-3-low-level-design/ch01-oop-fundamentals.md), [Ch 2 SOLID](../volume-3-low-level-design/ch02-solid-principles.md), [Ch 4 UML](../volume-3-low-level-design/ch04-uml-and-diagramming.md)). HLD is the rest of this volume: [capacity](ch02-capacity-planning.md), [scalability and reliability](ch03-scalability-and-reliability-fundamentals.md), [caching](ch07-caching-strategies.md), [queues](ch09-message-queues-and-streaming-kafka-sqs-pub.md), [database scaling](ch11-database-scaling.md), and the worked cases in [Ch 21](ch21-the-30-system-design-portfolio.md).
+
+### Monolith vs distributed systems
+
+| Aspect | Monolith (one deployable) | Distributed (services, many nodes) |
+|--------|---------------------------|-------------------------------------|
+| Complexity | low; in-process calls | high; network calls fail, are slow, are partial |
+| Deploy and test | one artifact, simple end-to-end tests | independent deploys, but contract and integration testing needed |
+| Scaling | scale whole app together | scale each part to its own load |
+| Data consistency | one database, ACID transactions | per-service data; eventual consistency, sagas |
+| Fault isolation | one bug can take down everything | failures can be contained, but also cascade |
+| Team scaling | fine for small teams | lets many teams ship independently |
+| Latency | function-call cost | each hop adds latency |
+
+Rule of thumb: **start with a well-modularized monolith** and split along proven seams when team size, scaling needs, or release independence demand it. Choose distributed from the start only when you already know those pressures exist. Distributed systems must handle the network being unreliable — see [Ch 4](ch04-distributed-systems-patterns.md).
+
+### Requirements gathering
+
+Ask before drawing. Who are the users? What are the core use cases? What is in scope and explicitly out? What scale (users, data, traffic), what geography, what budget and deadline? Write the answers down and get them confirmed — this is the output of system analysis.
+
+**Functional requirements (FR)** say what the system does; **non-functional requirements (NFR)** say how well.
+
+| Kind | Examples |
+|------|----------|
+| Functional | users can post, follow, search; an order can be placed, paid, cancelled; admin can approve refunds |
+| Non-functional | latency, throughput, availability, durability, consistency, security, cost, compliance, maintainability |
+
+An NFR is useless until it is a **number with a measurement**.
+
+| Vague NFR | Measurable form |
+|-----------|-----------------|
+| "fast" | **latency SLO:** p99 of `GET /feed` < 300 ms, measured at the gateway over 30 days |
+| "always up" | **availability SLO:** 99.9% of requests succeed per month (about 43.8 min of allowed downtime per 30-day-ish month; 99.99% is about 4.4 min; 99.999% about 26 s) |
+| "never lose data" | **durability:** no acknowledged write lost; backups with RPO of 5 min (see [Ch 17](ch17-disaster-recovery-backups-rto-rpo.md)) |
+| "always correct" | **consistency:** read-your-writes for the author; others may lag up to 5 s (eventual) |
+| "handles growth" | **throughput:** 5,000 writes/s sustained, 15,000/s peak, 10× headroom in 12 months |
+
+An **SLI** is the measured indicator (for example, ratio of good requests), an **SLO** is the target for it, and an **SLA** is a contract with consequences if the target is missed. Allowed downtime: 100% minus SLO, times the period.
+
+### A repeatable 7-step method
+
+| # | Step | You produce | Time (interview, rule of thumb) |
+|---|------|-------------|--------------------------------|
+| 1 | Requirements | FR list, NFR numbers, scope and non-goals | ~5 min |
+| 2 | Estimates | requests/s, read:write, storage, bandwidth, peak factor | ~5 min |
+| 3 | API | endpoints or RPCs, auth, pagination, idempotency | ~5 min |
+| 4 | Data model | entities, keys, access patterns, store choice, partition key | ~5 min |
+| 5 | High-level architecture | box-and-arrow diagram covering every use case | ~10 min |
+| 6 | Deep dive | the 1–2 hardest or riskiest components in detail | ~10 min |
+| 7 | Bottlenecks and trade-offs | single points of failure, hot spots, what you chose and what you gave up | ~5 min |
+
+Steps loop: estimates may change the data model, the deep dive may expose a missing requirement. In real work, replace the time column with design reviews and ADRs. The time column is only a rough interview guide.
+
+**Worked mini example — a "like" counter for posts.** Numbers are assumptions chosen to show the method, not measurements.
+
+1. **Requirements:** FR — like and unlike a post, see the like count and whether I liked it. NFR — read p99 < 100 ms, 99.9% availability, count may lag by a few seconds, no duplicate likes per user. Non-goal: who-liked-it lists.
+2. **Estimates:** assume 50M daily users × 5 likes = 250M likes/day ≈ 2,900/s average, peak ×3 ≈ 9,000/s. Assume reads 100× writes ≈ 290,000/s average. A like row of ~24 B (two 8-byte ids plus timestamp) × 250M/day ≈ 6 GB/day, about 2.2 TB/year before indexes and replicas.
+3. **API:** `PUT /posts/{id}/like` and `DELETE /posts/{id}/like` (idempotent), `GET /posts/{id}/likes/count`; batch endpoint for feeds: `POST /posts/likes/counts` with a list of ids.
+4. **Data model:** `likes(post_id, user_id, created_at)`, primary key `(post_id, user_id)` — the key enforces "no duplicates". Partition by `post_id`. `like_counts(post_id, n)` is a derived table.
+5. **Architecture:** clients → API gateway → like service → likes store; like events go to a queue; a counter worker updates counts; counts are served from a cache (Redis) in front of the counts table.
+6. **Deep dive — hot posts:** a viral post concentrates writes on one key. Split its counter into N sub-counters (for example 16), increment a random one, sum on read, and refresh the cached total every second or two.
+7. **Trade-offs:** counts are eventually consistent (cheaper, scalable) versus an exact count in the write transaction (slower, one hot row). The cache can lose counts on restart; rebuild from the likes table. Single point of failure: the queue — replicate it.
+
+### Performance vs scalability, latency vs throughput
+
+* **Latency** — time for one request to finish (ms). **Throughput** — work completed per unit time (requests/s, MB/s). They are linked by Little's law: concurrent requests in the system = throughput × average latency.
+* **Performance** problem: the system is slow **for one user** even when idle. **Scalability** problem: it is fast for one user but slows down or fails **as load grows**. A scalable system keeps performance acceptable by adding resources in proportion to load.
+* **They trade off:** batching and queuing raise throughput but add latency to each item; running servers near 100% utilization maximizes throughput but latency climbs sharply as queues build.
+* **Percentiles, not averages:** p50 is the median, p99 is the value 99% of requests beat. Averages hide the slow tail, and with fan-out (a page needing 20 backend calls) the chance that a user meets at least one slow call is much larger than 1%.
+
+| Scalability approach | Idea | Watch out for |
+|----------------------|------|---------------|
+| Vertical (scale up) | bigger machine | hard ceiling, single point of failure, cost curve |
+| Horizontal (scale out) | more machines behind a load balancer | needs stateless services or partitioned state |
+| Replication | copies serve reads, give redundancy | replication lag, failover |
+| Partitioning (sharding) | split data by key | hot keys, cross-shard queries and transactions |
+| Caching | serve repeats from memory | invalidation, stampede ([Ch 7](ch07-caching-strategies.md)) |
+| Asynchrony | queue work, respond early | ordering, duplicates, visibility |
+| Offload | CDN, object storage, managed services | vendor and cost trade-offs |
+
+**Common bottlenecks:** a single database primary; hot partitions or hot keys; lock contention; synchronous call chains; slow or missing indexes; connection and thread pool exhaustion; chatty cross-service calls; network bandwidth; unbounded queues; a shared dependency with no limit ([Ch 8](ch08-rate-limiting-throttling-and-backpressure.md)). Find them by measuring, not guessing.
+
+### Design qualities checklist
+
+| Quality | Question to ask | Typical levers |
+|---------|-----------------|----------------|
+| Reliability | does it keep working correctly despite faults? | redundancy, retries with backoff, timeouts, idempotency, graceful degradation |
+| Maintainability | can new engineers change it safely? | clear module boundaries, tests, observability, documentation, small deployable units |
+| Interoperability | can other systems and versions work with it? | open standards, stable contracts, schema evolution, adapters |
+| Usability | is it easy and predictable to use (also for API consumers)? | consistent naming, clear errors, good defaults, docs, SDKs |
+| Security | who can do what, and is data protected? | authN/authZ, encryption in transit and at rest, least privilege ([Ch 18](ch18-security-at-the-system-level.md)) |
+| Cost-effectiveness | does it meet needs at an affordable price? | right-sizing, autoscaling, tiered storage, build vs buy ([Ch 20](ch20-cost-and-capacity-economics.md)) |
+
+### Optimization techniques
+
+| Technique | Use when | Cost / risk |
+|-----------|----------|-------------|
+| Caching | same data read often, tolerates staleness | invalidation, memory, stampede |
+| Batching | many small operations to one target | adds latency per item, partial-failure handling |
+| Indexing | queries filter or sort on a column | slower writes, more storage |
+| Async processing | work need not finish before responding | complexity, eventual results, retries |
+| Compression | payloads or storage are large | CPU time, hard to debug |
+| Denormalization | joins dominate read time | duplicated data to keep in sync |
+| Connection pooling | connections are costly to open | pool sizing, exhaustion under load |
+| Pagination | lists can be large | cursor design, consistency while paging |
+| Precomputation / materialized views | expensive aggregates read often | stale until refreshed, storage |
+| Load shedding and limits | overload is possible | rejected requests need clear errors |
+
+Optimize after measuring: profile first, change one thing, measure again.
+
+### Modularity and interfaces
+
+* **Module boundary:** group things that change together (high cohesion) and hide internals behind a narrow interface (low coupling). Boundaries follow business capabilities, not technical layers; they become service boundaries only when you must scale or deploy them separately.
+* **Contract:** the interface is a promise — inputs, outputs, errors, ordering, latency and idempotency expectations. Write it as OpenAPI, protobuf, or JSON Schema, and test against it (consumer-driven contract tests).
+* **Versioning:** adding optional fields is usually backward compatible; removing or renaming a field, or changing meaning, is breaking. Version in the URL or header, support old and new in parallel, deprecate with a date, and roll out schema changes in expand-then-contract steps. See [Vol 2 Ch 12 — API Design and Versioning](../volume-2-software-engineering/ch12-api-design-and-versioning.md).
+
+### Data structures and algorithms that show up in system design
+
+| Structure / algorithm | Property | Where it appears |
+|-----------------------|----------|------------------|
+| Hash map | O(1) average lookup | caches, indexes, deduplication, sessions |
+| LRU (hash map + doubly linked list) | O(1) get, put, evict least-recent | cache eviction policies |
+| Heap / priority queue | O(log n) insert, O(1) peek of min or max | schedulers, timers, top-K, merging sorted streams |
+| Trie | prefix search by path | autocomplete, routing tables, IP prefix lookup |
+| Bloom filter | set membership; **no false negatives**, some false positives | skip disk lookups for missing keys (LSM stores), crawler "seen URL" check |
+| Consistent hashing | adding or removing a node moves only about K/N keys | partitioning caches and databases, load balancing |
+| Skip list | ordered set with expected O(log n) operations | sorted sets in Redis, in-memory LSM memtables in some stores |
+| HyperLogLog | approximate distinct count in small fixed memory | unique visitors, cardinality in analytics (Redis `PFADD`) |
+| Count-Min sketch | approximate frequency counts | heavy hitters, trending items |
+| Inverted index | term to list of documents | search engines (Lucene, Elasticsearch) |
+| B-tree / LSM tree | read-optimized vs write-optimized on-disk indexes | relational databases vs Cassandra, RocksDB |
+| Merkle tree | compare large data sets by hash | replica repair (Dynamo-style stores), Git |
+| Geohash / quadtree | map 2-D location to a key or tree | nearby-search, ride matching |
+| Ring buffer | fixed-size circular queue | bounded queues, logging, backpressure |
+| Token bucket | rate with burst allowance | rate limiting ([Ch 8](ch08-rate-limiting-throttling-and-backpressure.md)) |
+
+Background: [Vol 1 Ch 30 — Trees](../volume-1-cs-foundations/ch30-trees-bst-heap-and-trie.md), [Ch 31 — Hash Tables and Graphs](../volume-1-cs-foundations/ch31-hash-tables-and-graphs.md).
+
+### Activity diagrams
+
+An **activity diagram** is a UML behavior diagram that shows a workflow: the ordered actions, decisions, and parallel branches of one process. Use it for business flows, approval chains, and algorithms where *what happens next* matters more than *who owns the data*. Other UML diagrams (class, sequence, state, component) are in [Vol 3 Ch 4 — UML and Diagramming](../volume-3-low-level-design/ch04-uml-and-diagramming.md).
+
+| Notation | Meaning |
+|----------|---------|
+| Filled circle | initial node (start) |
+| Circle with inner dot (bullseye) | final node (end) |
+| Rounded rectangle | action |
+| Diamond | decision (guards like `[valid]`) or merge |
+| Thick bar | fork (split into parallel flows) or join (wait for all) |
+| Arrow | control flow |
+| Swimlane | partition showing who or which system performs the actions |
+
+---
+
+## Prereqs
+
+* [Vol 1 Ch 44 — Delivery: Load Balancing, Reverse Proxies & CDN](../volume-1-cs-foundations/ch44-delivery-load-balancing-reverse-proxies-and-cdn.md)
+* [Vol 1 Ch 46 — Schema Design, Normalization & Indexing](../volume-1-cs-foundations/ch46-schema-design-normalization-and-indexing.md)
+* [Vol 3 Ch 4 — UML and Diagramming](../volume-3-low-level-design/ch04-uml-and-diagramming.md)
+* [Chapter 2 — Capacity Planning](ch02-capacity-planning.md)
+
+---
+
+## Diagram
+
+**The 7-step method (it loops)**
+
+```mermaid
+flowchart LR
+    S1["1 Requirements<br/>FR + NFR numbers"] --> S2["2 Estimates<br/>QPS, storage"]
+    S2 --> S3["3 API"]
+    S3 --> S4["4 Data model"]
+    S4 --> S5["5 High-level<br/>architecture"]
+    S5 --> S6["6 Deep dive"]
+    S6 --> S7["7 Bottlenecks +<br/>trade-offs"]
+    S7 -. "iterate" .-> S1
+```
+
+**Where system design sits in the SDLC**
+
+```mermaid
+flowchart LR
+    REQ["Requirements"] --> AN["System analysis<br/>WHAT"]
+    AN --> HLD["HLD<br/>components, data"]
+    HLD --> LLD["LLD<br/>classes, schemas"]
+    LLD --> IMP["Implement + test"]
+    IMP --> OPS["Deploy + operate"]
+    OPS -. "feedback" .-> REQ
+```
+
+**Activity diagram — checkout with manager approval**
+
+```mermaid
+flowchart TD
+    START(("start")) --> SUB["Submit cart"]
+    SUB --> VAL{"cart valid?"}
+    VAL -- no --> ERR["Show errors"]
+    ERR --> END1(("end"))
+    VAL -- yes --> FORK["fork"]
+    FORK --> RES["Reserve stock"]
+    FORK --> PAY["Authorize payment"]
+    RES --> JOIN["join"]
+    PAY --> JOIN
+    JOIN --> OK{"both succeeded?"}
+    OK -- no --> REL["Release stock, void payment"]
+    REL --> END2(("end"))
+    OK -- yes --> BIG{"total over limit?"}
+    BIG -- no --> CONF["Confirm order"]
+    BIG -- yes --> APP{"manager approves?"}
+    APP -- yes --> CONF
+    APP -- no --> REL
+    CONF --> RCPT["Send receipt"]
+    RCPT --> END3(("end"))
+```
+
+---
+
+## Example
+
+A back-of-envelope estimator and a consistent-hash ring — two small tools used often when reasoning about a design. Run with Python 3.9+.
+
+```python
+# estimate.py — turn assumptions into numbers. Every input is an ASSUMPTION; change them.
+SECONDS_PER_MONTH = 30 * 24 * 3600
+
+def estimate(new_per_month, read_write_ratio, bytes_per_record, years, peak_factor=3):
+    writes_s = new_per_month / SECONDS_PER_MONTH
+    reads_s = writes_s * read_write_ratio
+    storage_tb = new_per_month * 12 * years * bytes_per_record / 1e12
+    return {
+        "writes/s avg": round(writes_s, 1),
+        "reads/s avg": round(reads_s),
+        "reads/s peak": round(reads_s * peak_factor),
+        "storage TB": round(storage_tb, 2),
+    }
+
+# URL shortener: 100M new links/month, 100 reads per write, 500 B per record, 5 years
+print(estimate(100_000_000, 100, 500, 5))
+# {'writes/s avg': 38.6, 'reads/s avg': 3858, 'reads/s peak': 11574, 'storage TB': 3.0}
+```
+
+```python
+# ring.py — consistent hashing with virtual nodes
+import bisect, hashlib
+
+class Ring:
+    def __init__(self, nodes, vnodes=100):
+        self.ring = sorted((self._h(f"{n}#{i}"), n) for n in nodes for i in range(vnodes))
+        self.keys = [h for h, _ in self.ring]
+
+    @staticmethod
+    def _h(s):
+        return int(hashlib.md5(s.encode()).hexdigest(), 16)
+
+    def node_for(self, key):
+        i = bisect.bisect(self.keys, self._h(key)) % len(self.ring)
+        return self.ring[i][1]
+
+keys = [f"user{i}" for i in range(10_000)]
+before = Ring(["a", "b", "c"])
+after = Ring(["a", "b", "c", "d"])
+moved = sum(before.node_for(k) != after.node_for(k) for k in keys)
+print(moved / len(keys))   # about 0.2 (expected ~1/4): only keys that now belong to the new node move; plain hash(key) % N would move ~3/4
+```
+
+---
+
+## Exercises
+
+1. Rewrite these vague NFRs as measurable SLOs: "the site must be fast", "must not lose orders", "must be highly available".
+
+   <details><summary>Solution</summary>Example: p99 of <code>GET /product</code> under 250 ms measured at the load balancer; every order acknowledged to the user is durable (replicated in at least two zones before the 201 response) with RPO of 0 for orders; 99.95% of requests succeed per calendar month (about 22 min of allowed downtime in a 30-day month). Each states the metric, the threshold, the measurement point and the window. Your exact numbers should come from business input.</details>
+
+2. Estimate for a chat app: 10M daily users, 40 messages sent per user per day, 100 B per message, 3× peak. Give writes/s, daily storage, and yearly storage.
+
+   <details><summary>Solution</summary>10M × 40 = 400M messages/day. 400M / 86,400 ≈ 4,630/s average, ≈ 13,900/s at 3× peak. Storage: 400M × 100 B = 40 GB/day, about 14.6 TB/year before replication (×3 if triple replicated ≈ 44 TB) and indexes. State that fan-out to recipients is separate and multiplies delivery work, not stored bytes.</details>
+
+3. Your team of 6 is building a new B2B product. Monolith or microservices? Justify, and name when you would revisit.
+
+   <details><summary>Solution</summary>A modular monolith: one deployable, strict module boundaries and interfaces, one database with schemas per module. Six people cannot absorb the operational cost of many services, and early domain boundaries are guesses. Revisit when a module needs independent scaling, teams grow so that deploys collide, or a component needs a different technology or fault isolation. Clean module contracts make the later split cheap.</details>
+
+4. Choose a data structure for each: (a) top 10 trending hashtags in the last hour, (b) "has this URL been crawled?" over 10 billion URLs, (c) distributing keys over a changing set of cache nodes, (d) unique visitors per page per day.
+
+   <details><summary>Solution</summary>(a) Count-Min sketch or exact counters plus a min-heap of size 10 over a sliding window. (b) Bloom filter in front of a persistent store — a false positive means an unneeded lookup or a skipped page, never a false "not seen"; accept the rate you size it for. (c) Consistent hashing with virtual nodes. (d) HyperLogLog per page per day — small fixed memory, approximate count (use exact sets only if exactness is required and the volume is small).</details>
+
+---
+
+## Mini project
+
+**A design-review kit: a one-page template and a calculator.**
+
+**Steps**
+
+1. Write a Markdown design-doc template with the 7 steps as headings, plus "Non-goals", "Open questions", and "Decisions (ADR links)".
+2. Extend the `estimate()` function into a CLI that reads a YAML file of assumptions and prints QPS, storage, bandwidth and instance counts, flagging every input as an assumption.
+3. Use it on three systems from [Chapter 21](ch21-the-30-system-design-portfolio.md): fill the template for each in 45 minutes, timed.
+4. Draw each architecture in Mermaid and the main workflow as an activity diagram.
+5. Swap with a peer; they review only for unmeasurable NFRs, single points of failure, and missing trade-offs.
+
+**Done when:** each doc has numeric NFRs, estimates with stated assumptions, an API, a data model with a partition key, a diagram, and at least three trade-offs written as "chose X over Y because Z".
+
+---
+
+## Design
+
+**Design a URL shortener, using the 7 steps.**
+
+1. **Requirements.** FR — create a short link for a long URL, redirect from short to long, optional custom alias, link expiry. NFR — redirect p99 < 100 ms, 99.99% redirect availability, links never silently change or vanish before expiry, creation may be slower. Non-goals: analytics dashboards, user accounts.
+2. **Estimates (assumptions).** 100M new links/month ≈ 39 writes/s; reads 100× ≈ 3,900/s average, ≈ 11,600/s peak at 3×. Storage 100M × 12 × 5 years × 500 B ≈ 3 TB. A 7-character base62 key gives 62^7 ≈ 3.5 × 10^12 possible keys, enough for 6 × 10^9 links.
+3. **API.** `POST /links {url, alias?, ttl?}` returns `{short}`; `GET /{short}` returns `301` or `302` with `Location`. Use `302` if you need every click to reach your server (analytics, edits); `301` lets browsers cache it, cutting load.
+4. **Data model.** `links(short PK, long_url, created_at, expires_at, owner)`. Access pattern is key-value by `short`, so use a key-value or wide-column store, partitioned by `short`.
+
+```mermaid
+flowchart LR
+    C["clients"] --> LB["load balancer"]
+    LB --> RD["redirect service<br/>stateless"]
+    LB --> CR["create service"]
+    RD --> CA[("cache<br/>hot short keys")]
+    CA -. "miss" .-> DB[("links store<br/>sharded by short")]
+    CR --> IDG["ID generator<br/>range allocation"]
+    CR --> DB
+    CR -. "bloom/uniqueness check" .-> DB
+    RD --> Q["click events queue"]
+```
+
+5. **Architecture** is the diagram above: read path and write path separated so each scales alone.
+6. **Deep dive — key generation.** Options: hash the URL and truncate (collisions to detect and retry), random 7 chars (check uniqueness), or a counter encoded in base62. A counter is collision-free; to avoid one global bottleneck each create-service instance leases a range of, for example, 100,000 ids from a coordinator and hands them out locally. Sequential ids are guessable; if links must be unguessable, encode a permuted or encrypted counter.
+7. **Bottlenecks and trade-offs.** Redirects dominate, so cache hot keys (popularity is skewed — rule of thumb, verify with data). `302` costs more load but keeps control; `301` is cheaper but irreversible in browsers. Range leasing wastes ids on crash (harmless). Expiry via TTL in the store. Single points of failure: the coordinator (replicate it, instances keep working with their remaining range) and the store (replicate across zones).
+
+---
+
+## Open source
+
+* [`donnemartin/system-design-primer`](https://github.com/donnemartin/system-design-primer) — a long, free study guide on designing large-scale systems, with worked cases.
+* [`ByteByteGoHQ/system-design-101`](https://github.com/ByteByteGoHQ/system-design-101) — short visual explanations of common architectural topics.
+* [`karanpratapsingh/system-design`](https://github.com/karanpratapsingh/system-design) — a system design course with concepts and case studies.
+* [`binhnguyennus/awesome-scalability`](https://github.com/binhnguyennus/awesome-scalability) — curated reading list of real-world architecture write-ups.
+* [`redis/redis`](https://github.com/redis/redis) — source for real hash tables, skip lists (sorted sets) and HyperLogLog implementations.
+* [`apache/cassandra`](https://github.com/apache/cassandra) — consistent hashing partitioning, Merkle trees for repair, and an LSM storage engine in one codebase.
+* [`mermaid-js/mermaid`](https://github.com/mermaid-js/mermaid) and [`plantuml/plantuml`](https://github.com/plantuml/plantuml) — text-to-diagram tools, including activity diagrams.
+
+---
+
+## Interview
+
+1. **"What is the difference between HLD and LLD?"**
+   <details><summary>Answer</summary>HLD is the system-level view: components, data stores, communication, scaling and failure handling, and technology choices, shown in architecture diagrams. LLD is the component-level view: classes, interfaces, schemas, algorithms and sequence flows, shown in class and sequence diagrams. HLD decides what the pieces are and how they connect; LLD decides how one piece is built. The HLD constraints (latency budget, consistency, ownership of data) shape the LLD.</details>
+
+2. **"Walk me through how you start a design problem."**
+   <details><summary>Answer</summary>Clarify requirements and scope first, separating functional from non-functional and turning the latter into numbers. Estimate load and storage with stated assumptions. Define the API, then the data model and access patterns. Draw a simple end-to-end architecture covering every use case. Deep-dive on the riskiest parts, and finish with bottlenecks, single points of failure, and explicit trade-offs. State assumptions aloud and invite correction.</details>
+
+3. **"Latency vs throughput — can you improve both?"**
+   <details><summary>Answer</summary>Latency is time per request; throughput is requests per time. Sometimes both improve together (a faster algorithm, a cache). Often they trade off: batching and queues raise throughput but add per-item delay, and high utilization raises throughput until queues make latency climb. Say which one the requirement prioritizes and measure percentiles (p99), not averages.</details>
+
+4. **"Why not use microservices for everything?"**
+   <details><summary>Answer</summary>Each service boundary replaces a function call with a network call that can fail, be slow, or return partial results, and splits transactions across data stores. You then need service discovery, tracing, contract versioning, and per-service deployment. They pay off when teams, scaling needs, or fault isolation justify the cost. Otherwise start with a modular monolith and split along proven seams.</details>
+
+---
+
+## Checklist
+
+- [ ] requirements written with numeric NFRs before any boxes are drawn
+- [ ] estimates show assumptions, peak factor, and storage growth
+- [ ] API and data model cover every use case and name the partition key
+- [ ] each single point of failure and hot spot is identified
+- [ ] every major choice is written as "X over Y because Z"
+- [ ] module boundaries and versioning rules are defined for each interface
+
+---
+
+> [Contents](index.md) · Next → [Chapter 2 — Capacity Planning](ch02-capacity-planning.md)
+</script>
+<script type="application/json" id="figs">["<figure><svg viewBox=\"0 0 660 350\" role=\"img\" aria-label=\"Seven-step design method flowchart\"><rect class=\"sk\" x=\"110\" y=\"30\" width=\"160\" height=\"60\" rx=\"12\" style=\"fill:var(--hl-green)\"/><text class=\"lbl b\" x=\"190.0\" y=\"55.0\" text-anchor=\"middle\">1 Requirements<\/text><text class=\"lbl\" x=\"190.0\" y=\"75.0\" text-anchor=\"middle\">FR + NFR numbers<\/text><rect class=\"sk\" x=\"295\" y=\"30\" width=\"160\" height=\"60\" rx=\"12\"/><text class=\"lbl b\" x=\"375.0\" y=\"55.0\" text-anchor=\"middle\">2 Estimates<\/text><text class=\"lbl\" x=\"375.0\" y=\"75.0\" text-anchor=\"middle\">QPS, storage<\/text><rect class=\"sk\" x=\"480\" y=\"30\" width=\"160\" height=\"60\" rx=\"12\"/><text class=\"lbl\" x=\"560.0\" y=\"65.0\" text-anchor=\"middle\">3 API<\/text><rect class=\"sk\" x=\"480\" y=\"150\" width=\"160\" height=\"60\" rx=\"12\"/><text class=\"lbl\" x=\"560.0\" y=\"185.0\" text-anchor=\"middle\">4 Data model<\/text><rect class=\"sk\" x=\"295\" y=\"150\" width=\"160\" height=\"60\" rx=\"12\"/><text class=\"lbl b\" x=\"375.0\" y=\"175.0\" text-anchor=\"middle\">5 High-level<\/text><text class=\"lbl\" x=\"375.0\" y=\"195.0\" text-anchor=\"middle\">architecture<\/text><rect class=\"sk\" x=\"110\" y=\"150\" width=\"160\" height=\"60\" rx=\"12\"/><text class=\"lbl\" x=\"190.0\" y=\"185.0\" text-anchor=\"middle\">6 Deep dive<\/text><rect class=\"sk\" x=\"110\" y=\"270\" width=\"160\" height=\"60\" rx=\"12\"/><text class=\"lbl b\" x=\"190.0\" y=\"295.0\" text-anchor=\"middle\">7 Bottlenecks +<\/text><text class=\"lbl\" x=\"190.0\" y=\"315.0\" text-anchor=\"middle\">trade-offs<\/text><path class=\"sk blue\" d=\"M270 60 C 280 58, 285 62, 295 60\" style=\"color:var(--ink)\" marker-end=\"url(#arr)\"/><path class=\"sk blue\" d=\"M455 60 C 465 58, 470 62, 480 60\" style=\"color:var(--ink)\" marker-end=\"url(#arr)\"/><path class=\"sk blue\" d=\"M560 90 C 562 110, 558 130, 560 150\" style=\"color:var(--ink)\" marker-end=\"url(#arr)\"/><path class=\"sk blue\" d=\"M480 180 C 470 178, 465 182, 455 180\" style=\"color:var(--ink)\" marker-end=\"url(#arr)\"/><path class=\"sk blue\" d=\"M295 180 C 285 178, 280 182, 270 180\" style=\"color:var(--ink)\" marker-end=\"url(#arr)\"/><path class=\"sk blue\" d=\"M190 210 C 192 230, 188 250, 190 270\" style=\"color:var(--ink)\" marker-end=\"url(#arr)\"/><path class=\"sk red\" d=\"M110 300 C -10 300, -10 60, 108 60\" style=\"color:var(--red)\" stroke-dasharray=\"7 6\" marker-end=\"url(#arr)\"/><text class=\"lbl r\" x=\"58\" y=\"190\" text-anchor=\"middle\" transform=\"rotate(-90 58 185)\">iterate<\/text><\/svg><figcaption>Fig 1: the 7-step method; step 7 loops back to step 1 (iterate).<\/figcaption><\/figure>", "<figure><svg viewBox=\"0 0 660 250\" role=\"img\" aria-label=\"Where system design sits in the software development life cycle\"><rect class=\"sk\" x=\"40\" y=\"30\" width=\"170\" height=\"64\" rx=\"12\"/><text class=\"lbl\" x=\"125.0\" y=\"67.0\" text-anchor=\"middle\">Requirements<\/text><rect class=\"sk\" x=\"250\" y=\"30\" width=\"170\" height=\"64\" rx=\"12\"/><text class=\"lbl b\" x=\"335.0\" y=\"57.0\" text-anchor=\"middle\">System analysis<\/text><text class=\"lbl\" x=\"335.0\" y=\"77.0\" text-anchor=\"middle\">WHAT<\/text><rect class=\"sk\" x=\"460\" y=\"30\" width=\"170\" height=\"64\" rx=\"12\" style=\"fill:var(--hl-blue)\"/><text class=\"lbl b\" x=\"545.0\" y=\"57.0\" text-anchor=\"middle\">HLD<\/text><text class=\"lbl\" x=\"545.0\" y=\"77.0\" text-anchor=\"middle\">components, data<\/text><rect class=\"sk\" x=\"460\" y=\"160\" width=\"170\" height=\"64\" rx=\"12\" style=\"fill:var(--hl-blue)\"/><text class=\"lbl b\" x=\"545.0\" y=\"187.0\" text-anchor=\"middle\">LLD<\/text><text class=\"lbl\" x=\"545.0\" y=\"207.0\" text-anchor=\"middle\">classes, schemas<\/text><rect class=\"sk\" x=\"250\" y=\"160\" width=\"170\" height=\"64\" rx=\"12\"/><text class=\"lbl\" x=\"335.0\" y=\"197.0\" text-anchor=\"middle\">Implement + test<\/text><rect class=\"sk\" x=\"40\" y=\"160\" width=\"170\" height=\"64\" rx=\"12\"/><text class=\"lbl\" x=\"125.0\" y=\"197.0\" text-anchor=\"middle\">Deploy + operate<\/text><path class=\"sk blue\" d=\"M210 62 C 225 60, 235 64, 250 62\" style=\"color:var(--ink)\" marker-end=\"url(#arr)\"/><path class=\"sk blue\" d=\"M420 62 C 435 60, 445 64, 460 62\" style=\"color:var(--ink)\" marker-end=\"url(#arr)\"/><path class=\"sk blue\" d=\"M545 94 C 547 115, 543 135, 545 160\" style=\"color:var(--ink)\" marker-end=\"url(#arr)\"/><path class=\"sk blue\" d=\"M460 192 C 445 190, 435 194, 420 192\" style=\"color:var(--ink)\" marker-end=\"url(#arr)\"/><path class=\"sk blue\" d=\"M250 192 C 235 190, 225 194, 210 192\" style=\"color:var(--ink)\" marker-end=\"url(#arr)\"/><path class=\"sk red\" d=\"M125 160 C 127 140, 123 120, 125 94\" style=\"color:var(--red)\" stroke-dasharray=\"7 6\" marker-end=\"url(#arr)\"/><text class=\"lbl r\" x=\"145\" y=\"132\" text-anchor=\"start\">feedback<\/text><\/svg><figcaption>Fig 2: system analysis (what) then HLD and LLD (how); feedback from operations returns to requirements.<\/figcaption><\/figure>", "<figure><svg viewBox=\"0 0 660 800\" role=\"img\" aria-label=\"Activity diagram for a checkout with manager approval\"><circle class=\"sk\" cx=\"330\" cy=\"22\" r=\"12\" style=\"fill:var(--ink2)\"/><path class=\"sk blue\" d=\"M330 34 L330 50\" style=\"color:var(--ink)\" marker-end=\"url(#arr)\"/><rect class=\"sk\" x=\"255\" y=\"50\" width=\"150\" height=\"44\" rx=\"12\"/><text class=\"lbl\" x=\"330.0\" y=\"77.0\" text-anchor=\"middle\">Submit cart<\/text><path class=\"sk blue\" d=\"M330 94 L330 129\" style=\"color:var(--ink)\" marker-end=\"url(#arr)\"/><path class=\"sk\" d=\"M330 129.0 L410.0 165 L330 201.0 L250.0 165 Z\" style=\"fill:var(--hl-yellow)\"/><text class=\"lbl\" x=\"330\" y=\"170.0\" text-anchor=\"middle\">cart valid?<\/text><path class=\"sk blue\" d=\"M250 165 L185 165\" style=\"color:var(--ink)\" marker-end=\"url(#arr)\"/><text class=\"lbl r\" x=\"218\" y=\"152\" text-anchor=\"middle\">no<\/text><rect class=\"sk\" x=\"55\" y=\"143\" width=\"130\" height=\"44\" rx=\"12\"/><text class=\"lbl\" x=\"120.0\" y=\"170.0\" text-anchor=\"middle\">Show errors<\/text><path class=\"sk blue\" d=\"M120 187 L120 226\" style=\"color:var(--ink)\" marker-end=\"url(#arr)\"/><circle class=\"sk\" cx=\"120\" cy=\"240\" r=\"12\"/><path class=\"sk blue\" d=\"M330 201 L330 246\" style=\"color:var(--ink)\" marker-end=\"url(#arr)\"/><text class=\"lbl g\" x=\"344\" y=\"228\" text-anchor=\"start\">yes<\/text><rect class=\"sk\" x=\"165\" y=\"246\" width=\"320\" height=\"8\" rx=\"3\" style=\"fill:var(--ink2)\"/><text class=\"lbl r\" x=\"500\" y=\"256\" text-anchor=\"start\">fork<\/text><rect class=\"sk\" x=\"165\" y=\"285\" width=\"150\" height=\"44\" rx=\"12\"/><text class=\"lbl\" x=\"240.0\" y=\"312.0\" text-anchor=\"middle\">Reserve stock<\/text><rect class=\"sk\" x=\"345\" y=\"285\" width=\"150\" height=\"44\" rx=\"12\"/><text class=\"lbl\" x=\"420.0\" y=\"312.0\" text-anchor=\"middle\">Authorize payment<\/text><path class=\"sk blue\" d=\"M240 254 L240 283\" style=\"color:var(--ink)\" marker-end=\"url(#arr)\"/><path class=\"sk blue\" d=\"M420 254 L420 283\" style=\"color:var(--ink)\" marker-end=\"url(#arr)\"/><rect class=\"sk\" x=\"165\" y=\"366\" width=\"320\" height=\"8\" rx=\"3\" style=\"fill:var(--ink2)\"/><text class=\"lbl r\" x=\"500\" y=\"376\" text-anchor=\"start\">join<\/text><path class=\"sk blue\" d=\"M240 329 L240 364\" style=\"color:var(--ink)\" marker-end=\"url(#arr)\"/><path class=\"sk blue\" d=\"M420 329 L420 364\" style=\"color:var(--ink)\" marker-end=\"url(#arr)\"/><path class=\"sk blue\" d=\"M330 374 L330 404\" style=\"color:var(--ink)\" marker-end=\"url(#arr)\"/><path class=\"sk\" d=\"M330 404.0 L410.0 440 L330 476.0 L250.0 440 Z\" style=\"fill:var(--hl-yellow)\"/><text class=\"lbl\" x=\"330\" y=\"435.5\" text-anchor=\"middle\">both<\/text><text class=\"lbl\" x=\"330\" y=\"454.5\" text-anchor=\"middle\">succeeded?<\/text><path class=\"sk blue\" d=\"M250 440 L190 440\" style=\"color:var(--ink)\" marker-end=\"url(#arr)\"/><text class=\"lbl r\" x=\"218\" y=\"428\" text-anchor=\"middle\">no<\/text><rect class=\"sk\" x=\"50\" y=\"416\" width=\"140\" height=\"48\" rx=\"12\"/><text class=\"lbl b\" x=\"120.0\" y=\"435.0\" text-anchor=\"middle\">Release stock,<\/text><text class=\"lbl\" x=\"120.0\" y=\"455.0\" text-anchor=\"middle\">void payment<\/text><path class=\"sk blue\" d=\"M120 416 L120 394\" style=\"color:var(--ink)\" marker-end=\"url(#arr)\"/><circle class=\"sk\" cx=\"120\" cy=\"382\" r=\"12\"/><path class=\"sk blue\" d=\"M330 476 L330 509\" style=\"color:var(--ink)\" marker-end=\"url(#arr)\"/><text class=\"lbl g\" x=\"344\" y=\"498\" text-anchor=\"start\">yes<\/text><path class=\"sk\" d=\"M330 509.0 L410.0 545 L330 581.0 L250.0 545 Z\" style=\"fill:var(--hl-yellow)\"/><text class=\"lbl\" x=\"330\" y=\"540.5\" text-anchor=\"middle\">total over<\/text><text class=\"lbl\" x=\"330\" y=\"559.5\" text-anchor=\"middle\">limit?<\/text><path class=\"sk blue\" d=\"M250 545 L200 545\" style=\"color:var(--ink)\" marker-end=\"url(#arr)\"/><text class=\"lbl g\" x=\"218\" y=\"533\" text-anchor=\"middle\">yes<\/text><path class=\"sk\" d=\"M120 509.0 L200.0 545 L120 581.0 L40.0 545 Z\" style=\"fill:var(--hl-yellow)\"/><text class=\"lbl\" x=\"120\" y=\"540.5\" text-anchor=\"middle\">manager<\/text><text class=\"lbl\" x=\"120\" y=\"559.5\" text-anchor=\"middle\">approves?<\/text><path class=\"sk red\" d=\"M120 509 L120 466\" style=\"color:var(--red)\" marker-end=\"url(#arr)\"/><text class=\"lbl r\" x=\"134\" y=\"494\" text-anchor=\"start\">no<\/text><rect class=\"sk\" x=\"255\" y=\"618\" width=\"150\" height=\"44\" rx=\"12\"/><text class=\"lbl\" x=\"330.0\" y=\"645.0\" text-anchor=\"middle\">Confirm order<\/text><path class=\"sk blue\" d=\"M330 581 L330 616\" style=\"color:var(--ink)\" marker-end=\"url(#arr)\"/><text class=\"lbl r\" x=\"344\" y=\"604\" text-anchor=\"start\">no<\/text><path class=\"sk green\" d=\"M120 581 C 120 640, 210 640, 253 640\" style=\"color:var(--green)\" marker-end=\"url(#arr)\"/><text class=\"lbl g\" x=\"108\" y=\"620\" text-anchor=\"end\">yes<\/text><path class=\"sk blue\" d=\"M330 662 L330 690\" style=\"color:var(--ink)\" marker-end=\"url(#arr)\"/><rect class=\"sk\" x=\"255\" y=\"692\" width=\"150\" height=\"44\" rx=\"12\"/><text class=\"lbl\" x=\"330.0\" y=\"719.0\" text-anchor=\"middle\">Send receipt<\/text><path class=\"sk blue\" d=\"M330 736 L330 758\" style=\"color:var(--ink)\" marker-end=\"url(#arr)\"/><circle class=\"sk\" cx=\"330\" cy=\"772\" r=\"12\"/><\/svg><figcaption>Fig 3: activity diagram. Fork/join bars mark parallel branches; diamonds are decisions with guards.<\/figcaption><\/figure>", "<figure><svg viewBox=\"0 0 660 420\" role=\"img\" aria-label=\"URL shortener architecture\"><rect class=\"sk\" x=\"20\" y=\"175\" width=\"100\" height=\"50\" rx=\"12\"/><text class=\"lbl\" x=\"70.0\" y=\"205.0\" text-anchor=\"middle\">clients<\/text><rect class=\"sk\" x=\"150\" y=\"175\" width=\"100\" height=\"50\" rx=\"12\"/><text class=\"lbl b\" x=\"200.0\" y=\"195.0\" text-anchor=\"middle\">load<\/text><text class=\"lbl\" x=\"200.0\" y=\"215.0\" text-anchor=\"middle\">balancer<\/text><rect class=\"sk\" x=\"300\" y=\"20\" width=\"150\" height=\"50\" rx=\"12\"/><text class=\"lbl b\" x=\"375.0\" y=\"40.0\" text-anchor=\"middle\">click events<\/text><text class=\"lbl\" x=\"375.0\" y=\"60.0\" text-anchor=\"middle\">queue<\/text><rect class=\"sk\" x=\"300\" y=\"110\" width=\"150\" height=\"56\" rx=\"12\"/><text class=\"lbl b\" x=\"375.0\" y=\"133.0\" text-anchor=\"middle\">redirect service<\/text><text class=\"lbl\" x=\"375.0\" y=\"153.0\" text-anchor=\"middle\">stateless<\/text><rect class=\"sk\" x=\"300\" y=\"240\" width=\"150\" height=\"56\" rx=\"12\"/><text class=\"lbl\" x=\"375.0\" y=\"273.0\" text-anchor=\"middle\">create service<\/text><rect class=\"sk\" x=\"300\" y=\"350\" width=\"165\" height=\"56\" rx=\"12\"/><text class=\"lbl b\" x=\"382.5\" y=\"373.0\" text-anchor=\"middle\">ID generator<\/text><text class=\"lbl\" x=\"382.5\" y=\"393.0\" text-anchor=\"middle\">range allocation<\/text><rect class=\"sk\" x=\"490\" y=\"110\" width=\"150\" height=\"56\" rx=\"12\"/><text class=\"lbl b\" x=\"565.0\" y=\"133.0\" text-anchor=\"middle\">cache<\/text><text class=\"lbl\" x=\"565.0\" y=\"153.0\" text-anchor=\"middle\">hot short keys<\/text><rect class=\"sk\" x=\"490\" y=\"240\" width=\"150\" height=\"56\" rx=\"12\"/><text class=\"lbl b\" x=\"565.0\" y=\"263.0\" text-anchor=\"middle\">links store<\/text><text class=\"lbl\" x=\"565.0\" y=\"283.0\" text-anchor=\"middle\">sharded by short<\/text><path class=\"sk blue\" d=\"M120 200 L150 200\" style=\"color:var(--ink)\" marker-end=\"url(#arr)\"/><path class=\"sk blue\" d=\"M250 190 C 280 190, 280 138, 300 138\" style=\"color:var(--ink)\" marker-end=\"url(#arr)\"/><path class=\"sk blue\" d=\"M250 210 C 280 210, 280 268, 300 268\" style=\"color:var(--ink)\" marker-end=\"url(#arr)\"/><path class=\"sk blue\" d=\"M450 138 L490 138\" style=\"color:var(--ink)\" marker-end=\"url(#arr)\"/><path class=\"sk blue\" d=\"M375 110 L375 70\" style=\"color:var(--ink)\" marker-end=\"url(#arr)\"/><path class=\"sk blue\" d=\"M375 296 L375 350\" style=\"color:var(--ink)\" marker-end=\"url(#arr)\"/><path class=\"sk blue\" d=\"M450 268 L490 268\" style=\"color:var(--ink)\" marker-end=\"url(#arr)\"/><path class=\"sk blue\" d=\"M565 166 L565 240\" style=\"color:var(--ink)\" stroke-dasharray=\"7 6\" marker-end=\"url(#arr)\"/><text class=\"lbl\" x=\"580\" y=\"208\" text-anchor=\"start\">miss<\/text><path class=\"sk blue\" d=\"M440 296 C 440 330, 565 330, 565 296\" style=\"color:var(--ink)\" stroke-dasharray=\"7 6\" marker-end=\"url(#arr)\"/><text class=\"lbl\" x=\"570\" y=\"352\" text-anchor=\"middle\">uniqueness check<\/text><\/svg><figcaption>Fig 4: URL shortener. Redirect path (top) and create path (bottom) scale separately; dashed = miss and uniqueness check (bloom filter optional).<\/figcaption><\/figure>"]</script>
+<script>window.GUIDE = { root: "../../", page: "volumes/volume-4-high-level-design/ch01-approaching-a-system-design-problem.html", nav: [{"title": "Volume 0 \u2014 Math & Mental Models", "goal": "The math the rest of the book silently assumes. Load-bearing for algorithms (Vol 1 Part 4) and all of AI (Vol 5).", "index": "volumes/volume-0-math/index.html", "chapters": [{"n": 1, "title": "Logic & Boolean Algebra", "part": null, "md": "volumes/volume-0-math/ch01-logic-and-boolean-algebra.md", "page": "volumes/volume-0-math/ch01-logic-and-boolean-algebra.html", "exists": true}, {"n": 2, "title": "Sets, Relations & Functions", "part": null, "md": "volumes/volume-0-math/ch02-sets-relations-and-functions.md", "page": "volumes/volume-0-math/ch02-sets-relations-and-functions.html", "exists": true}, {"n": 3, "title": "Combinatorics & Counting", "part": null, "md": "volumes/volume-0-math/ch03-combinatorics-and-counting.md", "page": "volumes/volume-0-math/ch03-combinatorics-and-counting.html", "exists": true}, {"n": 4, "title": "Graph Theory Foundations", "part": null, "md": "volumes/volume-0-math/ch04-graph-theory-foundations.md", "page": "volumes/volume-0-math/ch04-graph-theory-foundations.html", "exists": true}, {"n": 5, "title": "Proof by Induction", "part": null, "md": "volumes/volume-0-math/ch05-proof-by-induction.md", "page": "volumes/volume-0-math/ch05-proof-by-induction.html", "exists": true}, {"n": 6, "title": "Asymptotic Notation (Big-O, \u0398, \u03a9)", "part": null, "md": "volumes/volume-0-math/ch06-asymptotic-notation-big-o.md", "page": "volumes/volume-0-math/ch06-asymptotic-notation-big-o.html", "exists": true}, {"n": 7, "title": "Time/Space Complexity & Amortized Analysis", "part": null, "md": "volumes/volume-0-math/ch07-time-space-complexity-and-amortized-analysis.md", "page": "volumes/volume-0-math/ch07-time-space-complexity-and-amortized-analysis.html", "exists": true}, {"n": 8, "title": "Probability, Distributions & Bayes", "part": null, "md": "volumes/volume-0-math/ch08-probability-distributions-and-bayes.md", "page": "volumes/volume-0-math/ch08-probability-distributions-and-bayes.html", "exists": true}, {"n": 9, "title": "Linear Algebra for AI", "part": null, "md": "volumes/volume-0-math/ch09-linear-algebra-for-ai.md", "page": "volumes/volume-0-math/ch09-linear-algebra-for-ai.html", "exists": true}]}, {"title": "Volume 1 \u2014 Computer Science Foundations", "goal": "Understand how computers work from the hardware up to applications.", "index": "volumes/volume-1-cs-foundations/index.html", "chapters": [{"n": 1, "title": "Variables, Data Types & Operators", "part": "Programming Fundamentals", "md": "volumes/volume-1-cs-foundations/ch01-variables-data-types-and-operators.md", "page": "volumes/volume-1-cs-foundations/ch01-variables-data-types-and-operators.html", "exists": true}, {"n": 2, "title": "Control Flow", "part": "Programming Fundamentals", "md": "volumes/volume-1-cs-foundations/ch02-control-flow.md", "page": "volumes/volume-1-cs-foundations/ch02-control-flow.html", "exists": true}, {"n": 3, "title": "Functions, Parameters, Return Values, Scope & Namespaces", "part": "Programming Fundamentals", "md": "volumes/volume-1-cs-foundations/ch03-functions-parameters-return-values-scope-and-namespaces.md", "page": "volumes/volume-1-cs-foundations/ch03-functions-parameters-return-values-scope-and-namespaces.html", "exists": true}, {"n": 4, "title": "Built-in Data Structures", "part": "Programming Fundamentals", "md": "volumes/volume-1-cs-foundations/ch04-built-in-data-structures.md", "page": "volumes/volume-1-cs-foundations/ch04-built-in-data-structures.html", "exists": true}, {"n": 5, "title": "Modules, Packages, Imports & Dependency Management", "part": "Programming Fundamentals", "md": "volumes/volume-1-cs-foundations/ch05-modules-packages-imports-and-dependency-management.md", "page": "volumes/volume-1-cs-foundations/ch05-modules-packages-imports-and-dependency-management.html", "exists": true}, {"n": 6, "title": "Error Handling", "part": "Programming Fundamentals", "md": "volumes/volume-1-cs-foundations/ch06-error-handling.md", "page": "volumes/volume-1-cs-foundations/ch06-error-handling.html", "exists": true}, {"n": 7, "title": "File I/O", "part": "Programming Fundamentals", "md": "volumes/volume-1-cs-foundations/ch07-file-i-o.md", "page": "volumes/volume-1-cs-foundations/ch07-file-i-o.html", "exists": true}, {"n": 8, "title": "Data Formats (Text): JSON, CSV, XML, YAML, TOML", "part": "Programming Fundamentals", "md": "volumes/volume-1-cs-foundations/ch08-data-formats-text-json-csv-xml-yaml.md", "page": "volumes/volume-1-cs-foundations/ch08-data-formats-text-json-csv-xml-yaml.html", "exists": true}, {"n": 9, "title": "Character Encoding & Binary Serialization", "part": "Programming Fundamentals", "md": "volumes/volume-1-cs-foundations/ch09-character-encoding-and-binary-serialization.md", "page": "volumes/volume-1-cs-foundations/ch09-character-encoding-and-binary-serialization.html", "exists": true}, {"n": 10, "title": "Generics, Traits, Interfaces & Abstract Classes", "part": "Programming Fundamentals", "md": "volumes/volume-1-cs-foundations/ch10-generics-traits-interfaces-and-abstract-classes.md", "page": "volumes/volume-1-cs-foundations/ch10-generics-traits-interfaces-and-abstract-classes.html", "exists": true}, {"n": 11, "title": "Advanced Language Features", "part": "Programming Fundamentals", "md": "volumes/volume-1-cs-foundations/ch11-advanced-language-features.md", "page": "volumes/volume-1-cs-foundations/ch11-advanced-language-features.html", "exists": true}, {"n": 12, "title": "Memory: Stack, Heap, Ownership & Garbage Collection", "part": "Programming Fundamentals", "md": "volumes/volume-1-cs-foundations/ch12-memory-stack-heap-ownership-and-garbage-collection.md", "page": "volumes/volume-1-cs-foundations/ch12-memory-stack-heap-ownership-and-garbage-collection.html", "exists": true}, {"n": 13, "title": "Concurrency: Threads, Processes, Async, Futures & Coroutines", "part": "Programming Fundamentals", "md": "volumes/volume-1-cs-foundations/ch13-concurrency-threads-processes-async-futures-and-coroutines.md", "page": "volumes/volume-1-cs-foundations/ch13-concurrency-threads-processes-async-futures-and-coroutines.html", "exists": true}, {"n": 14, "title": "Programming Paradigms", "part": "Programming Fundamentals", "md": "volumes/volume-1-cs-foundations/ch14-programming-paradigms.md", "page": "volumes/volume-1-cs-foundations/ch14-programming-paradigms.html", "exists": true}, {"n": 15, "title": "Correctness Traps", "part": "Programming Fundamentals", "md": "volumes/volume-1-cs-foundations/ch15-correctness-traps.md", "page": "volumes/volume-1-cs-foundations/ch15-correctness-traps.html", "exists": true}, {"n": 16, "title": "Linux: Filesystem, Shell, Bash, Permissions, Users & Groups", "part": "Developer Environment", "md": "volumes/volume-1-cs-foundations/ch16-linux-filesystem-shell-bash-permissions-users-and.md", "page": "volumes/volume-1-cs-foundations/ch16-linux-filesystem-shell-bash-permissions-users-and.html", "exists": true}, {"n": 17, "title": "Linux: Processes, Signals, Services, systemd, SSH, Cron & Networking", "part": "Developer Environment", "md": "volumes/volume-1-cs-foundations/ch17-linux-processes-signals-services-systemd-ssh-cron.md", "page": "volumes/volume-1-cs-foundations/ch17-linux-processes-signals-services-systemd-ssh-cron.html", "exists": true}, {"n": 18, "title": "Terminal Tools: grep, sed, awk, jq, curl, wget, find, xargs, tmux, rsync", "part": "Developer Environment", "md": "volumes/volume-1-cs-foundations/ch18-terminal-tools-grep-sed-awk-jq-curl.md", "page": "volumes/volume-1-cs-foundations/ch18-terminal-tools-grep-sed-awk-jq-curl.html", "exists": true}, {"n": 19, "title": "Git: Branching, Merge, Rebase & Cherry-Pick", "part": "Developer Environment", "md": "volumes/volume-1-cs-foundations/ch19-git-branching-merge-rebase-and-cherry-pick.md", "page": "volumes/volume-1-cs-foundations/ch19-git-branching-merge-rebase-and-cherry-pick.html", "exists": true}, {"n": 20, "title": "Git: Tags, Stash, Hooks & Internals", "part": "Developer Environment", "md": "volumes/volume-1-cs-foundations/ch20-git-tags-stash-hooks-and-internals.md", "page": "volumes/volume-1-cs-foundations/ch20-git-tags-stash-hooks-and-internals.html", "exists": true}, {"n": 21, "title": "Build Systems & Package Management", "part": "Developer Environment", "md": "volumes/volume-1-cs-foundations/ch21-build-systems-and-package-management.md", "page": "volumes/volume-1-cs-foundations/ch21-build-systems-and-package-management.html", "exists": true}, {"n": 22, "title": "Clean Code & Refactoring", "part": "Software Engineering Fundamentals", "md": "volumes/volume-1-cs-foundations/ch22-clean-code-and-refactoring.md", "page": "volumes/volume-1-cs-foundations/ch22-clean-code-and-refactoring.html", "exists": true}, {"n": 23, "title": "Documentation, ADRs & READMEs", "part": "Software Engineering Fundamentals", "md": "volumes/volume-1-cs-foundations/ch23-documentation-adrs-and-readmes.md", "page": "volumes/volume-1-cs-foundations/ch23-documentation-adrs-and-readmes.html", "exists": true}, {"n": 24, "title": "Logging", "part": "Software Engineering Fundamentals", "md": "volumes/volume-1-cs-foundations/ch24-logging.md", "page": "volumes/volume-1-cs-foundations/ch24-logging.html", "exists": true}, {"n": 25, "title": "Configuration & Secrets Management", "part": "Software Engineering Fundamentals", "md": "volumes/volume-1-cs-foundations/ch25-configuration-and-secrets-management.md", "page": "volumes/volume-1-cs-foundations/ch25-configuration-and-secrets-management.html", "exists": true}, {"n": 26, "title": "Testing: Unit, Integration, Mocking & Coverage", "part": "Software Engineering Fundamentals", "md": "volumes/volume-1-cs-foundations/ch26-testing-unit-integration-mocking-and-coverage.md", "page": "volumes/volume-1-cs-foundations/ch26-testing-unit-integration-mocking-and-coverage.html", "exists": true}, {"n": 27, "title": "Debugging & Profiling", "part": "Software Engineering Fundamentals", "md": "volumes/volume-1-cs-foundations/ch27-debugging-and-profiling.md", "page": "volumes/volume-1-cs-foundations/ch27-debugging-and-profiling.html", "exists": true}, {"n": 28, "title": "Static Analysis: Linters, Formatters & Type Checkers", "part": "Software Engineering Fundamentals", "md": "volumes/volume-1-cs-foundations/ch28-static-analysis-linters-formatters-and-type-checkers.md", "page": "volumes/volume-1-cs-foundations/ch28-static-analysis-linters-formatters-and-type-checkers.html", "exists": true}, {"n": 29, "title": "Basic Data Structures: Arrays, Linked Lists, Stack & Queue", "part": "Data Structures & Algorithms", "md": "volumes/volume-1-cs-foundations/ch29-basic-data-structures-arrays-linked-lists-stack.md", "page": "volumes/volume-1-cs-foundations/ch29-basic-data-structures-arrays-linked-lists-stack.html", "exists": true}, {"n": 30, "title": "Trees, BST, Heap & Trie", "part": "Data Structures & Algorithms", "md": "volumes/volume-1-cs-foundations/ch30-trees-bst-heap-and-trie.md", "page": "volumes/volume-1-cs-foundations/ch30-trees-bst-heap-and-trie.html", "exists": true}, {"n": 31, "title": "Hash Tables & Graphs", "part": "Data Structures & Algorithms", "md": "volumes/volume-1-cs-foundations/ch31-hash-tables-and-graphs.md", "page": "volumes/volume-1-cs-foundations/ch31-hash-tables-and-graphs.html", "exists": true}, {"n": 32, "title": "Advanced Structures: Segment Tree, Fenwick Tree & Union-Find", "part": "Data Structures & Algorithms", "md": "volumes/volume-1-cs-foundations/ch32-advanced-structures-segment-tree-fenwick-tree-and.md", "page": "volumes/volume-1-cs-foundations/ch32-advanced-structures-segment-tree-fenwick-tree-and.html", "exists": true}, {"n": 33, "title": "Sorting, Searching & Binary Search", "part": "Data Structures & Algorithms", "md": "volumes/volume-1-cs-foundations/ch33-sorting-searching-and-binary-search.md", "page": "volumes/volume-1-cs-foundations/ch33-sorting-searching-and-binary-search.html", "exists": true}, {"n": 34, "title": "Graph Algorithms: DFS, BFS, Topological Sort & Backtracking", "part": "Data Structures & Algorithms", "md": "volumes/volume-1-cs-foundations/ch34-graph-algorithms-dfs-bfs-topological-sort-and.md", "page": "volumes/volume-1-cs-foundations/ch34-graph-algorithms-dfs-bfs-topological-sort-and.html", "exists": true}, {"n": 35, "title": "Dynamic Programming, Greedy, Divide & Conquer, Sliding Window & Two Pointers", "part": "Data Structures & Algorithms", "md": "volumes/volume-1-cs-foundations/ch35-dynamic-programming-greedy-divide-and-conquer-sliding.md", "page": "volumes/volume-1-cs-foundations/ch35-dynamic-programming-greedy-divide-and-conquer-sliding.html", "exists": true}, {"n": 36, "title": "Binary, CPU, Registers, Cache & Memory Hierarchy", "part": "Computer Architecture", "md": "volumes/volume-1-cs-foundations/ch36-binary-cpu-registers-cache-and-memory-hierarchy.md", "page": "volumes/volume-1-cs-foundations/ch36-binary-cpu-registers-cache-and-memory-hierarchy.html", "exists": true}, {"n": 37, "title": "Instruction Cycle, Pipelining, SIMD & Virtual Memory", "part": "Computer Architecture", "md": "volumes/volume-1-cs-foundations/ch37-instruction-cycle-pipelining-simd-and-virtual-memory.md", "page": "volumes/volume-1-cs-foundations/ch37-instruction-cycle-pipelining-simd-and-virtual-memory.html", "exists": true}, {"n": 38, "title": "OS: Processes, Threads, Scheduling, Synchronization & Deadlocks", "part": "Operating Systems", "md": "volumes/volume-1-cs-foundations/ch38-os-processes-threads-scheduling-synchronization-and-deadlocks.md", "page": "volumes/volume-1-cs-foundations/ch38-os-processes-threads-scheduling-synchronization-and-deadlocks.html", "exists": true}, {"n": 39, "title": "OS: Memory Management, File Systems, System Calls & IPC", "part": "Operating Systems", "md": "volumes/volume-1-cs-foundations/ch39-os-memory-management-file-systems-system-calls.md", "page": "volumes/volume-1-cs-foundations/ch39-os-memory-management-file-systems-system-calls.html", "exists": true}, {"n": 40, "title": "Networking Fundamentals: OSI, TCP/IP, IP, Ports, DNS & NAT", "part": "Networking", "md": "volumes/volume-1-cs-foundations/ch40-networking-fundamentals-osi-tcp-ip-ip-ports.md", "page": "volumes/volume-1-cs-foundations/ch40-networking-fundamentals-osi-tcp-ip-ip-ports.html", "exists": true}, {"n": 41, "title": "Transport & Security: TCP, UDP, QUIC, TLS & HTTPS", "part": "Networking", "md": "volumes/volume-1-cs-foundations/ch41-transport-and-security-tcp-udp-quic-tls.md", "page": "volumes/volume-1-cs-foundations/ch41-transport-and-security-tcp-udp-quic-tls.html", "exists": true}, {"n": 42, "title": "HTTP, REST, GraphQL & JSON-RPC", "part": "Networking", "md": "volumes/volume-1-cs-foundations/ch42-http-rest-graphql-and-json-rpc.md", "page": "volumes/volume-1-cs-foundations/ch42-http-rest-graphql-and-json-rpc.html", "exists": true}, {"n": 43, "title": "WebSockets, gRPC, MQTT & SSE", "part": "Networking", "md": "volumes/volume-1-cs-foundations/ch43-websockets-grpc-mqtt-and-sse.md", "page": "volumes/volume-1-cs-foundations/ch43-websockets-grpc-mqtt-and-sse.html", "exists": true}, {"n": 44, "title": "Delivery: Load Balancing, Reverse Proxies & CDN", "part": "Networking", "md": "volumes/volume-1-cs-foundations/ch44-delivery-load-balancing-reverse-proxies-and-cdn.md", "page": "volumes/volume-1-cs-foundations/ch44-delivery-load-balancing-reverse-proxies-and-cdn.html", "exists": true}, {"n": 45, "title": "SQL & the Relational Model", "part": "Databases", "md": "volumes/volume-1-cs-foundations/ch45-sql-and-the-relational-model.md", "page": "volumes/volume-1-cs-foundations/ch45-sql-and-the-relational-model.html", "exists": true}, {"n": 46, "title": "Schema Design, Normalization & Indexing", "part": "Databases", "md": "volumes/volume-1-cs-foundations/ch46-schema-design-normalization-and-indexing.md", "page": "volumes/volume-1-cs-foundations/ch46-schema-design-normalization-and-indexing.html", "exists": true}, {"n": 47, "title": "ACID, Transactions & Isolation", "part": "Databases", "md": "volumes/volume-1-cs-foundations/ch47-acid-transactions-and-isolation.md", "page": "volumes/volume-1-cs-foundations/ch47-acid-transactions-and-isolation.html", "exists": true}, {"n": 48, "title": "NoSQL: MongoDB, Cassandra & DynamoDB", "part": "Databases", "md": "volumes/volume-1-cs-foundations/ch48-nosql-mongodb-cassandra-and-dynamodb.md", "page": "volumes/volume-1-cs-foundations/ch48-nosql-mongodb-cassandra-and-dynamodb.html", "exists": true}, {"n": 49, "title": "Redis, Elasticsearch, Neo4j & Vector Databases", "part": "Databases", "md": "volumes/volume-1-cs-foundations/ch49-redis-elasticsearch-neo4j-and-vector-databases.md", "page": "volumes/volume-1-cs-foundations/ch49-redis-elasticsearch-neo4j-and-vector-databases.html", "exists": true}, {"n": 50, "title": "CAP, Consistency & Consensus", "part": "Distributed Systems", "md": "volumes/volume-1-cs-foundations/ch50-cap-consistency-and-consensus.md", "page": "volumes/volume-1-cs-foundations/ch50-cap-consistency-and-consensus.html", "exists": true}, {"n": 51, "title": "Replication, Sharding, Raft & Paxos", "part": "Distributed Systems", "md": "volumes/volume-1-cs-foundations/ch51-replication-sharding-raft-and-paxos.md", "page": "volumes/volume-1-cs-foundations/ch51-replication-sharding-raft-and-paxos.html", "exists": true}, {"n": 52, "title": "Event Sourcing & CQRS (Distributed View)", "part": "Distributed Systems", "md": "volumes/volume-1-cs-foundations/ch52-event-sourcing-and-cqrs-distributed-view.md", "page": "volumes/volume-1-cs-foundations/ch52-event-sourcing-and-cqrs-distributed-view.html", "exists": true}, {"n": 53, "title": "ETL/ELT, Batch & Stream Processing", "part": "Data Engineering", "md": "volumes/volume-1-cs-foundations/ch53-etl-elt-batch-and-stream-processing.md", "page": "volumes/volume-1-cs-foundations/ch53-etl-elt-batch-and-stream-processing.html", "exists": true}, {"n": 54, "title": "Data Lakes, Warehouses & Orchestration", "part": "Data Engineering", "md": "volumes/volume-1-cs-foundations/ch54-data-lakes-warehouses-and-orchestration.md", "page": "volumes/volume-1-cs-foundations/ch54-data-lakes-warehouses-and-orchestration.html", "exists": true}, {"n": 55, "title": "Containers: Docker, Kubernetes & Helm", "part": "Cloud & Ops", "md": "volumes/volume-1-cs-foundations/ch55-containers-docker-kubernetes-and-helm.md", "page": "volumes/volume-1-cs-foundations/ch55-containers-docker-kubernetes-and-helm.html", "exists": true}, {"n": 56, "title": "IaC: Terraform, State & Config Drift", "part": "Cloud & Ops", "md": "volumes/volume-1-cs-foundations/ch56-iac-terraform-state-and-config-drift.md", "page": "volumes/volume-1-cs-foundations/ch56-iac-terraform-state-and-config-drift.html", "exists": true}, {"n": 57, "title": "CI/CD & GitHub Actions", "part": "Cloud & Ops", "md": "volumes/volume-1-cs-foundations/ch57-ci-cd-and-github-actions.md", "page": "volumes/volume-1-cs-foundations/ch57-ci-cd-and-github-actions.html", "exists": true}, {"n": 58, "title": "Observability: Logs, Metrics, Traces & OpenTelemetry", "part": "Cloud & Ops", "md": "volumes/volume-1-cs-foundations/ch58-observability-logs-metrics-traces-and-opentelemetry.md", "page": "volumes/volume-1-cs-foundations/ch58-observability-logs-metrics-traces-and-opentelemetry.html", "exists": true}, {"n": 59, "title": "Cost Awareness in the Cloud", "part": "Cloud & Ops", "md": "volumes/volume-1-cs-foundations/ch59-cost-awareness-in-the-cloud.md", "page": "volumes/volume-1-cs-foundations/ch59-cost-awareness-in-the-cloud.html", "exists": true}]}, {"title": "Volume 2 \u2014 Software Engineering", "goal": "Everything beyond writing code that ships and survives production.", "index": "volumes/volume-2-software-engineering/index.html", "chapters": [{"n": 1, "title": "Professional Git Workflow", "part": null, "md": "volumes/volume-2-software-engineering/ch01-professional-git-workflow.md", "page": "volumes/volume-2-software-engineering/ch01-professional-git-workflow.html", "exists": true}, {"n": 2, "title": "Monorepos", "part": null, "md": "volumes/volume-2-software-engineering/ch02-monorepos.md", "page": "volumes/volume-2-software-engineering/ch02-monorepos.html", "exists": true}, {"n": 3, "title": "Dependency Injection & Inversion of Control", "part": null, "md": "volumes/volume-2-software-engineering/ch03-dependency-injection-and-inversion-of-control.md", "page": "volumes/volume-2-software-engineering/ch03-dependency-injection-and-inversion-of-control.html", "exists": true}, {"n": 4, "title": "The Testing Pyramid & Test Strategy", "part": null, "md": "volumes/volume-2-software-engineering/ch04-the-testing-pyramid-and-test-strategy.md", "page": "volumes/volume-2-software-engineering/ch04-the-testing-pyramid-and-test-strategy.html", "exists": true}, {"n": 5, "title": "CI/CD", "part": null, "md": "volumes/volume-2-software-engineering/ch05-ci-cd.md", "page": "volumes/volume-2-software-engineering/ch05-ci-cd.html", "exists": true}, {"n": 6, "title": "Packaging & Release Engineering", "part": null, "md": "volumes/volume-2-software-engineering/ch06-packaging-and-release-engineering.md", "page": "volumes/volume-2-software-engineering/ch06-packaging-and-release-engineering.html", "exists": true}, {"n": 7, "title": "Code Reviews", "part": null, "md": "volumes/volume-2-software-engineering/ch07-code-reviews.md", "page": "volumes/volume-2-software-engineering/ch07-code-reviews.html", "exists": true}, {"n": 8, "title": "Static Analysis & Type Safety at Scale", "part": null, "md": "volumes/volume-2-software-engineering/ch08-static-analysis-and-type-safety-at-scale.md", "page": "volumes/volume-2-software-engineering/ch08-static-analysis-and-type-safety-at-scale.html", "exists": true}, {"n": 9, "title": "Performance Engineering", "part": null, "md": "volumes/volume-2-software-engineering/ch09-performance-engineering.md", "page": "volumes/volume-2-software-engineering/ch09-performance-engineering.html", "exists": true}, {"n": 10, "title": "Security & Threat Modeling", "part": null, "md": "volumes/volume-2-software-engineering/ch10-security-and-threat-modeling.md", "page": "volumes/volume-2-software-engineering/ch10-security-and-threat-modeling.html", "exists": true}, {"n": 11, "title": "Licensing & OSS Compliance", "part": null, "md": "volumes/volume-2-software-engineering/ch11-licensing-and-oss-compliance.md", "page": "volumes/volume-2-software-engineering/ch11-licensing-and-oss-compliance.html", "exists": true}, {"n": 12, "title": "API Design & Versioning", "part": null, "md": "volumes/volume-2-software-engineering/ch12-api-design-and-versioning.md", "page": "volumes/volume-2-software-engineering/ch12-api-design-and-versioning.html", "exists": true}, {"n": 13, "title": "Documentation as a System", "part": null, "md": "volumes/volume-2-software-engineering/ch13-documentation-as-a-system.md", "page": "volumes/volume-2-software-engineering/ch13-documentation-as-a-system.html", "exists": true}, {"n": 14, "title": "Observability: Logs, Metrics & Traces", "part": null, "md": "volumes/volume-2-software-engineering/ch14-observability-logs-metrics-and-traces.md", "page": "volumes/volume-2-software-engineering/ch14-observability-logs-metrics-and-traces.html", "exists": true}, {"n": 15, "title": "Incident Response & Postmortems", "part": null, "md": "volumes/volume-2-software-engineering/ch15-incident-response-and-postmortems.md", "page": "volumes/volume-2-software-engineering/ch15-incident-response-and-postmortems.html", "exists": true}, {"n": 16, "title": "Production Debugging", "part": null, "md": "volumes/volume-2-software-engineering/ch16-production-debugging.md", "page": "volumes/volume-2-software-engineering/ch16-production-debugging.html", "exists": true}]}, {"title": "Volume 3 \u2014 Low-Level Design", "goal": "Design clean, correct, maintainable components. Requires Volume 2.", "index": "volumes/volume-3-low-level-design/index.html", "chapters": [{"n": 1, "title": "OOP Fundamentals", "part": null, "md": "volumes/volume-3-low-level-design/ch01-oop-fundamentals.md", "page": "volumes/volume-3-low-level-design/ch01-oop-fundamentals.html", "exists": true}, {"n": 2, "title": "SOLID Principles", "part": null, "md": "volumes/volume-3-low-level-design/ch02-solid-principles.md", "page": "volumes/volume-3-low-level-design/ch02-solid-principles.html", "exists": true}, {"n": 3, "title": "Design Principles (Cohesion, Coupling, YAGNI, DRY, KISS)", "part": null, "md": "volumes/volume-3-low-level-design/ch03-design-principles-cohesion-coupling-yagni-dry-kiss.md", "page": "volumes/volume-3-low-level-design/ch03-design-principles-cohesion-coupling-yagni-dry-kiss.html", "exists": true}, {"n": 4, "title": "UML & Diagramming", "part": null, "md": "volumes/volume-3-low-level-design/ch04-uml-and-diagramming.md", "page": "volumes/volume-3-low-level-design/ch04-uml-and-diagramming.html", "exists": true}, {"n": 5, "title": "GoF Creational Patterns", "part": null, "md": "volumes/volume-3-low-level-design/ch05-gof-creational-patterns.md", "page": "volumes/volume-3-low-level-design/ch05-gof-creational-patterns.html", "exists": true}, {"n": 6, "title": "GoF Structural Patterns", "part": null, "md": "volumes/volume-3-low-level-design/ch06-gof-structural-patterns.md", "page": "volumes/volume-3-low-level-design/ch06-gof-structural-patterns.html", "exists": true}, {"n": 7, "title": "GoF Behavioral Patterns", "part": null, "md": "volumes/volume-3-low-level-design/ch07-gof-behavioral-patterns.md", "page": "volumes/volume-3-low-level-design/ch07-gof-behavioral-patterns.html", "exists": true}, {"n": 8, "title": "Clean Architecture", "part": null, "md": "volumes/volume-3-low-level-design/ch08-clean-architecture.md", "page": "volumes/volume-3-low-level-design/ch08-clean-architecture.html", "exists": true}, {"n": 9, "title": "Hexagonal Architecture (Ports & Adapters)", "part": null, "md": "volumes/volume-3-low-level-design/ch09-hexagonal-architecture-ports-and-adapters.md", "page": "volumes/volume-3-low-level-design/ch09-hexagonal-architecture-ports-and-adapters.html", "exists": true}, {"n": 10, "title": "Domain-Driven Design (Tactical)", "part": null, "md": "volumes/volume-3-low-level-design/ch10-domain-driven-design-tactical.md", "page": "volumes/volume-3-low-level-design/ch10-domain-driven-design-tactical.html", "exists": true}, {"n": 11, "title": "Repository Pattern & Data Mapping", "part": null, "md": "volumes/volume-3-low-level-design/ch11-repository-pattern-and-data-mapping.md", "page": "volumes/volume-3-low-level-design/ch11-repository-pattern-and-data-mapping.html", "exists": true}, {"n": 12, "title": "Event Bus, CQRS & Event Sourcing", "part": null, "md": "volumes/volume-3-low-level-design/ch12-event-bus-cqrs-and-event-sourcing.md", "page": "volumes/volume-3-low-level-design/ch12-event-bus-cqrs-and-event-sourcing.html", "exists": true}, {"n": 13, "title": "Concurrency Patterns & Thread Safety", "part": null, "md": "volumes/volume-3-low-level-design/ch13-concurrency-patterns-and-thread-safety.md", "page": "volumes/volume-3-low-level-design/ch13-concurrency-patterns-and-thread-safety.html", "exists": true}, {"n": 14, "title": "Resilience Patterns (Idempotency, Retries, Backoff, Circuit Breakers)", "part": null, "md": "volumes/volume-3-low-level-design/ch14-resilience-patterns-idempotency-retries-backoff-circuit-breakers.md", "page": "volumes/volume-3-low-level-design/ch14-resilience-patterns-idempotency-retries-backoff-circuit-breakers.html", "exists": true}]}, {"title": "Volume 4 \u2014 High-Level Design", "goal": "Design systems that scale and stay reliable. Requires Volume 1 (Parts 7\u20139) and Volume 3.", "index": "volumes/volume-4-high-level-design/index.html", "chapters": [{"n": 1, "title": "Approaching a System Design Problem", "part": null, "md": "volumes/volume-4-high-level-design/ch01-approaching-a-system-design-problem.md", "page": "volumes/volume-4-high-level-design/ch01-approaching-a-system-design-problem.html", "exists": true}, {"n": 2, "title": "Capacity Planning", "part": null, "md": "volumes/volume-4-high-level-design/ch02-capacity-planning.md", "page": "volumes/volume-4-high-level-design/ch02-capacity-planning.html", "exists": true}, {"n": 3, "title": "Scalability & Reliability Fundamentals", "part": null, "md": "volumes/volume-4-high-level-design/ch03-scalability-and-reliability-fundamentals.md", "page": "volumes/volume-4-high-level-design/ch03-scalability-and-reliability-fundamentals.html", "exists": true}, {"n": 4, "title": "Distributed Systems Patterns", "part": null, "md": "volumes/volume-4-high-level-design/ch04-distributed-systems-patterns.md", "page": "volumes/volume-4-high-level-design/ch04-distributed-systems-patterns.html", "exists": true}, {"n": 5, "title": "Proxies, Gateways, Web Servers & Storage Types", "part": null, "md": "volumes/volume-4-high-level-design/ch05-proxies-gateways-web-servers-and-storage-types.md", "page": "volumes/volume-4-high-level-design/ch05-proxies-gateways-web-servers-and-storage-types.html", "exists": true}, {"n": 6, "title": "Load Balancing", "part": null, "md": "volumes/volume-4-high-level-design/ch06-load-balancing.md", "page": "volumes/volume-4-high-level-design/ch06-load-balancing.html", "exists": true}, {"n": 7, "title": "Caching Strategies", "part": null, "md": "volumes/volume-4-high-level-design/ch07-caching-strategies.md", "page": "volumes/volume-4-high-level-design/ch07-caching-strategies.html", "exists": true}, {"n": 8, "title": "Rate Limiting, Throttling & Backpressure", "part": null, "md": "volumes/volume-4-high-level-design/ch08-rate-limiting-throttling-and-backpressure.md", "page": "volumes/volume-4-high-level-design/ch08-rate-limiting-throttling-and-backpressure.html", "exists": true}, {"n": 9, "title": "Message Queues & Streaming (Kafka, SQS, Pub/Sub)", "part": null, "md": "volumes/volume-4-high-level-design/ch09-message-queues-and-streaming-kafka-sqs-pub.md", "page": "volumes/volume-4-high-level-design/ch09-message-queues-and-streaming-kafka-sqs-pub.html", "exists": true}, {"n": 10, "title": "Service Mesh & Service Discovery", "part": null, "md": "volumes/volume-4-high-level-design/ch10-service-mesh-and-service-discovery.md", "page": "volumes/volume-4-high-level-design/ch10-service-mesh-and-service-discovery.html", "exists": true}, {"n": 11, "title": "Database Scaling", "part": null, "md": "volumes/volume-4-high-level-design/ch11-database-scaling.md", "page": "volumes/volume-4-high-level-design/ch11-database-scaling.html", "exists": true}, {"n": 12, "title": "Event-Driven Systems", "part": null, "md": "volumes/volume-4-high-level-design/ch12-event-driven-systems.md", "page": "volumes/volume-4-high-level-design/ch12-event-driven-systems.html", "exists": true}, {"n": 13, "title": "Cloud Design Patterns", "part": null, "md": "volumes/volume-4-high-level-design/ch13-cloud-design-patterns.md", "page": "volumes/volume-4-high-level-design/ch13-cloud-design-patterns.html", "exists": true}, {"n": 14, "title": "CDN, Edge & Geo-Distribution", "part": null, "md": "volumes/volume-4-high-level-design/ch14-cdn-edge-and-geo-distribution.md", "page": "volumes/volume-4-high-level-design/ch14-cdn-edge-and-geo-distribution.html", "exists": true}, {"n": 15, "title": "Multi-Tenancy", "part": null, "md": "volumes/volume-4-high-level-design/ch15-multi-tenancy.md", "page": "volumes/volume-4-high-level-design/ch15-multi-tenancy.html", "exists": true}, {"n": 16, "title": "Performance Antipatterns & Monitoring", "part": null, "md": "volumes/volume-4-high-level-design/ch16-performance-antipatterns-and-monitoring.md", "page": "volumes/volume-4-high-level-design/ch16-performance-antipatterns-and-monitoring.html", "exists": true}, {"n": 17, "title": "Disaster Recovery (Backups, RTO/RPO)", "part": null, "md": "volumes/volume-4-high-level-design/ch17-disaster-recovery-backups-rto-rpo.md", "page": "volumes/volume-4-high-level-design/ch17-disaster-recovery-backups-rto-rpo.html", "exists": true}, {"n": 18, "title": "Security at the System Level", "part": null, "md": "volumes/volume-4-high-level-design/ch18-security-at-the-system-level.md", "page": "volumes/volume-4-high-level-design/ch18-security-at-the-system-level.html", "exists": true}, {"n": 19, "title": "Cloud Architecture", "part": null, "md": "volumes/volume-4-high-level-design/ch19-cloud-architecture.md", "page": "volumes/volume-4-high-level-design/ch19-cloud-architecture.html", "exists": true}, {"n": 20, "title": "Cost & Capacity Economics", "part": null, "md": "volumes/volume-4-high-level-design/ch20-cost-and-capacity-economics.md", "page": "volumes/volume-4-high-level-design/ch20-cost-and-capacity-economics.html", "exists": true}, {"n": 21, "title": "The 30-System Design Portfolio", "part": null, "md": "volumes/volume-4-high-level-design/ch21-the-30-system-design-portfolio.md", "page": "volumes/volume-4-high-level-design/ch21-the-30-system-design-portfolio.html", "exists": true}]}, {"title": "Volume 5 \u2014 AI Systems Engineering", "goal": "Where all previous knowledge converges. Requires Volume 0 (linear algebra, probability) and Volume 1 (encoding, Ch 9).", "index": "volumes/volume-5-ai-systems/index.html", "chapters": [{"n": 1, "title": "LLM Internals", "part": null, "md": "volumes/volume-5-ai-systems/ch01-llm-internals.md", "page": "volumes/volume-5-ai-systems/ch01-llm-internals.html", "exists": true}, {"n": 2, "title": "Tokenization", "part": null, "md": "volumes/volume-5-ai-systems/ch02-tokenization.md", "page": "volumes/volume-5-ai-systems/ch02-tokenization.html", "exists": true}, {"n": 3, "title": "Transformers", "part": null, "md": "volumes/volume-5-ai-systems/ch03-transformers.md", "page": "volumes/volume-5-ai-systems/ch03-transformers.html", "exists": true}, {"n": 4, "title": "Inference & Serving", "part": null, "md": "volumes/volume-5-ai-systems/ch04-inference-and-serving.md", "page": "volumes/volume-5-ai-systems/ch04-inference-and-serving.html", "exists": true}, {"n": 5, "title": "Quantization & Efficiency", "part": null, "md": "volumes/volume-5-ai-systems/ch05-quantization-and-efficiency.md", "page": "volumes/volume-5-ai-systems/ch05-quantization-and-efficiency.html", "exists": true}, {"n": 6, "title": "Prompt Engineering & Structured Output", "part": null, "md": "volumes/volume-5-ai-systems/ch06-prompt-engineering-and-structured-output.md", "page": "volumes/volume-5-ai-systems/ch06-prompt-engineering-and-structured-output.html", "exists": true}, {"n": 7, "title": "Fine-Tuning, LoRA & PEFT", "part": null, "md": "volumes/volume-5-ai-systems/ch07-fine-tuning-lora-and-peft.md", "page": "volumes/volume-5-ai-systems/ch07-fine-tuning-lora-and-peft.html", "exists": true}, {"n": 8, "title": "Alignment, RLHF & Guardrails", "part": null, "md": "volumes/volume-5-ai-systems/ch08-alignment-rlhf-and-guardrails.md", "page": "volumes/volume-5-ai-systems/ch08-alignment-rlhf-and-guardrails.html", "exists": true}, {"n": 9, "title": "Embeddings & RAG", "part": null, "md": "volumes/volume-5-ai-systems/ch09-embeddings-and-rag.md", "page": "volumes/volume-5-ai-systems/ch09-embeddings-and-rag.html", "exists": true}, {"n": 10, "title": "Vector Databases", "part": null, "md": "volumes/volume-5-ai-systems/ch10-vector-databases.md", "page": "volumes/volume-5-ai-systems/ch10-vector-databases.html", "exists": true}, {"n": 11, "title": "Agent Frameworks & Tool Use", "part": null, "md": "volumes/volume-5-ai-systems/ch11-agent-frameworks-and-tool-use.md", "page": "volumes/volume-5-ai-systems/ch11-agent-frameworks-and-tool-use.html", "exists": true}, {"n": 12, "title": "Agent Memory", "part": null, "md": "volumes/volume-5-ai-systems/ch12-agent-memory.md", "page": "volumes/volume-5-ai-systems/ch12-agent-memory.html", "exists": true}, {"n": 13, "title": "MCP & A2A", "part": null, "md": "volumes/volume-5-ai-systems/ch13-mcp-and-a2a.md", "page": "volumes/volume-5-ai-systems/ch13-mcp-and-a2a.html", "exists": true}, {"n": 14, "title": "Multi-Agent Systems", "part": null, "md": "volumes/volume-5-ai-systems/ch14-multi-agent-systems.md", "page": "volumes/volume-5-ai-systems/ch14-multi-agent-systems.html", "exists": true}, {"n": 15, "title": "Voice Agents", "part": null, "md": "volumes/volume-5-ai-systems/ch15-voice-agents.md", "page": "volumes/volume-5-ai-systems/ch15-voice-agents.html", "exists": true}, {"n": 16, "title": "AI Observability", "part": null, "md": "volumes/volume-5-ai-systems/ch16-ai-observability.md", "page": "volumes/volume-5-ai-systems/ch16-ai-observability.html", "exists": true}, {"n": 17, "title": "Evaluation", "part": null, "md": "volumes/volume-5-ai-systems/ch17-evaluation.md", "page": "volumes/volume-5-ai-systems/ch17-evaluation.html", "exists": true}, {"n": 18, "title": "Cost & Latency Optimization", "part": null, "md": "volumes/volume-5-ai-systems/ch18-cost-and-latency-optimization.md", "page": "volumes/volume-5-ai-systems/ch18-cost-and-latency-optimization.html", "exists": true}, {"n": 19, "title": "AI Security", "part": null, "md": "volumes/volume-5-ai-systems/ch19-ai-security.md", "page": "volumes/volume-5-ai-systems/ch19-ai-security.html", "exists": true}, {"n": 20, "title": "GPU Infrastructure & the AI OS", "part": null, "md": "volumes/volume-5-ai-systems/ch20-gpu-infrastructure-and-the-ai-os.md", "page": "volumes/volume-5-ai-systems/ch20-gpu-infrastructure-and-the-ai-os.html", "exists": true}]}] };</script>
+<script src="https://cdn.jsdelivr.net/npm/marked@15/marked.min.js"></script>
+<script src="../../assets/app.js"></script>
+</body>
+</html>
