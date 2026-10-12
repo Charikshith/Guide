@@ -48,8 +48,8 @@ TEMPLATE = """<!doctype html>
   <nav id="sidebar" aria-label="Contents"></nav>
   <main><article id="content" class="page">Loading…</article></main>
 </div>
-<script type="text/markdown" id="source">{source}</script>
-<script type="application/json" id="figs">{figs}</script>
+<textarea id="source" hidden>{source}</textarea>
+<textarea id="figs" hidden>{figs}</textarea>
 <script>window.GUIDE = {{ root: "{root}", page: "{page}", nav: {nav} }};</script>
 <script src="https://cdn.jsdelivr.net/npm/marked@15/marked.min.js"></script>
 <script src="{root}assets/app.js"></script>
@@ -211,7 +211,7 @@ main{flex:1;min-width:0;border-left:2px solid var(--margin);padding-left:22px}
 JS = r"""(function boot() {
   /* Some hosts (e.g. htmlpreview.github.io) run this file before the marked CDN script has loaded.
      Chapter pages need marked, so load it here and start over once it is ready. */
-  if (typeof marked === "undefined" && document.getElementById("source").textContent.trim()) {
+  if (typeof marked === "undefined" && document.getElementById("source").value.trim()) {
     const s = document.createElement("script");
     s.src = "https://cdn.jsdelivr.net/npm/marked@15/marked.min.js";
     s.onload = boot;
@@ -308,10 +308,10 @@ JS = r"""(function boot() {
 
   // ---- content ----
   const content = document.getElementById("content");
-  const src = document.getElementById("source").textContent;
+  const src = document.getElementById("source").value;
   if (!src.trim()) { renderHome(); place(); return; }
 
-  const figs = JSON.parse(document.getElementById("figs").textContent || "[]");
+  const figs = JSON.parse(document.getElementById("figs").value || "[]");
   let mermaidSeen = 0, needMermaid = false;
 
   // Markdown links to .md files become links to the generated .html files.
@@ -494,9 +494,9 @@ def collect_nav():
 def write_page(out_path, title, page, source, nav, figs=()):
     depth = page.count("/")
     root = "../" * depth
-    # "</script" inside the embedded source would end the tag early.
-    safe = source.replace("</script", "<\\/script")
-    safe_figs = json.dumps(list(figs)).replace("</", "<\\/")
+    # Data sits in <textarea> (not <script>) so previewers that re-run scripts do not choke on it.
+    safe = html.escape(source, quote=False)
+    safe_figs = html.escape(json.dumps(list(figs)), quote=False)
     out_path.parent.mkdir(parents=True, exist_ok=True)
     out_path.write_text(TEMPLATE.format(title=html.escape(title), root=root, page=page,
                                         source=safe, figs=safe_figs, nav=json.dumps(nav)), encoding="utf-8")

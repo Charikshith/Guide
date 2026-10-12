@@ -1,7 +1,7 @@
 (function boot() {
   /* Some hosts (e.g. htmlpreview.github.io) run this file before the marked CDN script has loaded.
      Chapter pages need marked, so load it here and start over once it is ready. */
-  if (typeof marked === "undefined" && document.getElementById("source").textContent.trim()) {
+  if (typeof marked === "undefined" && document.getElementById("source").value.trim()) {
     const s = document.createElement("script");
     s.src = "https://cdn.jsdelivr.net/npm/marked@15/marked.min.js";
     s.onload = boot;
@@ -98,10 +98,10 @@
 
   // ---- content ----
   const content = document.getElementById("content");
-  const src = document.getElementById("source").textContent;
+  const src = document.getElementById("source").value;
   if (!src.trim()) { renderHome(); place(); return; }
 
-  const figs = JSON.parse(document.getElementById("figs").textContent || "[]");
+  const figs = JSON.parse(document.getElementById("figs").value || "[]");
   let mermaidSeen = 0, needMermaid = false;
 
   // Markdown links to .md files become links to the generated .html files.
