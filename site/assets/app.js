@@ -1,4 +1,25 @@
 (function () {
+  /* Online preview (htmlpreview.github.io): relative links would resolve against the previewer, not the repo.
+     The real page URL is in the query string, so map every relative link and the map iframe through it. */
+  const PV = location.hostname === "htmlpreview.github.io" && location.search.length > 1;
+  function pvUrl(rel) {
+    const real = decodeURIComponent(location.search.slice(1)).split("#")[0];
+    const u = new URL(rel, real);
+    return "https://htmlpreview.github.io/?" + u.origin + u.pathname + u.search + u.hash;
+  }
+  function pvFrames() {
+    if (!PV) return;
+    const f = content.querySelector("iframe.map-frame");
+    if (f) f.src = pvUrl(G.root + "guide-map.html#embed");
+  }
+  if (PV) document.addEventListener("click", e => {
+    const a = e.target.closest && e.target.closest("a[href]");
+    if (!a) return;
+    const h = a.getAttribute("href");
+    if (!h || /^(#|[a-z]+:)/i.test(h)) return;
+    e.preventDefault();
+    location.href = pvUrl(h);
+  });
   const G = window.GUIDE;
   const progressKey = "guide-progress";
   const progress = JSON.parse(localStorage.getItem(progressKey) || "{}");
@@ -182,5 +203,6 @@
         sec.style.display = !q || any ? "" : "none";
       });
     };
+    pvFrames();
   }
 })();
