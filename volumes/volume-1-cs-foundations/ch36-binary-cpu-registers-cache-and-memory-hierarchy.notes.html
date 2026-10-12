@@ -94,6 +94,7 @@ ul>li.check::before{content:"✓";color:var(--green)}
 
 /* two-column notes */
 .cols{display:grid;grid-template-columns:1fr 1fr;gap:0 28px}
+.cols>*{min-width:0}
 @media (max-width:600px){.cols{grid-template-columns:1fr}}
 
 /* diagrams */
@@ -102,7 +103,7 @@ figure svg{width:100%;max-width:640px;height:auto;overflow:visible}
 figcaption{font-family:var(--title);font-size:20px;color:var(--ink2)}
 /* phones: keep labels readable — diagram scrolls inside its own box instead of shrinking */
 @media (max-width:600px){figure{overflow-x:auto}figure svg{min-width:520px}}
-.sk{fill:none;stroke:var(--ink2);stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round;filter:url(#rough)}
+.sk{fill:none;stroke:var(--ink2);stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round}   /* wobble comes from the sketch script below */
 .sk.blue{stroke:var(--ink)} .sk.red{stroke:var(--red)} .sk.green{stroke:var(--green)}
 .lbl{font-family:var(--hand);font-size:17px;fill:var(--ink)}
 .lbl.b{font-weight:700;fill:var(--ink2)} .lbl.r{fill:var(--red)} .lbl.g{fill:var(--green)}
@@ -113,12 +114,16 @@ table{border-collapse:collapse;margin:calc(var(--line)*.5) 0;min-width:100%}
 th,td{border:2px solid var(--ink2);padding:0 10px;text-align:left;vertical-align:top}
 th{font-family:var(--title);font-size:24px;color:var(--ink2)}
 
-@media print{body{background:#fff}.page{box-shadow:none;margin:0}.page::before{display:none}}
+/* code block: syntax-coloured pen colours, still on the ruled-line grid */
+pre.code{font-family:Consolas,'Cascadia Mono','SFMono-Regular',Menlo,monospace;font-size:16px;line-height:var(--line);
+  margin:calc(var(--line)*.5) 0;padding:calc(var(--line)*.5 - 2px) 14px;border:2px solid var(--ink2);border-radius:4px 10px 6px 12px;
+  background:rgba(255,255,255,.55);color:var(--ink2);white-space:pre;overflow-x:auto;tab-size:4}
+pre.code .kw{color:#8e24aa;font-weight:700} pre.code .st{color:var(--green)} pre.code .nu{color:#d35400}
+pre.code .cm{color:#7f8c8d;font-style:italic} pre.code .fn{color:var(--ink)} pre.code .bi{color:#00838f}
 
-/* ===== Added for long chapter notes ===== */
-pre.code{font-family:Consolas,'Courier New',monospace;font-size:14px;line-height:var(--line);color:var(--ink);background:rgba(255,255,255,.45);
-  border-left:4px solid var(--red);margin:calc(var(--line)*.5) 0;padding:0 12px;overflow-x:auto;white-space:pre}
-pre.code.ascii{border-left-color:var(--green)}
+@media print{body{background:#fff}.page{box-shadow:none;margin:0}.page::before{display:none}}
+/* ===== Extras for long chapter notes */
+pre.code.ascii{border-color:var(--green)}
 code{font-family:Consolas,'Courier New',monospace;font-size:.82em;background:rgba(0,0,0,.06);padding:0 3px;border-radius:3px}
 pre.code code{background:none;padding:0;font-size:inherit}
 .lang{font-family:var(--title);font-size:18px;color:var(--red)}
@@ -133,12 +138,15 @@ a{color:var(--ink);text-decoration:underline dotted}
 </style>
 </head>
 <body>
-<!-- One shared hand-drawn wobble filter; give every diagram stroke class="sk" -->
+<!-- Give every diagram stroke class="sk": the sketch script at the bottom redraws it as a smooth hand-drawn line. -->
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
-  <!-- userSpaceOnUse region: a % region collapses to nothing on perfectly straight lines (zero-height bbox) -->
-  <filter id="rough" filterUnits="userSpaceOnUse" x="-500" y="-500" width="3000" height="3000">
-    <feTurbulence type="fractalNoise" baseFrequency="0.03" numOctaves="2" seed="3" result="n"/>
-    <feDisplacementMap in="SourceGraphic" in2="n" scale="3"/>
+  <!-- Fallback wobble filter (only used if something references url(#rough)). One smooth noise octave + sRGB +
+       a light final blur: Chrome's displacement samples nearest-neighbour, so a raw filter leaves stair-step breaks. -->
+  <filter id="rough" filterUnits="userSpaceOnUse" x="-500" y="-500" width="3000" height="3000" color-interpolation-filters="sRGB">
+    <feTurbulence type="fractalNoise" baseFrequency="0.02" numOctaves="1" seed="3" result="t"/>
+    <feGaussianBlur in="t" stdDeviation="2" result="n"/>
+    <feDisplacementMap in="SourceGraphic" in2="n" scale="5" xChannelSelector="R" yChannelSelector="G" result="d"/>
+    <feGaussianBlur in="d" stdDeviation="0.45"/>
   </filter>
   <marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
     <path d="M1 1 L9 5 L1 9" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
@@ -307,5 +315,42 @@ for (int j = 0; j &lt; N; j++)          // slow: strides N*4 bytes per step
   <p class="black"><a href="index.md">Contents</a> · ← <a href="ch35-dynamic-programming-greedy-divide-and-conquer-sliding.notes.html">Chapter 35 — Dynamic Programming, Greedy, Divide &amp; Conquer, Sliding Window &amp; Two Pointers</a> · Next → <a href="ch37-instruction-cycle-pipelining-simd-and-virtual-memory.notes.html">Chapter 37 — Instruction Cycle, Pipelining, SIMD &amp; Virtual Memory</a></p>
   <nav class="nav"><a href="ch35-dynamic-programming-greedy-divide-and-conquer-sliding.notes.html">← Ch 35 — Dynamic Programming, Greedy, Divide &amp; Conquer, Sliding Window &amp; Two Pointers</a><a href="index.notes.html">☰ Contents</a><a href="ch37-instruction-cycle-pipelining-simd-and-virtual-memory.notes.html">Ch 37 — Instruction Cycle, Pipelining, SIMD &amp; Virtual Memory →</a></nav>
 </main>
+<script>
+/* Sketch: redraw every .sk shape as a smooth hand-drawn line. The outline is resampled, each point is pushed
+   along the normal by a gentle wobble (two low-frequency sines; on closed shapes the wobble loops exactly once so
+   start and end meet), and a smooth Catmull-Rom curve is rebuilt. Pure geometry, so the line stays crisp. */
+(() => {
+  const NS = 'http://www.w3.org/2000/svg', TAU = Math.PI * 2;
+  const KEEP_OUT = /^(cx|cy|rx|ry|r|x|y|width|height|x1|y1|x2|y2|points|d)$/;
+  const sketch = (el, i) => {
+    if (!el.getTotalLength) return;
+    const dAttr = el.getAttribute('d') || '';
+    if ((dAttr.match(/[Mm]/g) || []).length > 1) return;            // several sub-paths: leave as drawn
+    const L = el.getTotalLength(); if (!(L > 4)) return;
+    const closed = /^(ellipse|circle|rect|polygon)$/.test(el.tagName) || /[Zz]\s*$/.test(dAttr);
+    const n = Math.max(8, Math.round(L / 7)), amp = Math.min(1.1, 0.45 + L / 900);
+    const k1 = closed ? Math.max(2, Math.round(L / 180)) : 0, k2 = closed ? Math.max(3, Math.round(L / 95)) : 0;
+    const f1 = closed ? TAU * k1 / L : TAU / Math.max(160, L / 2.5), f2 = closed ? TAU * k2 / L : TAU / 95;
+    const p1 = (i * 2.399) % TAU, p2 = (i * 4.17) % TAU, pts = [];
+    for (let k = 0; k < (closed ? n : n + 1); k++) {
+      const s = L * k / n, a = el.getPointAtLength(Math.max(0, s - 0.5)), b = el.getPointAtLength(Math.min(L, s + 0.5)), c = el.getPointAtLength(s);
+      let nx = -(b.y - a.y), ny = b.x - a.x; const m = Math.hypot(nx, ny) || 1;
+      const w = (closed ? amp : amp * Math.min(1, s / 12, (L - s) / 12)) * (0.8 * Math.sin(s * f1 + p1) + 0.25 * Math.sin(s * f2 + p2));
+      pts.push([c.x + nx / m * w, c.y + ny / m * w]);                // open lines: ends stay exactly in place
+    }
+    const P = k => closed ? pts[(k + pts.length) % pts.length] : pts[Math.max(0, Math.min(pts.length - 1, k))];
+    let d = `M${pts[0][0].toFixed(2)} ${pts[0][1].toFixed(2)}`;
+    for (let k = 0, last = closed ? pts.length : pts.length - 1; k < last; k++) {
+      const [x0, y0] = P(k - 1), [x1, y1] = P(k), [x2, y2] = P(k + 1), [x3, y3] = P(k + 2);
+      d += ` C${(x1 + (x2 - x0) / 6).toFixed(2)} ${(y1 + (y2 - y0) / 6).toFixed(2)} ${(x2 - (x3 - x1) / 6).toFixed(2)} ${(y2 - (y3 - y1) / 6).toFixed(2)} ${x2.toFixed(2)} ${y2.toFixed(2)}`;
+    }
+    const path = document.createElementNS(NS, 'path');
+    for (const at of el.attributes) if (!KEEP_OUT.test(at.name)) path.setAttribute(at.name, at.value);
+    path.setAttribute('d', d + (closed ? ' Z' : ''));
+    el.replaceWith(path);
+  };
+  document.querySelectorAll('svg .sk').forEach(sketch);
+})();
+</script>
 </body>
 </html>

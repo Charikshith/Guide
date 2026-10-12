@@ -24,3 +24,7 @@ python tools/build_site.py   # writes site/ (git-ignored)
 ```
 
 Then open `site/index.html` in a browser.
+
+**HTML preview:** [site/index.html](site/index.html) is the home page. It opens only after you run the build above, because `site/` is git-ignored and not on GitHub.
+
+Each chapter also has a handwritten-notes page (`*.notes.html`). Open `volumes/<volume>/index.notes.html` for a volume's contents. To re-apply the skill template after it changes, run `python tools/apply_handwritten_template.py`.
