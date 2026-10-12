@@ -11,6 +11,7 @@ Diagrams: every ```mermaid block is replaced by the hand-drawn SVG figure from t
 <chapter>.notes.html (matched by label overlap). If a chapter has no matching figure, the
 browser falls back to mermaid (loaded lazily from a CDN) for that block.
 """
+import hashlib
 import html
 import json
 import re
@@ -29,7 +30,7 @@ TEMPLATE = """<!doctype html>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;700&family=Kalam:wght@400;700&family=Patrick+Hand&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="{root}assets/style.css">
+<link rel="stylesheet" href="{root}assets/style.css?v={css_v}">
 <script>try{{var t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t;var n=localStorage.getItem("nav");if(n)document.documentElement.dataset.nav=n;}}catch(e){{}}</script>
 </head>
 <body>
@@ -52,7 +53,7 @@ TEMPLATE = """<!doctype html>
 <textarea id="figs" hidden>{figs}</textarea>
 <script>window.GUIDE = {{ root: "{root}", page: "{page}", nav: {nav} }};</script>
 <script src="https://cdn.jsdelivr.net/npm/marked@15/marked.min.js"></script>
-<script src="{root}assets/app.js"></script>
+<script src="{root}assets/app.js?v={js_v}"></script>
 </body>
 </html>
 """
@@ -473,6 +474,11 @@ def collect_nav():
     return nav
 
 
+def _ver(text):
+    """Short content hash, so a changed asset gets a new URL (defeats stale CDN/previewer caches)."""
+    return hashlib.md5(text.encode("utf-8")).hexdigest()[:8]
+
+
 def write_page(out_path, title, page, source, nav, figs=()):
     depth = page.count("/")
     root = "../" * depth
@@ -480,7 +486,7 @@ def write_page(out_path, title, page, source, nav, figs=()):
     safe = html.escape(source, quote=False)
     safe_figs = html.escape(json.dumps(list(figs)), quote=False)
     out_path.parent.mkdir(parents=True, exist_ok=True)
-    out_path.write_text(TEMPLATE.format(title=html.escape(title), root=root, page=page,
+    out_path.write_text(TEMPLATE.format(title=html.escape(title), root=root, page=page, css_v=_ver(CSS), js_v=_ver(JS),
                                         source=safe, figs=safe_figs, nav=json.dumps(nav)), encoding="utf-8")
 
 
