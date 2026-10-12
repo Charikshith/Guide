@@ -28,3 +28,16 @@ Then open `site/index.html` in a browser.
 **HTML preview:** [site/index.html](site/index.html) is the home page. It opens only after you run the build above, because `site/` is git-ignored and not on GitHub.
 
 Each chapter also has a handwritten-notes page (`*.notes.html`). Open `volumes/<volume>/index.notes.html` for a volume's contents. To re-apply the skill template after it changes, run `python tools/apply_handwritten_template.py`.
+
+### Online preview (handwritten notes)
+
+GitHub shows `.html` files as source code, not as a page. These links render the committed notes pages through [htmlpreview.github.io](https://htmlpreview.github.io/):
+
+| # | Volume notes |
+|---|--------------|
+| 0 | [Math & Mental Models](https://htmlpreview.github.io/?https://github.com/Charikshith/Guide/blob/main/volumes/volume-0-math/index.notes.html) |
+| 1 | [Computer Science Foundations](https://htmlpreview.github.io/?https://github.com/Charikshith/Guide/blob/main/volumes/volume-1-cs-foundations/index.notes.html) |
+| 2 | [Software Engineering](https://htmlpreview.github.io/?https://github.com/Charikshith/Guide/blob/main/volumes/volume-2-software-engineering/index.notes.html) |
+| 3 | [Low-Level Design](https://htmlpreview.github.io/?https://github.com/Charikshith/Guide/blob/main/volumes/volume-3-low-level-design/index.notes.html) |
+| 4 | [High-Level Design](https://htmlpreview.github.io/?https://github.com/Charikshith/Guide/blob/main/volumes/volume-4-high-level-design/index.notes.html) |
+| 5 | [AI Systems Engineering](https://htmlpreview.github.io/?https://github.com/Charikshith/Guide/blob/main/volumes/volume-5-ai-systems/index.notes.html) |
