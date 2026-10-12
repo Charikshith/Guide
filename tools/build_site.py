@@ -92,12 +92,12 @@ main{flex:1;min-width:0;border-left:2px solid var(--margin);padding-left:22px}
 .pen:hover{background:var(--hl-yellow);border-radius:4px 8px 4px 8px}
 .pen.tl{left:10px;z-index:2} .pen.tr{right:18px}
 
-/* contents column (all rows are 32px so text sits on the rules; JS keeps it stuck in 32px steps) */
-#sidebar{width:262px;flex:none;align-self:flex-start;position:relative;overflow-y:auto;overflow-x:hidden;
-  padding:0 10px 0 4px;scrollbar-width:none;scroll-snap-type:y mandatory;font-size:17px;line-height:var(--line)}
+/* contents column: native sticky (smooth, no scroll script); rows are 32px, so at rest the text sits on the rules */
+#sidebar{width:262px;flex:none;align-self:flex-start;position:sticky;top:var(--line);max-height:calc(100vh - 2*var(--line));
+  overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;
+  padding:0 10px 0 4px;scrollbar-width:none;font-size:17px;line-height:var(--line)}
 #sidebar::-webkit-scrollbar{display:none}
 #sidebar[hidden],html[data-nav="closed"] #sidebar{display:none}
-#sidebar>*{scroll-snap-align:start}
 #sidebar .vol{font-family:var(--title);font-weight:700;font-size:26px;color:var(--red);margin-top:var(--line)}
 #sidebar .part{font-family:var(--title);font-size:20px;color:var(--ink2)}
 #sidebar a{display:block;padding:0 6px;color:var(--ink);text-decoration:none;border-radius:4px 8px 4px 8px}
@@ -284,27 +284,9 @@ JS = r"""(function boot() {
     try { localStorage.setItem("theme", t); } catch (e) {}
   };
 
-  // Keep the contents column on screen while the sheet scrolls, but only in whole 32px steps, so its
-  // text always sits on the same ruled lines as the chapter (the two look like one page).
+  // The contents column is `position:sticky` in CSS, so nothing runs on scroll. place() only clears old inline styles.
   const LINE = 32;
-  function place() {
-    const inner = document.getElementById("sidein");
-    if (!inner || side.hidden) return;
-    if (window.innerWidth <= 900 || root.dataset.nav === "closed") { side.style.transform = ""; side.style.height = ""; return; }
-    const avail = Math.floor((window.innerHeight - 2 * LINE) / LINE) * LINE;
-    const natural = Math.ceil(inner.offsetHeight / LINE) * LINE;
-    const H = Math.min(natural, avail);
-    side.style.height = H + "px";
-    const nbTop = nb.getBoundingClientRect().top;
-    let y = Math.round(Math.max(0, -nbTop) / LINE) * LINE;
-    const maxY = Math.max(0, nb.offsetHeight - 3 * LINE - H);
-    side.style.transform = `translateY(${Math.min(y, maxY)}px)`;
-  }
-  let raf = 0;
-  const later = () => { if (!raf) raf = requestAnimationFrame(() => { raf = 0; place(); }); };
-  window.addEventListener("scroll", later, { passive: true });
-  window.addEventListener("resize", later);
-  if (document.fonts && document.fonts.ready) document.fonts.ready.then(later);
+  function place() { side.style.transform = ""; side.style.height = ""; }
 
   // ---- content ----
   const content = document.getElementById("content");

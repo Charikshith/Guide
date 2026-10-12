@@ -74,27 +74,9 @@
     try { localStorage.setItem("theme", t); } catch (e) {}
   };
 
-  // Keep the contents column on screen while the sheet scrolls, but only in whole 32px steps, so its
-  // text always sits on the same ruled lines as the chapter (the two look like one page).
+  // The contents column is `position:sticky` in CSS, so nothing runs on scroll. place() only clears old inline styles.
   const LINE = 32;
-  function place() {
-    const inner = document.getElementById("sidein");
-    if (!inner || side.hidden) return;
-    if (window.innerWidth <= 900 || root.dataset.nav === "closed") { side.style.transform = ""; side.style.height = ""; return; }
-    const avail = Math.floor((window.innerHeight - 2 * LINE) / LINE) * LINE;
-    const natural = Math.ceil(inner.offsetHeight / LINE) * LINE;
-    const H = Math.min(natural, avail);
-    side.style.height = H + "px";
-    const nbTop = nb.getBoundingClientRect().top;
-    let y = Math.round(Math.max(0, -nbTop) / LINE) * LINE;
-    const maxY = Math.max(0, nb.offsetHeight - 3 * LINE - H);
-    side.style.transform = `translateY(${Math.min(y, maxY)}px)`;
-  }
-  let raf = 0;
-  const later = () => { if (!raf) raf = requestAnimationFrame(() => { raf = 0; place(); }); };
-  window.addEventListener("scroll", later, { passive: true });
-  window.addEventListener("resize", later);
-  if (document.fonts && document.fonts.ready) document.fonts.ready.then(later);
+  function place() { side.style.transform = ""; side.style.height = ""; }
 
   // ---- content ----
   const content = document.getElementById("content");
