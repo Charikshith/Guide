@@ -477,7 +477,7 @@ def answer(question, sources):                     # sources: list of (source_na
   <h3>Steps</h3>
   <ol style="list-style:none;padding-left:0">
     <li>1. <b>Ingestion service:</b> connectors for upload and at least one external source; async workers; per-document status (queued → parsed → indexed → failed with reason); re-ingest only changed documents (content hashes).</li>
-    <li>2. <b>Multi-tenancy and permissions:</b> every chunk carries <code>tenant_id</code> and ACL groups; filters are applied <i>inside</i> the vector query (<a href="../volume-4-high-level-design/ch12-multi-tenancy.notes.html">Vol 4 Ch 12</a>).</li>
+    <li>2. <b>Multi-tenancy and permissions:</b> every chunk carries <code>tenant_id</code> and ACL groups; filters are applied <i>inside</i> the vector query (<a href="../volume-4-high-level-design/ch15-multi-tenancy.notes.html">Vol 4 Ch 15</a>).</li>
     <li>3. <b>Retrieval service:</b> hybrid search + rerank, with configurable k, and a debug endpoint that shows scores at each stage.</li>
     <li>4. <b>Grounded answers:</b> citations link to the exact section; answers must say "not found in the knowledge base" when retrieval confidence is low.</li>
     <li>5. <b>Plug into Build #1:</b> the chatbot gains a knowledge-base toggle; conversation history drives query rewriting.</li>

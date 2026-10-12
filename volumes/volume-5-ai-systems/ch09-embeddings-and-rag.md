@@ -223,7 +223,7 @@ flowchart TB
 **Steps**
 
 1. **Ingestion service:** connectors for upload and at least one external source; async workers; per-document status (queued → parsed → indexed → failed with reason); re-ingest only changed documents (content hashes).
-2. **Multi-tenancy and permissions:** every chunk carries `tenant_id` and ACL groups; filters are applied *inside* the vector query ([Vol 4 Ch 12](../volume-4-high-level-design/ch12-multi-tenancy.md)).
+2. **Multi-tenancy and permissions:** every chunk carries `tenant_id` and ACL groups; filters are applied *inside* the vector query ([Vol 4 Ch 15](../volume-4-high-level-design/ch15-multi-tenancy.md)).
 3. **Retrieval service:** hybrid search + rerank, with configurable k, and a debug endpoint that shows scores at each stage.
 4. **Grounded answers:** citations link to the exact section; answers must say "not found in the knowledge base" when retrieval confidence is low.
 5. **Plug into Build #1:** the chatbot gains a knowledge-base toggle; conversation history drives query rewriting.

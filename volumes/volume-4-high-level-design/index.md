@@ -2,31 +2,43 @@
 
 > Goal: Design systems that scale and stay reliable. Requires Volume 1 (Parts 7–9) and Volume 3.
 >
-> **Chapters 1–17.** Each chapter ends by designing one or more real-world systems; by the end you will have designed **30+ systems**.
+> **Chapters 1–21.** Each chapter ends by designing one or more real-world systems; by the end you will have designed **30+ systems**.
 
 # Contents
 
-1. [Capacity Planning](ch01-capacity-planning.md)
-2. [Scalability & Reliability Fundamentals](ch02-scalability-and-reliability-fundamentals.md)
-3. [Distributed Systems Patterns](ch03-distributed-systems-patterns.md)
-4. [Load Balancing](ch04-load-balancing.md)
-5. [Caching Strategies](ch05-caching-strategies.md)
-6. [Rate Limiting, Throttling & Backpressure](ch06-rate-limiting-throttling-and-backpressure.md)
-7. [Message Queues & Streaming (Kafka, SQS, Pub/Sub)](ch07-message-queues-and-streaming-kafka-sqs-pub.md)
-8. [Service Mesh & Service Discovery](ch08-service-mesh-and-service-discovery.md)
-9. [Database Scaling](ch09-database-scaling.md)
-10. [Event-Driven Systems](ch10-event-driven-systems.md)
-11. [CDN, Edge & Geo-Distribution](ch11-cdn-edge-and-geo-distribution.md)
-12. [Multi-Tenancy](ch12-multi-tenancy.md)
-13. [Disaster Recovery (Backups, RTO/RPO)](ch13-disaster-recovery-backups-rto-rpo.md)
-14. [Security at the System Level](ch14-security-at-the-system-level.md)
-15. [Cloud Architecture](ch15-cloud-architecture.md)
-16. [Cost & Capacity Economics](ch16-cost-and-capacity-economics.md)
-17. [The 30-System Design Portfolio](ch17-the-30-system-design-portfolio.md)
+1. [Approaching a System Design Problem](ch01-approaching-a-system-design-problem.md)
+2. [Capacity Planning](ch02-capacity-planning.md)
+3. [Scalability & Reliability Fundamentals](ch03-scalability-and-reliability-fundamentals.md)
+4. [Distributed Systems Patterns](ch04-distributed-systems-patterns.md)
+5. [Proxies, Gateways, Web Servers & Storage Types](ch05-proxies-gateways-web-servers-and-storage-types.md)
+6. [Load Balancing](ch06-load-balancing.md)
+7. [Caching Strategies](ch07-caching-strategies.md)
+8. [Rate Limiting, Throttling & Backpressure](ch08-rate-limiting-throttling-and-backpressure.md)
+9. [Message Queues & Streaming (Kafka, SQS, Pub/Sub)](ch09-message-queues-and-streaming-kafka-sqs-pub.md)
+10. [Service Mesh & Service Discovery](ch10-service-mesh-and-service-discovery.md)
+11. [Database Scaling](ch11-database-scaling.md)
+12. [Event-Driven Systems](ch12-event-driven-systems.md)
+13. [Cloud Design Patterns](ch13-cloud-design-patterns.md)
+14. [CDN, Edge & Geo-Distribution](ch14-cdn-edge-and-geo-distribution.md)
+15. [Multi-Tenancy](ch15-multi-tenancy.md)
+16. [Performance Antipatterns & Monitoring](ch16-performance-antipatterns-and-monitoring.md)
+17. [Disaster Recovery (Backups, RTO/RPO)](ch17-disaster-recovery-backups-rto-rpo.md)
+18. [Security at the System Level](ch18-security-at-the-system-level.md)
+19. [Cloud Architecture](ch19-cloud-architecture.md)
+20. [Cost & Capacity Economics](ch20-cost-and-capacity-economics.md)
+21. [The 30-System Design Portfolio](ch21-the-30-system-design-portfolio.md)
 
 ---
 
-## Chapter 1 — Capacity Planning
+## Chapter 1 — Approaching a System Design Problem
+
+**Concept:** What system design is, how HLD differs from LLD, and a repeatable method — requirements, estimates, API, data, architecture, deep dive, trade-offs — for starting any design problem.
+
+**Design:** Design a URL shortener, using the 7 steps.
+
+---
+
+## Chapter 2 — Capacity Planning
 
 **Concept:** QPS, latency percentiles (p50/p99), throughput, storage sizing, and translating requirements into hardware/tier estimates.
 
@@ -50,11 +62,11 @@
 
 ---
 
-## Chapter 2 — Scalability & Reliability Fundamentals
+## Chapter 3 — Scalability & Reliability Fundamentals
 
 **Concept:** Vertical vs horizontal scaling, statelessness, redundancy, failure domains, availability math (N nines).
 
-**Prereqs:** Ch 1.
+**Prereqs:** Ch 2.
 
 **Diagram:** Scale-up vs scale-out; a redundancy diagram with an availability formula.
 
@@ -74,7 +86,7 @@
 
 ---
 
-## Chapter 3 — Distributed Systems Patterns
+## Chapter 4 — Distributed Systems Patterns
 
 **Concept:** Replication, partitioning, leader/follower, quorums, idempotency, and the failure modes that shape every design.
 
@@ -98,7 +110,15 @@
 
 ---
 
-## Chapter 4 — Load Balancing
+## Chapter 5 — Proxies, Gateways, Web Servers & Storage Types
+
+**Concept:** Forward vs reverse proxy, API gateway patterns, web vs app servers, CDN push vs pull, block/object/file storage, federation, graph databases.
+
+**Design:** Design the edge and storage tier of an online shop.
+
+---
+
+## Chapter 6 — Load Balancing
 
 **Concept:** L4 vs L7, algorithms (round-robin, least-conn, consistent hashing), health checks, and sticky sessions.
 
@@ -122,7 +142,7 @@
 
 ---
 
-## Chapter 5 — Caching Strategies
+## Chapter 7 — Caching Strategies
 
 **Concept:** Cache-aside, write-through/write-around/write-back, invalidation, TTLs, stampedes, and cache coherence.
 
@@ -146,7 +166,7 @@
 
 ---
 
-## Chapter 6 — Rate Limiting, Throttling & Backpressure
+## Chapter 8 — Rate Limiting, Throttling & Backpressure
 
 **Concept:** Token bucket, leaky bucket, sliding window; distributed limits; backpressure upstream.
 
@@ -170,7 +190,7 @@
 
 ---
 
-## Chapter 7 — Message Queues & Streaming (Kafka, SQS, Pub/Sub)
+## Chapter 9 — Message Queues & Streaming (Kafka, SQS, Pub/Sub)
 
 **Concept:** Queues vs logs, at-least/at-most/exactly-once, ordering, DLQs, and stream processing.
 
@@ -194,11 +214,11 @@
 
 ---
 
-## Chapter 8 — Service Mesh & Service Discovery
+## Chapter 10 — Service Mesh & Service Discovery
 
 **Concept:** Sidecars, discovery, mTLS, retries/timeouts/circuit breaking at the mesh layer; when a mesh earns its cost.
 
-**Prereqs:** Ch 4, Vol 3 Ch 14.
+**Prereqs:** Ch 6, Vol 3 Ch 14.
 
 **Diagram:** A service mesh with sidecars intercepting traffic; a discovery registry.
 
@@ -218,7 +238,7 @@
 
 ---
 
-## Chapter 9 — Database Scaling
+## Chapter 11 — Database Scaling
 
 **Concept:** Read replicas, caching, sharding (key selection), partitioning, and the read/write split.
 
@@ -242,11 +262,11 @@
 
 ---
 
-## Chapter 10 — Event-Driven Systems
+## Chapter 12 — Event-Driven Systems
 
 **Concept:** Event producers/consumers, event schemas, ordering, idempotency, and eventual consistency.
 
-**Prereqs:** Ch 7, Vol 3 Ch 12.
+**Prereqs:** Ch 9, Vol 3 Ch 12.
 
 **Diagram:** An event flow across services with a schema registry.
 
@@ -266,7 +286,15 @@
 
 ---
 
-## Chapter 11 — CDN, Edge & Geo-Distribution
+## Chapter 13 — Cloud Design Patterns
+
+**Concept:** A catalog of the named patterns for building reliable, scalable distributed applications in the cloud: messaging, data management, design and implementation, reliability, and security.
+
+**Design:** Design an incremental migration of a monolith using Strangler Fig and an Anti-Corruption Layer.
+
+---
+
+## Chapter 14 — CDN, Edge & Geo-Distribution
 
 **Concept:** Caching at the edge, geo-routing, data residency, and multi-region consistency.
 
@@ -290,7 +318,7 @@
 
 ---
 
-## Chapter 12 — Multi-Tenancy
+## Chapter 15 — Multi-Tenancy
 
 **Concept:** Tenant isolation models (pool, bridge, silo), data isolation, and tenant-aware routing/security.
 
@@ -314,11 +342,19 @@
 
 ---
 
-## Chapter 13 — Disaster Recovery (Backups, RTO/RPO)
+## Chapter 16 — Performance Antipatterns & Monitoring
+
+**Concept:** The ten classic performance antipatterns, the bulkhead fix, and the five kinds of monitoring: health, availability, performance, security, usage.
+
+**Design:** Design a metrics and alerting pipeline for a company with about 300 services.
+
+---
+
+## Chapter 17 — Disaster Recovery (Backups, RTO/RPO)
 
 **Concept:** Backup strategies, restore testing, RTO/RPO, and multi-region failover.
 
-**Prereqs:** Ch 9.
+**Prereqs:** Ch 11.
 
 **Diagram:** A backup/recovery timeline showing RPO (data loss) and RTO (downtime).
 
@@ -338,7 +374,7 @@
 
 ---
 
-## Chapter 14 — Security at the System Level
+## Chapter 18 — Security at the System Level
 
 **Concept:** Zero-trust, IAM, secrets, encryption in transit/at rest, and blast-radius reduction.
 
@@ -362,11 +398,11 @@
 
 ---
 
-## Chapter 15 — Cloud Architecture
+## Chapter 19 — Cloud Architecture
 
 **Concept:** Cloud building blocks (compute, storage, networking, managed services), serverless vs containers, and cost-aware design.
 
-**Prereqs:** Ch 1–2, Vol 1 Ch 44.
+**Prereqs:** Ch 2–3, Vol 1 Ch 44.
 
 **Diagram:** A reference architecture on a cloud provider with managed services.
 
@@ -386,11 +422,11 @@
 
 ---
 
-## Chapter 16 — Cost & Capacity Economics
+## Chapter 20 — Cost & Capacity Economics
 
 **Concept:** Unit economics, cloud cost drivers, right-sizing, and cost as a design constraint.
 
-**Prereqs:** Ch 15.
+**Prereqs:** Ch 19.
 
 **Diagram:** A cost breakdown by service with the top spenders highlighted.
 
@@ -410,11 +446,11 @@
 
 ---
 
-## Chapter 17 — The 30-System Design Portfolio
+## Chapter 21 — The 30-System Design Portfolio
 
 **Concept:** Applying every prior chapter to a portfolio of canonical designs; pattern recognition across systems.
 
-**Prereqs:** Ch 1–16.
+**Prereqs:** Ch 1–20.
 
 **Diagram:** A "system design zoo" — one diagram each for 30 systems, grouped by family.
 
@@ -434,4 +470,4 @@
 
 ---
 
-**Exit criteria:** Design **30+ real-world systems** (chapter 17 portfolio).
+**Exit criteria:** Design **30+ real-world systems** (chapter 21 portfolio).

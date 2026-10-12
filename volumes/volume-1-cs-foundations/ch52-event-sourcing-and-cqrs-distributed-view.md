@@ -37,7 +37,7 @@ Event sourcing and CQRS at the system level — event logs, projections, and rep
 | Read-after-write lag | return the new version/offset to the client; the UI polls until the projection catches up, or reads from the write model |
 | Schema changes | version events (`OrderPlaced.v2`); only add optional fields; upcasters for old versions |
 | Bugs in a projection | fix the code, reset the offset, **replay** into a fresh table, swap |
-| Writing state + publishing events atomically | the **transactional outbox** pattern (see [Vol 4 Ch 10](../volume-4-high-level-design/ch10-event-driven-systems.md)), or make the event store the only write |
+| Writing state + publishing events atomically | the **transactional outbox** pattern (see [Vol 4 Ch 12](../volume-4-high-level-design/ch12-event-driven-systems.md)), or make the event store the only write |
 
 **Costs** — more moving parts; eventual consistency everywhere; event schemas become a long-lived public contract; GDPR deletion needs crypto-shredding or tombstones; "current state" queries need projections. Use it where the history *is* the product: finance, orders, audits, workflows, collaboration.
 

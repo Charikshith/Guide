@@ -185,7 +185,7 @@ flowchart LR
 **Steps**
 
 1. An `asyncio.Queue` of URLs and N worker coroutines that loop `get → fetch → parse → put new links`.
-2. A per-host token-bucket rate limiter (see [Vol 4 Ch 6](../volume-4-high-level-design/ch06-rate-limiting-throttling-and-backpressure.md)).
+2. A per-host token-bucket rate limiter (see [Vol 4 Ch 8](../volume-4-high-level-design/ch08-rate-limiting-throttling-and-backpressure.md)).
 3. A timeout per request, retries with backoff, and a `seen` set for dedup; stop at max depth or page count.
 4. Graceful shutdown: `queue.join()`, then cancel the workers.
 5. Compare throughput for N = 1, 5, 20, 50.

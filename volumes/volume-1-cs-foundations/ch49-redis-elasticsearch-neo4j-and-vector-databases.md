@@ -169,7 +169,7 @@ print(hits[0].payload)                         # {'t': 'canoe'}
 
 1. Cache an expensive query in Redis with TTL.
 
-   <details><summary>Solution</summary>See <code>top_products</code> (cache-aside). Add TTL jitter (<code>300 + random(0, 60)</code>) to avoid synchronized expiry, invalidate (<code>DEL</code>) when the underlying data changes, and use a lock (<code>SET NX</code>) so only one caller recomputes a hot key. See <a href="../volume-4-high-level-design/ch05-caching-strategies.md">Vol 4 Ch 5</a>.</details>
+   <details><summary>Solution</summary>See <code>top_products</code> (cache-aside). Add TTL jitter (<code>300 + random(0, 60)</code>) to avoid synchronized expiry, invalidate (<code>DEL</code>) when the underlying data changes, and use a lock (<code>SET NX</code>) so only one caller recomputes a hot key. See <a href="../volume-4-high-level-design/ch07-caching-strategies.md">Vol 4 Ch 7</a>.</details>
 
 2. Write a Cypher query for friends-of-friends.
 

@@ -20,7 +20,7 @@ Orchestration vs choreography, agent roles, shared state, and coordination patte
 | Visibility | the flow is in one place; easy to trace and debug | the flow emerges; harder to see end to end |
 | Coupling | the coordinator knows every agent | agents know only the events |
 | Failure handling | central retries, timeouts, fallbacks | each agent handles its own; needs good monitoring |
-| Fits | most LLM systems today | event-driven pipelines, loosely coupled teams (see [Vol 4 Ch 10](../volume-4-high-level-design/ch10-event-driven-systems.md)) |
+| Fits | most LLM systems today | event-driven pipelines, loosely coupled teams (see [Vol 4 Ch 12](../volume-4-high-level-design/ch12-event-driven-systems.md)) |
 
 **Coordination patterns**
 

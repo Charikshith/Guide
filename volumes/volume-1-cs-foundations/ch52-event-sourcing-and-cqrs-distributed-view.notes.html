@@ -186,7 +186,7 @@ a{color:var(--ink);text-decoration:underline dotted}
     <tr><td>Read-after-write lag</td><td>return the new version/offset to the client; the UI polls until the projection catches up, or reads from the write model</td></tr>
     <tr><td>Schema changes</td><td>version events (<code>OrderPlaced.v2</code>); only add optional fields; upcasters for old versions</td></tr>
     <tr><td>Bugs in a projection</td><td>fix the code, reset the offset, <b>replay</b> into a fresh table, swap</td></tr>
-    <tr><td>Writing state + publishing events atomically</td><td>the <b>transactional outbox</b> pattern (see <a href="../volume-4-high-level-design/ch10-event-driven-systems.notes.html">Vol 4 Ch 10</a>), or make the event store the only write</td></tr>
+    <tr><td>Writing state + publishing events atomically</td><td>the <b>transactional outbox</b> pattern (see <a href="../volume-4-high-level-design/ch12-event-driven-systems.notes.html">Vol 4 Ch 12</a>), or make the event store the only write</td></tr>
   </table></div>
 
   <div class="box red"><b>Costs</b> — more moving parts; eventual consistency everywhere; event schemas become a long-lived public contract; GDPR deletion needs crypto-shredding or tombstones; "current state" queries need projections. Use it where the history <i>is</i> the product: finance, orders, audits, workflows, collaboration.</div>

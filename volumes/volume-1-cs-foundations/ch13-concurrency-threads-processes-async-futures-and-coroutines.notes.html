@@ -356,7 +356,7 @@ async fn main() {
 <h3>Steps</h3>
 <ol style="list-style:none;padding-left:0">
 <li><p>1. An <code>asyncio.Queue</code> of URLs and N worker coroutines that loop <code>get → fetch → parse → put new links</code>.</p></li>
-<li><p>2. A per-host token-bucket rate limiter (see <a href="../volume-4-high-level-design/ch06-rate-limiting-throttling-and-backpressure.md">Vol 4 Ch 6</a>).</p></li>
+<li><p>2. A per-host token-bucket rate limiter (see <a href="../volume-4-high-level-design/ch08-rate-limiting-throttling-and-backpressure.md">Vol 4 Ch 8</a>).</p></li>
 <li><p>3. A timeout per request, retries with backoff, and a <code>seen</code> set for dedup; stop at max depth or page count.</p></li>
 <li><p>4. Graceful shutdown: <code>queue.join()</code>, then cancel the workers.</p></li>
 <li><p>5. Compare throughput for N = 1, 5, 20, 50.</p></li>

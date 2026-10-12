@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ch 17 — Disaster Recovery (Backups, RTO/RPO) — Notes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;700&family=Kalam:wght@400;700&family=Patrick+Hand&display=swap" rel="stylesheet">
+<style>
+/* ===== Page tokens ===== */
+:root{
+  --line:32px;                 /* ruled-line spacing; every vertical size is a multiple */
+  --paper:#fdfbf4; --rule:#c9dcef; --margin:#e8a0a0;
+  --ink:#1f3a93;               /* blue pen (body) */
+  --ink2:#222;                 /* black pen (headings) */
+  --red:#c0392b; --green:#1e8449;
+  --hl-yellow:rgba(255,235,59,.55); --hl-pink:rgba(255,128,171,.45);
+  --hl-green:rgba(118,255,3,.35); --hl-blue:rgba(64,196,255,.35);
+  --sticky:#fff59d; --desk:#e9e4d8;
+  --hand:'Kalam','Patrick Hand','Comic Sans MS','Segoe Print','Bradley Hand',cursive;
+  --title:'Caveat','Kalam','Segoe Print','Bradley Hand',cursive;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){ --desk:#2b2b2b; }
+}
+:root[data-theme="dark"]{ --desk:#2b2b2b; }
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--desk);font-family:var(--hand);color:var(--ink);}
+
+/* ===== Notebook sheet ===== */
+.page{
+  position:relative; max-width:860px; margin:24px auto; padding:var(--line) 28px calc(var(--line)*2) 84px;
+  background:
+    linear-gradient(90deg,transparent 64px,var(--margin) 64px,var(--margin) 66px,transparent 66px),
+    repeating-linear-gradient(var(--paper) 0,var(--paper) calc(var(--line) - 1px),var(--rule) calc(var(--line) - 1px),var(--rule) var(--line));
+  background-color:var(--paper);
+  box-shadow:0 2px 6px rgba(0,0,0,.15),0 12px 28px rgba(0,0,0,.12);
+  font-size:20px; line-height:var(--line);
+}
+.page::before{ /* punched holes */
+  content:""; position:absolute; left:22px; top:0; bottom:0; width:18px;
+  background:radial-gradient(circle,var(--desk) 7px,transparent 8px) 0 40px/18px 220px repeat-y;
+}
+@media (max-width:600px){
+  .page{margin:0;padding-left:52px;padding-right:16px;font-size:18px;
+    background:
+      linear-gradient(90deg,transparent 40px,var(--margin) 40px,var(--margin) 42px,transparent 42px),
+      repeating-linear-gradient(var(--paper) 0,var(--paper) calc(var(--line) - 1px),var(--rule) calc(var(--line) - 1px),var(--rule) var(--line));
+    background-color:var(--paper);}
+  .page::before{left:10px;width:16px}
+}
+
+/* ===== Text (all margins are multiples of --line so text sits on the rules) ===== */
+.date{position:absolute;top:0;right:24px;font-family:var(--title);font-size:22px;color:var(--ink2);line-height:var(--line)}
+h1{font-family:var(--title);font-weight:700;color:var(--ink2);font-size:46px;line-height:calc(var(--line)*2);margin:0;transform:rotate(-1deg)}
+h1 .u{background:linear-gradient(transparent 62%,var(--hl-yellow) 62%,var(--hl-yellow) 92%,transparent 92%)}
+h2{font-family:var(--title);font-weight:700;color:var(--red);font-size:32px;line-height:calc(var(--line)*1.5);margin:calc(var(--line)*.5) 0 0}
+h2::before{content:"➤ ";font-size:22px}
+p,li{margin:0}
+ul,ol{margin:0;padding-left:28px}
+ul{list-style:none}
+ul>li::before{content:"–";position:absolute;margin-left:-20px}
+ul>li.star::before{content:"★";color:var(--red)}
+ul>li.arrow::before{content:"→"}
+ul>li.check::before{content:"✓";color:var(--green)}
+.gap{height:var(--line)}
+
+/* ===== Pen effects ===== */
+.hl{background:var(--hl-yellow);padding:0 3px;border-radius:3px 6px 4px 7px}
+.hl.pink{background:var(--hl-pink)} .hl.green{background:var(--hl-green)} .hl.blue{background:var(--hl-blue)}
+.red{color:var(--red)} .green{color:var(--green)} .black{color:var(--ink2)}
+.ul{text-decoration:underline wavy var(--red);text-underline-offset:5px}
+.circ{border:2px solid var(--red);border-radius:50% 45% 55% 48%;padding:0 6px}
+.strike{text-decoration:line-through 2px var(--red)}
+.term{font-weight:700;color:var(--ink2)}
+.box{display:flow-root;border:2.5px solid var(--ink2);border-radius:4px 10px 6px 12px;padding:calc(var(--line)*.5 - 2.5px) 14px;margin:calc(var(--line)*.5) 0;transform:rotate(-.4deg);background:rgba(255,255,255,.35)}
+.box.red{border-color:var(--red)}
+.formula{font-family:var(--title);font-size:28px;text-align:center;color:var(--ink2)}
+
+/* sticky note */
+.sticky{float:right;width:min(250px,42%);margin:0 0 var(--line) 20px;padding:var(--line) 16px;background:var(--sticky);
+  color:#333;transform:rotate(2.2deg);box-shadow:2px 4px 8px rgba(0,0,0,.18);font-size:18px}
+.sticky b{font-family:var(--title);font-size:24px;color:var(--red)}
+@media (max-width:600px){.sticky{float:none;width:auto;margin:var(--line) 0}}
+
+/* margin annotation (lives in the red margin) */
+.side{position:absolute;left:4px;width:58px;text-align:center;font-family:var(--title);font-size:17px;line-height:18px;color:var(--red);transform:rotate(-8deg)}
+@media (max-width:600px){.side{display:none}}
+
+/* two-column notes */
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:0 28px}
+@media (max-width:600px){.cols{grid-template-columns:1fr}}
+
+/* diagrams */
+figure{margin:var(--line) 0;text-align:center}
+figure svg{width:100%;max-width:640px;height:auto;overflow:visible}
+figcaption{font-family:var(--title);font-size:20px;color:var(--ink2)}
+/* phones: keep labels readable — diagram scrolls inside its own box instead of shrinking */
+@media (max-width:600px){figure{overflow-x:auto}figure svg{min-width:520px}}
+.sk{fill:none;stroke:var(--ink2);stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round;filter:url(#rough)}
+.sk.blue{stroke:var(--ink)} .sk.red{stroke:var(--red)} .sk.green{stroke:var(--green)}
+.lbl{font-family:var(--hand);font-size:17px;fill:var(--ink)}
+.lbl.b{font-weight:700;fill:var(--ink2)} .lbl.r{fill:var(--red)} .lbl.g{fill:var(--green)}
+
+/* table */
+.wrap{overflow-x:auto}
+table{border-collapse:collapse;margin:calc(var(--line)*.5) 0;min-width:100%}
+th,td{border:2px solid var(--ink2);padding:0 10px;text-align:left;vertical-align:top}
+th{font-family:var(--title);font-size:24px;color:var(--ink2)}
+
+@media print{body{background:#fff}.page{box-shadow:none;margin:0}.page::before{display:none}}
+
+/* ===== Added for long chapter notes ===== */
+pre.code{font-family:Consolas,'Courier New',monospace;font-size:14px;line-height:var(--line);color:var(--ink);background:rgba(255,255,255,.45);
+  border-left:4px solid var(--red);margin:calc(var(--line)*.5) 0;padding:0 12px;overflow-x:auto;white-space:pre}
+pre.code.ascii{border-left-color:var(--green)}
+code{font-family:Consolas,'Courier New',monospace;font-size:.82em;background:rgba(0,0,0,.06);padding:0 3px;border-radius:3px}
+pre.code code{background:none;padding:0;font-size:inherit}
+.lang{font-family:var(--title);font-size:18px;color:var(--red)}
+h3{font-family:var(--title);font-weight:700;color:var(--ink2);font-size:26px;line-height:var(--line);margin:calc(var(--line)*.5) 0 0}
+h3::before{content:"✎ ";font-size:18px;color:var(--red)}
+.nav{display:flex;justify-content:space-between;gap:12px;font-family:var(--title);font-size:22px;line-height:var(--line)}
+.nav a{color:var(--red);text-decoration:none}
+.nav a:hover{text-decoration:underline wavy}
+.pagebreak{border-top:3px dashed var(--margin);margin:var(--line) 0;text-align:center;font-family:var(--title);color:var(--red);line-height:var(--line)}
+li.todo::before{content:"☐";color:var(--ink2)}
+a{color:var(--ink);text-decoration:underline dotted}
+
+details{margin:calc(var(--line)*.5) 0}
+summary{cursor:pointer;font-family:var(--title);font-size:22px;color:var(--red)}
+details>summary+*{margin-top:0}
+.fig{margin:var(--line) 0}
+ol.num{list-style:none;padding-left:38px}
+ol.num>li>.n{position:absolute;margin-left:-34px;font-weight:700;color:var(--red)}
+</style>
+</head>
+<body>
+<!-- One shared hand-drawn wobble filter; give every diagram stroke class="sk" -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <!-- userSpaceOnUse region: a % region collapses to nothing on perfectly straight lines (zero-height bbox) -->
+  <filter id="rough" filterUnits="userSpaceOnUse" x="-500" y="-500" width="3000" height="3000">
+    <feTurbulence type="fractalNoise" baseFrequency="0.03" numOctaves="2" seed="3" result="n"/>
+    <feDisplacementMap in="SourceGraphic" in2="n" scale="3"/>
+  </filter>
+  <marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+    <path d="M1 1 L9 5 L1 9" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+  </marker>
+</defs></svg>
+
+<main class="page">
+  <nav class="nav"><a href="ch16-performance-antipatterns-and-monitoring.notes.html">← Ch 16 — Performance Antipatterns &amp; Monitoring</a><a href="index.notes.html">☰ Contents</a><a href="ch18-security-at-the-system-level.notes.html">Ch 18 — Security at the System Level →</a></nav>
+  <div class="date">2026-10-10</div>
+  <h1><span class="u">Ch 17 — Disaster Recovery (Backups, RTO/RPO)</span></h1>
+  <p class="black">Chapter 17 — Disaster Recovery (Backups, RTO/RPO)</p>
+<p class="black"><b>Volume 4 — High-Level Design</b> · <a href="index.md">Contents</a> · ← <a href="ch15-multi-tenancy.notes.html">Chapter 15 — Multi-Tenancy</a> · Next → <a href="ch18-security-at-the-system-level.notes.html">Chapter 18 — Security at the System Level</a></p>
+<h2>Concept</h2>
+<p>Backup strategies, restore testing, RTO/RPO, and multi-region failover.</p>
+<div class="box"><b>In one sentence:</b> disaster recovery answers two questions agreed with the business — how much data may we lose (RPO) and how long may we be down (RTO) — and then proves, by actually restoring and failing over on a schedule, that the system can meet them.</div>
+<p><b>Mental model — a fire drill and a photo album.</b> Backups are copies of your photo album kept in another building; how often you copy them decides how many recent photos a fire can take (RPO). The fire drill is how you prove everyone can get out and set up again elsewhere, and how long it takes (RTO). An album copy you've never tried to open is a hope, not a backup.</p>
+<h3>RPO vs RTO</h3>
+<div class="wrap"><table>
+<tr><th></th><th>RPO — Recovery Point Objective</th><th>RTO — Recovery Time Objective</th></tr>
+<tr><td>Question</td><td>how much <i>data</i> can we lose?</td><td>how long can we be <i>down</i>?</td></tr>
+<tr><td>Measured</td><td>time between the last recoverable point and the disaster</td><td>time from the disaster to service restored</td></tr>
+<tr><td>Driven by</td><td>backup frequency, replication lag, sync vs async</td><td>detection, automation, restore speed, DNS, people</td></tr>
+<tr><td>Example</td><td>"≤ 5 minutes of orders"</td><td>"back within 1 hour"</td></tr>
+</table></div>
+<h3>What you're protecting against</h3>
+<div class="wrap"><table>
+<tr><th>Disaster</th><th>Replication helps?</th><th>Backups help?</th></tr>
+<tr><td>Disk / node failure</td><td>✓</td><td>✓</td></tr>
+<tr><td>Zone outage</td><td>✓ multi-AZ</td><td>✓</td></tr>
+<tr><td>Region outage</td><td>✓ cross-region</td><td>✓ (if stored cross-region)</td></tr>
+<tr><td><b>Accidental <code>DELETE</code> / bad migration / bug corrupting data</b></td><td>✗ replicas copy the mistake instantly</td><td>✓ <b>point-in-time recovery</b></td></tr>
+<tr><td><b>Ransomware / malicious admin</b></td><td>✗</td><td>✓ only if backups are <b>immutable</b> and in a separate account</td></tr>
+<tr><td>Provider / account compromise</td><td>✗</td><td>✓ with an off-provider or separate-account copy</td></tr>
+</table></div>
+<p>Replication is for availability; backups are for recovery. You need both.</p>
+<h3>Backup strategies</h3>
+<div class="wrap"><table>
+<tr><th>Type</th><th>What</th><th>Pros / cons</th></tr>
+<tr><td>Full snapshot</td><td>the whole volume or DB at time T</td><td>simple restore; large and slow</td></tr>
+<tr><td>Incremental / differential</td><td>changes since the last backup</td><td>small and fast; restore needs a chain</td></tr>
+<tr><td><b>Continuous WAL / binlog archiving</b></td><td>every change streamed to object storage</td><td><b>point-in-time recovery (PITR)</b> to any second; RPO ≈ seconds</td></tr>
+<tr><td>Logical dump (<code>pg_dump</code>)</td><td>SQL or data export</td><td>portable across versions; slow for large DBs</td></tr>
+<tr><td>Object storage versioning + replication</td><td>S3 versioning, cross-region replication</td><td>protects files against deletes and overwrites</td></tr>
+</table></div>
+<p><b>The 3-2-1 rule (plus immutability):</b> 3 copies, on 2 different media or services, with 1 off-site — and at least 1 immutable (object lock / WORM) in a separate account.</p>
+<h3>DR strategies (cost ↔ RTO)</h3>
+<div class="wrap"><table>
+<tr><th>Strategy</th><th>Secondary region has</th><th>RTO</th><th>RPO</th><th>Cost</th></tr>
+<tr><td>Backup &amp; restore</td><td>only backups</td><td>hours–a day</td><td>hours (or minutes with PITR)</td><td>$</td></tr>
+<tr><td>Pilot light</td><td>the data replicated; minimal core infrastructure off or tiny</td><td>tens of minutes</td><td>minutes</td><td>$$</td></tr>
+<tr><td>Warm standby</td><td>a scaled-down, fully working copy</td><td>minutes</td><td>seconds–minutes</td><td>$$$</td></tr>
+<tr><td>Multi-site active-active</td><td>full capacity serving traffic</td><td>~0 (reroute)</td><td>~0 (sync) or seconds</td><td>$$$$</td></tr>
+</table></div>
+<p><b>Why test restores, not just backups?</b> Backups fail silently: expired credentials, missing tables, corrupt files, incompatible versions, a restore that takes 14 hours instead of the 1 you promised, or a runbook nobody can follow. The only real measure of RTO and RPO is a timed restore.</p>
+<div class="pagebreak">~ page 2 ~</div>
+<h2>Prereqs</h2>
+<ul>
+<li><a href="ch11-database-scaling.notes.html">Chapter 11 — Database Scaling</a></li>
+</ul>
+<h2>Diagram</h2>
+<h3>A backup/recovery timeline showing RPO (data loss) and RTO (downtime)</h3>
+<pre class="code ascii"><code> time ──────────────────────────────────────────────────────────────────────────────►
+      last good                                                  service
+      backup / WAL point      💥 disaster                        restored
+            │                    │                                  │
+            ├──── RPO ───────────┤                                  │
+            │  data written here │                                  │
+            │  is LOST           ├──────────── RTO ─────────────────┤
+                                 │ detect → decide → restore/        │
+                                 │ promote → verify → reroute        │</code></pre>
+<h3>Nightly snapshots + WAL streaming → point-in-time recovery</h3>
+<figure>
+<svg viewBox="0 0 640 430" role="img" aria-label="Diagram 1 (redrawn from Mermaid)"><path class="sk" style="color:var(--ink2)" d="M290 70 L290 170" marker-end="url(#arr)"/><path class="sk" style="color:var(--ink2)" d="M350 70 L350 170" marker-end="url(#arr)"/><path class="sk" style="color:var(--ink2)" d="M180 260 L180 360" marker-end="url(#arr)"/><path class="sk" style="color:var(--ink2)" d="M460 260 L460 360" marker-end="url(#arr)"/><rect x="145.0" y="111" width="140" height="23" rx="4" style="fill:#fdfbf4;stroke:none"/><text class="lbl g" style="font-size:14px" x="215" y="125" text-anchor="middle">nightly base backup</text><rect x="357.5" y="101" width="165" height="40" rx="4" style="fill:#fdfbf4;stroke:none"/><text class="lbl g" style="font-size:14px" x="440" y="115" text-anchor="middle">continuous WAL archive</text><text class="lbl g" style="font-size:14px" x="440" y="132" text-anchor="middle">(every 60 s or 16 MB)</text><rect x="40.0" y="291" width="110" height="40" rx="4" style="fill:#fdfbf4;stroke:none"/><text class="lbl g" style="font-size:14px" x="95" y="305" text-anchor="middle">cross-region</text><text class="lbl g" style="font-size:14px" x="95" y="322" text-anchor="middle">replication</text><rect x="481.0" y="271" width="150" height="74" rx="4" style="fill:#fdfbf4;stroke:none"/><text class="lbl g" style="font-size:14px" x="556" y="285" text-anchor="middle">restore: base backup</text><text class="lbl g" style="font-size:14px" x="556" y="302" text-anchor="middle">+ replay WAL up to</text><text class="lbl g" style="font-size:14px" x="556" y="319" text-anchor="middle">14:31:59 (just before</text><text class="lbl g" style="font-size:14px" x="556" y="336" text-anchor="middle">the bad DELETE)</text><path class="sk" style="fill:#e3f1d8" d="M220 20 A100.0 8 0 0 1 420 20 L420 70 A100.0 8 0 0 1 220 70 Z"/><path class="sk" d="M220 20 A100.0 8 0 0 0 420 20"/><text class="lbl" style="font-size:15px" x="320.0" y="54.0" text-anchor="middle">Postgres primary</text><path class="sk" style="fill:#e3f1d8" d="M120 170 A200.0 8 0 0 1 520 170 L520 260 A200.0 8 0 0 1 120 260 Z"/><path class="sk" d="M120 170 A200.0 8 0 0 0 520 170"/><text class="lbl" style="font-size:15px" x="320.0" y="206.0" text-anchor="middle">object storage</text><text class="lbl" style="font-size:15px" x="320.0" y="224.0" text-anchor="middle">versioned + object lock</text><text class="lbl" style="font-size:15px" x="320.0" y="242.0" text-anchor="middle">(separate account)</text><path class="sk" style="fill:#e3f1d8" d="M80 360 A100.0 8 0 0 1 280 360 L280 410 A100.0 8 0 0 1 80 410 Z"/><path class="sk" d="M80 360 A100.0 8 0 0 0 280 360"/><text class="lbl" style="font-size:15px" x="180.0" y="394.0" text-anchor="middle">DR-region copy</text><path class="sk" style="fill:#e3f1d8" d="M360 360 A100.0 8 0 0 1 560 360 L560 410 A100.0 8 0 0 1 360 410 Z"/><path class="sk" d="M360 360 A100.0 8 0 0 0 560 360"/><text class="lbl" style="font-size:15px" x="460.0" y="394.0" text-anchor="middle">restored DB</text></svg>
+<figcaption>Fig 1: diagram redrawn by hand from the Mermaid source</figcaption>
+</figure>
+<h3>Warm-standby failover</h3>
+<figure>
+<svg viewBox="0 0 640 622" role="img" aria-label="Diagram 2 (redrawn from Mermaid)"><path class="sk" style="stroke-dasharray:3 7;stroke-width:1.6" d="M80 60 L80 616"/><path class="sk" style="stroke-dasharray:3 7;stroke-width:1.6" d="M200 60 L200 616"/><path class="sk" style="stroke-dasharray:3 7;stroke-width:1.6" d="M320 60 L320 616"/><path class="sk" style="stroke-dasharray:3 7;stroke-width:1.6" d="M440 60 L440 616"/><path class="sk" style="stroke-dasharray:3 7;stroke-width:1.6" d="M560 60 L560 616"/><rect class="sk" style="fill:#dcecff" x="28" y="10" width="104" height="50" rx="8"/><text class="lbl b" style="font-size:15px" x="80" y="40" text-anchor="middle">Monitoring</text><rect class="sk" style="fill:#dcecff" x="148" y="10" width="104" height="50" rx="8"/><text class="lbl b" style="font-size:15px" x="200" y="40" text-anchor="middle">On-call</text><rect class="sk" style="fill:#dcecff" x="268" y="10" width="104" height="50" rx="8"/><text class="lbl b" style="font-size:15px" x="320" y="31" text-anchor="middle">Global DNS /</text><text class="lbl b" style="font-size:15px" x="320" y="49" text-anchor="middle">LB</text><rect class="sk" style="fill:#dcecff" x="388" y="10" width="104" height="50" rx="8"/><text class="lbl b" style="font-size:15px" x="440" y="31" text-anchor="middle">Primary</text><text class="lbl b" style="font-size:15px" x="440" y="49" text-anchor="middle">region</text><rect class="sk" style="fill:#dcecff" x="508" y="10" width="104" height="50" rx="8"/><text class="lbl b" style="font-size:15px" x="560" y="31" text-anchor="middle">DR region</text><text class="lbl b" style="font-size:15px" x="560" y="49" text-anchor="middle">(warm)</text><path class="sk" style="color:var(--ink2)" d="M80 156 L196 156" marker-end="url(#arr)"/><text class="lbl" style="font-size:14px" x="140" y="94" text-anchor="middle">page: primary</text><text class="lbl" style="font-size:14px" x="140" y="111" text-anchor="middle">region</text><text class="lbl" style="font-size:14px" x="140" y="128" text-anchor="middle">unhealthy (5</text><text class="lbl" style="font-size:14px" x="140" y="145" text-anchor="middle">min)</text><path class="sk" style="color:var(--ink2)" d="M200 180 C255 180, 255 206, 203 206" marker-end="url(#arr)"/><text class="lbl" style="font-size:14px" x="262" y="190" text-anchor="start">declare</text><text class="lbl" style="font-size:14px" x="262" y="207" text-anchor="start">disaster, follow</text><text class="lbl" style="font-size:14px" x="262" y="224" text-anchor="start">the runbook</text><path class="sk" style="color:var(--ink2)" d="M200 266 L556 266" marker-end="url(#arr)"/><text class="lbl" style="font-size:14px" x="380" y="255" text-anchor="middle">promote the replica to primary</text><path class="sk" style="color:var(--ink2)" d="M200 307 L556 307" marker-end="url(#arr)"/><text class="lbl" style="font-size:14px" x="380" y="296" text-anchor="middle">scale the app from 2 to 20 instances</text><path class="sk" style="color:var(--ink2)" d="M200 399 L316 399" marker-end="url(#arr)"/><text class="lbl" style="font-size:14px" x="260" y="337" text-anchor="middle">switch</text><text class="lbl" style="font-size:14px" x="260" y="354" text-anchor="middle">api.example.com</text><text class="lbl" style="font-size:14px" x="260" y="371" text-anchor="middle">to the DR</text><text class="lbl" style="font-size:14px" x="260" y="388" text-anchor="middle">region</text><path class="sk" style="color:var(--red);stroke-dasharray:7 6" d="M320 457 L204 457" marker-end="url(#arr)"/><text class="lbl" style="font-size:14px" x="260" y="429" text-anchor="middle">traffic flowing</text><text class="lbl" style="font-size:14px" x="260" y="446" text-anchor="middle">(TTL 60 s)</text><path class="sk" style="color:var(--ink2)" d="M200 498 L556 498" marker-end="url(#arr)"/><text class="lbl" style="font-size:14px" x="380" y="487" text-anchor="middle">verify: smoke tests, error rates</text><rect class="sk" style="fill:#fff59d" x="332" y="520" width="300" height="86" rx="4"/><text class="lbl" style="font-size:14px" x="482" y="540" text-anchor="middle">RPO = replication lag at failure</text><text class="lbl" style="font-size:14px" x="482" y="558" text-anchor="middle">(~seconds)</text><text class="lbl" style="font-size:14px" x="482" y="576" text-anchor="middle">RTO = detection + promotion + scale +</text><text class="lbl" style="font-size:14px" x="482" y="594" text-anchor="middle">DNS (~20 min)</text></svg>
+<figcaption>Fig 2: diagram redrawn by hand from the Mermaid source</figcaption>
+</figure>
+<div class="pagebreak">~ page 3 ~</div>
+<h2>Example</h2>
+<span class="lang">bash</span>
+<pre class="code"><code># PostgreSQL with pgBackRest: full + WAL archiving to S3, then PITR
+pgbackrest --stanza=main --type=full backup            # nightly (cron / systemd timer)
+# postgresql.conf: archive_mode = on
+#                  archive_command = 'pgbackrest --stanza=main archive-push %p'
+
+# Disaster: someone ran DELETE FROM orders at 14:32:05
+pgbackrest --stanza=main --delta \
+  --type=time --target="2024-05-01 14:32:00+00" --target-action=promote restore
+# start Postgres → it replays WAL up to 14:32:00 → orders are back
+
+# Verify every restore automatically
+psql -c "SELECT count(*), max(created_at) FROM orders"   # compare to expectations</code></pre>
+<span class="lang">python</span>
+<pre class="code"><code># A scheduled restore test that measures the real RTO and RPO
+import time, subprocess, datetime as dt
+
+def restore_drill():
+    t0 = time.monotonic()
+    subprocess.run(["./restore_latest.sh", "--target", "drill-db"], check=True)      # to a scratch instance
+    rto_minutes = (time.monotonic() - t0) / 60
+    newest = query("drill-db", "SELECT max(created_at) FROM orders")               # newest recovered row
+    rpo_seconds = (dt.datetime.now(dt.timezone.utc) - newest).total_seconds()
+    rows_ok = query("drill-db", "SELECT count(*) FROM orders") &gt; 0
+    report(rto_minutes=rto_minutes, rpo_seconds=rpo_seconds, ok=rows_ok)
+    assert rto_minutes &lt;= 60 and rpo_seconds &lt;= 300, "DR objectives missed — page the owner"</code></pre>
+<span class="lang">hcl</span>
+<pre class="code"><code># Immutable backups: S3 Object Lock in a separate backup account
+resource "aws_s3_bucket" "backups" {
+  bucket              = "acme-db-backups-dr"
+  object_lock_enabled = true
+}
+resource "aws_s3_bucket_object_lock_configuration" "backups" {
+  bucket = aws_s3_bucket.backups.id
+  rule {
+    default_retention {
+      mode = "COMPLIANCE"     # cannot be deleted by anyone, including root, until retention ends
+      days = 35
+    }
+  }
+}</code></pre>
+<h2>Exercises</h2>
+<ol class="num">
+<li><span class="n">1.</span>Define RTO/RPO for a service and pick a strategy.
+<details open><summary>Solution</summary>Ask the business what an hour of downtime and a minute of lost data cost. Example: an e-commerce checkout — RPO ≤ 1 min (lost orders mean lost money and trust), RTO ≤ 30 min. That needs continuous WAL archiving (for PITR), a cross-region async replica, and warm standby with an automated failover runbook. An internal reporting tool might accept RPO 24 h and RTO 1 day: nightly backups and restore on demand.</details></li>
+<li><span class="n">2.</span>Test a restore from backup.
+<details open><summary>Solution</summary>Restore the latest backup to a fresh, isolated instance using only the runbook (ideally by someone who didn't write it). Time every step. Verify row counts, the newest timestamps, schema version, and a few business queries; then run the app's smoke tests against it. Record the measured RTO and RPO, fix every surprise, and automate the drill monthly.</details></li>
+<li><span class="n">3.</span>Your primary DB has synchronous replicas in three zones. Do you still need backups?
+<details open><summary>Solution</summary>Yes. Replicas protect against hardware and zone failures, but they faithfully replicate a <code>DROP TABLE</code>, a buggy migration, or ransomware encryption within milliseconds. Only point-in-time backups, ideally immutable and in a separate account, recover from logical corruption.</details></li>
+</ol>
+<div class="pagebreak">~ page 4 ~</div>
+<h2>Mini project</h2>
+<h3>A backup + restore script with verification and a measured RTO/RPO.</h3>
+<figure>
+<svg viewBox="0 0 277 726" role="img" aria-label="Diagram 3 (redrawn from Mermaid)"><path class="sk" style="color:var(--ink2)" d="M139 204 C139 226, 139 226, 139 247" marker-end="url(#arr)"/><path class="sk" style="color:var(--ink2)" d="M139 74 C139 96, 139 96, 139 117" marker-end="url(#arr)"/><path class="sk" style="color:var(--ink2)" d="M139 338 C139 360, 139 360, 139 381" marker-end="url(#arr)"/><path class="sk" style="color:var(--ink2)" d="M139 454 C139 476, 139 476, 139 497" marker-end="url(#arr)"/><path class="sk" style="color:var(--ink2)" d="M139 588 C139 610, 139 610, 139 631" marker-end="url(#arr)"/><path class="sk" style="fill:#e3f1d8" d="M40 128 A99 8 0 0 1 238 128 L238 196 A99 8 0 0 1 40 196 Z"/><path class="sk" d="M40 128 A99 8 0 0 0 238 128"/><text class="lbl" style="font-size:15px" x="139" y="149" text-anchor="middle">Postgres in Docker</text><text class="lbl" style="font-size:15px" x="139" y="167" text-anchor="middle">+ a writer inserting 10</text><text class="lbl" style="font-size:15px" x="139" y="185" text-anchor="middle">rows/s</text><rect class="sk" style="fill:#fdfbf4" x="26" y="250" width="226" height="88" rx="10"/><text class="lbl" style="font-size:15px" x="139" y="272" text-anchor="middle">backup.sh:</text><text class="lbl" style="font-size:15px" x="139" y="290" text-anchor="middle">base backup + WAL archive →</text><text class="lbl" style="font-size:15px" x="139" y="308" text-anchor="middle">MinIO</text><text class="lbl" style="font-size:15px" x="139" y="326" text-anchor="middle">(versioned, object lock)</text><rect class="sk" style="fill:#fdfbf4" x="26" y="22" width="226" height="52" rx="10"/><text class="lbl" style="font-size:15px" x="139" y="44" text-anchor="middle">disaster: DROP TABLE orders</text><text class="lbl" style="font-size:15px" x="139" y="62" text-anchor="middle">at a random moment</text><rect class="sk" style="fill:#fdfbf4" x="22" y="384" width="233" height="70" rx="10"/><text class="lbl" style="font-size:15px" x="139" y="406" text-anchor="middle">restore.sh --to 'just before</text><text class="lbl" style="font-size:15px" x="139" y="424" text-anchor="middle">the drop'</text><text class="lbl" style="font-size:15px" x="139" y="442" text-anchor="middle">→ a fresh container</text><rect class="sk" style="fill:#fdfbf4" x="29" y="500" width="218" height="88" rx="10"/><text class="lbl" style="font-size:15px" x="139" y="522" text-anchor="middle">verify.sh: counts, newest</text><text class="lbl" style="font-size:15px" x="139" y="540" text-anchor="middle">row,</text><text class="lbl" style="font-size:15px" x="139" y="558" text-anchor="middle">checksum of the last 1,000</text><text class="lbl" style="font-size:15px" x="139" y="576" text-anchor="middle">rows</text><rect class="sk" style="fill:#fdfbf4" x="26" y="634" width="226" height="70" rx="10"/><text class="lbl" style="font-size:15px" x="139" y="656" text-anchor="middle">report: RTO (min), RPO (s),</text><text class="lbl" style="font-size:15px" x="139" y="674" text-anchor="middle">data lost, pass/fail vs</text><text class="lbl" style="font-size:15px" x="139" y="692" text-anchor="middle">targets</text></svg>
+<figcaption>Fig 3: diagram redrawn by hand from the Mermaid source</figcaption>
+</figure>
+<h3>Steps</h3>
+<ol class="num">
+<li><span class="n">1.</span>Run Postgres and MinIO in Docker; a script inserts rows continuously with timestamps.</li>
+<li><span class="n">2.</span>Configure base backups and WAL archiving (pgBackRest or WAL-G) to MinIO with versioning.</li>
+<li><span class="n">3.</span>Chaos script: at a random time, drop a table; log the exact time.</li>
+<li><span class="n">4.</span><code>restore.sh</code>: restore to a new container at a target time just before the drop.</li>
+<li><span class="n">5.</span><code>verify.sh</code>: compare counts and checksums; compute RPO (the gap from the last recovered row to the drop time) and RTO (the restore duration).</li>
+<li><span class="n">6.</span>Run it on a schedule and fail loudly when objectives are missed.</li>
+</ol>
+<div class="box"><b>Done when:</b> one command runs the whole drill and prints measured RTO and RPO, and both meet your stated targets.</div>
+<h2>Design</h2>
+<h3>Design DR for a payments database.</h3>
+<p>Requirements: a payments ledger in PostgreSQL, 3 TB, 3,000 writes/s; RPO ≈ 0 for a zone failure and ≤ 5 s for a region failure; RTO ≤ 15 min for a region failure; protection against operator mistakes and ransomware; 7-year retention for audit.</p>
+<figure>
+<svg viewBox="0 0 640 560" role="img" aria-label="Diagram 4 (redrawn from Mermaid)"><rect class="sk red" style="stroke-dasharray:8 6;stroke-width:2" x="25" y="20" width="390" height="240" rx="14"/><text class="lbl r" style="font-size:15px" x="37" y="40">Primary region</text><rect class="sk red" style="stroke-dasharray:8 6;stroke-width:2" x="25" y="295" width="390" height="145" rx="14"/><text class="lbl r" style="font-size:15px" x="37" y="315">DR region</text><rect class="sk red" style="stroke-dasharray:8 6;stroke-width:2" x="470" y="100" width="165" height="170" rx="14"/><text class="lbl r" style="font-size:15px" x="482" y="120">Separate backup account</text><path class="sk" style="color:var(--ink2)" d="M190 95 C190 125,110 125,110 160" marker-end="url(#arr)"/><path class="sk" style="color:var(--ink2)" d="M230 95 C230 125,305 125,305 160" marker-end="url(#arr)"/><path class="sk" style="color:var(--ink2)" d="M210 95 L210 335" marker-end="url(#arr)"/><path class="sk" style="color:var(--ink2)" d="M310 235 L310 345" marker-end="url(#arr)"/><path class="sk" style="color:var(--ink2)" d="M370 198 L478 198" marker-end="url(#arr)"/><path class="sk red" style="color:var(--red);stroke-dasharray:7 6" d="M170 465 L170 405" marker-end="url(#arr)"/><rect x="42.5" y="104" width="85" height="23" rx="4" style="fill:#fdfbf4;stroke:none"/><text class="lbl g" style="font-size:14px" x="85" y="118" text-anchor="middle">synchronous</text><rect x="327.0" y="104" width="36" height="23" rx="4" style="fill:#fdfbf4;stroke:none"/><text class="lbl g" style="font-size:14px" x="345" y="118" text-anchor="middle">WAL</text><rect x="156.0" y="262" width="108" height="23" rx="4" style="fill:#fdfbf4;stroke:none"/><text class="lbl g" style="font-size:14px" x="210" y="276" text-anchor="middle">async streaming</text><rect x="271.0" y="269" width="78" height="23" rx="4" style="fill:#fdfbf4;stroke:none"/><text class="lbl g" style="font-size:14px" x="310" y="283" text-anchor="middle">replication</text><rect x="396.0" y="176" width="72" height="23" rx="4" style="fill:#fdfbf4;stroke:none"/><text class="lbl g" style="font-size:14px" x="432" y="190" text-anchor="middle">replication</text><path class="sk" style="fill:#e3f1d8" d="M130 55 A80.0 8 0 0 1 290 55 L290 95 A80.0 8 0 0 1 130 95 Z"/><path class="sk" d="M130 55 A80.0 8 0 0 0 290 55"/><text class="lbl" style="font-size:15px" x="210.0" y="84.0" text-anchor="middle">primary (AZ-a)</text><path class="sk" style="fill:#e3f1d8" d="M40 160 A70.0 8 0 0 1 180 160 L180 235 A70.0 8 0 0 1 40 235 Z"/><path class="sk" d="M40 160 A70.0 8 0 0 0 180 160"/><text class="lbl" style="font-size:15px" x="110.0" y="188.5" text-anchor="middle">standby (AZ-b)</text><text class="lbl" style="font-size:15px" x="110.0" y="206.5" text-anchor="middle">auto-failover</text><text class="lbl" style="font-size:15px" x="110.0" y="224.5" text-anchor="middle">(Patroni)</text><path class="sk" style="fill:#e3f1d8" d="M232 160 A75.0 8 0 0 1 382 160 L382 235 A75.0 8 0 0 1 232 235 Z"/><path class="sk" d="M232 160 A75.0 8 0 0 0 382 160"/><text class="lbl" style="font-size:15px" x="307.0" y="188.5" text-anchor="middle">WAL + base backups</text><text class="lbl" style="font-size:15px" x="307.0" y="206.5" text-anchor="middle">object storage,</text><text class="lbl" style="font-size:15px" x="307.0" y="224.5" text-anchor="middle">versioned</text><path class="sk" style="fill:#e3f1d8" d="M100 335 A70.0 8 0 0 1 240 335 L240 405 A70.0 8 0 0 1 100 405 Z"/><path class="sk" d="M100 335 A70.0 8 0 0 0 240 335"/><text class="lbl" style="font-size:15px" x="170.0" y="370.0" text-anchor="middle">async replica</text><text class="lbl" style="font-size:15px" x="170.0" y="388.0" text-anchor="middle">lag alert &gt; 2 s</text><path class="sk" style="fill:#e3f1d8" d="M265 345 A55.0 8 0 0 1 375 345 L375 395 A55.0 8 0 0 1 265 395 Z"/><path class="sk" d="M265 345 A55.0 8 0 0 0 375 345"/><text class="lbl" style="font-size:15px" x="320.0" y="379.0" text-anchor="middle">backup copy</text><path class="sk" style="fill:#e3f1d8" d="M478 150 A75.0 8 0 0 1 628 150 L628 250 A75.0 8 0 0 1 478 250 Z"/><path class="sk" d="M478 150 A75.0 8 0 0 0 628 150"/><text class="lbl" style="font-size:15px" x="553.0" y="182.0" text-anchor="middle">immutable copies</text><text class="lbl" style="font-size:15px" x="553.0" y="200.0" text-anchor="middle">object lock 35 days;</text><text class="lbl" style="font-size:15px" x="553.0" y="218.0" text-anchor="middle">monthly archives</text><text class="lbl" style="font-size:15px" x="553.0" y="236.0" text-anchor="middle">7 years</text><rect class="sk" style="fill:#fdfbf4" x="110" y="465" width="320" height="80" rx="10"/><text class="lbl" style="font-size:15px" x="270.0" y="489" text-anchor="middle">runbook + automation:</text><text class="lbl" style="font-size:15px" x="270.0" y="507" text-anchor="middle">promote the DR replica, repoint</text><text class="lbl" style="font-size:15px" x="270.0" y="525" text-anchor="middle">the app, fence the old primary</text></svg>
+<figcaption>Fig 4: diagram redrawn by hand from the Mermaid source</figcaption>
+</figure>
+<h3>Decisions to justify</h3>
+<ul>
+<li><b>Zone failure (RPO 0, RTO &lt; 1 min):</b> a synchronous standby in another zone, with automatic failover (Patroni or a managed Multi-AZ service). Synchronous means every commit waits for the standby — a few ms of extra latency, acceptable for a ledger.</li>
+<li><b>Region failure (RPO ≤ 5 s, RTO ≤ 15 min):</b> an async cross-region replica (sync across regions would add ~70 ms+ to every write). Alert when lag &gt; 2 s. Failover is a practiced, mostly automated runbook; <b>fencing</b> the old primary prevents split-brain.</li>
+<li><b>Logical disasters:</b> PITR from WAL archives (any second in the last 35 days); <b>immutable</b> copies in a separate account defeat ransomware and malicious admins.</li>
+<li><b>Double-entry ledger + idempotency keys</b> make reconciliation after a failover possible: replayed or missing transactions are detectable.</li>
+<li><b>Audit retention:</b> monthly logical exports to archive storage for 7 years, with restore tests yearly.</li>
+<li><b>Proof:</b> a monthly restore drill and a quarterly region failover game day, with measured RTO/RPO reported to leadership.</li>
+</ul>
+<div class="pagebreak">~ page 5 ~</div>
+<h2>Open source</h2>
+<ul>
+<li><a href="https://github.com/postgres/postgres"><code>postgres/postgres</code></a> (WAL/PITR) — the docs chapter "Continuous Archiving and Point-in-Time Recovery"; tools: pgBackRest, WAL-G, Barman, and Patroni for HA.</li>
+<li><a href="https://github.com/velero/velero"><code>velero/velero</code></a> — backup, restore, and migration of Kubernetes resources and persistent volumes.</li>
+</ul>
+<h2>Interview</h2>
+<ol class="num">
+<li><span class="n">1.</span><b>"RTO vs RPO?"</b>
+<details open><summary>Answer</summary>RPO (Recovery Point Objective) is the maximum acceptable data loss, measured in time: how far back the last recoverable state may be. It is set by backup frequency and replication mode. RTO (Recovery Time Objective) is the maximum acceptable downtime until service is restored. It is set by detection, automation, restore speed, and routing. Both are business decisions that drive the DR strategy and its cost.</details></li>
+<li><span class="n">2.</span><b>"Why test restores, not just backups?"</b>
+<details open><summary>Answer</summary>A backup job succeeding only proves that bytes were written. Restores fail for many silent reasons: missing WAL segments, expired keys or credentials, version incompatibilities, corrupted files, missing configuration, runbooks that don't work, or restore times far beyond the RTO. Only regular, timed, verified restore drills turn "we have backups" into a known RTO and RPO.</details></li>
+</ol>
+<div class="pagebreak">~ page 6 ~</div>
+<h2>Checklist</h2>
+<ul>
+<li class="todo">state RTO/RPO explicitly</li>
+<li class="todo">automate + verify restores</li>
+<li class="todo">run failover drills</li>
+</ul>
+  <nav class="nav"><a href="ch16-performance-antipatterns-and-monitoring.notes.html">← Ch 16 — Performance Antipatterns &amp; Monitoring</a><a href="index.notes.html">☰ Contents</a><a href="ch18-security-at-the-system-level.notes.html">Ch 18 — Security at the System Level →</a></nav>
+</main>
+</body>
+</html>

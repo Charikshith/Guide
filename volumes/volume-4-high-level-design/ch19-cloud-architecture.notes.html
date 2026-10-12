@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ch 19 — Cloud Architecture — Notes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;700&family=Kalam:wght@400;700&family=Patrick+Hand&display=swap" rel="stylesheet">
+<style>
+/* ===== Page tokens ===== */
+:root{
+  --line:32px;                 /* ruled-line spacing; every vertical size is a multiple */
+  --paper:#fdfbf4; --rule:#c9dcef; --margin:#e8a0a0;
+  --ink:#1f3a93;               /* blue pen (body) */
+  --ink2:#222;                 /* black pen (headings) */
+  --red:#c0392b; --green:#1e8449;
+  --hl-yellow:rgba(255,235,59,.55); --hl-pink:rgba(255,128,171,.45);
+  --hl-green:rgba(118,255,3,.35); --hl-blue:rgba(64,196,255,.35);
+  --sticky:#fff59d; --desk:#e9e4d8;
+  --hand:'Kalam','Patrick Hand','Comic Sans MS','Segoe Print','Bradley Hand',cursive;
+  --title:'Caveat','Kalam','Segoe Print','Bradley Hand',cursive;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){ --desk:#2b2b2b; }
+}
+:root[data-theme="dark"]{ --desk:#2b2b2b; }
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--desk);font-family:var(--hand);color:var(--ink);}
+
+/* ===== Notebook sheet ===== */
+.page{
+  position:relative; max-width:860px; margin:24px auto; padding:var(--line) 28px calc(var(--line)*2) 84px;
+  background:
+    linear-gradient(90deg,transparent 64px,var(--margin) 64px,var(--margin) 66px,transparent 66px),
+    repeating-linear-gradient(var(--paper) 0,var(--paper) calc(var(--line) - 1px),var(--rule) calc(var(--line) - 1px),var(--rule) var(--line));
+  background-color:var(--paper);
+  box-shadow:0 2px 6px rgba(0,0,0,.15),0 12px 28px rgba(0,0,0,.12);
+  font-size:20px; line-height:var(--line);
+}
+.page::before{ /* punched holes */
+  content:""; position:absolute; left:22px; top:0; bottom:0; width:18px;
+  background:radial-gradient(circle,var(--desk) 7px,transparent 8px) 0 40px/18px 220px repeat-y;
+}
+@media (max-width:600px){
+  .page{margin:0;padding-left:52px;padding-right:16px;font-size:18px;
+    background:
+      linear-gradient(90deg,transparent 40px,var(--margin) 40px,var(--margin) 42px,transparent 42px),
+      repeating-linear-gradient(var(--paper) 0,var(--paper) calc(var(--line) - 1px),var(--rule) calc(var(--line) - 1px),var(--rule) var(--line));
+    background-color:var(--paper);}
+  .page::before{left:10px;width:16px}
+}
+
+/* ===== Text (all margins are multiples of --line so text sits on the rules) ===== */
+.date{position:absolute;top:0;right:24px;font-family:var(--title);font-size:22px;color:var(--ink2);line-height:var(--line)}
+h1{font-family:var(--title);font-weight:700;color:var(--ink2);font-size:46px;line-height:calc(var(--line)*2);margin:0;transform:rotate(-1deg)}
+h1 .u{background:linear-gradient(transparent 62%,var(--hl-yellow) 62%,var(--hl-yellow) 92%,transparent 92%)}
+h2{font-family:var(--title);font-weight:700;color:var(--red);font-size:32px;line-height:calc(var(--line)*1.5);margin:calc(var(--line)*.5) 0 0}
+h2::before{content:"➤ ";font-size:22px}
+p,li{margin:0}
+ul,ol{margin:0;padding-left:28px}
+ul{list-style:none}
+ul>li::before{content:"–";position:absolute;margin-left:-20px}
+ul>li.star::before{content:"★";color:var(--red)}
+ul>li.arrow::before{content:"→"}
+ul>li.check::before{content:"✓";color:var(--green)}
+.gap{height:var(--line)}
+
+/* ===== Pen effects ===== */
+.hl{background:var(--hl-yellow);padding:0 3px;border-radius:3px 6px 4px 7px}
+.hl.pink{background:var(--hl-pink)} .hl.green{background:var(--hl-green)} .hl.blue{background:var(--hl-blue)}
+.red{color:var(--red)} .green{color:var(--green)} .black{color:var(--ink2)}
+.ul{text-decoration:underline wavy var(--red);text-underline-offset:5px}
+.circ{border:2px solid var(--red);border-radius:50% 45% 55% 48%;padding:0 6px}
+.strike{text-decoration:line-through 2px var(--red)}
+.term{font-weight:700;color:var(--ink2)}
+.box{display:flow-root;border:2.5px solid var(--ink2);border-radius:4px 10px 6px 12px;padding:calc(var(--line)*.5 - 2.5px) 14px;margin:calc(var(--line)*.5) 0;transform:rotate(-.4deg);background:rgba(255,255,255,.35)}
+.box.red{border-color:var(--red)}
+.formula{font-family:var(--title);font-size:28px;text-align:center;color:var(--ink2)}
+
+/* sticky note */
+.sticky{float:right;width:min(250px,42%);margin:0 0 var(--line) 20px;padding:var(--line) 16px;background:var(--sticky);
+  color:#333;transform:rotate(2.2deg);box-shadow:2px 4px 8px rgba(0,0,0,.18);font-size:18px}
+.sticky b{font-family:var(--title);font-size:24px;color:var(--red)}
+@media (max-width:600px){.sticky{float:none;width:auto;margin:var(--line) 0}}
+
+/* margin annotation (lives in the red margin) */
+.side{position:absolute;left:4px;width:58px;text-align:center;font-family:var(--title);font-size:17px;line-height:18px;color:var(--red);transform:rotate(-8deg)}
+@media (max-width:600px){.side{display:none}}
+
+/* two-column notes */
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:0 28px}
+@media (max-width:600px){.cols{grid-template-columns:1fr}}
+
+/* diagrams */
+figure{margin:var(--line) 0;text-align:center}
+figure svg{width:100%;max-width:640px;height:auto;overflow:visible}
+figcaption{font-family:var(--title);font-size:20px;color:var(--ink2)}
+/* phones: keep labels readable — diagram scrolls inside its own box instead of shrinking */
+@media (max-width:600px){figure{overflow-x:auto}figure svg{min-width:520px}}
+.sk{fill:none;stroke:var(--ink2);stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round;filter:url(#rough)}
+.sk.blue{stroke:var(--ink)} .sk.red{stroke:var(--red)} .sk.green{stroke:var(--green)}
+.lbl{font-family:var(--hand);font-size:17px;fill:var(--ink)}
+.lbl.b{font-weight:700;fill:var(--ink2)} .lbl.r{fill:var(--red)} .lbl.g{fill:var(--green)}
+
+/* table */
+.wrap{overflow-x:auto}
+table{border-collapse:collapse;margin:calc(var(--line)*.5) 0;min-width:100%}
+th,td{border:2px solid var(--ink2);padding:0 10px;text-align:left;vertical-align:top}
+th{font-family:var(--title);font-size:24px;color:var(--ink2)}
+
+@media print{body{background:#fff}.page{box-shadow:none;margin:0}.page::before{display:none}}
+
+/* ===== Added for long chapter notes ===== */
+pre.code{font-family:Consolas,'Courier New',monospace;font-size:14px;line-height:var(--line);color:var(--ink);background:rgba(255,255,255,.45);
+  border-left:4px solid var(--red);margin:calc(var(--line)*.5) 0;padding:0 12px;overflow-x:auto;white-space:pre}
+pre.code.ascii{border-left-color:var(--green)}
+code{font-family:Consolas,'Courier New',monospace;font-size:.82em;background:rgba(0,0,0,.06);padding:0 3px;border-radius:3px}
+pre.code code{background:none;padding:0;font-size:inherit}
+.lang{font-family:var(--title);font-size:18px;color:var(--red)}
+h3{font-family:var(--title);font-weight:700;color:var(--ink2);font-size:26px;line-height:var(--line);margin:calc(var(--line)*.5) 0 0}
+h3::before{content:"✎ ";font-size:18px;color:var(--red)}
+.nav{display:flex;justify-content:space-between;gap:12px;font-family:var(--title);font-size:22px;line-height:var(--line)}
+.nav a{color:var(--red);text-decoration:none}
+.nav a:hover{text-decoration:underline wavy}
+.pagebreak{border-top:3px dashed var(--margin);margin:var(--line) 0;text-align:center;font-family:var(--title);color:var(--red);line-height:var(--line)}
+li.todo::before{content:"☐";color:var(--ink2)}
+a{color:var(--ink);text-decoration:underline dotted}
+
+details{margin:calc(var(--line)*.5) 0}
+summary{cursor:pointer;font-family:var(--title);font-size:22px;color:var(--red)}
+details>summary+*{margin-top:0}
+.fig{margin:var(--line) 0}
+ol.num{list-style:none;padding-left:38px}
+ol.num>li>.n{position:absolute;margin-left:-34px;font-weight:700;color:var(--red)}
+</style>
+</head>
+<body>
+<!-- One shared hand-drawn wobble filter; give every diagram stroke class="sk" -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <!-- userSpaceOnUse region: a % region collapses to nothing on perfectly straight lines (zero-height bbox) -->
+  <filter id="rough" filterUnits="userSpaceOnUse" x="-500" y="-500" width="3000" height="3000">
+    <feTurbulence type="fractalNoise" baseFrequency="0.03" numOctaves="2" seed="3" result="n"/>
+    <feDisplacementMap in="SourceGraphic" in2="n" scale="3"/>
+  </filter>
+  <marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+    <path d="M1 1 L9 5 L1 9" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+  </marker>
+</defs></svg>
+
+<main class="page">
+  <nav class="nav"><a href="ch18-security-at-the-system-level.notes.html">← Ch 18 — Security at the System Level</a><a href="index.notes.html">☰ Contents</a><a href="ch20-cost-and-capacity-economics.notes.html">Ch 20 — Cost &amp; Capacity Economics →</a></nav>
+  <div class="date">2026-10-10</div>
+  <h1><span class="u">Ch 19 — Cloud Architecture</span></h1>
+  <p class="black">Chapter 19 — Cloud Architecture</p>
+<p class="black"><b>Volume 4 — High-Level Design</b> · <a href="index.md">Contents</a> · ← <a href="ch18-security-at-the-system-level.notes.html">Chapter 18 — Security at the System Level</a> · Next → <a href="ch20-cost-and-capacity-economics.notes.html">Chapter 20 — Cost &amp; Capacity Economics</a></p>
+<h2>Concept</h2>
+<p>Cloud building blocks (compute, storage, networking, managed services), serverless vs containers, and cost-aware design.</p>
+<div class="box"><b>In one sentence:</b> cloud architecture is choosing and connecting rented building blocks — compute, storage, networking, and managed services — so the system meets its reliability, performance, security, and cost goals with the least undifferentiated work for your team.</div>
+<p><b>Mental model — building with LEGO Technic vs carving wood.</b> On-premises you carve every part yourself: servers, racks, databases, backups. In the cloud you snap together ready-made parts (a managed database, a queue, a load balancer) that someone else maintains. The skill moves from making parts to choosing the right parts, connecting them safely, and not buying far more bricks than you need.</p>
+<h3>The building blocks (AWS / GCP / Azure names)</h3>
+<div class="wrap"><table>
+<tr><th>Category</th><th>Options</th><th>Use</th></tr>
+<tr><td><b>Compute</b></td><td>VMs (EC2 / Compute Engine / VMs); containers (EKS/ECS, GKE, Cloud Run, AKS, Container Apps); functions (Lambda, Cloud Functions, Azure Functions)</td><td>run code</td></tr>
+<tr><td><b>Storage</b></td><td>object (S3 / GCS / Blob); block (EBS / PD / Managed Disks); file (EFS / Filestore / Files)</td><td>files, volumes, shared file systems</td></tr>
+<tr><td><b>Databases</b></td><td>relational (RDS/Aurora, Cloud SQL/AlloyDB, Azure SQL); NoSQL (DynamoDB, Firestore/Bigtable, Cosmos DB); caches (ElastiCache, Memorystore); warehouses (Redshift, BigQuery, Synapse)</td><td>data</td></tr>
+<tr><td><b>Networking</b></td><td>VPC/VNet, subnets, NAT, load balancers, DNS, CDN, private endpoints, transit gateways</td><td>connectivity and isolation</td></tr>
+<tr><td><b>Integration</b></td><td>queues (SQS, Pub/Sub, Service Bus), streams (Kinesis, managed Kafka), workflows (Step Functions, Workflows), API gateways, event buses (EventBridge)</td><td>decoupling</td></tr>
+<tr><td><b>Identity &amp; security</b></td><td>IAM, KMS, secrets managers, WAF</td><td><a href="ch18-security-at-the-system-level.notes.html">Ch 18</a></td></tr>
+<tr><td><b>Observability</b></td><td>CloudWatch, Cloud Monitoring/Logging, Azure Monitor, managed Prometheus/Grafana</td><td>operations</td></tr>
+</table></div>
+<h3>Serverless vs containers vs VMs</h3>
+<div class="wrap"><table>
+<tr><th></th><th>Functions (Lambda)</th><th>Serverless containers (Cloud Run, Fargate)</th><th>Kubernetes / VMs</th></tr>
+<tr><td>Unit</td><td>a function per event</td><td>a container, scaled per request</td><td>pods/processes you manage</td></tr>
+<tr><td>Scaling</td><td>per request, to zero, very fast</td><td>per request/concurrency, to zero (Cloud Run)</td><td>autoscalers you configure; rarely to zero</td></tr>
+<tr><td>Max run time</td><td>~15 min (Lambda)</td><td>long (up to 60 min per request on Cloud Run; unlimited on Fargate tasks)</td><td>unlimited</td></tr>
+<tr><td>Cold starts</td><td>yes (100 ms–seconds)</td><td>yes, smaller with min instances</td><td>none</td></tr>
+<tr><td>Ops burden</td><td>lowest</td><td>low</td><td>highest</td></tr>
+<tr><td>Cost at low/bursty traffic</td><td><b>lowest</b> (pay per ms)</td><td>low</td><td>idle capacity costs money</td></tr>
+<tr><td>Cost at high steady traffic</td><td>can be <b>highest</b></td><td>moderate</td><td><b>lowest</b> per unit (with commitments)</td></tr>
+<tr><td>Portability / control</td><td>lowest</td><td>high (it's a container)</td><td>highest</td></tr>
+<tr><td>Fits</td><td>event glue, webhooks, cron, spiky APIs</td><td>most web APIs and workers</td><td>large platforms, special hardware/networking, steady heavy load</td></tr>
+</table></div>
+<p><b>Break-even sketch:</b> Lambda at 512 MB, 100 ms per request ≈ $0.00000083 compute + $0.0000002 request ≈ <b>$1.03 per million requests</b>. A 2-vCPU container at ~$50/month handling 200 req/s sustained ≈ 518M requests/month ≈ <b>$0.10 per million</b>. Serverless wins at low or spiky volume; containers win at high steady volume. Always model your own numbers.</p>
+<p><b>Managed services — when sensible:</b> use managed databases, queues, caches, and object storage unless you have a strong reason not to (special performance, cost at huge scale, portability requirements). Running your own Postgres HA with backups, patching, and failover is a full-time job.</p>
+<p><b>Lock-in, sensibly</b> — lock-in isn't binary; it's a cost you weigh. Low-regret choices: standard interfaces (Postgres, Kafka API, S3 API, OCI containers, Kubernetes, OpenTelemetry, Terraform). Accept deep lock-in where the service gives a big advantage (DynamoDB, BigQuery), and keep your domain logic behind your own interfaces (<a href="../volume-3-low-level-design/ch09-hexagonal-architecture-ports-and-adapters.notes.html">Vol 3 Ch 9</a>) so a later migration touches adapters, not everything.</p>
+<p><b>Well-architected pillars</b> (shared by the major clouds): operational excellence, security, reliability, performance efficiency, cost optimization, sustainability.</p>
+<div class="pagebreak">~ page 2 ~</div>
+<h2>Prereqs</h2>
+<ul>
+<li><a href="ch02-capacity-planning.notes.html">Chapter 2 — Capacity Planning</a></li>
+<li><a href="ch03-scalability-and-reliability-fundamentals.notes.html">Chapter 3 — Scalability &amp; Reliability Fundamentals</a></li>
+<li><a href="../volume-1-cs-foundations/ch44-delivery-load-balancing-reverse-proxies-and-cdn.notes.html">Vol 1 Ch 44 — Delivery: Load Balancing, Reverse Proxies &amp; CDN</a></li>
+</ul>
+<h2>Diagram</h2>
+<h3>A reference architecture on a cloud provider with managed services</h3>
+<figure>
+<svg viewBox="0 0 640 800" role="img" aria-label="Diagram 1 (redrawn from Mermaid)"><rect class="sk red" style="stroke-dasharray:8 6;stroke-width:2" x="15" y="235" width="440" height="545" rx="14"/><text class="lbl r" style="font-size:15px" x="27" y="255">VPC (3 availability zones)</text><rect class="sk red" style="stroke-dasharray:8 6;stroke-width:2" x="50" y="275" width="390" height="385" rx="14"/><text class="lbl r" style="font-size:15px" x="62" y="295">private subnets</text><path class="sk" style="color:var(--ink2)" d="M125 47 L145 47" marker-end="url(#arr)"/><path class="sk" style="color:var(--ink2)" d="M295 47 L325 47" marker-end="url(#arr)"/><path class="sk" style="color:var(--ink2)" d="M380 75 C380 105,270 105,270 130" marker-end="url(#arr)"/><path class="sk" style="color:var(--ink2)" d="M470 75 C470 105,570 105,570 130" marker-end="url(#arr)"/><path class="sk" style="color:var(--ink2)" d="M270 185 L270 330" marker-end="url(#arr)"/><path class="sk" style="color:var(--ink2)" d="M150 385 C150 420,125 420,125 450" marker-end="url(#arr)"/><path class="sk" style="color:var(--ink2)" d="M255 385 L265 450" marker-end="url(#arr)"/><path class="sk" style="color:var(--ink2)" d="M355 347 L485 365" marker-end="url(#arr)"/><path class="sk" style="color:var(--ink2)" d="M355 335 C400 300,440 270,485 270" marker-end="url(#arr)"/><path class="sk" style="color:var(--ink2)" d="M105 350 C40 350,32 420,32 520 L32 715 L60 715" marker-end="url(#arr)"/><path class="sk" style="color:var(--ink2)" d="M562 400 C562 520,420 500,400 560" marker-end="url(#arr)"/><path class="sk" style="color:var(--ink2)" d="M425 595 C470 595,480 700,485 715" marker-end="url(#arr)"/><path class="sk" style="color:var(--ink2)" d="M300 620 C300 655,240 655,240 690" marker-end="url(#arr)"/><rect class="sk" style="fill:#fdfbf4" x="15" y="20" width="110" height="55" rx="10"/><text class="lbl" style="font-size:15px" x="70.0" y="44" text-anchor="middle">users</text><rect class="sk" style="fill:#fdfbf4" x="145" y="20" width="150" height="55" rx="10"/><text class="lbl" style="font-size:15px" x="220.0" y="44" text-anchor="middle">Route 53 /</text><text class="lbl" style="font-size:15px" x="220.0" y="62" text-anchor="middle">Cloud DNS</text><rect class="sk" style="fill:#fdfbf4" x="325" y="20" width="190" height="55" rx="10"/><text class="lbl" style="font-size:15px" x="420.0" y="44" text-anchor="middle">CloudFront / Cloud</text><text class="lbl" style="font-size:15px" x="420.0" y="62" text-anchor="middle">CDN + WAF</text><rect class="sk" style="fill:#fdfbf4" x="180" y="130" width="180" height="55" rx="10"/><text class="lbl" style="font-size:15px" x="270.0" y="154" text-anchor="middle">API gateway / ALB</text><path class="sk" style="fill:#e3f1d8" d="M500 130 A70.0 8 0 0 1 640 130 L640 185 A70.0 8 0 0 1 500 185 Z"/><path class="sk" d="M500 130 A70.0 8 0 0 0 640 130"/><text class="lbl" style="font-size:15px" x="570.0" y="157.5" text-anchor="middle">static site</text><text class="lbl" style="font-size:15px" x="570.0" y="175.5" text-anchor="middle">bucket</text><rect class="sk" style="fill:#fdfbf4" x="105" y="310" width="250" height="75" rx="10"/><text class="lbl" style="font-size:15px" x="230.0" y="334" text-anchor="middle">API: containers</text><text class="lbl" style="font-size:15px" x="230.0" y="352" text-anchor="middle">(ECS Fargate / Cloud Run)</text><text class="lbl" style="font-size:15px" x="230.0" y="370" text-anchor="middle">autoscaling 2–40</text><path class="sk" style="fill:#e3f1d8" d="M65 450 A60.0 8 0 0 1 185 450 L185 520 A60.0 8 0 0 1 65 520 Z"/><path class="sk" d="M65 450 A60.0 8 0 0 0 185 450"/><text class="lbl" style="font-size:15px" x="125.0" y="476.0" text-anchor="middle">managed</text><text class="lbl" style="font-size:15px" x="125.0" y="494.0" text-anchor="middle">Postgres</text><text class="lbl" style="font-size:15px" x="125.0" y="512.0" text-anchor="middle">Multi-AZ</text><path class="sk" style="fill:#e3f1d8" d="M205 455 A60.0 8 0 0 1 325 455 L325 515 A60.0 8 0 0 1 205 515 Z"/><path class="sk" d="M205 455 A60.0 8 0 0 0 325 455"/><text class="lbl" style="font-size:15px" x="265.0" y="485.0" text-anchor="middle">managed</text><text class="lbl" style="font-size:15px" x="265.0" y="503.0" text-anchor="middle">Redis</text><rect class="sk" style="fill:#fdfbf4" x="225" y="560" width="200" height="60" rx="10"/><text class="lbl" style="font-size:15px" x="325.0" y="584" text-anchor="middle">workers</text><text class="lbl" style="font-size:15px" x="325.0" y="602" text-anchor="middle">(containers, spot)</text><rect class="sk" style="fill:#fdfbf4" x="60" y="690" width="200" height="50" rx="10"/><text class="lbl" style="font-size:15px" x="160.0" y="714" text-anchor="middle">VPC endpoints</text><text class="lbl" style="font-size:15px" x="160.0" y="732" text-anchor="middle">(S3, SQS, KMS)</text><rect class="sk" style="fill:#fdfbf4" x="290" y="690" width="150" height="50" rx="10"/><text class="lbl" style="font-size:15px" x="365.0" y="714" text-anchor="middle">NAT gateway</text><rect class="sk" style="fill:#fdfbf4" x="485" y="240" width="155" height="60" rx="10"/><text class="lbl" style="font-size:15px" x="562.5" y="264" text-anchor="middle">logs · metrics</text><text class="lbl" style="font-size:15px" x="562.5" y="282" text-anchor="middle">· traces</text><path class="sk" style="fill:#e3f1d8" d="M485 340 A77.5 8 0 0 1 640 340 L640 400 A77.5 8 0 0 1 485 400 Z"/><path class="sk" d="M485 340 A77.5 8 0 0 0 640 340"/><text class="lbl" style="font-size:15px" x="562.5" y="379.0" text-anchor="middle">SQS / Pub/Sub</text><path class="sk" style="fill:#e3f1d8" d="M485 690 A77.5 8 0 0 1 640 690 L640 745 A77.5 8 0 0 1 485 745 Z"/><path class="sk" d="M485 690 A77.5 8 0 0 0 640 690"/><text class="lbl" style="font-size:15px" x="562.5" y="726.5" text-anchor="middle">object storage</text></svg>
+<figcaption>Fig 1: diagram redrawn by hand from the Mermaid source</figcaption>
+</figure>
+<h3>Choosing compute</h3>
+<figure>
+<svg viewBox="0 0 481 690" role="img" aria-label="Diagram 2 (redrawn from Mermaid)"><path class="sk" style="color:var(--ink2)" d="M240 160 C240 210, 113 210, 113 261" marker-end="url(#arr)"/><path class="sk" style="color:var(--ink2)" d="M240 160 C240 186, 300 186, 300 212" marker-end="url(#arr)"/><path class="sk" style="color:var(--ink2)" d="M300 353 C300 407, 113 407, 113 462" marker-end="url(#arr)"/><path class="sk" style="color:var(--ink2)" d="M300 353 C300 379, 344 379, 344 405" marker-end="url(#arr)"/><path class="sk" style="color:var(--ink2)" d="M344 573 C344 599, 114 599, 114 625" marker-end="url(#arr)"/><path class="sk" style="color:var(--ink2)" d="M344 573 C344 599, 340 599, 340 625" marker-end="url(#arr)"/><rect x="162" y="200" width="30" height="20" rx="4" style="fill:#fdfbf4;stroke:none"/><text class="lbl g" style="font-size:14px" x="176" y="214" text-anchor="middle">yes</text><rect x="258" y="176" width="23" height="20" rx="4" style="fill:#fdfbf4;stroke:none"/><text class="lbl g" style="font-size:14px" x="270" y="190" text-anchor="middle">no</text><rect x="191" y="397" width="30" height="20" rx="4" style="fill:#fdfbf4;stroke:none"/><text class="lbl g" style="font-size:14px" x="206" y="411" text-anchor="middle">yes</text><rect x="310" y="369" width="23" height="20" rx="4" style="fill:#fdfbf4;stroke:none"/><text class="lbl g" style="font-size:14px" x="322" y="383" text-anchor="middle">no</text><rect x="214" y="589" width="30" height="20" rx="4" style="fill:#fdfbf4;stroke:none"/><text class="lbl g" style="font-size:14px" x="229" y="603" text-anchor="middle">yes</text><rect x="331" y="589" width="23" height="20" rx="4" style="fill:#fdfbf4;stroke:none"/><text class="lbl g" style="font-size:14px" x="342" y="603" text-anchor="middle">no</text><path class="sk" style="fill:#fff3b0" d="M240 22 L349 91 L240 160 L131 91 Z"/><text class="lbl b" style="font-size:15px" x="240" y="69" text-anchor="middle">event glue, cron,</text><text class="lbl b" style="font-size:15px" x="240" y="87" text-anchor="middle">webhooks,</text><text class="lbl b" style="font-size:15px" x="240" y="105" text-anchor="middle">or very spiky low</text><text class="lbl b" style="font-size:15px" x="240" y="123" text-anchor="middle">traffic?</text><rect class="sk" style="fill:#fdfbf4" x="66" y="264" width="93" height="40" rx="10"/><text class="lbl" style="font-size:15px" x="113" y="289" text-anchor="middle">functions</text><path class="sk" style="fill:#fff3b0" d="M300 215 L414 284 L300 353 L185 284 Z"/><text class="lbl b" style="font-size:15px" x="300" y="262" text-anchor="middle">a normal HTTP</text><text class="lbl b" style="font-size:15px" x="300" y="280" text-anchor="middle">service or worker,</text><text class="lbl b" style="font-size:15px" x="300" y="298" text-anchor="middle">small team, wants</text><text class="lbl b" style="font-size:15px" x="300" y="316" text-anchor="middle">low ops?</text><rect class="sk" style="fill:#fdfbf4" x="22" y="464" width="181" height="52" rx="10"/><text class="lbl" style="font-size:15px" x="113" y="486" text-anchor="middle">serverless containers</text><text class="lbl" style="font-size:15px" x="113" y="504" text-anchor="middle">(Cloud Run / Fargate)</text><path class="sk" style="fill:#fff3b0" d="M344 408 L459 490 L344 573 L229 490 Z"/><text class="lbl b" style="font-size:15px" x="344" y="460" text-anchor="middle">many services,</text><text class="lbl b" style="font-size:15px" x="344" y="478" text-anchor="middle">custom networking,</text><text class="lbl b" style="font-size:15px" x="344" y="496" text-anchor="middle">GPUs, steady heavy</text><text class="lbl b" style="font-size:15px" x="344" y="514" text-anchor="middle">load,</text><text class="lbl b" style="font-size:15px" x="344" y="532" text-anchor="middle">a platform team?</text><rect class="sk" style="fill:#fdfbf4" x="27" y="628" width="174" height="40" rx="10"/><text class="lbl" style="font-size:15px" x="114" y="653" text-anchor="middle">Kubernetes (managed)</text><rect class="sk" style="fill:#fdfbf4" x="227" y="628" width="226" height="40" rx="10"/><text class="lbl" style="font-size:15px" x="340" y="653" text-anchor="middle">VMs with autoscaling groups</text></svg>
+<figcaption>Fig 2: diagram redrawn by hand from the Mermaid source</figcaption>
+</figure>
+<h3>Mapping a monolith to cloud services (lift → reshape)</h3>
+<pre class="code ascii"><code> on-prem monolith box                     cloud
+ ┌────────────────────────┐
+ │ nginx                  │  ──►  ALB / API gateway + CDN
+ │ app (Django)           │  ──►  containers (Fargate / Cloud Run), 3 AZs
+ │ cron jobs              │  ──►  EventBridge Scheduler / Cloud Scheduler → a job
+ │ Celery + RabbitMQ      │  ──►  SQS / Pub/Sub + workers
+ │ Postgres on the box    │  ──►  RDS / Cloud SQL (Multi-AZ, PITR)
+ │ Redis                  │  ──►  ElastiCache / Memorystore
+ │ /var/uploads           │  ──►  S3 / GCS (+ presigned URLs)
+ │ logs in files          │  ──►  CloudWatch / Cloud Logging + OTel
+ └────────────────────────┘</code></pre>
+<div class="pagebreak">~ page 3 ~</div>
+<h2>Example</h2>
+<h3>API gateway → serverless/containers → managed DB/cache (Terraform excerpt, AWS)</h3>
+<span class="lang">hcl</span>
+<pre class="code"><code>resource "aws_ecs_service" "api" {
+  name            = "api"
+  cluster         = aws_ecs_cluster.main.id
+  task_definition = aws_ecs_task_definition.api.arn
+  launch_type     = "FARGATE"
+  desired_count   = 3
+  network_configuration {
+    subnets         = module.vpc.private_subnets
+    security_groups = [aws_security_group.api.id]
+  }
+  load_balancer {
+    target_group_arn = aws_lb_target_group.api.arn
+    container_name   = "api"
+    container_port   = 8080
+  }
+}
+
+resource "aws_db_instance" "main" {
+  engine                  = "postgres"
+  engine_version          = "16"
+  instance_class          = "db.r7g.large"
+  multi_az                = true
+  storage_encrypted       = true
+  backup_retention_period = 14
+  db_subnet_group_name    = aws_db_subnet_group.private.name
+  publicly_accessible     = false
+}
+
+resource "aws_elasticache_replication_group" "cache" {
+  replication_group_id       = "api-cache"
+  description                = "api cache"
+  node_type                  = "cache.r7g.large"
+  num_cache_clusters         = 2
+  automatic_failover_enabled = true
+  at_rest_encryption_enabled = true
+  transit_encryption_enabled = true
+}</code></pre>
+<span class="lang">python</span>
+<pre class="code"><code># Serverless vs container cost model — plug in your own numbers
+def lambda_cost(req_per_month, ms=100, mb=512):
+    gb_s = req_per_month * (ms / 1000) * (mb / 1024)
+    return gb_s * 0.0000166667 + req_per_month / 1e6 * 0.20
+
+def container_cost(req_per_month, rps_per_task=200, task_month=50.0, min_tasks=2):
+    avg_rps = req_per_month / (30 * 24 * 3600)
+    tasks = max(min_tasks, -(-avg_rps // rps_per_task))    # ceiling division
+    return tasks * task_month
+
+for m in (1e6, 50e6, 500e6, 5e9):
+    print(f"{m/1e6:&gt;6.0f}M req/mo  lambda ${lambda_cost(m):&gt;9,.0f}   containers ${container_cost(m):&gt;6,.0f}")
+#      1M req/mo  lambda $        1   containers $   100
+#     50M req/mo  lambda $       52   containers $   100
+#    500M req/mo  lambda $      517   containers $   100
+#   5000M req/mo  lambda $    5,167   containers $   500</code></pre>
+<h2>Exercises</h2>
+<ol class="num">
+<li><span class="n">1.</span>Map a monolith to cloud services.
+<details open><summary>Solution</summary>See the mapping above. Order: (1) lift the app into containers behind a managed LB, move the DB to a managed service with Multi-AZ and PITR, and move files to object storage; (2) move cron and queues to managed schedulers and queues; (3) add a CDN and WAF; (4) put everything in IaC with observability; (5) only then consider splitting services where scaling or team boundaries demand it.</details></li>
+<li><span class="n">2.</span>Compare serverless vs container costs for a workload.
+<details open><summary>Solution</summary>Model monthly requests, duration, memory, and the traffic shape. Run the cost model above with real prices: at 1–50M requests per month, functions are cheaper (and scale to zero); somewhere in the hundreds of millions of steady requests, containers win. Add hidden costs: API gateway fees per request, NAT and data transfer, cold-start impact on SLOs, and the engineering time for each option.</details></li>
+<li><span class="n">3.</span>Why put the database in private subnets with <code>publicly_accessible = false</code>?
+<details open><summary>Solution</summary>It removes an entire attack surface: the database can't be reached from the internet at all, only from app security groups inside the VPC. Credential leaks or database zero-days then require a foothold inside the network first. Admins connect through SSM Session Manager, a bastion, or an identity-aware proxy.</details></li>
+</ol>
+<div class="pagebreak">~ page 4 ~</div>
+<h2>Mini project</h2>
+<h3>A cost-estimate + architecture diagram for a service on a cloud provider.</h3>
+<figure>
+<svg viewBox="0 0 433 652" role="img" aria-label="Diagram 3 (redrawn from Mermaid)"><path class="sk" style="color:var(--ink2)" d="M216 110 C216 132, 216 132, 216 153" marker-end="url(#arr)"/><path class="sk" style="color:var(--ink2)" d="M216 208 C216 242, 102 242, 102 275" marker-end="url(#arr)"/><path class="sk" style="color:var(--ink2)" d="M102 318 C102 352, 216 352, 216 385" marker-end="url(#arr)"/><path class="sk" style="color:var(--ink2)" d="M216 208 C216 230, 309 230, 309 251" marker-end="url(#arr)"/><path class="sk" style="color:var(--ink2)" d="M216 428 C216 450, 216 450, 216 471" marker-end="url(#arr)"/><path class="sk" style="color:var(--ink2)" d="M309 342 C309 406, 216 406, 216 471" marker-end="url(#arr)"/><path class="sk" style="color:var(--ink2)" d="M216 544 C216 566, 216 566, 216 587" marker-end="url(#arr)"/><rect class="sk" style="fill:#fdfbf4" x="111" y="22" width="211" height="88" rx="10"/><text class="lbl" style="font-size:15px" x="216" y="44" text-anchor="middle">requirements:</text><text class="lbl" style="font-size:15px" x="216" y="62" text-anchor="middle">10k DAU, 50 rps avg / 400</text><text class="lbl" style="font-size:15px" x="216" y="80" text-anchor="middle">peak,</text><text class="lbl" style="font-size:15px" x="216" y="98" text-anchor="middle">1 TB of files, 99.9% SLO</text><rect class="sk" style="fill:#fdfbf4" x="129" y="156" width="174" height="52" rx="10"/><text class="lbl" style="font-size:15px" x="216" y="178" text-anchor="middle">architecture diagram</text><text class="lbl" style="font-size:15px" x="216" y="196" text-anchor="middle">(Mermaid / draw.io)</text><rect class="sk" style="fill:#fdfbf4" x="22" y="278" width="159" height="40" rx="10"/><text class="lbl" style="font-size:15px" x="102" y="303" text-anchor="middle">Terraform skeleton</text><rect class="sk" style="fill:#fdfbf4" x="133" y="388" width="167" height="40" rx="10"/><text class="lbl" style="font-size:15px" x="216" y="413" text-anchor="middle">infracost breakdown</text><rect class="sk" style="fill:#fdfbf4" x="207" y="254" width="204" height="88" rx="10"/><text class="lbl" style="font-size:15px" x="309" y="276" text-anchor="middle">cost sheet: compute, DB,</text><text class="lbl" style="font-size:15px" x="309" y="294" text-anchor="middle">cache,</text><text class="lbl" style="font-size:15px" x="309" y="312" text-anchor="middle">storage, transfer,</text><text class="lbl" style="font-size:15px" x="309" y="330" text-anchor="middle">observability</text><rect class="sk" style="fill:#fdfbf4" x="133" y="474" width="167" height="70" rx="10"/><text class="lbl" style="font-size:15px" x="216" y="496" text-anchor="middle">2 alternatives:</text><text class="lbl" style="font-size:15px" x="216" y="514" text-anchor="middle">serverless-first vs</text><text class="lbl" style="font-size:15px" x="216" y="532" text-anchor="middle">containers</text><rect class="sk" style="fill:#fdfbf4" x="100" y="590" width="233" height="40" rx="10"/><text class="lbl" style="font-size:15px" x="216" y="615" text-anchor="middle">ADR: the choice + trade-offs</text></svg>
+<figcaption>Fig 3: diagram redrawn by hand from the Mermaid source</figcaption>
+</figure>
+<h3>Steps</h3>
+<ol class="num">
+<li><span class="n">1.</span>Write requirements (traffic, data size, SLO, compliance).</li>
+<li><span class="n">2.</span>Draw the architecture with managed services across 2–3 AZs.</li>
+<li><span class="n">3.</span>A Terraform skeleton for the main resources; run <code>infracost breakdown</code>.</li>
+<li><span class="n">4.</span>Build a cost sheet including easily forgotten items (NAT processing, egress, logs, backups).</li>
+<li><span class="n">5.</span>Design an alternative (serverless-first) and cost it too.</li>
+<li><span class="n">6.</span>Write an ADR choosing one, with the break-even point where you'd switch.</li>
+</ol>
+<div class="box"><b>Done when:</b> you have a diagram, a monthly estimate within ±30% for each option, and an ADR explaining the choice.</div>
+<h2>Design</h2>
+<h3>Design a serverless image-processing pipeline.</h3>
+<p>Requirements: users upload images (up to 25 MB); generate 4 sizes plus WebP; detect NSFW content; 1M uploads/day with peaks of 200/s; results available within 10 s p95; pay close to zero when idle.</p>
+<figure>
+<svg viewBox="0 0 640 790" role="img" aria-label="Diagram 4 (redrawn from Mermaid)"><path class="sk" style="color:var(--ink2)" d="M270 70 C270 105,140 105,140 140" marker-end="url(#arr)"/><path class="sk" style="color:var(--ink2)" d="M320 70 C320 105,500 105,500 140" marker-end="url(#arr)"/><path class="sk" style="color:var(--ink2)" d="M500 195 C500 240,400 240,400 280" marker-end="url(#arr)"/><path class="sk" style="color:var(--ink2)" d="M240 345 C240 385,115 385,115 425" marker-end="url(#arr)"/><path class="sk" style="color:var(--ink2)" d="M330 345 C330 385,335 385,335 425" marker-end="url(#arr)"/><path class="sk red" style="color:var(--red);stroke-dasharray:7 6" d="M445 312 C545 312,550 360,550 425" marker-end="url(#arr)"/><path class="sk" style="color:var(--ink2)" d="M115 480 L115 540" marker-end="url(#arr)"/><path class="sk" style="color:var(--ink2)" d="M190 480 C190 510,290 510,290 540" marker-end="url(#arr)"/><path class="sk" style="color:var(--ink2)" d="M380 480 L380 540" marker-end="url(#arr)"/><path class="sk" style="color:var(--ink2)" d="M115 590 L115 640" marker-end="url(#arr)"/><path class="sk" style="color:var(--ink2)" d="M115 685 L115 730" marker-end="url(#arr)"/><path class="sk" style="color:var(--ink2)" d="M345 45 L625 45 L625 565 L482 565" marker-end="url(#arr)"/><rect x="22.5" y="86" width="125" height="23" rx="4" style="fill:#fdfbf4;stroke:none"/><text class="lbl g" style="font-size:14px" x="85" y="100" text-anchor="middle">1. POST /uploads</text><rect x="455.0" y="86" width="160" height="23" rx="4" style="fill:#fdfbf4;stroke:none"/><text class="lbl g" style="font-size:14px" x="535" y="100" text-anchor="middle">2. PUT the file directly</text><rect x="468.0" y="231" width="160" height="23" rx="4" style="fill:#fdfbf4;stroke:none"/><text class="lbl g" style="font-size:14px" x="548" y="245" text-anchor="middle">3. ObjectCreated event</text><rect x="564.0" y="371" width="72" height="23" rx="4" style="fill:#fdfbf4;stroke:none"/><text class="lbl g" style="font-size:14px" x="600" y="385" text-anchor="middle">3 failures</text><rect x="380.0" y="19" width="210" height="23" rx="4" style="fill:#fdfbf4;stroke:none"/><text class="lbl g" style="font-size:14px" x="485" y="33" text-anchor="middle">4. poll / WebSocket for status</text><rect class="sk" style="fill:#fdfbf4" x="245" y="20" width="100" height="50" rx="10"/><text class="lbl" style="font-size:15px" x="295.0" y="44" text-anchor="middle">client</text><rect class="sk" style="fill:#fdfbf4" x="20" y="140" width="240" height="70" rx="10"/><text class="lbl" style="font-size:15px" x="140.0" y="164" text-anchor="middle">API Gateway + Lambda:</text><text class="lbl" style="font-size:15px" x="140.0" y="182" text-anchor="middle">auth, create a</text><text class="lbl" style="font-size:15px" x="140.0" y="200" text-anchor="middle">presigned PUT URL</text><path class="sk" style="fill:#e3f1d8" d="M400 140 A100.0 8 0 0 1 600 140 L600 195 A100.0 8 0 0 1 400 195 Z"/><path class="sk" d="M400 140 A100.0 8 0 0 0 600 140"/><text class="lbl" style="font-size:15px" x="500.0" y="176.5" text-anchor="middle">S3 raw bucket</text><path class="sk" style="fill:#e3f1d8" d="M195 280 A125.0 8 0 0 1 445 280 L445 345 A125.0 8 0 0 1 195 345 Z"/><path class="sk" d="M195 280 A125.0 8 0 0 0 445 280"/><text class="lbl" style="font-size:15px" x="320.0" y="312.5" text-anchor="middle">SQS queue</text><text class="lbl" style="font-size:15px" x="320.0" y="330.5" text-anchor="middle">(buffers the peaks)</text><rect class="sk" style="fill:#fdfbf4" x="15" y="425" width="200" height="55" rx="10"/><text class="lbl" style="font-size:15px" x="115.0" y="449" text-anchor="middle">Lambda: resize + WebP</text><text class="lbl" style="font-size:15px" x="115.0" y="467" text-anchor="middle">(concurrency limit 300)</text><rect class="sk" style="fill:#fdfbf4" x="235" y="425" width="200" height="55" rx="10"/><text class="lbl" style="font-size:15px" x="335.0" y="449" text-anchor="middle">Lambda: moderation</text><text class="lbl" style="font-size:15px" x="335.0" y="467" text-anchor="middle">(managed vision API)</text><path class="sk" style="fill:#e3f1d8" d="M480 425 A70.0 8 0 0 1 620 425 L620 475 A70.0 8 0 0 1 480 475 Z"/><path class="sk" d="M480 425 A70.0 8 0 0 0 620 425"/><text class="lbl" style="font-size:15px" x="550.0" y="459.0" text-anchor="middle">DLQ + alarm</text><path class="sk" style="fill:#e3f1d8" d="M15 540 A100.0 8 0 0 1 215 540 L215 590 A100.0 8 0 0 1 15 590 Z"/><path class="sk" d="M15 540 A100.0 8 0 0 0 215 540"/><text class="lbl" style="font-size:15px" x="115.0" y="574.0" text-anchor="middle">S3 variants bucket</text><path class="sk" style="fill:#e3f1d8" d="M245 540 A117.5 8 0 0 1 480 540 L480 590 A117.5 8 0 0 1 245 590 Z"/><path class="sk" d="M245 540 A117.5 8 0 0 0 480 540"/><text class="lbl" style="font-size:15px" x="362.5" y="574.0" text-anchor="middle">DynamoDB: image status</text><rect class="sk" style="fill:#fdfbf4" x="45" y="640" width="140" height="45" rx="10"/><text class="lbl" style="font-size:15px" x="115.0" y="664" text-anchor="middle">CloudFront</text><rect class="sk" style="fill:#fdfbf4" x="45" y="730" width="140" height="45" rx="10"/><text class="lbl" style="font-size:15px" x="115.0" y="754" text-anchor="middle">viewers</text></svg>
+<figcaption>Fig 4: diagram redrawn by hand from the Mermaid source</figcaption>
+</figure>
+<h3>Decisions to justify</h3>
+<ul>
+<li><b>Presigned uploads</b>: the file goes straight to S3; Lambda never handles 25 MB bodies (API Gateway payload limits make that impossible anyway).</li>
+<li><b>SQS between S3 and the workers</b> absorbs peaks, gives retries and a DLQ, and lets you cap Lambda concurrency so downstream APIs aren't overwhelmed.</li>
+<li><b>Idempotent processing</b> keyed by the object key and version: S3 events are at-least-once.</li>
+<li><b>Capacity:</b> 200 uploads/s × ~2 s of processing ≈ 400 concurrent executions at peak (set reserved concurrency; request a limit increase if needed). Memory ~2 GB for image libraries (a faster CPU comes with more memory in Lambda).</li>
+<li><b>Cost:</b> 1M/day × 2 s × 2 GB ≈ 4M GB-s/day ≈ $67/day of compute at list price, and near zero when idle. Compare with a container fleet sized for the peak.</li>
+<li><b>Status in DynamoDB</b> (on-demand capacity) keyed by image ID; the client polls or subscribes.</li>
+<li><b>Limits to watch:</b> Lambda's 15-minute timeout and <code>/tmp</code> size; very large images or video → Fargate tasks instead.</li>
+</ul>
+<div class="pagebreak">~ page 5 ~</div>
+<h2>Open source</h2>
+<ul>
+<li><a href="https://github.com/serverless/serverless"><code>serverless/serverless</code></a> — a framework for defining functions, events, and resources; compare with AWS SAM, SST, and Terraform modules.</li>
+<li><a href="https://github.com/aws/aws-sdk"><code>aws/aws-sdk</code></a> — the SDK specs; the AWS, Google Cloud, and Azure "Well-Architected" / "Architecture Framework" docs are the reference checklists.</li>
+</ul>
+<h2>Interview</h2>
+<ol class="num">
+<li><span class="n">1.</span><b>"Serverless vs containers — when each?"</b>
+<details open><summary>Answer</summary>Serverless functions for event-driven glue, scheduled jobs, webhooks, and spiky or low-traffic APIs — you pay per use, scale to zero, and have almost no ops, but you accept cold starts, time limits, and per-request pricing that gets expensive at high steady volume. Containers for long-running or steady high-traffic services, custom runtimes, and portability — more control and a lower unit cost at scale, with more to operate (less with serverless containers like Cloud Run or Fargate). Decide with a cost model and the latency SLO.</details></li>
+<li><span class="n">2.</span><b>"How do you control cloud cost?"</b>
+<details open><summary>Answer</summary>Design for it (right service per workload, autoscaling, scale to zero where possible, keep traffic in-zone, a CDN for egress); make it visible (tags, per-team and per-service dashboards, unit cost per request or customer, budgets and anomaly alerts); optimize continuously (right-size, commitments for the steady baseline, spot for interruptible work, storage lifecycle, delete idle resources); and review cost in design reviews and PRs (Infracost). See &lt;a href="ch20-cost-and-capacity-economics.md"&gt;Ch 16&lt;/a&gt;.</details></li>
+</ol>
+<div class="pagebreak">~ page 6 ~</div>
+<h2>Checklist</h2>
+<ul>
+<li class="todo">use managed services where sensible</li>
+<li class="todo">design for cost</li>
+<li class="todo">avoid vendor lock-in where it matters</li>
+</ul>
+  <nav class="nav"><a href="ch18-security-at-the-system-level.notes.html">← Ch 18 — Security at the System Level</a><a href="index.notes.html">☰ Contents</a><a href="ch20-cost-and-capacity-economics.notes.html">Ch 20 — Cost &amp; Capacity Economics →</a></nav>
+</main>
+</body>
+</html>

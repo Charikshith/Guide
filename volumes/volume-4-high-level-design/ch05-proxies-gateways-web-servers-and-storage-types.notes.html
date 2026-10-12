@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ch 5 — Proxies, Gateways, Web Servers &amp; Storage Types — Notes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;700&family=Kalam:wght@400;700&family=Patrick+Hand&display=swap" rel="stylesheet">
+<style>
+/* ===== Page tokens ===== */
+:root{
+  --line:32px;                 /* ruled-line spacing; every vertical size is a multiple */
+  --paper:#fdfbf4; --rule:#c9dcef; --margin:#e8a0a0;
+  --ink:#1f3a93;               /* blue pen (body) */
+  --ink2:#222;                 /* black pen (headings) */
+  --red:#c0392b; --green:#1e8449;
+  --hl-yellow:rgba(255,235,59,.55); --hl-pink:rgba(255,128,171,.45);
+  --hl-green:rgba(118,255,3,.35); --hl-blue:rgba(64,196,255,.35);
+  --sticky:#fff59d; --desk:#e9e4d8;
+  --hand:'Kalam','Patrick Hand','Comic Sans MS','Segoe Print','Bradley Hand',cursive;
+  --title:'Caveat','Kalam','Segoe Print','Bradley Hand',cursive;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){ --desk:#2b2b2b; }
+}
+:root[data-theme="dark"]{ --desk:#2b2b2b; }
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--desk);font-family:var(--hand);color:var(--ink);}
+
+/* ===== Notebook sheet ===== */
+.page{
+  position:relative; max-width:860px; margin:24px auto; padding:var(--line) 28px calc(var(--line)*2) 84px;
+  background:
+    linear-gradient(90deg,transparent 64px,var(--margin) 64px,var(--margin) 66px,transparent 66px),
+    repeating-linear-gradient(var(--paper) 0,var(--paper) calc(var(--line) - 1px),var(--rule) calc(var(--line) - 1px),var(--rule) var(--line));
+  background-color:var(--paper);
+  box-shadow:0 2px 6px rgba(0,0,0,.15),0 12px 28px rgba(0,0,0,.12);
+  font-size:20px; line-height:var(--line);
+}
+.page::before{ /* punched holes */
+  content:""; position:absolute; left:22px; top:0; bottom:0; width:18px;
+  background:radial-gradient(circle,var(--desk) 7px,transparent 8px) 0 40px/18px 220px repeat-y;
+}
+@media (max-width:600px){
+  .page{margin:0;padding-left:52px;padding-right:16px;font-size:18px;
+    background:
+      linear-gradient(90deg,transparent 40px,var(--margin) 40px,var(--margin) 42px,transparent 42px),
+      repeating-linear-gradient(var(--paper) 0,var(--paper) calc(var(--line) - 1px),var(--rule) calc(var(--line) - 1px),var(--rule) var(--line));
+    background-color:var(--paper);}
+  .page::before{left:10px;width:16px}
+}
+
+/* ===== Text (all margins are multiples of --line so text sits on the rules) ===== */
+.date{position:absolute;top:0;right:24px;font-family:var(--title);font-size:22px;color:var(--ink2);line-height:var(--line)}
+h1{font-family:var(--title);font-weight:700;color:var(--ink2);font-size:46px;line-height:calc(var(--line)*2);margin:0;transform:rotate(-1deg)}
+h1 .u{background:linear-gradient(transparent 62%,var(--hl-yellow) 62%,var(--hl-yellow) 92%,transparent 92%)}
+h2{font-family:var(--title);font-weight:700;color:var(--red);font-size:32px;line-height:calc(var(--line)*1.5);margin:calc(var(--line)*.5) 0 0}
+h2::before{content:"➤ ";font-size:22px}
+p,li{margin:0}
+ul,ol{margin:0;padding-left:28px}
+ul{list-style:none}
+ul>li::before{content:"–";position:absolute;margin-left:-20px}
+ul>li.star::before{content:"★";color:var(--red)}
+ul>li.arrow::before{content:"→"}
+ul>li.check::before{content:"✓";color:var(--green)}
+.gap{height:var(--line)}
+
+/* ===== Pen effects ===== */
+.hl{background:var(--hl-yellow);padding:0 3px;border-radius:3px 6px 4px 7px}
+.hl.pink{background:var(--hl-pink)} .hl.green{background:var(--hl-green)} .hl.blue{background:var(--hl-blue)}
+.red{color:var(--red)} .green{color:var(--green)} .black{color:var(--ink2)}
+.ul{text-decoration:underline wavy var(--red);text-underline-offset:5px}
+.circ{border:2px solid var(--red);border-radius:50% 45% 55% 48%;padding:0 6px}
+.strike{text-decoration:line-through 2px var(--red)}
+.term{font-weight:700;color:var(--ink2)}
+.box{display:flow-root;border:2.5px solid var(--ink2);border-radius:4px 10px 6px 12px;padding:calc(var(--line)*.5 - 2.5px) 14px;margin:calc(var(--line)*.5) 0;transform:rotate(-.4deg);background:rgba(255,255,255,.35)}
+.box.red{border-color:var(--red)}
+.formula{font-family:var(--title);font-size:28px;text-align:center;color:var(--ink2)}
+
+/* sticky note */
+.sticky{float:right;width:min(250px,42%);margin:0 0 var(--line) 20px;padding:var(--line) 16px;background:var(--sticky);
+  color:#333;transform:rotate(2.2deg);box-shadow:2px 4px 8px rgba(0,0,0,.18);font-size:18px}
+.sticky b{font-family:var(--title);font-size:24px;color:var(--red)}
+@media (max-width:600px){.sticky{float:none;width:auto;margin:var(--line) 0}}
+
+/* margin annotation (lives in the red margin) */
+.side{position:absolute;left:4px;width:58px;text-align:center;font-family:var(--title);font-size:17px;line-height:18px;color:var(--red);transform:rotate(-8deg)}
+@media (max-width:600px){.side{display:none}}
+
+/* two-column notes */
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:0 28px}
+@media (max-width:600px){.cols{grid-template-columns:1fr}}
+
+/* diagrams */
+figure{margin:var(--line) 0;text-align:center}
+figure svg{width:100%;max-width:640px;height:auto;overflow:visible}
+figcaption{font-family:var(--title);font-size:20px;color:var(--ink2)}
+/* phones: keep labels readable — diagram scrolls inside its own box instead of shrinking */
+@media (max-width:600px){figure{overflow-x:auto}figure svg{min-width:520px}}
+.sk{fill:none;stroke:var(--ink2);stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round;filter:url(#rough)}
+.sk.blue{stroke:var(--ink)} .sk.red{stroke:var(--red)} .sk.green{stroke:var(--green)}
+.lbl{font-family:var(--hand);font-size:17px;fill:var(--ink)}
+.lbl.b{font-weight:700;fill:var(--ink2)} .lbl.r{fill:var(--red)} .lbl.g{fill:var(--green)}
+
+/* table */
+.wrap{overflow-x:auto}
+table{border-collapse:collapse;margin:calc(var(--line)*.5) 0;min-width:100%}
+th,td{border:2px solid var(--ink2);padding:0 10px;text-align:left;vertical-align:top}
+th{font-family:var(--title);font-size:24px;color:var(--ink2)}
+
+@media print{body{background:#fff}.page{box-shadow:none;margin:0}.page::before{display:none}}
+
+/* ===== Added for long chapter notes ===== */
+pre.code{font-family:Consolas,'Courier New',monospace;font-size:14px;line-height:var(--line);color:var(--ink);background:rgba(255,255,255,.45);
+  border-left:4px solid var(--red);margin:calc(var(--line)*.5) 0;padding:0 12px;overflow-x:auto;white-space:pre}
+pre.code.ascii{border-left-color:var(--green)}
+code{font-family:Consolas,'Courier New',monospace;font-size:.82em;background:rgba(0,0,0,.06);padding:0 3px;border-radius:3px}
+pre.code code{background:none;padding:0;font-size:inherit}
+.lang{font-family:var(--title);font-size:18px;color:var(--red)}
+h3{font-family:var(--title);font-weight:700;color:var(--ink2);font-size:26px;line-height:var(--line);margin:calc(var(--line)*.5) 0 0}
+h3::before{content:"✎ ";font-size:18px;color:var(--red)}
+.nav{display:flex;justify-content:space-between;gap:12px;font-family:var(--title);font-size:22px;line-height:var(--line)}
+.nav a{color:var(--red);text-decoration:none}
+.nav a:hover{text-decoration:underline wavy}
+.pagebreak{border-top:3px dashed var(--margin);margin:var(--line) 0;text-align:center;font-family:var(--title);color:var(--red);line-height:var(--line)}
+li.todo::before{content:"☐";color:var(--ink2)}
+a{color:var(--ink);text-decoration:underline dotted}
+</style>
+</head>
+<body>
+<!-- One shared hand-drawn wobble filter; give every diagram stroke class="sk" -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <!-- userSpaceOnUse region: a % region collapses to nothing on perfectly straight lines (zero-height bbox) -->
+  <filter id="rough" filterUnits="userSpaceOnUse" x="-500" y="-500" width="3000" height="3000">
+    <feTurbulence type="fractalNoise" baseFrequency="0.03" numOctaves="2" seed="3" result="n"/>
+    <feDisplacementMap in="SourceGraphic" in2="n" scale="3"/>
+  </filter>
+  <marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+    <path d="M1 1 L9 5 L1 9" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+  </marker>
+</defs></svg>
+
+<main class="page">
+  <nav class="nav"><a href="ch04-distributed-systems-patterns.notes.html">← Ch 4 — Distributed Systems Patterns</a><a href="index.notes.html">☰ Contents</a><a href="ch06-load-balancing.notes.html">Ch 6 — Load Balancing →</a></nav>
+  <div class="date">2026-10-12</div>
+  <h1><span class="u">Ch 5 — Proxies, Gateways, Web Servers &amp; Storage Types</span></h1>
+  <p class="black">Chapter 5 — Proxies, Gateways, Web Servers &amp; Storage Types</p>
+
+  <p class="black"><b>Volume 4 — High-Level Design</b> · <a href="index.md">Contents</a> · ← <a href="ch01-approaching-a-system-design-problem.notes.html">Chapter 1 — Approaching a System Design Problem</a> · Next → <a href="ch13-cloud-design-patterns.notes.html">Chapter 13 — Cloud Design Patterns</a></p>
+  <h2>Concept</h2>
+  <p>Forward vs reverse proxy, API gateway patterns, web vs app servers, CDN push vs pull, block/object/file storage, federation, graph databases.</p>
+  <div class="box"><b><span class="hl">In one sentence:</span></b> the boxes between a client and your data — proxies, gateways, web servers, app servers — each have one job, and the boxes at the bottom — block, object, file storage, relational or graph databases — each fit one access pattern, so good design is matching each job and each access pattern to the right box.</div>
+  <p><b>Mental model — a hotel.</b> A forward proxy is the guest's personal assistant who makes calls on the guest's behalf. A reverse proxy is the front desk: guests never meet the kitchen, the desk decides who goes where. The API gateway is the concierge with a checklist (ID check, queue management, routing to the right department). Storage is the back office: a locker you rent by the shelf (block), a warehouse where you hand over whole crates and get a ticket (object), and a shared filing cabinet everyone can open (file).</p>
+  <h3>Forward proxy vs reverse proxy</h3>
+  <div class="wrap"><table>
+    <tr><th></th><th>Forward proxy</th><th>Reverse proxy</th></tr>
+    <tr><td>Sits in front of</td><td>clients</td><td>servers</td></tr>
+    <tr><td>Who configures it</td><td>the client or its network (corporate, school)</td><td>the service owner</td></tr>
+    <tr><td>Hides</td><td>the client's identity from the server</td><td>the servers' identity and topology from the client</td></tr>
+    <tr><td>Typical jobs</td><td>filtering, caching, anonymity, egress control</td><td>TLS termination, caching, compression, routing, load balancing</td></tr>
+    <tr><td>Examples</td><td>Squid, corporate egress proxies</td><td>nginx, HAProxy, Envoy, Traefik</td></tr>
+  </table></div>
+  <p><b>Load balancer vs reverse proxy.</b> Overlap: both accept a client connection and forward it to a backend. A <b>load balancer's</b> core job is spreading traffic across many identical backends (algorithms, health checks, failover) — see <a href="ch06-load-balancing.notes.html">Ch 6</a>. A <b>reverse proxy's</b> core job is standing in front of one or more backends and doing work on the way (TLS, caching, compression, rewriting, routing by path or host). In practice nginx, HAProxy and Envoy do both; "load balancer" names the role of spreading load, "reverse proxy" names the position in front of servers. Layer 4 balancers forward TCP without reading HTTP; layer 7 proxies read the request and can route on it.</p>
+  <h3>Web servers vs application servers</h3>
+  <div class="wrap"><table>
+    <tr><th></th><th>Web server</th><th>Application server</th></tr>
+    <tr><td>Serves</td><td>static files (HTML, CSS, JS, images), plus proxying</td><td>dynamic responses: runs your business code</td></tr>
+    <tr><td>Strength</td><td>very fast at files, many idle connections, TLS</td><td>runs the language runtime, framework, DB access</td></tr>
+    <tr><td>Examples</td><td>nginx, Apache httpd</td><td>Gunicorn / Uvicorn (Python), Tomcat (Java servlets), Node.js, Puma, Kestrel</td></tr>
+  </table></div>
+  <p>The line is blurry: Node and Tomcat also serve files and speak HTTP directly, and nginx can run Lua or call FastCGI. The classic split exists because they scale differently.</p>
+  <h3>Concurrency models</h3>
+  <div class="wrap"><table>
+    <tr><th>Model</th><th>How</th><th>Examples</th><th>Trade-off</th></tr>
+    <tr><td>Process per request/connection</td><td>one OS process each</td><td>Apache prefork, Gunicorn sync workers (a fixed pool of pre-forked workers)</td><td>isolation; heavy memory, few connections</td></tr>
+    <tr><td>Thread per request</td><td>thread pool</td><td>Tomcat, Apache worker MPM, Gunicorn gthread</td><td>cheaper than processes; shared memory, blocking I/O ties up a thread</td></tr>
+    <tr><td>Event loop</td><td>one thread multiplexes many connections with non-blocking I/O</td><td>nginx (a few worker processes, each an event loop), Node.js, Apache event MPM</td><td>huge connection counts; one slow CPU task blocks the loop</td></tr>
+  </table></div>
+  <p><b>Request flow:</b> client → DNS → CDN (static hits end here) → load balancer / reverse proxy (TLS, routing) → web server (static files, buffers slow clients) → app server (your code) → cache / database. Putting nginx in front of Gunicorn is common because nginx absorbs slow clients while Gunicorn workers stay free for real work.</p>
+  <h3>API gateway</h3>
+  <p>An <b>API gateway</b> is a reverse proxy that understands your API: one entry point for many services.</p>
+  <div class="wrap"><table>
+    <tr><th>Responsibility</th><th>What it does</th></tr>
+    <tr><td>Authentication / authorization</td><td>validate API keys, JWTs, OAuth tokens once, pass identity downstream</td></tr>
+    <tr><td>Rate limiting &amp; quotas</td><td>per key or plan (<a href="ch08-rate-limiting-throttling-and-backpressure.notes.html">Ch 8</a>)</td></tr>
+    <tr><td>Routing</td><td><code>/orders/*</code> to the orders service, versions, canaries</td></tr>
+    <tr><td>TLS termination</td><td>HTTPS at the edge, plain or mTLS inside</td></tr>
+    <tr><td>Aggregation</td><td>combine several backend calls into one response</td></tr>
+    <tr><td>Observability</td><td>access logs, metrics, tracing headers</td></tr>
+  </table></div>
+  <p><b>Gateway patterns</b> (names from the Azure Architecture Center cloud design patterns and Sam Newman for BFF)</p>
+  <div class="wrap"><table>
+    <tr><th>Pattern</th><th>Idea</th><th>Trade-off</th></tr>
+    <tr><td>Gateway Routing</td><td>one endpoint, route by path, host, header or version to different backends</td><td>gateway config grows; a bad route breaks many services</td></tr>
+    <tr><td>Gateway Offloading</td><td>move shared cross-cutting work (TLS, auth, rate limits, compression, logging) from every service into the gateway</td><td>services must trust the gateway; keep business logic out of it</td></tr>
+    <tr><td>Gateway Aggregation</td><td>the client makes one call; the gateway fans out to N services and merges the results</td><td>fewer client round trips; added latency of the slowest call, partial-failure handling</td></tr>
+    <tr><td>Backends for Frontend (BFF)</td><td>one gateway per client type (web, mobile, partner), each shaped for that client</td><td>more services to run; duplicated logic if teams don't share libraries</td></tr>
+  </table></div>
+  <p><b>Trade-offs of any gateway:</b> it is a <b>single point of failure</b> unless run as a redundant fleet behind a load balancer; it adds a hop of latency; and it can become a <b>coupling hotspot</b> — every team needs to change it, and logic creeping in turns it into a distributed monolith's brain. Keep it thin, declarative, and owned by a platform team (or per-team in the BFF style). It differs from a service mesh (<a href="ch10-service-mesh-and-service-discovery.notes.html">Ch 10</a>): the gateway handles north-south traffic (clients to services), the mesh handles east-west (service to service).</p>
+  <h3>CDN push vs pull</h3>
+  <p>CDN basics are in <a href="ch14-cdn-edge-and-geo-distribution.notes.html">Ch 14</a>; this is only the two ways content reaches the edge.</p>
+  <div class="wrap"><table>
+    <tr><th></th><th>Pull CDN</th><th>Push CDN</th></tr>
+    <tr><td>How content arrives</td><td>edge fetches from your origin on the first miss, then caches for the TTL</td><td>you upload content to the CDN or its storage ahead of time</td></tr>
+    <tr><td>Setup</td><td>point the CDN at the origin; set <code>Cache-Control</code></td><td>deploy step must publish every file, and delete old ones</td></tr>
+    <tr><td>First request</td><td>slow (miss), later fast</td><td>fast everywhere</td></tr>
+    <tr><td>Invalidation</td><td>wait for TTL, purge by URL or tag, or version file names</td><td>you replace or delete the pushed object</td></tr>
+    <tr><td>Cost</td><td>origin egress on misses; storage only for what is requested</td><td>storage for everything pushed, even if never requested</td></tr>
+    <tr><td>Best for</td><td>large or changing catalogues, websites, APIs with cacheable GETs</td><td>small, rarely-changing sets: software releases, big media launches, files you know will be hot</td></tr>
+  </table></div>
+  <p>Most sites use pull with content-hashed file names (<code>app.3f9a1c.js</code>), which makes invalidation unnecessary.</p>
+  <h3>Storage types</h3>
+  <div class="wrap"><table>
+    <tr><th></th><th>Block</th><th>Object</th><th>File</th></tr>
+    <tr><td>Model</td><td>raw fixed-size blocks, you put a file system or database on top</td><td>flat namespace of key → object + metadata, over an HTTP API</td><td>hierarchy of directories and files, POSIX-style</td></tr>
+    <tr><td>Examples</td><td>AWS EBS, a local SSD, SAN</td><td>AWS S3, GCS, Azure Blob, MinIO</td><td>AWS EFS, NFS, SMB, Azure Files</td></tr>
+    <tr><td>Access</td><td>attached to one machine (usually) as a disk</td><td><code>PUT</code>/<code>GET</code> whole objects; no in-place edits</td><td>mounted by many machines at once</td></tr>
+    <tr><td>Latency</td><td>lowest</td><td>highest of the three (a network API call)</td><td>in between</td></tr>
+    <tr><td>Scalability</td><td>bounded by volume size</td><td>effectively unlimited objects</td><td>large but shared-metadata limits</td></tr>
+    <tr><td>Cost per GB</td><td>highest</td><td>lowest</td><td>middle to high</td></tr>
+    <tr><td>Use for</td><td>databases, boot disks, low-latency random I/O</td><td>images, video, backups, logs, data lake, static sites</td><td>shared content, home directories, lift-and-shift apps needing a shared file system</td></tr>
+  </table></div>
+  <p><b>File system storage vs database storage.</b> A plain file or object store gives you bytes by name. A <b>database</b> adds <b>indexes</b> (find rows without scanning), <b>queries</b> (filter, join, aggregate), <b>transactions</b> (atomic multi-row updates, isolation), <b>constraints</b>, and concurrent-write safety. Plain files or objects win when data is <b>large, opaque and read whole</b> (a photo, a video, a PDF, a log archive), when you only look up by key, and when cost per GB matters. The usual pattern: <b>bytes in object storage, metadata and the key in a database</b>.</p>
+  <h3>Database federation</h3>
+  <p><b>Federation (functional partitioning)</b> splits databases <b>by function</b>: a users DB, a products DB, an orders DB, each on its own server. <b>Sharding</b> (<a href="ch11-database-scaling.notes.html">Ch 11</a>) instead splits <b>one table's rows</b> across servers by a key.</p>
+  <div class="wrap"><table>
+    <tr><th></th><th>Federation</th><th>Sharding</th></tr>
+    <tr><td>Split by</td><td>feature / bounded context</td><td>row key (user id, hash)</td></tr>
+    <tr><td>Benefit</td><td>less read/write load per server, smaller working sets, per-domain scaling and ownership</td><td>scales one huge dataset horizontally</td></tr>
+    <tr><td>Cost</td><td>cross-DB joins become application code or API calls; transactions across DBs need sagas or two-phase commit</td><td>resharding, hot shards, cross-shard queries</td></tr>
+    <tr><td>When</td><td>clear domain boundaries; first step toward microservices</td><td>one domain's data outgrows one machine</td></tr>
+  </table></div>
+  <p>Federation does not remove the single-writer limit inside one function: a busy orders DB may still need replicas or sharding later.</p>
+  <h3>Graph databases</h3>
+  <p>A <b>graph database</b> stores <b>nodes</b> and <b>relationships</b> as first-class data. In the <b>property graph</b> model, nodes and relationships carry labels/types and key-value properties. Relationships are stored as direct pointers, so traversing "friends of friends" follows links instead of computing a join.</p>
+  <div class="wrap"><table>
+    <tr><th>Fits</th><th>Examples</th></tr>
+    <tr><td>deep relationship traversals</td><td>social networks, org charts</td></tr>
+    <tr><td>recommendations</td><td>"people who bought X also bought Y"</td></tr>
+    <tr><td>fraud and risk</td><td>rings of accounts sharing devices or cards</td></tr>
+    <tr><td>network and dependency analysis, knowledge graphs</td><td>IT topology, permissions graphs</td></tr>
+  </table></div>
+  <p>Versus relational: a relational query needs one self-join per hop, and cost grows with hops and table size; a graph traversal cost grows with the part of the graph visited. If your queries are mostly filters, aggregates and fixed-depth lookups, a relational database is the better default. Examples: Neo4j (query language Cypher), Amazon Neptune, JanusGraph, ArangoDB; PostgreSQL can also do recursive queries.</p>
+  <h3>Denormalization and SQL tuning</h3>
+  <p>Denormalizing (duplicating data to avoid joins) and tuning queries (indexes, <code>EXPLAIN</code>, avoiding N+1) are covered in <a href="../volume-1-cs-foundations/ch46-schema-design-normalization-and-indexing.md">Vol 1 Ch 46</a> and, at scale (replicas, partitioning, caching), in <a href="ch11-database-scaling.notes.html">Ch 11</a>. Rule of thumb: normalize first, tune the slow queries, denormalize only for measured read hot spots and own the cost of keeping copies in sync.</p>
+  <div class="pagebreak">~ page 2 ~</div>
+
+  <h2>Prereqs</h2>
+  <ul>
+    <li><a href="../volume-1-cs-foundations/ch44-delivery-load-balancing-reverse-proxies-and-cdn.md">Vol 1 Ch 44 — Delivery: Load Balancing, Reverse Proxies &amp; CDN</a></li>
+    <li><a href="ch06-load-balancing.notes.html">Chapter 6 — Load Balancing</a></li>
+    <li><a href="ch11-database-scaling.notes.html">Chapter 11 — Database Scaling</a></li>
+    <li><a href="ch14-cdn-edge-and-geo-distribution.notes.html">Chapter 14 — CDN, Edge &amp; Geo-Distribution</a></li>
+  </ul>
+  <h2>Diagram</h2>
+  <h3>Forward vs reverse proxy</h3>
+  <figure>
+    <svg viewBox="-117.8 16 480 521.2" role="img" aria-label="Forward vs reverse proxy">
+      <path class="sk blue" d="M122.2 70 C122.2 95, 122.2 95, 122.2 120" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M122.2 176 C122.2 201, 122.2 201, 122.2 226" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M122.2 327.2 C122.2 352.2, 122.2 352.2, 122.2 377.2" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M107.2 433.2 C107.2 458.2, 64.6 458.2, 64.6 483.2" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M137.2 433.2 C137.2 458.2, 179.8 458.2, 179.8 483.2" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <rect class="sk" x="81.8" y="30" width="80.8" height="40" rx="8" style="fill:#fdfbf4"/>
+      <text class="lbl b" x="122.2" y="55" text-anchor="middle" style="font-size:15px">clients</text>
+      <rect class="sk" x="56.6" y="120" width="131.2" height="56" rx="8" style="fill:#fdfbf4"/>
+      <text class="lbl b" x="122.2" y="144" text-anchor="middle" style="font-size:15px">forward proxy</text>
+      <text class="lbl b" x="122.2" y="162" text-anchor="middle" style="font-size:15px">(client side)</text>
+      <ellipse class="sk" cx="122.2" cy="276.6" rx="50.6" ry="50.6" style="fill:#fdfbf4"/>
+      <text class="lbl b" x="122.2" y="281.6" text-anchor="middle" style="font-size:15px">internet</text>
+      <rect class="sk" x="56.6" y="377.2" width="131.2" height="56" rx="8" style="fill:#fdfbf4"/>
+      <text class="lbl b" x="122.2" y="401.2" text-anchor="middle" style="font-size:15px">reverse proxy</text>
+      <text class="lbl b" x="122.2" y="419.2" text-anchor="middle" style="font-size:15px">(server side)</text>
+      <rect class="sk green" x="20" y="483.2" width="89.2" height="40" rx="8" style="fill:#fdfbf4"/>
+      <text class="lbl b" x="64.6" y="508.2" text-anchor="middle" style="font-size:15px">server A</text>
+      <rect class="sk green" x="135.2" y="483.2" width="89.2" height="40" rx="8" style="fill:#fdfbf4"/>
+      <text class="lbl b" x="179.8" y="508.2" text-anchor="middle" style="font-size:15px">server B</text>
+    </svg>
+    <figcaption>Fig 1: Forward vs reverse proxy</figcaption>
+  </figure>
+  <h3>Request flow through the layers</h3>
+  <figure>
+    <svg viewBox="-125 16 480 650" role="img" aria-label="Request flow through the layers">
+      <path class="sk blue" d="M115 70 C115 95, 115 95, 115 120" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M115 176 C115 201, 115 201, 115 226" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M115 300 C115 325, 115 325, 115 350" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M115 424 C115 449, 115 449, 115 474" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M115 530 C115 555, 115 555, 115 580" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <rect class="sk" x="78.8" y="30" width="72.4" height="40" rx="8" style="fill:#fdfbf4"/>
+      <text class="lbl b" x="115" y="55" text-anchor="middle" style="font-size:15px">client</text>
+      <rect class="sk" x="20" y="120" width="190" height="56" rx="8" style="fill:#fdfbf4"/>
+      <text class="lbl b" x="115" y="144" text-anchor="middle" style="font-size:15px">CDN</text>
+      <text class="lbl b" x="115" y="162" text-anchor="middle" style="font-size:15px">static hits end here</text>
+      <rect class="sk" x="41" y="226" width="148" height="74" rx="8" style="fill:#fdfbf4"/>
+      <text class="lbl b" x="115" y="250" text-anchor="middle" style="font-size:15px">load balancer /</text>
+      <text class="lbl b" x="115" y="268" text-anchor="middle" style="font-size:15px">reverse proxy</text>
+      <text class="lbl b" x="115" y="286" text-anchor="middle" style="font-size:15px">TLS, routing</text>
+      <rect class="sk" x="45.2" y="350" width="139.6" height="74" rx="8" style="fill:#fdfbf4"/>
+      <text class="lbl b" x="115" y="374" text-anchor="middle" style="font-size:15px">web server</text>
+      <text class="lbl b" x="115" y="392" text-anchor="middle" style="font-size:15px">nginx: static,</text>
+      <text class="lbl b" x="115" y="410" text-anchor="middle" style="font-size:15px">slow clients</text>
+      <rect class="sk" x="24.2" y="474" width="181.6" height="56" rx="8" style="fill:#fdfbf4"/>
+      <text class="lbl b" x="115" y="498" text-anchor="middle" style="font-size:15px">app server</text>
+      <text class="lbl b" x="115" y="516" text-anchor="middle" style="font-size:15px">Gunicorn: your code</text>
+      <path class="sk green" d="M58 588 v56 a57 8 0 0 0 114 0 v-56" style="fill:#fdfbf4"/>
+      <ellipse class="sk green" cx="115" cy="588" rx="57" ry="8" style="fill:#fdfbf4"/>
+      <text class="lbl b" x="115" y="616" text-anchor="middle" style="font-size:15px">database /</text>
+      <text class="lbl b" x="115" y="634" text-anchor="middle" style="font-size:15px">cache</text>
+    </svg>
+    <figcaption>Fig 2: Request flow through the layers</figcaption>
+  </figure>
+  <h3>API gateway doing routing, offloading and aggregation</h3>
+  <figure>
+    <svg viewBox="0 0 660 340" role="img" aria-label="API gateway doing routing, offloading and aggregation"><path class="sk blue" d="M330 50 L330 100" style="color:var(--ink)" marker-end="url(#arr)"/><path class="sk blue" d="M270 156 C270 196, 85 196, 85 236" style="color:var(--ink)" marker-end="url(#arr)"/><path class="sk blue" d="M300 156 C300 196, 250 196, 250 236" style="color:var(--ink)" marker-end="url(#arr)"/><path class="sk blue" d="M360 156 C360 196, 415 196, 415 236" style="color:var(--ink)" marker-end="url(#arr)"/><path class="sk blue" d="M390 156 C390 196, 580 196, 580 236" style="color:var(--ink);stroke-dasharray:6 5" marker-end="url(#arr)"/><rect class="sk " x="285" y="10" width="90" height="40" rx="8" style="fill:#fdfbf4"/><text class="lbl b" x="330.0" y="35.0" text-anchor="middle" style="font-size:15px">client</text><rect class="sk " x="215" y="100" width="230" height="56" rx="8" style="fill:#fdfbf4"/><text class="lbl b" x="330.0" y="124.0" text-anchor="middle" style="font-size:15px">API gateway</text><text class="lbl b" x="330.0" y="142.0" text-anchor="middle" style="font-size:15px">TLS, auth, rate limit</text><rect class="sk green" x="10" y="236" width="150" height="56" rx="8" style="fill:#fdfbf4"/><text class="lbl b" x="85.0" y="269.0" text-anchor="middle" style="font-size:15px">users service</text><rect class="sk green" x="175" y="236" width="150" height="56" rx="8" style="fill:#fdfbf4"/><text class="lbl b" x="250.0" y="269.0" text-anchor="middle" style="font-size:15px">orders service</text><rect class="sk green" x="340" y="236" width="150" height="56" rx="8" style="fill:#fdfbf4"/><text class="lbl b" x="415.0" y="269.0" text-anchor="middle" style="font-size:15px">products service</text><rect class="sk green" x="505" y="236" width="150" height="56" rx="8" style="fill:#fdfbf4"/><text class="lbl b" x="580.0" y="269.0" text-anchor="middle" style="font-size:15px">merged response</text><text class="lbl r" x="338" y="82" text-anchor="start" style="font-size:14px;paint-order:stroke;stroke:#fdfbf4;stroke-width:5px;stroke-linejoin:round">HTTPS</text><text class="lbl r" x="76" y="222" text-anchor="end" style="font-size:14px;paint-order:stroke;stroke:#fdfbf4;stroke-width:5px;stroke-linejoin:round">/users/*</text><text class="lbl r" x="241" y="222" text-anchor="end" style="font-size:14px;paint-order:stroke;stroke:#fdfbf4;stroke-width:5px;stroke-linejoin:round">/orders/*</text><text class="lbl r" x="424" y="222" text-anchor="start" style="font-size:14px;paint-order:stroke;stroke:#fdfbf4;stroke-width:5px;stroke-linejoin:round">/products/*</text><text class="lbl r" x="588" y="222" text-anchor="start" style="font-size:14px;paint-order:stroke;stroke:#fdfbf4;stroke-width:5px;stroke-linejoin:round">GET /home</text><text class="lbl r" x="655" y="314" text-anchor="end" style="font-size:14px;paint-order:stroke;stroke:#fdfbf4;stroke-width:5px;stroke-linejoin:round">aggregates users + orders +</text><text class="lbl r" x="655" y="332" text-anchor="end" style="font-size:14px;paint-order:stroke;stroke:#fdfbf4;stroke-width:5px;stroke-linejoin:round">products</text></svg>
+    <figcaption>Fig 3: API gateway doing routing, offloading and aggregation</figcaption>
+  </figure>
+  <h3>Backends for Frontend</h3>
+  <figure>
+    <svg viewBox="-43.4 16 480 264" role="img" aria-label="Backends for Frontend">
+      <path class="sk blue" d="M60.4 70 C60.4 95, 60.4 95, 60.4 120" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M179.8 70 C179.8 95, 179.8 95, 179.8 120" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M316 70 C316 95, 316 95, 316 120" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M60.4 160 C60.4 185, 155.4 185, 155.4 210" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M179.8 160 C179.8 185, 185.4 185, 185.4 210" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M316 160 C316 185, 215.4 185, 215.4 210" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <rect class="sk" x="20" y="30" width="80.8" height="40" rx="8" style="fill:#fdfbf4"/>
+      <text class="lbl b" x="60.4" y="55" text-anchor="middle" style="font-size:15px">web app</text>
+      <rect class="sk" x="20" y="120" width="80.8" height="40" rx="8" style="fill:#fdfbf4"/>
+      <text class="lbl b" x="60.4" y="145" text-anchor="middle" style="font-size:15px">web BFF</text>
+      <rect class="sk" x="126.8" y="30" width="106" height="40" rx="8" style="fill:#fdfbf4"/>
+      <text class="lbl b" x="179.8" y="55" text-anchor="middle" style="font-size:15px">mobile app</text>
+      <rect class="sk" x="126.8" y="120" width="106" height="40" rx="8" style="fill:#fdfbf4"/>
+      <text class="lbl b" x="179.8" y="145" text-anchor="middle" style="font-size:15px">mobile BFF</text>
+      <rect class="sk" x="258.8" y="30" width="114.4" height="40" rx="8" style="fill:#fdfbf4"/>
+      <text class="lbl b" x="316" y="55" text-anchor="middle" style="font-size:15px">partner API</text>
+      <rect class="sk" x="258.8" y="120" width="114.4" height="40" rx="8" style="fill:#fdfbf4"/>
+      <text class="lbl b" x="316" y="145" text-anchor="middle" style="font-size:15px">partner BFF</text>
+      <rect class="sk green" x="82" y="210" width="206.8" height="56" rx="8" style="fill:#fdfbf4"/>
+      <text class="lbl b" x="185.4" y="234" text-anchor="middle" style="font-size:15px">shared services</text>
+      <text class="lbl b" x="185.4" y="252" text-anchor="middle" style="font-size:15px">users, orders, catalog</text>
+    </svg>
+    <figcaption>Fig 4: Backends for Frontend</figcaption>
+  </figure>
+  <h3>Push vs pull CDN</h3>
+  <pre class="code ascii"><code> PULL                                         PUSH
+ client -&gt; edge (miss) -&gt; origin               you -&gt; upload to CDN / its storage
+ origin -&gt; edge caches for TTL                 client -&gt; edge (already there)
+ next client -&gt; edge (hit)                     you must delete or replace old files
+ expiry: TTL, purge, or new file name          cost: storage for everything pushed</code></pre>
+  <div class="pagebreak">~ page 3 ~</div>
+
+  <h2>Example</h2>
+  <span class="lang">nginx</span>
+<pre class="code"><code># nginx as TLS-terminating reverse proxy + web server in front of a Gunicorn app
+upstream app {
+    server 127.0.0.1:8000;          # gunicorn
+    server 127.0.0.1:8001;
+    keepalive 32;
+}
+
+server {
+    listen 443 ssl;
+    server_name shop.example.com;
+    ssl_certificate     /etc/ssl/shop.crt;
+    ssl_certificate_key /etc/ssl/shop.key;
+
+    location /static/ {             # web server job: files straight from disk
+        root /var/www;
+        expires 30d;
+        add_header Cache-Control "public, immutable";
+    }
+
+    location /api/ {                # reverse proxy job: pass to the app server
+        proxy_pass http://app;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $remote_addr;
+        proxy_http_version 1.1;
+        proxy_set_header Connection "";
+    }
+}</code></pre>
+  <span class="lang">bash</span>
+<pre class="code"><code># app server: pre-forked worker processes (2 x cores + 1 is a common starting point)
+gunicorn app:app --workers 5 --bind 127.0.0.1:8000</code></pre>
+  <span class="lang">python</span>
+<pre class="code"><code># Gateway aggregation: one client call, three backend calls in parallel
+import asyncio, httpx
+
+async def home(user_id: str) -&gt; dict:
+    async with httpx.AsyncClient(timeout=0.5) as c:
+        u, o, p = await asyncio.gather(
+            c.get(f"http://users/users/{user_id}"),
+            c.get(f"http://orders/orders?user={user_id}&amp;limit=3"),
+            c.get("http://products/featured"),
+            return_exceptions=True,          # partial failure: do not fail the whole page
+        )
+    return {
+        "user": u.json() if not isinstance(u, Exception) else None,
+        "orders": o.json() if not isinstance(o, Exception) else [],
+        "featured": p.json() if not isinstance(p, Exception) else [],
+    }</code></pre>
+  <span class="lang">cypher</span>
+<pre class="code"><code>// Property graph: friends-of-friends recommendation (Cypher)
+MATCH (me:User {id: 42})-[:FOLLOWS]-&gt;(:User)-[:FOLLOWS]-&gt;(rec:User)
+WHERE rec &lt;&gt; me AND NOT (me)-[:FOLLOWS]-&gt;(rec)
+RETURN rec.name, count(*) AS mutual
+ORDER BY mutual DESC
+LIMIT 10;</code></pre>
+  <span class="lang">sql</span>
+<pre class="code"><code>-- the same two-hop query in SQL needs a self-join per hop
+SELECT f2.followee_id, COUNT(*) AS mutual
+FROM follows f1
+JOIN follows f2 ON f2.follower_id = f1.followee_id
+WHERE f1.follower_id = 42
+  AND f2.followee_id &lt;&gt; 42
+  AND f2.followee_id NOT IN (SELECT followee_id FROM follows WHERE follower_id = 42)
+GROUP BY f2.followee_id
+ORDER BY mutual DESC
+LIMIT 10;</code></pre>
+  <h2>Exercises</h2>
+  <ol style="list-style:none;padding-left:0">
+    <li>1. Explain the difference between a forward proxy and a reverse proxy, and name one real product for each.
+      <div class="box"><b>Solution</b> A forward proxy acts for clients (Squid on a corporate network filters and caches outbound traffic, hiding client IPs). A reverse proxy acts for servers (nginx, HAProxy or Envoy in front of a service handles TLS, caching and routing, hiding the backends). The question to ask: whose side is the proxy on, and who knows it is there?</div></li>
+  </ol>
+  <ol style="list-style:none;padding-left:0">
+    <li>2. Pick block, object or file storage for: a PostgreSQL data volume, user-uploaded profile photos, a shared folder mounted by 10 web servers.
+      <div class="box"><b>Solution</b> PostgreSQL: block (EBS) for low-latency random I/O. Profile photos: object (S3), with the key stored in the database and a CDN in front. Shared folder: file storage (EFS/NFS), because many machines need a POSIX file system at once. If the shared folder only holds uploaded assets, consider moving it to object storage instead.</div></li>
+  </ol>
+  <ol style="list-style:none;padding-left:0">
+    <li>3. Your single database holds users, products and orders and is CPU-bound. When is federation a better first step than sharding, and what breaks?
+      <div class="box"><b>Solution</b> When the load comes from different functions and the domains are mostly independent: split into users, products and orders databases. Joins across them move into application code or an API, and a checkout touching two databases needs a saga or two-phase commit instead of one transaction. If one table (say orders) is itself too big for one machine, sharding is still needed later.</div></li>
+  </ol>
+  <ol style="list-style:none;padding-left:0">
+    <li>4. When would you choose a graph database over PostgreSQL?
+      <div class="box"><b>Solution</b> When the core queries traverse relationships with unknown or deep depth (fraud rings, recommendations, permission graphs) and join cost grows with every hop. For fixed-depth lookups, filters, aggregates and strong transactional needs, stay relational; recursive CTEs cover occasional graph queries.</div></li>
+  </ol>
+  <h2>Mini project</h2>
+  <p><b>A tiny edge stack with docker compose: nginx → gateway → services.</b></p>
+  <figure>
+    <svg viewBox="6 16 507.2 370" role="img" aria-label="A tiny edge stack with docker compose: nginx → gateway → services">
+      <path class="sk blue" d="M251.2 70 C251.2 95, 251.2 95, 251.2 120" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M251.2 176 C251.2 201, 251.2 201, 251.2 226" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M221.2 282 C221.2 307, 85.6 307, 85.6 332" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M251.2 282 C251.2 307, 247 307, 247 332" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M281.2 282 C281.2 307, 421 307, 421 332" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <rect class="sk" x="223.4" y="30" width="55.6" height="40" rx="8" style="fill:#fdfbf4"/>
+      <text class="lbl b" x="251.2" y="55" text-anchor="middle" style="font-size:15px">curl</text>
+      <rect class="sk" x="194" y="120" width="114.4" height="56" rx="8" style="fill:#fdfbf4"/>
+      <text class="lbl b" x="251.2" y="144" text-anchor="middle" style="font-size:15px">nginx</text>
+      <text class="lbl b" x="251.2" y="162" text-anchor="middle" style="font-size:15px">TLS, static</text>
+      <rect class="sk" x="122.6" y="226" width="257.2" height="56" rx="8" style="fill:#fdfbf4"/>
+      <text class="lbl b" x="251.2" y="250" text-anchor="middle" style="font-size:15px">gateway (FastAPI)</text>
+      <text class="lbl b" x="251.2" y="268" text-anchor="middle" style="font-size:15px">auth + routing + aggregation</text>
+      <rect class="sk green" x="20" y="332" width="131.2" height="40" rx="8" style="fill:#fdfbf4"/>
+      <text class="lbl b" x="85.6" y="357" text-anchor="middle" style="font-size:15px">users service</text>
+      <rect class="sk green" x="177.2" y="332" width="139.6" height="40" rx="8" style="fill:#fdfbf4"/>
+      <text class="lbl b" x="247" y="357" text-anchor="middle" style="font-size:15px">orders service</text>
+      <rect class="sk green" x="342.8" y="332" width="156.4" height="40" rx="8" style="fill:#fdfbf4"/>
+      <text class="lbl b" x="421" y="357" text-anchor="middle" style="font-size:15px">products service</text>
+    </svg>
+    <figcaption>Fig 5: A tiny edge stack with docker compose: nginx → gateway → services</figcaption>
+  </figure>
+  <h3>Steps</h3>
+  <ol style="list-style:none;padding-left:0">
+    <li>1. Three small services, each with its own SQLite or Postgres database (federation in miniature).</li>
+    <li>2. A FastAPI gateway: API-key check, path routing, and a <code>/home</code> endpoint that aggregates the three services with timeouts and partial failure.</li>
+    <li>3. nginx in front: TLS with a self-signed cert, <code>/static/</code> served from disk, everything else proxied.</li>
+    <li>4. Add a second gateway instance and let nginx balance across them; kill one and show requests keep working.</li>
+    <li>5. Store uploaded images in MinIO (S3-compatible object storage) and keep only the key in the database.</li>
+  </ol>
+  <div class="box"><b>Done when:</b> <code>/home</code> returns merged data even if one service is down (that field empty), static files never reach the gateway, and killing a gateway instance causes no failed requests.</div>
+  <h2>Design</h2>
+  <p><b>Design the edge and storage tier of an online shop.</b></p>
+  <p>Requirements: 5M users, 20k peak requests/s at the edge (80% static assets and cacheable GETs), web and mobile apps with different payloads, product images up to 5 MB, orders must be transactional, "customers also bought" recommendations.</p>
+  <figure>
+    <svg viewBox="0 0 660 650" role="img" aria-label="Design the edge and storage tier of an online shop"><path class="sk blue" d="M330 50 L330 90" style="color:var(--ink)" marker-end="url(#arr)"/><path class="sk blue" d="M330 146 L330 186" style="color:var(--ink)" marker-end="url(#arr)"/><path class="sk blue" d="M300 242 L200 290" style="color:var(--ink)" marker-end="url(#arr)"/><path class="sk blue" d="M360 242 L460 290" style="color:var(--ink)" marker-end="url(#arr)"/><path class="sk blue" d="M165 330 L70 398" style="color:var(--ink)" marker-end="url(#arr)"/><path class="sk blue" d="M190 330 L235 398" style="color:var(--ink)" marker-end="url(#arr)"/><path class="sk blue" d="M210 330 L400 398" style="color:var(--ink)" marker-end="url(#arr)"/><path class="sk blue" d="M235 330 L565 398" style="color:var(--ink)" marker-end="url(#arr)"/><path class="sk blue" d="M425 330 L100 398" style="color:var(--ink)" marker-end="url(#arr)"/><path class="sk blue" d="M450 330 L265 398" style="color:var(--ink)" marker-end="url(#arr)"/><path class="sk blue" d="M470 330 L430 398" style="color:var(--ink)" marker-end="url(#arr)"/><path class="sk blue" d="M495 330 L595 398" style="color:var(--ink)" marker-end="url(#arr)"/><path class="sk blue" d="M85 456 L85 520" style="color:var(--ink)" marker-end="url(#arr)"/><path class="sk blue" d="M250 456 L250 520" style="color:var(--ink)" marker-end="url(#arr)"/><path class="sk blue" d="M400 456 L372 520" style="color:var(--ink)" marker-end="url(#arr)"/><path class="sk blue" d="M430 456 L480 520" style="color:var(--ink)" marker-end="url(#arr)"/><path class="sk blue" d="M580 456 L600 520" style="color:var(--ink)" marker-end="url(#arr)"/><rect class="sk " x="265.0" y="10" width="130" height="40" rx="8" style="fill:#fdfbf4"/><text class="lbl b" x="330" y="35.0" text-anchor="middle" style="font-size:15px">web / mobile</text><rect class="sk " x="255.0" y="90" width="150" height="56" rx="8" style="fill:#fdfbf4"/><text class="lbl b" x="330" y="114.0" text-anchor="middle" style="font-size:15px">CDN (pull)</text><text class="lbl b" x="330" y="132.0" text-anchor="middle" style="font-size:15px">images, JS, CSS</text><rect class="sk " x="255.0" y="186" width="150" height="56" rx="8" style="fill:#fdfbf4"/><text class="lbl b" x="330" y="210.0" text-anchor="middle" style="font-size:15px">load balancer</text><text class="lbl b" x="330" y="228.0" text-anchor="middle" style="font-size:15px">TLS termination</text><rect class="sk " x="130.0" y="290" width="140" height="40" rx="8" style="fill:#fdfbf4"/><text class="lbl b" x="200" y="315.0" text-anchor="middle" style="font-size:15px">web BFF</text><rect class="sk " x="390.0" y="290" width="140" height="40" rx="8" style="fill:#fdfbf4"/><text class="lbl b" x="460" y="315.0" text-anchor="middle" style="font-size:15px">mobile BFF</text><rect class="sk " x="10.0" y="400" width="150" height="56" rx="8" style="fill:#fdfbf4"/><text class="lbl b" x="85" y="433.0" text-anchor="middle" style="font-size:15px">users service</text><rect class="sk " x="175.0" y="400" width="150" height="56" rx="8" style="fill:#fdfbf4"/><text class="lbl b" x="250" y="433.0" text-anchor="middle" style="font-size:15px">orders service</text><rect class="sk " x="340.0" y="400" width="150" height="56" rx="8" style="fill:#fdfbf4"/><text class="lbl b" x="415" y="433.0" text-anchor="middle" style="font-size:15px">products service</text><rect class="sk " x="505.0" y="400" width="150" height="56" rx="8" style="fill:#fdfbf4"/><text class="lbl b" x="580" y="424.0" text-anchor="middle" style="font-size:15px">recommendation</text><text class="lbl b" x="580" y="442.0" text-anchor="middle" style="font-size:15px">service</text><path class="sk green" d="M35.0 528 v56 a50.0 8 0 0 0 100 0 v-56" style="fill:#fdfbf4"/><ellipse class="sk green" cx="85" cy="528" rx="50.0" ry="8" style="fill:#fdfbf4"/><text class="lbl b" x="85" y="565.0" text-anchor="middle" style="font-size:15px">users DB</text><path class="sk green" d="M190.0 528 v56 a60.0 8 0 0 0 120 0 v-56" style="fill:#fdfbf4"/><ellipse class="sk green" cx="250" cy="528" rx="60.0" ry="8" style="fill:#fdfbf4"/><text class="lbl b" x="250" y="556.0" text-anchor="middle" style="font-size:15px">orders DB</text><text class="lbl b" x="250" y="574.0" text-anchor="middle" style="font-size:15px">+ replicas</text><path class="sk green" d="M322.0 528 v56 a50.0 8 0 0 0 100 0 v-56" style="fill:#fdfbf4"/><ellipse class="sk green" cx="372" cy="528" rx="50.0" ry="8" style="fill:#fdfbf4"/><text class="lbl b" x="372" y="556.0" text-anchor="middle" style="font-size:15px">products</text><text class="lbl b" x="372" y="574.0" text-anchor="middle" style="font-size:15px">DB</text><path class="sk green" d="M430.0 528 v92 a50.0 8 0 0 0 100 0 v-92" style="fill:#fdfbf4"/><ellipse class="sk green" cx="480" cy="528" rx="50.0" ry="8" style="fill:#fdfbf4"/><text class="lbl b" x="480" y="556.0" text-anchor="middle" style="font-size:15px">object</text><text class="lbl b" x="480" y="574.0" text-anchor="middle" style="font-size:15px">storage</text><text class="lbl b" x="480" y="592.0" text-anchor="middle" style="font-size:15px">product</text><text class="lbl b" x="480" y="610.0" text-anchor="middle" style="font-size:15px">images</text><path class="sk green" d="M550.0 528 v56 a50.0 8 0 0 0 100 0 v-56" style="fill:#fdfbf4"/><ellipse class="sk green" cx="600" cy="528" rx="50.0" ry="8" style="fill:#fdfbf4"/><text class="lbl b" x="600" y="556.0" text-anchor="middle" style="font-size:15px">graph DB</text><text class="lbl b" x="600" y="574.0" text-anchor="middle" style="font-size:15px">purchases</text></svg>
+    <figcaption>Fig 6: Design the edge and storage tier of an online shop</figcaption>
+  </figure>
+  <p><b>Capacity:</b> 20k req/s × 20% dynamic = ~4k req/s reach the gateways; across 4 gateway nodes that is ~1k req/s each, comfortable for one proxy node. Images: 1M products × ~5 MB originals = ~5 TB, trivial for object storage and expensive on block storage.</p>
+  <h3>Decisions to justify</h3>
+  <ul>
+    <li><b>Pull CDN with hashed file names</b> for assets; product images in object storage behind the CDN, so the origin only sees misses.</li>
+    <li><b>Redundant BFFs</b> (web and mobile) behind a load balancer: no single point of failure; a shared library (not a shared gateway) for auth and rate limiting to limit duplication.</li>
+    <li><b>Federation</b> by domain: users, products and orders databases scale and fail independently; orders keeps replicas, and checkout uses a saga rather than a cross-DB transaction.</li>
+    <li><b>Block storage</b> (EBS-style volumes) only under the databases; <b>object storage</b> for images and exports; <b>file storage</b> not needed.</li>
+    <li><b>Graph DB</b> only for recommendations, fed asynchronously from order events; the orders DB stays the source of truth.</li>
+    <li><b>Trade-off acknowledged:</b> more databases mean more operations work and no cross-domain joins; accept it for the isolation.</li>
+  </ul>
+  <div class="pagebreak">~ page 4 ~</div>
+
+  <h2>Open source</h2>
+  <ul>
+    <li><a href="https://github.com/nginx/nginx"><code>nginx/nginx</code></a> — web server and reverse proxy with an event-driven worker model.</li>
+    <li><a href="https://github.com/haproxy/haproxy"><code>haproxy/haproxy</code></a> — high-performance TCP and HTTP load balancer and proxy.</li>
+    <li><a href="https://github.com/envoyproxy/envoy"><code>envoyproxy/envoy</code></a> — L4/L7 proxy used as an edge proxy, gateway data plane and service-mesh sidecar.</li>
+    <li><a href="https://github.com/Kong/kong"><code>Kong/kong</code></a> — API gateway with an auth, rate-limit and transform plugin ecosystem.</li>
+    <li><a href="https://github.com/squid-cache/squid"><code>squid-cache/squid</code></a> — long-standing forward caching proxy.</li>
+    <li><a href="https://github.com/benoitc/gunicorn"><code>benoitc/gunicorn</code></a> — pre-fork Python WSGI application server.</li>
+    <li><a href="https://github.com/apache/tomcat"><code>apache/tomcat</code></a> — Java servlet container with a thread-pool model.</li>
+    <li><a href="https://github.com/minio/minio"><code>minio/minio</code></a> — S3-compatible object storage you can run yourself.</li>
+    <li><a href="https://github.com/neo4j/neo4j"><code>neo4j/neo4j</code></a> — property graph database with the Cypher query language.</li>
+  </ul>
+  <h2>Interview</h2>
+  <ol style="list-style:none;padding-left:0">
+    <li>1. <b>"What is the difference between a load balancer and a reverse proxy?"</b>
+      <div class="box"><b>Answer</b> They overlap heavily and products like nginx, HAProxy and Envoy do both. A load balancer is defined by spreading traffic across several identical backends with health checks and failover. A reverse proxy is defined by sitting in front of servers and doing work on the way: TLS termination, caching, compression, rewriting, path or host routing. A load balancer may work at layer 4 without reading HTTP; a reverse proxy normally works at layer 7.</div></li>
+  </ol>
+  <ol style="list-style:none;padding-left:0">
+    <li>2. <b>"Why put nginx in front of Gunicorn or Tomcat?"</b>
+      <div class="box"><b>Answer</b> The event-driven web server handles thousands of slow or idle client connections cheaply, terminates TLS, serves static files directly and buffers requests and responses. The app server's limited worker processes or threads then spend their time running code, not waiting on slow clients.</div></li>
+  </ol>
+  <ol style="list-style:none;padding-left:0">
+    <li>3. <b>"Explain the gateway patterns and the risks of an API gateway."</b>
+      <div class="box"><b>Answer</b> Routing sends requests to backends by path, host or version. Offloading moves shared concerns (TLS, auth, rate limiting, logging) out of each service. Aggregation fans out and merges calls so clients make one request. BFF gives each client type its own gateway shaped to its needs. Risks: a single point of failure unless redundant, an extra hop of latency, and coupling if business logic accumulates in it. Keep it thin and redundant, and split per client with BFFs when teams or payloads diverge.</div></li>
+  </ol>
+  <ol style="list-style:none;padding-left:0">
+    <li>4. <b>"Block, object or file storage for a given workload?"</b>
+      <div class="box"><b>Answer</b> Block for databases and boot volumes needing low-latency random I/O from one machine. Object for large, immutable, read-whole data (images, video, backups, logs) at the lowest cost per GB and near-unlimited scale. File when several machines need a shared POSIX file system. Often the best design stores bytes in object storage and the metadata in a database.</div></li>
+  </ol>
+  <ol style="list-style:none;padding-left:0">
+    <li>5. <b>"Federation vs sharding?"</b>
+      <div class="box"><b>Answer</b> Federation splits databases by function (users, products, orders), reducing load per server and giving domains independent scaling, at the price of cross-database joins and transactions. Sharding splits one dataset's rows by key across servers, scaling a single large domain but adding resharding and cross-shard query complexity. Federate first along domain lines; shard a domain when its own data outgrows one node.</div></li>
+  </ol>
+  <h2>Checklist</h2>
+  <ul>
+    <li class="todo">know whose side each proxy is on</li>
+    <li class="todo">keep the gateway thin and redundant</li>
+    <li class="todo">pick block, object or file storage by access pattern</li>
+    <li class="todo">choose pull or push CDN deliberately</li>
+    <li class="todo">federate by domain before sharding</li>
+    <li class="todo">use a graph database only for relationship-heavy queries</li>
+  </ul>
+  <p class="black"><a href="index.md">Contents</a> · ← <a href="ch01-approaching-a-system-design-problem.notes.html">Chapter 1 — Approaching a System Design Problem</a> · Next → <a href="ch13-cloud-design-patterns.notes.html">Chapter 13 — Cloud Design Patterns</a></p>
+  <nav class="nav"><a href="ch04-distributed-systems-patterns.notes.html">← Ch 4 — Distributed Systems Patterns</a><a href="index.notes.html">☰ Contents</a><a href="ch06-load-balancing.notes.html">Ch 6 — Load Balancing →</a></nav>
+</main>
+</body>
+</html>
