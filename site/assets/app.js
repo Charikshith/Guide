@@ -84,6 +84,7 @@
   if (!src.trim()) { renderHome(); place(); return; }
 
   const figs = JSON.parse(document.getElementById("figs").value || "[]");
+  const codes = JSON.parse(document.getElementById("codes").value || "{}");   // code text -> pre-coloured HTML
   let mermaidSeen = 0, needMermaid = false;
 
   // Markdown links to .md files become links to the generated .html files.
@@ -101,7 +102,7 @@
       needMermaid = true;
       return `<pre class="mermaid">${esc}</pre>`;  // fallback
     }
-    return `<pre><code class="language-${token.lang || ""}">${esc}</code></pre>`;
+    return `<pre><code class="language-${token.lang || ""}">${codes[token.text] || esc}</code></pre>`;
   };
   // Render each <details> body as its own markdown, since marked leaves raw HTML blocks unparsed.
   const folds = [];

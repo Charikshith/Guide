@@ -14,6 +14,7 @@ browser falls back to mermaid (loaded lazily from a CDN) for that block.
 import hashlib
 import html
 import json
+import sys
 import re
 from pathlib import Path
 
@@ -51,6 +52,7 @@ TEMPLATE = """<!doctype html>
 </div>
 <textarea id="source" hidden>{source}</textarea>
 <textarea id="figs" hidden>{figs}</textarea>
+<textarea id="codes" hidden>{codes}</textarea>
 <script>window.GUIDE = {{ root: "{root}", page: "{page}", nav: {nav} }};</script>
 <script src="https://cdn.jsdelivr.net/npm/marked@15/marked.min.js"></script>
 <script src="{root}assets/app.js?v={js_v}"></script>
@@ -111,6 +113,10 @@ main{flex:1;min-width:0;border-left:2px solid var(--margin);padding-left:22px}
   color:var(--ink);font-family:var(--hand);font-size:16px;outline:0}
 .filter:focus{background:var(--hl-yellow)}
 .filter::placeholder{color:#7b86b4}
+
+/* code colours (same pen colours as the skill's pre.code) */
+.page pre code .kw{color:#8e24aa;font-weight:700} .page pre code .st{color:var(--green)} .page pre code .nu{color:#d35400}
+.page pre code .cm{color:#7f8c8d;font-style:italic} .page pre code .bi{color:#00838f}
 
 /* ===== text (all margins are multiples of --line) ===== */
 .page h1{font-family:var(--title);font-weight:700;color:var(--ink2);font-size:46px;line-height:calc(var(--line)*2);margin:0 0 var(--line);transform:rotate(-1deg)}
@@ -295,6 +301,7 @@ JS = r"""(function boot() {
   if (!src.trim()) { renderHome(); place(); return; }
 
   const figs = JSON.parse(document.getElementById("figs").value || "[]");
+  const codes = JSON.parse(document.getElementById("codes").value || "{}");   // code text -> pre-coloured HTML
   let mermaidSeen = 0, needMermaid = false;
 
   // Markdown links to .md files become links to the generated .html files.
@@ -312,7 +319,7 @@ JS = r"""(function boot() {
       needMermaid = true;
       return `<pre class="mermaid">${esc}</pre>`;  // fallback
     }
-    return `<pre><code class="language-${token.lang || ""}">${esc}</code></pre>`;
+    return `<pre><code class="language-${token.lang || ""}">${codes[token.text] || esc}</code></pre>`;
   };
   // Render each <details> body as its own markdown, since marked leaves raw HTML blocks unparsed.
   const folds = [];
@@ -474,6 +481,25 @@ def collect_nav():
     return nav
 
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from highlight_notes import ALIAS, LANGS, SKIP, highlight   # same colouring rules as the notes pages
+
+FENCE = re.compile(r"^( *)```([\w+-]*)[^\n]*\n(.*?)\n\1```[ \t]*$", re.S | re.M)
+
+
+def coloured_blocks(source):
+    """{code text: html with <span class=kw|st|nu|bi|fn|cm>} for every fenced block we can colour."""
+    out = {}
+    for m in FENCE.finditer(source):
+        lang = ALIAS.get(m.group(2).lower(), m.group(2).lower())
+        if lang in SKIP or lang not in LANGS:
+            continue
+        pad = len(m.group(1))
+        code = "\n".join(l[pad:] if l[:pad].strip() == "" else l for l in m.group(3).split("\n"))
+        out[code] = highlight(code, lang)
+    return out
+
+
 def _ver(text):
     """Short content hash, so a changed asset gets a new URL (defeats stale CDN/previewer caches)."""
     return hashlib.md5(text.encode("utf-8")).hexdigest()[:8]
@@ -486,7 +512,7 @@ def write_page(out_path, title, page, source, nav, figs=()):
     safe = html.escape(source, quote=False)
     safe_figs = html.escape(json.dumps(list(figs)), quote=False)
     out_path.parent.mkdir(parents=True, exist_ok=True)
-    out_path.write_text(TEMPLATE.format(title=html.escape(title), root=root, page=page, css_v=_ver(CSS), js_v=_ver(JS),
+    out_path.write_text(TEMPLATE.format(title=html.escape(title), root=root, page=page, css_v=_ver(CSS), js_v=_ver(JS), codes=html.escape(json.dumps(coloured_blocks(source)), quote=False),
                                         source=safe, figs=safe_figs, nav=json.dumps(nav)), encoding="utf-8")
 
 

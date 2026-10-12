@@ -52,6 +52,10 @@ main{flex:1;min-width:0;border-left:2px solid var(--margin);padding-left:22px}
 .filter:focus{background:var(--hl-yellow)}
 .filter::placeholder{color:#7b86b4}
 
+/* code colours (same pen colours as the skill's pre.code) */
+.page pre code .kw{color:#8e24aa;font-weight:700} .page pre code .st{color:var(--green)} .page pre code .nu{color:#d35400}
+.page pre code .cm{color:#7f8c8d;font-style:italic} .page pre code .bi{color:#00838f}
+
 /* ===== text (all margins are multiples of --line) ===== */
 .page h1{font-family:var(--title);font-weight:700;color:var(--ink2);font-size:46px;line-height:calc(var(--line)*2);margin:0 0 var(--line);transform:rotate(-1deg)}
 .page h1 .u{background:linear-gradient(transparent 62%,var(--hl-yellow) 62%,var(--hl-yellow) 92%,transparent 92%)}
