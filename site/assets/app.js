@@ -1,4 +1,13 @@
-(function () {
+(function boot() {
+  /* Some hosts (e.g. htmlpreview.github.io) run this file before the marked CDN script has loaded.
+     Chapter pages need marked, so load it here and start over once it is ready. */
+  if (typeof marked === "undefined" && document.getElementById("source").textContent.trim()) {
+    const s = document.createElement("script");
+    s.src = "https://cdn.jsdelivr.net/npm/marked@15/marked.min.js";
+    s.onload = boot;
+    document.head.appendChild(s);
+    return;
+  }
   /* Online preview (htmlpreview.github.io): relative links would resolve against the previewer, not the repo.
      The real page URL is in the query string, so map every relative link and the map iframe through it. */
   const PV = location.hostname === "htmlpreview.github.io" && location.search.length > 1;
