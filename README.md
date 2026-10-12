@@ -25,7 +25,7 @@ python tools/build_site.py   # writes site/ (git-ignored)
 
 Then open `site/index.html` in a browser.
 
-**HTML preview:** [open the site home page online](https://htmlpreview.github.io/?https://github.com/Charikshith/Guide/blob/main/site/index.html). The built site is committed in `site/`. For the full experience, clone the repo and open `site/index.html` locally. The online previewer may not load the map or the chapter text.
+**HTML preview:** [open the site home page online](https://htmlpreview.github.io/?https://github.com/Charikshith/Guide/blob/main/site/index.html). The built site is committed in `site/`.
 
 Each chapter also has a handwritten-notes page (`*.notes.html`). Open `volumes/<volume>/index.notes.html` for a volume's contents. To re-apply the skill template after it changes, run `python tools/apply_handwritten_template.py`.
 
