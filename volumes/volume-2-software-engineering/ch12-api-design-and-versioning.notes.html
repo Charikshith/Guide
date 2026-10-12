@@ -304,51 +304,51 @@ a{color:var(--ink);text-decoration:underline dotted}
 
   <h2>Example</h2>
   <span class="lang">python</span>
-<pre class="code"><code># FastAPI: consistent errors, cursor pagination, idempotency keys
-import hashlib, json
-from fastapi import FastAPI, Header, HTTPException, Request
-from fastapi.responses import JSONResponse
+<pre class="code"><code><span class="cm"># FastAPI: consistent errors, cursor pagination, idempotency keys</span>
+<span class="kw">import</span> hashlib, json
+<span class="kw">from</span> fastapi <span class="kw">import</span> FastAPI, Header, HTTPException, Request
+<span class="kw">from</span> fastapi.responses <span class="kw">import</span> JSONResponse
 
-app = FastAPI()
+app = <span class="fn">FastAPI</span>()
 
-class ApiError(Exception):
-    def __init__(self, status, type_, code, message, param=None):
-        self.status, self.body = status, {"error": {"type": type_, "code": code,
-                                                    "message": message, "param": param}}
+<span class="kw">class</span> <span class="fn">ApiError</span>(<span class="bi">Exception</span>):
+    <span class="kw">def</span> <span class="fn">__init__</span>(<span class="bi">self</span>, status, type_, code, message, param=<span class="kw">None</span>):
+        <span class="bi">self</span>.status, <span class="bi">self</span>.body = status, {<span class="st">"error"</span>: {<span class="st">"type"</span>: type_, <span class="st">"code"</span>: code,
+                                                    <span class="st">"message"</span>: message, <span class="st">"param"</span>: param}}
 
-@app.exception_handler(ApiError)
-async def api_error(_: Request, e: ApiError):
-    return JSONResponse(e.body, status_code=e.status)        # ONE error shape everywhere
+<span class="bi">@app.exception_handler</span>(ApiError)
+<span class="kw">async</span> <span class="kw">def</span> <span class="fn">api_error</span>(_: Request, e: ApiError):
+    <span class="kw">return</span> <span class="fn">JSONResponse</span>(e.body, status_code=e.status)        <span class="cm"># ONE error shape everywhere</span>
 
-@app.get("/v1/invoices")
-def list_invoices(limit: int = 20, after: str | None = None):
-    if not 1 &lt;= limit &lt;= 100:
-        raise ApiError(400, "invalid_request", "limit_out_of_range", "limit must be 1–100", "limit")
-    rows = db.invoices_before(cursor=after, limit=limit + 1)  # one extra row → has_more
+<span class="bi">@app.get</span>(<span class="st">"/v1/invoices"</span>)
+<span class="kw">def</span> <span class="fn">list_invoices</span>(limit: <span class="bi">int</span> = <span class="nu">20</span>, after: <span class="bi">str</span> | <span class="kw">None</span> = <span class="kw">None</span>):
+    <span class="kw">if</span> <span class="kw">not</span> <span class="nu">1</span> &lt;= limit &lt;= <span class="nu">100</span>:
+        <span class="kw">raise</span> <span class="fn">ApiError</span>(<span class="nu">400</span>, <span class="st">"invalid_request"</span>, <span class="st">"limit_out_of_range"</span>, <span class="st">"limit must be 1–100"</span>, <span class="st">"limit"</span>)
+    rows = db.<span class="fn">invoices_before</span>(cursor=after, limit=limit + <span class="nu">1</span>)  <span class="cm"># one extra row → has_more</span>
     page = rows[:limit]
-    return {"data": page, "has_more": len(rows) &gt; limit,
-            "next_cursor": page[-1]["id"] if page else None}
+    <span class="kw">return</span> {<span class="st">"data"</span>: page, <span class="st">"has_more"</span>: <span class="bi">len</span>(rows) &gt; limit,
+            <span class="st">"next_cursor"</span>: page[-<span class="nu">1</span>][<span class="st">"id"</span>] <span class="kw">if</span> page <span class="kw">else</span> <span class="kw">None</span>}
 
-@app.post("/v1/charges", status_code=201)
-async def create_charge(req: Request, idempotency_key: str = Header(...)):
-    body = await req.json()
-    digest = hashlib.sha256(json.dumps(body, sort_keys=True).encode()).hexdigest()
-    with db.transaction():
-        prior = db.get_idempotency(idempotency_key, for_update=True)
-        if prior:
-            if prior.request_hash != digest:
-                raise ApiError(422, "idempotency_error", "key_reused",
-                               "this key was used with a different request")
-            return JSONResponse(prior.response, status_code=prior.status)
-        charge = db.create_charge(body["amount"], body["currency"])
-        db.save_idempotency(idempotency_key, digest, 201, charge)   # same transaction
-    return charge</code></pre>
+<span class="bi">@app.post</span>(<span class="st">"/v1/charges"</span>, status_code=<span class="nu">201</span>)
+<span class="kw">async</span> <span class="kw">def</span> <span class="fn">create_charge</span>(req: Request, idempotency_key: <span class="bi">str</span> = <span class="fn">Header</span>(...)):
+    body = <span class="kw">await</span> req.<span class="fn">json</span>()
+    digest = hashlib.<span class="fn">sha256</span>(json.<span class="fn">dumps</span>(body, sort_keys=<span class="kw">True</span>).<span class="fn">encode</span>()).<span class="fn">hexdigest</span>()
+    <span class="kw">with</span> db.<span class="fn">transaction</span>():
+        prior = db.<span class="fn">get_idempotency</span>(idempotency_key, for_update=<span class="kw">True</span>)
+        <span class="kw">if</span> prior:
+            <span class="kw">if</span> prior.request_hash != digest:
+                <span class="kw">raise</span> <span class="fn">ApiError</span>(<span class="nu">422</span>, <span class="st">"idempotency_error"</span>, <span class="st">"key_reused"</span>,
+                               <span class="st">"this key was used with a different request"</span>)
+            <span class="kw">return</span> <span class="fn">JSONResponse</span>(prior.response, status_code=prior.status)
+        charge = db.<span class="fn">create_charge</span>(body[<span class="st">"amount"</span>], body[<span class="st">"currency"</span>])
+        db.<span class="fn">save_idempotency</span>(idempotency_key, digest, <span class="nu">201</span>, charge)   <span class="cm"># same transaction</span>
+    <span class="kw">return</span> charge</code></pre>
 
   <span class="lang">http</span>
-<pre class="code"><code>HTTP/1.1 200 OK
-Deprecation: true
-Sunset: Sat, 01 Mar 2025 00:00:00 GMT
-Link: &lt;https://docs.acme.dev/migrate-v2&gt;; rel="deprecation"</code></pre>
+<pre class="code"><code><span class="bi">HTTP/1.1</span> <span class="nu">200</span> OK
+<span class="bi">Deprecation</span>: true
+<span class="bi">Sunset</span>: Sat, <span class="nu">01</span> Mar <span class="nu">2025</span> <span class="nu">00</span>:<span class="nu">00</span>:<span class="nu">00</span> GMT
+<span class="bi">Link</span>: &lt;https://docs.acme.dev/migrate-v2&gt;; rel=<span class="st">"deprecation"</span></code></pre>
 
   <h2>Exercises</h2>
   <ol style="list-style:none;padding-left:0">

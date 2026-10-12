@@ -259,28 +259,28 @@ a{color:var(--ink);text-decoration:underline dotted}
   <div class="pagebreak">~ page 3 ~</div>
   <h2>Example</h2>
   <span class="lang">bash</span>
-<pre class="code"><code># etcd (CP): 3-node cluster; kill 2 nodes, then try to write
-etcdctl put /config/feature on                 # OK with a quorum (2 of 3 alive)
-# … stop two members …
-etcdctl put /config/feature off                # Error: context deadline exceeded — no quorum → refuses
-etcdctl get /config/feature --consistency=s    # serializable (possibly stale) read from the local member</code></pre>
+<pre class="code"><code><span class="cm"># etcd (CP): 3-node cluster; kill 2 nodes, then try to write</span>
+etcdctl put /config/feature on                 <span class="cm"># OK with a quorum (2 of 3 alive)</span>
+<span class="cm"># … stop two members …</span>
+etcdctl put /config/feature off                <span class="cm"># Error: context deadline exceeded — no quorum → refuses</span>
+etcdctl get /config/feature --consistency=s    <span class="cm"># serializable (possibly stale) read from the local member</span></code></pre>
   <span class="lang">sql</span>
-<pre class="code"><code>-- Cassandra (AP, tunable). RF = 3.
-CONSISTENCY ONE;       -- fastest, most available; may read stale data
-INSERT INTO kv (k, v) VALUES ('x', '2');
-CONSISTENCY QUORUM;    -- 2 of 3 replicas; QUORUM reads + QUORUM writes → read-your-latest-write
-SELECT v FROM kv WHERE k = 'x';
--- during a partition that leaves only 1 replica reachable, QUORUM fails; ONE still answers</code></pre>
+<pre class="code"><code><span class="cm">-- Cassandra (AP, tunable). RF = 3.</span>
+CONSISTENCY ONE;       <span class="cm">-- fastest, most available; may read stale data</span>
+<span class="kw">INSERT</span> <span class="kw">INTO</span> kv (k, v) <span class="kw">VALUES</span> (<span class="st">'x'</span>, <span class="st">'2'</span>);
+CONSISTENCY QUORUM;    <span class="cm">-- 2 of 3 replicas; QUORUM reads + QUORUM writes → read-your-latest-write</span>
+<span class="kw">SELECT</span> v <span class="kw">FROM</span> kv <span class="kw">WHERE</span> k = <span class="st">'x'</span>;
+<span class="cm">-- during a partition that leaves only 1 replica reachable, QUORUM fails; ONE still answers</span></code></pre>
   <span class="lang">python</span>
-<pre class="code"><code># Read-your-writes on top of async replicas: route a user's reads to the
-# primary for a short window after they write.
-import time
+<pre class="code"><code><span class="cm"># Read-your-writes on top of async replicas: route a user's reads to the</span>
+<span class="cm"># primary for a short window after they write.</span>
+<span class="kw">import</span> time
 LAST_WRITE = {}
-def write(user, sql):
-    primary.execute(sql); LAST_WRITE[user] = time.time()
-def read(user, sql):
-    fresh = time.time() - LAST_WRITE.get(user, 0) &lt; 5      # replica lag budget
-    return (primary if fresh else replica).execute(sql)</code></pre>
+<span class="kw">def</span> <span class="fn">write</span>(user, sql):
+    primary.<span class="fn">execute</span>(sql); LAST_WRITE[user] = time.<span class="fn">time</span>()
+<span class="kw">def</span> <span class="fn">read</span>(user, sql):
+    fresh = time.<span class="fn">time</span>() - LAST_WRITE.<span class="fn">get</span>(user, <span class="nu">0</span>) &lt; <span class="nu">5</span>      <span class="cm"># replica lag budget</span>
+    <span class="kw">return</span> (primary <span class="kw">if</span> fresh <span class="kw">else</span> replica).<span class="fn">execute</span>(sql)</code></pre>
   <h2>Exercises</h2>
   <ol style="list-style:none;padding-left:0">
 <li>1. Classify Postgres, Redis, Cassandra by CAP.

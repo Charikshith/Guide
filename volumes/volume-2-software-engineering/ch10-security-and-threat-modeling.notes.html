@@ -320,41 +320,41 @@ a{color:var(--ink);text-decoration:underline dotted}
 
   <h2>Example</h2>
   <span class="lang">python</span>
-<pre class="code"><code># SQL injection and the fix
-def find_user_BAD(conn, email):
-    return conn.execute(f"SELECT * FROM users WHERE email = '{email}'").fetchone()
-# email = "x' OR '1'='1"  → returns the first user;  "x'; DROP TABLE users; --" → worse
+<pre class="code"><code><span class="cm"># SQL injection and the fix</span>
+<span class="kw">def</span> <span class="fn">find_user_BAD</span>(conn, email):
+    <span class="kw">return</span> conn.<span class="fn">execute</span>(<span class="st">f"SELECT * FROM users WHERE email = '{email}'"</span>).<span class="fn">fetchone</span>()
+<span class="cm"># email = "x' OR '1'='1"  → returns the first user;  "x'; DROP TABLE users; --" → worse</span>
 
-def find_user(conn, email):
-    return conn.execute("SELECT * FROM users WHERE email = %s", (email,)).fetchone()   # parameterized
+<span class="kw">def</span> <span class="fn">find_user</span>(conn, email):
+    <span class="kw">return</span> conn.<span class="fn">execute</span>(<span class="st">"SELECT * FROM users WHERE email = %s"</span>, (email,)).<span class="fn">fetchone</span>()   <span class="cm"># parameterized</span>
 
-# Broken access control (IDOR) and the fix
-@app.get("/invoices/{invoice_id}")
-def get_invoice_BAD(invoice_id: int, user=Depends(current_user)):
-    return db.get_invoice(invoice_id)                           # any logged-in user can read any invoice
+<span class="cm"># Broken access control (IDOR) and the fix</span>
+<span class="bi">@app.get</span>(<span class="st">"/invoices/{invoice_id}"</span>)
+<span class="kw">def</span> <span class="fn">get_invoice_BAD</span>(invoice_id: <span class="bi">int</span>, user=<span class="fn">Depends</span>(current_user)):
+    <span class="kw">return</span> db.<span class="fn">get_invoice</span>(invoice_id)                           <span class="cm"># any logged-in user can read any invoice</span>
 
-@app.get("/invoices/{invoice_id}")
-def get_invoice(invoice_id: int, user=Depends(current_user)):
-    inv = db.get_invoice(invoice_id)
-    if inv is None or inv.account_id != user.account_id:        # authorize the OBJECT, not just the user
-        raise HTTPException(404)                                # 404, so IDs can't be probed
-    return inv
+<span class="bi">@app.get</span>(<span class="st">"/invoices/{invoice_id}"</span>)
+<span class="kw">def</span> <span class="fn">get_invoice</span>(invoice_id: <span class="bi">int</span>, user=<span class="fn">Depends</span>(current_user)):
+    inv = db.<span class="fn">get_invoice</span>(invoice_id)
+    <span class="kw">if</span> inv <span class="kw">is</span> <span class="kw">None</span> <span class="kw">or</span> inv.account_id != user.account_id:        <span class="cm"># authorize the OBJECT, not just the user</span>
+        <span class="kw">raise</span> <span class="fn">HTTPException</span>(<span class="nu">404</span>)                                <span class="cm"># 404, so IDs can't be probed</span>
+    <span class="kw">return</span> inv
 
-# Passwords
-from argon2 import PasswordHasher
-ph = PasswordHasher()                                          # Argon2id with sensible defaults
-stored = ph.hash("correct horse battery staple")
-ph.verify(stored, "correct horse battery staple")              # raises on mismatch
+<span class="cm"># Passwords</span>
+<span class="kw">from</span> argon2 <span class="kw">import</span> PasswordHasher
+ph = <span class="fn">PasswordHasher</span>()                                          <span class="cm"># Argon2id with sensible defaults</span>
+stored = ph.<span class="bi">hash</span>(<span class="st">"correct horse battery staple"</span>)
+ph.<span class="fn">verify</span>(stored, <span class="st">"correct horse battery staple"</span>)              <span class="cm"># raises on mismatch</span>
 
-# OS command injection: never use shell=True with user input
-import subprocess
-subprocess.run(["convert", user_file, "out.png"], check=True, timeout=30)   # argument list, no shell</code></pre>
+<span class="cm"># OS command injection: never use shell=True with user input</span>
+<span class="kw">import</span> subprocess
+subprocess.<span class="fn">run</span>([<span class="st">"convert"</span>, user_file, <span class="st">"out.png"</span>], check=<span class="kw">True</span>, timeout=<span class="nu">30</span>)   <span class="cm"># argument list, no shell</span></code></pre>
 
   <span class="lang">bash</span>
-<pre class="code"><code>pip-audit                      # known vulnerabilities in dependencies
+<pre class="code"><code><span class="bi">pip</span>-audit                      <span class="cm"># known vulnerabilities in dependencies</span>
 osv-scanner -r .
-semgrep --config p/owasp-top-ten .
-gitleaks detect                # committed secrets
+semgrep --config p/owasp-<span class="bi">top</span>-ten .
+gitleaks detect                <span class="cm"># committed secrets</span>
 syft . -o spdx-json &gt; sbom.json &amp;&amp; cosign sign-blob sbom.json</code></pre>
 
   <h2>Exercises</h2>

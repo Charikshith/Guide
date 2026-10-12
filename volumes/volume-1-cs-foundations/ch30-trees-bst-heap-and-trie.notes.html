@@ -318,73 +318,73 @@ a{color:var(--ink);text-decoration:underline dotted}
 
   <h2>Example</h2>
   <span class="lang">python</span>
-<pre class="code"><code>import heapq
+<pre class="code"><code><span class="kw">import</span> heapq
 
 h = []
-for x in [5, 1, 8, 3]:
-    heapq.heappush(h, x)
-print(heapq.heappop(h), h[0])          # 1 3  (pop min, peek next min)
-print(heapq.nsmallest(2, [9, 4, 7, 1]))  # [1, 4]
+<span class="kw">for</span> x <span class="kw">in</span> [<span class="nu">5</span>, <span class="nu">1</span>, <span class="nu">8</span>, <span class="nu">3</span>]:
+    heapq.<span class="fn">heappush</span>(h, x)
+<span class="bi">print</span>(heapq.<span class="fn">heappop</span>(h), h[<span class="nu">0</span>])          <span class="cm"># 1 3  (pop min, peek next min)</span>
+<span class="bi">print</span>(heapq.<span class="fn">nsmallest</span>(<span class="nu">2</span>, [<span class="nu">9</span>, <span class="nu">4</span>, <span class="nu">7</span>, <span class="nu">1</span>]))  <span class="cm"># [1, 4]</span>
 
-nums = [9, 4, 7, 1, 8]
-heapq.heapify(nums)                     # O(n), not O(n log n)
+nums = [<span class="nu">9</span>, <span class="nu">4</span>, <span class="nu">7</span>, <span class="nu">1</span>, <span class="nu">8</span>]
+heapq.<span class="fn">heapify</span>(nums)                     <span class="cm"># O(n), not O(n log n)</span>
 
-class BST:
-    class Node:
-        __slots__ = ("key", "left", "right")
-        def __init__(self, key): self.key, self.left, self.right = key, None, None
+<span class="kw">class</span> BST:
+    <span class="kw">class</span> Node:
+        __slots__ = (<span class="st">"key"</span>, <span class="st">"left"</span>, <span class="st">"right"</span>)
+        <span class="kw">def</span> <span class="fn">__init__</span>(<span class="bi">self</span>, key): <span class="bi">self</span>.key, <span class="bi">self</span>.left, <span class="bi">self</span>.right = key, <span class="kw">None</span>, <span class="kw">None</span>
 
-    def __init__(self): self.root = None
+    <span class="kw">def</span> <span class="fn">__init__</span>(<span class="bi">self</span>): <span class="bi">self</span>.root = <span class="kw">None</span>
 
-    def insert(self, key):
-        def _ins(n):
-            if n is None: return BST.Node(key)
-            if key &lt; n.key: n.left = _ins(n.left)
-            elif key &gt; n.key: n.right = _ins(n.right)
-            return n
-        self.root = _ins(self.root)
+    <span class="kw">def</span> <span class="fn">insert</span>(<span class="bi">self</span>, key):
+        <span class="kw">def</span> <span class="fn">_ins</span>(n):
+            <span class="kw">if</span> n <span class="kw">is</span> <span class="kw">None</span>: <span class="kw">return</span> BST.<span class="fn">Node</span>(key)
+            <span class="kw">if</span> key &lt; n.key: n.left = <span class="fn">_ins</span>(n.left)
+            <span class="kw">elif</span> key &gt; n.key: n.right = <span class="fn">_ins</span>(n.right)
+            <span class="kw">return</span> n
+        <span class="bi">self</span>.root = <span class="fn">_ins</span>(<span class="bi">self</span>.root)
 
-    def search(self, key):
-        n = self.root
-        while n and n.key != key:
-            n = n.left if key &lt; n.key else n.right
-        return n is not None
+    <span class="kw">def</span> <span class="fn">search</span>(<span class="bi">self</span>, key):
+        n = <span class="bi">self</span>.root
+        <span class="kw">while</span> n <span class="kw">and</span> n.key != key:
+            n = n.left <span class="kw">if</span> key &lt; n.key <span class="kw">else</span> n.right
+        <span class="kw">return</span> n <span class="kw">is</span> <span class="kw">not</span> <span class="kw">None</span>
 
-    def inorder(self):
-        def _walk(n):
-            if n:
-                yield from _walk(n.left); yield n.key; yield from _walk(n.right)
-        return list(_walk(self.root))
+    <span class="kw">def</span> <span class="fn">inorder</span>(<span class="bi">self</span>):
+        <span class="kw">def</span> <span class="fn">_walk</span>(n):
+            <span class="kw">if</span> n:
+                <span class="kw">yield</span> <span class="kw">from</span> <span class="fn">_walk</span>(n.left); <span class="kw">yield</span> n.key; <span class="kw">yield</span> <span class="kw">from</span> <span class="fn">_walk</span>(n.right)
+        <span class="kw">return</span> <span class="bi">list</span>(<span class="fn">_walk</span>(<span class="bi">self</span>.root))
 
-t = BST()
-for k in [8, 3, 10, 1, 6, 14, 4, 7]:
-    t.insert(k)
-print(t.search(6), t.search(5), t.inorder())   # True False [1, 3, 4, 6, 7, 8, 10, 14]</code></pre>
+t = <span class="fn">BST</span>()
+<span class="kw">for</span> k <span class="kw">in</span> [<span class="nu">8</span>, <span class="nu">3</span>, <span class="nu">10</span>, <span class="nu">1</span>, <span class="nu">6</span>, <span class="nu">14</span>, <span class="nu">4</span>, <span class="nu">7</span>]:
+    t.<span class="fn">insert</span>(k)
+<span class="bi">print</span>(t.<span class="fn">search</span>(<span class="nu">6</span>), t.<span class="fn">search</span>(<span class="nu">5</span>), t.<span class="fn">inorder</span>())   <span class="cm"># True False [1, 3, 4, 6, 7, 8, 10, 14]</span></code></pre>
 
   <span class="lang">python</span>
-<pre class="code"><code>class Trie:
-    def __init__(self): self.root = {}
-    def insert(self, word):
-        node = self.root
-        for ch in word:
-            node = node.setdefault(ch, {})
-        node["$"] = True                       # end-of-word marker
-    def complete(self, prefix):
-        node = self.root
-        for ch in prefix:
-            if ch not in node: return []
+<pre class="code"><code><span class="kw">class</span> Trie:
+    <span class="kw">def</span> <span class="fn">__init__</span>(<span class="bi">self</span>): <span class="bi">self</span>.root = {}
+    <span class="kw">def</span> <span class="fn">insert</span>(<span class="bi">self</span>, word):
+        node = <span class="bi">self</span>.root
+        <span class="kw">for</span> ch <span class="kw">in</span> word:
+            node = node.<span class="fn">setdefault</span>(ch, {})
+        node[<span class="st">"$"</span>] = <span class="kw">True</span>                       <span class="cm"># end-of-word marker</span>
+    <span class="kw">def</span> <span class="fn">complete</span>(<span class="bi">self</span>, prefix):
+        node = <span class="bi">self</span>.root
+        <span class="kw">for</span> ch <span class="kw">in</span> prefix:
+            <span class="kw">if</span> ch <span class="kw">not</span> <span class="kw">in</span> node: <span class="kw">return</span> []
             node = node[ch]
         out, stack = [], [(node, prefix)]
-        while stack:
-            n, word = stack.pop()
-            if "$" in n: out.append(word)
-            stack.extend((child, word + ch) for ch, child in n.items() if ch != "$")
-        return sorted(out)
+        <span class="kw">while</span> stack:
+            n, word = stack.<span class="fn">pop</span>()
+            <span class="kw">if</span> <span class="st">"$"</span> <span class="kw">in</span> n: out.<span class="fn">append</span>(word)
+            stack.<span class="fn">extend</span>((child, word + ch) <span class="kw">for</span> ch, child <span class="kw">in</span> n.<span class="fn">items</span>() <span class="kw">if</span> ch != <span class="st">"$"</span>)
+        <span class="kw">return</span> <span class="bi">sorted</span>(out)
 
-tr = Trie()
-for w in ["car", "cart", "cat", "dog"]:
-    tr.insert(w)
-print(tr.complete("ca"))                         # ['car', 'cart', 'cat']</code></pre>
+tr = <span class="fn">Trie</span>()
+<span class="kw">for</span> w <span class="kw">in</span> [<span class="st">"car"</span>, <span class="st">"cart"</span>, <span class="st">"cat"</span>, <span class="st">"dog"</span>]:
+    tr.<span class="fn">insert</span>(w)
+<span class="bi">print</span>(tr.<span class="fn">complete</span>(<span class="st">"ca"</span>))                         <span class="cm"># ['car', 'cart', 'cat']</span></code></pre>
 
   <h2>Exercises</h2>
   <ol style="list-style:none;padding-left:0">

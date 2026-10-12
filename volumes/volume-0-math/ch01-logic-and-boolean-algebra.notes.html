@@ -335,19 +335,19 @@ a{color:var(--ink);text-decoration:underline dotted}
   <h2>Example</h2>
   <p>De Morgan, checked by brute force over every input:</p>
   <span class="lang">python</span>
-<pre class="code"><code>from itertools import product
+<pre class="code"><code><span class="kw">from</span> itertools <span class="kw">import</span> product
 
-for a, b in product([False, True], repeat=2):
-    assert (not (a and b)) == (not a or not b)   # De Morgan (1)
-    assert (not (a or b)) == (not a and not b)   # De Morgan (2)
-print("De Morgan holds for all 4 inputs")</code></pre>
+<span class="kw">for</span> a, b <span class="kw">in</span> <span class="fn">product</span>([<span class="kw">False</span>, <span class="kw">True</span>], repeat=<span class="nu">2</span>):
+    <span class="kw">assert</span> (<span class="kw">not</span> (a <span class="kw">and</span> b)) == (<span class="kw">not</span> a <span class="kw">or</span> <span class="kw">not</span> b)   <span class="cm"># De Morgan (1)</span>
+    <span class="kw">assert</span> (<span class="kw">not</span> (a <span class="kw">or</span> b)) == (<span class="kw">not</span> a <span class="kw">and</span> <span class="kw">not</span> b)   <span class="cm"># De Morgan (2)</span>
+<span class="bi">print</span>(<span class="st">"De Morgan holds for all 4 inputs"</span>)</code></pre>
 
   <p>The same laws hold bit-by-bit on integers:</p>
   <span class="lang">python</span>
-<pre class="code"><code>a, b = 0b1100, 0b1010
-mask = 0b1111                      # keep 4 bits so ~ stays readable
-assert (~(a &amp; b)) &amp; mask == ((~a) | (~b)) &amp; mask
-print(bin(a &amp; b), bin(a | b), bin(a ^ b))   # 0b1000 0b1110 0b110</code></pre>
+<pre class="code"><code>a, b = <span class="nu">0b1100</span>, <span class="nu">0b1010</span>
+mask = <span class="nu">0b1111</span>                      <span class="cm"># keep 4 bits so ~ stays readable</span>
+<span class="kw">assert</span> (~(a &amp; b)) &amp; mask == ((~a) | (~b)) &amp; mask
+<span class="bi">print</span>(<span class="fn">bin</span>(a &amp; b), <span class="fn">bin</span>(a | b), <span class="fn">bin</span>(a ^ b))   <span class="cm"># 0b1000 0b1110 0b110</span></code></pre>
 
   <p>The power-of-two trick — <code>x &amp; (x - 1)</code> clears the lowest set bit:</p>
 <pre class="code ascii"><code>x       = 0b0100_0000   (64)
@@ -358,20 +358,20 @@ x       = 0b0100_1000   (72)
 x - 1   = 0b0100_0111
 x &amp; x-1 = 0b0100_0000   → not 0, so 72 is not</code></pre>
   <span class="lang">python</span>
-<pre class="code"><code>def is_power_of_two(x: int) -&gt; bool:
-    return x &gt; 0 and (x &amp; (x - 1)) == 0</code></pre>
+<pre class="code"><code><span class="kw">def</span> <span class="fn">is_power_of_two</span>(x: <span class="bi">int</span>) -&gt; <span class="bi">bool</span>:
+    <span class="kw">return</span> x &gt; <span class="nu">0</span> <span class="kw">and</span> (x &amp; (x - <span class="nu">1</span>)) == <span class="nu">0</span></code></pre>
 
   <p>Simplifying a real condition:</p>
   <span class="lang">python</span>
-<pre class="code"><code># Before: hard to read
-if not (not is_weekend or (is_holiday and not office_open)):
+<pre class="code"><code><span class="cm"># Before: hard to read</span>
+<span class="kw">if</span> <span class="kw">not</span> (<span class="kw">not</span> is_weekend <span class="kw">or</span> (is_holiday <span class="kw">and</span> <span class="kw">not</span> office_open)):
     ...
 
-# Step 1 — De Morgan (2):  ¬(X ∨ Y) = ¬X ∧ ¬Y
-#   = is_weekend and not (is_holiday and not office_open)
-# Step 2 — De Morgan (1):  ¬(P ∧ ¬Q) = ¬P ∨ Q
-#   = is_weekend and (not is_holiday or office_open)
-if is_weekend and (not is_holiday or office_open):
+<span class="cm"># Step 1 — De Morgan (2):  ¬(X ∨ Y) = ¬X ∧ ¬Y</span>
+<span class="cm">#   = is_weekend and not (is_holiday and not office_open)</span>
+<span class="cm"># Step 2 — De Morgan (1):  ¬(P ∧ ¬Q) = ¬P ∨ Q</span>
+<span class="cm">#   = is_weekend and (not is_holiday or office_open)</span>
+<span class="kw">if</span> is_weekend <span class="kw">and</span> (<span class="kw">not</span> is_holiday <span class="kw">or</span> office_open):
     ...</code></pre>
 
   <h2>Exercises</h2>
@@ -440,10 +440,10 @@ if is_weekend and (not is_holiday or office_open):
     <li><code>sympy/sympy</code> (github.com/sympy/sympy) — the <code>sympy.logic</code> module. Read <code>sympy/logic/boolalg.py</code>: look at <code>to_cnf</code>, <code>to_dnf</code>, and <code>simplify_logic</code> to see these laws applied at scale.</li>
   </ul>
   <span class="lang">python</span>
-<pre class="code"><code>from sympy import symbols
-from sympy.logic.boolalg import simplify_logic
-a, b = symbols("a b")
-print(simplify_logic(~(~a | ~b)))   # a &amp; b</code></pre>
+<pre class="code"><code><span class="kw">from</span> sympy <span class="kw">import</span> symbols
+<span class="kw">from</span> sympy.logic.boolalg <span class="kw">import</span> simplify_logic
+a, b = <span class="fn">symbols</span>(<span class="st">"a b"</span>)
+<span class="bi">print</span>(<span class="fn">simplify_logic</span>(~(~a | ~b)))   <span class="cm"># a &amp; b</span></code></pre>
 
   <h2>Interview</h2>
   <ol style="list-style:none;padding-left:0">

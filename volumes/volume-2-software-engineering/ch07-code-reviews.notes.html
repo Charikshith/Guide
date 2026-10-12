@@ -313,12 +313,12 @@ a{color:var(--ink);text-decoration:underline dotted}
   <ol style="list-style:none;padding-left:0">
     <li>1. Review a PR with a bug and write actionable feedback.
   <span class="lang">python</span>
-  <pre class="code"><code>def average_order_value(orders):
-      total = 0
-      for o in orders:
-          if o.status == "paid":
+  <pre class="code"><code><span class="kw">def</span> <span class="fn">average_order_value</span>(orders):
+      total = <span class="nu">0</span>
+      <span class="kw">for</span> o <span class="kw">in</span> orders:
+          <span class="kw">if</span> o.status == <span class="st">"paid"</span>:
               total += o.amount
-      return total / len(orders)</code></pre>
+      <span class="kw">return</span> total / <span class="bi">len</span>(orders)</code></pre>
   <div class="box"><b>Solution</b> <code>blocking:</code> the divisor counts <i>all</i> orders, but the total counts only paid ones, so the average is understated whenever there are unpaid orders; it also raises <code>ZeroDivisionError</code> for an empty list. Suggest: <code>paid = [o.amount for o in orders if o.status == "paid"]; return sum(paid) / len(paid) if paid else 0</code>, plus tests for an empty list and mixed statuses. <code>nit:</code> use money in integer cents.</div></li>
     <li>2. Fix a PR based on review comments and re-request.
   <div class="box"><b>Solution</b> Address the blocking items first, in separate commits for easier re-review (<code>fix: guard empty list</code>). Reply to each thread: "Done in abc123", or "I'd prefer X because Y — happy to discuss", or "Good idea, filed #512 for a follow-up". Re-request review only when all threads have a response and CI is green.</div></li>

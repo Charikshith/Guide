@@ -269,38 +269,38 @@ a{color:var(--ink);text-decoration:underline dotted}
   <div class="pagebreak">~ page 3 ~</div>
   <h2>Example</h2>
   <span class="lang">javascript</span>
-<pre class="code"><code>// MongoDB: a product document with embedded variants
-db.products.insertOne({
-  _id: "sku-123", name: "Trail Shoe", brand: "Acme", tags: ["running", "trail"],
-  variants: [{ size: 42, color: "red", stock: 7 }, { size: 43, color: "red", stock: 0 }],
-  price_cents: 12900
+<pre class="code"><code><span class="cm">// MongoDB: a product document with embedded variants</span>
+db.products.<span class="fn">insertOne</span>({
+  _id: <span class="st">"sku-123"</span>, name: <span class="st">"Trail Shoe"</span>, brand: <span class="st">"Acme"</span>, tags: [<span class="st">"running"</span>, <span class="st">"trail"</span>],
+  variants: [{ size: <span class="nu">42</span>, color: <span class="st">"red"</span>, stock: <span class="nu">7</span> }, { size: <span class="nu">43</span>, color: <span class="st">"red"</span>, stock: <span class="nu">0</span> }],
+  price_cents: <span class="nu">12900</span>
 });
-db.products.createIndex({ tags: 1, price_cents: 1 });
-db.products.find({ tags: "trail", price_cents: { $lt: 15000 } }, { name: 1, price_cents: 1 });</code></pre>
+db.products.<span class="fn">createIndex</span>({ tags: <span class="nu">1</span>, price_cents: <span class="nu">1</span> });
+db.products.<span class="fn">find</span>({ tags: <span class="st">"trail"</span>, price_cents: { $lt: <span class="nu">15000</span> } }, { name: <span class="nu">1</span>, price_cents: <span class="nu">1</span> });</code></pre>
   <span class="lang">sql</span>
-<pre class="code"><code>-- Cassandra (CQL): a user's feed, newest first, bounded by month bucket
-CREATE TABLE feed_by_user (
-  user_id   uuid,
-  month     text,           -- '2024-05' keeps partitions bounded
+<pre class="code"><code><span class="cm">-- Cassandra (CQL): a user's feed, newest first, bounded by month bucket</span>
+<span class="kw">CREATE</span> <span class="kw">TABLE</span> feed_by_user (
+  user_id   <span class="bi">uuid</span>,
+  month     <span class="bi">text</span>,           <span class="cm">-- '2024-05' keeps partitions bounded</span>
   posted_at timeuuid,
-  post_id   uuid,
-  author    text,
-  body      text,
-  PRIMARY KEY ((user_id, month), posted_at)
-) WITH CLUSTERING ORDER BY (posted_at DESC);
+  post_id   <span class="bi">uuid</span>,
+  author    <span class="bi">text</span>,
+  body      <span class="bi">text</span>,
+  <span class="kw">PRIMARY</span> <span class="kw">KEY</span> ((user_id, month), posted_at)
+) <span class="kw">WITH</span> CLUSTERING <span class="kw">ORDER</span> <span class="kw">BY</span> (posted_at <span class="kw">DESC</span>);
 
-SELECT * FROM feed_by_user WHERE user_id = ? AND month = '2024-05' LIMIT 50;
--- WHERE author = 'x' alone is rejected: not the partition key (no full scans by accident)</code></pre>
+<span class="kw">SELECT</span> * <span class="kw">FROM</span> feed_by_user <span class="kw">WHERE</span> user_id = ? <span class="kw">AND</span> month = <span class="st">'2024-05'</span> <span class="kw">LIMIT</span> <span class="nu">50</span>;
+<span class="cm">-- WHERE author = 'x' alone is rejected: not the partition key (no full scans by accident)</span></code></pre>
   <span class="lang">python</span>
-<pre class="code"><code>import boto3
-table = boto3.resource("dynamodb").Table("app")
+<pre class="code"><code><span class="kw">import</span> boto3
+table = boto3.<span class="fn">resource</span>(<span class="st">"dynamodb"</span>).<span class="fn">Table</span>(<span class="st">"app"</span>)
 
-table.put_item(Item={"PK": "SESSION#abc", "SK": "META", "user_id": "42", "ttl": 1735689600})
-item = table.get_item(Key={"PK": "SESSION#abc", "SK": "META"}, ConsistentRead=True).get("Item")
+table.<span class="fn">put_item</span>(Item={<span class="st">"PK"</span>: <span class="st">"SESSION#abc"</span>, <span class="st">"SK"</span>: <span class="st">"META"</span>, <span class="st">"user_id"</span>: <span class="st">"42"</span>, <span class="st">"ttl"</span>: <span class="nu">1735689600</span>})
+item = table.<span class="fn">get_item</span>(Key={<span class="st">"PK"</span>: <span class="st">"SESSION#abc"</span>, <span class="st">"SK"</span>: <span class="st">"META"</span>}, ConsistentRead=<span class="kw">True</span>).<span class="fn">get</span>(<span class="st">"Item"</span>)
 
-from boto3.dynamodb.conditions import Key
-orders = table.query(KeyConditionExpression=Key("PK").eq("USER#42") &amp;
-                     Key("SK").begins_with("ORDER#"), ScanIndexForward=False, Limit=20)["Items"]</code></pre>
+<span class="kw">from</span> boto3.dynamodb.conditions <span class="kw">import</span> Key
+orders = table.<span class="fn">query</span>(KeyConditionExpression=<span class="fn">Key</span>(<span class="st">"PK"</span>).<span class="fn">eq</span>(<span class="st">"USER#42"</span>) &amp;
+                     <span class="fn">Key</span>(<span class="st">"SK"</span>).<span class="fn">begins_with</span>(<span class="st">"ORDER#"</span>), ScanIndexForward=<span class="kw">False</span>, Limit=<span class="nu">20</span>)[<span class="st">"Items"</span>]</code></pre>
   <h2>Exercises</h2>
   <ol style="list-style:none;padding-left:0">
 <li>1. Model a feed in Cassandra with the right partition key.

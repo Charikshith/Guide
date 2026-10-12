@@ -326,61 +326,61 @@ a{color:var(--ink);text-decoration:underline dotted}
 
   <h2>Example</h2>
   <span class="lang">python</span>
-<pre class="code"><code>import numpy as np
-rng = np.random.default_rng(0)
+<pre class="code"><code><span class="kw">import</span> numpy <span class="kw">as</span> np
+rng = np.random.<span class="fn">default_rng</span>(<span class="nu">0</span>)
 
-def sample(logits, temperature=1.0, top_k=None, top_p=None):
-    if temperature == 0:
-        return int(np.argmax(logits))                        # greedy
+<span class="kw">def</span> <span class="fn">sample</span>(logits, temperature=<span class="nu">1.0</span>, top_k=<span class="kw">None</span>, top_p=<span class="kw">None</span>):
+    <span class="kw">if</span> temperature == <span class="nu">0</span>:
+        <span class="kw">return</span> <span class="bi">int</span>(np.<span class="fn">argmax</span>(logits))                        <span class="cm"># greedy</span>
     z = logits / temperature
-    if top_k is not None:
-        cutoff = np.sort(z)[-top_k]
-        z = np.where(z &gt;= cutoff, z, -np.inf)
-    p = np.exp(z - z.max()); p /= p.sum()
-    if top_p is not None:
-        order = np.argsort(p)[::-1]
-        keep = np.cumsum(p[order]) - p[order] &lt; top_p        # smallest prefix reaching top_p
-        mask = np.zeros_like(p, bool); mask[order[keep]] = True
-        p = np.where(mask, p, 0); p /= p.sum()
-    return int(rng.choice(len(p), p=p))
+    <span class="kw">if</span> top_k <span class="kw">is</span> <span class="kw">not</span> <span class="kw">None</span>:
+        cutoff = np.<span class="fn">sort</span>(z)[-top_k]
+        z = np.<span class="fn">where</span>(z &gt;= cutoff, z, -np.inf)
+    p = np.<span class="fn">exp</span>(z - z.<span class="bi">max</span>()); p /= p.<span class="bi">sum</span>()
+    <span class="kw">if</span> top_p <span class="kw">is</span> <span class="kw">not</span> <span class="kw">None</span>:
+        order = np.<span class="fn">argsort</span>(p)[::-<span class="nu">1</span>]
+        keep = np.<span class="fn">cumsum</span>(p[order]) - p[order] &lt; top_p        <span class="cm"># smallest prefix reaching top_p</span>
+        mask = np.<span class="fn">zeros_like</span>(p, <span class="bi">bool</span>); mask[order[keep]] = <span class="kw">True</span>
+        p = np.<span class="fn">where</span>(mask, p, <span class="nu">0</span>); p /= p.<span class="bi">sum</span>()
+    <span class="kw">return</span> <span class="bi">int</span>(rng.<span class="fn">choice</span>(<span class="bi">len</span>(p), p=p))
 
-logits = np.array([2.0, 1.0, 0.1, -1.0])
-print(sample(logits, 0), [sample(logits, 0.7, top_p=0.9) for _ in range(10)])</code></pre>
-
-  <span class="lang">python</span>
-<pre class="code"><code># A generate loop with a KV cache (Hugging Face model, token by token)
-import torch
-from transformers import AutoTokenizer, AutoModelForCausalLM
-tok = AutoTokenizer.from_pretrained("gpt2")
-model = AutoModelForCausalLM.from_pretrained("gpt2").eval()
-
-@torch.no_grad()
-def generate(prompt, max_new=40, temperature=0.8, top_p=0.95):
-    ids = tok(prompt, return_tensors="pt").input_ids
-    out = model(ids, use_cache=True)                         # prefill
-    past, logits = out.past_key_values, out.logits[0, -1]
-    for _ in range(max_new):                                 # decode
-        nxt = sample(logits.numpy(), temperature, top_p=top_p)
-        if nxt == tok.eos_token_id:
-            break
-        yield tok.decode([nxt])                              # stream each token
-        out = model(torch.tensor([[nxt]]), past_key_values=past, use_cache=True)
-        past, logits = out.past_key_values, out.logits[0, -1]
-
-print("".join(generate("The best way to learn systems is")))</code></pre>
+logits = np.<span class="fn">array</span>([<span class="nu">2.0</span>, <span class="nu">1.0</span>, <span class="nu">0.1</span>, -<span class="nu">1.0</span>])
+<span class="bi">print</span>(<span class="fn">sample</span>(logits, <span class="nu">0</span>), [<span class="fn">sample</span>(logits, <span class="nu">0.7</span>, top_p=<span class="nu">0.9</span>) <span class="kw">for</span> _ <span class="kw">in</span> <span class="bi">range</span>(<span class="nu">10</span>)])</code></pre>
 
   <span class="lang">python</span>
-<pre class="code"><code># Streaming from a hosted model (Anthropic SDK)
-import anthropic
-client = anthropic.Anthropic()
-with client.messages.stream(
-    model="claude-sonnet-5-5",
-    max_tokens=300,
-    temperature=0.7,
-    messages=[{"role": "user", "content": "Explain the KV cache in two sentences."}],
-) as stream:
-    for text in stream.text_stream:
-        print(text, end="", flush=True)</code></pre>
+<pre class="code"><code><span class="cm"># A generate loop with a KV cache (Hugging Face model, token by token)</span>
+<span class="kw">import</span> torch
+<span class="kw">from</span> transformers <span class="kw">import</span> AutoTokenizer, AutoModelForCausalLM
+tok = AutoTokenizer.<span class="fn">from_pretrained</span>(<span class="st">"gpt2"</span>)
+model = AutoModelForCausalLM.<span class="fn">from_pretrained</span>(<span class="st">"gpt2"</span>).<span class="fn">eval</span>()
+
+<span class="bi">@torch.no_grad</span>()
+<span class="kw">def</span> <span class="fn">generate</span>(prompt, max_new=<span class="nu">40</span>, temperature=<span class="nu">0.8</span>, top_p=<span class="nu">0.95</span>):
+    ids = <span class="fn">tok</span>(prompt, return_tensors=<span class="st">"pt"</span>).input_ids
+    out = <span class="fn">model</span>(ids, use_cache=<span class="kw">True</span>)                         <span class="cm"># prefill</span>
+    past, logits = out.past_key_values, out.logits[<span class="nu">0</span>, -<span class="nu">1</span>]
+    <span class="kw">for</span> _ <span class="kw">in</span> <span class="bi">range</span>(max_new):                                 <span class="cm"># decode</span>
+        nxt = <span class="fn">sample</span>(logits.<span class="fn">numpy</span>(), temperature, top_p=top_p)
+        <span class="kw">if</span> nxt == tok.eos_token_id:
+            <span class="kw">break</span>
+        <span class="kw">yield</span> tok.<span class="fn">decode</span>([nxt])                              <span class="cm"># stream each token</span>
+        out = <span class="fn">model</span>(torch.<span class="fn">tensor</span>([[nxt]]), past_key_values=past, use_cache=<span class="kw">True</span>)
+        past, logits = out.past_key_values, out.logits[<span class="nu">0</span>, -<span class="nu">1</span>]
+
+<span class="bi">print</span>(<span class="st">""</span>.<span class="fn">join</span>(<span class="fn">generate</span>(<span class="st">"The best way to learn systems is"</span>)))</code></pre>
+
+  <span class="lang">python</span>
+<pre class="code"><code><span class="cm"># Streaming from a hosted model (Anthropic SDK)</span>
+<span class="kw">import</span> anthropic
+client = anthropic.<span class="fn">Anthropic</span>()
+<span class="kw">with</span> client.messages.<span class="fn">stream</span>(
+    model=<span class="st">"claude-sonnet-5-5"</span>,
+    max_tokens=<span class="nu">300</span>,
+    temperature=<span class="nu">0.7</span>,
+    messages=[{<span class="st">"role"</span>: <span class="st">"user"</span>, <span class="st">"content"</span>: <span class="st">"Explain the KV cache in two sentences."</span>}],
+) <span class="kw">as</span> stream:
+    <span class="kw">for</span> text <span class="kw">in</span> stream.text_stream:
+        <span class="bi">print</span>(text, end=<span class="st">""</span>, flush=<span class="kw">True</span>)</code></pre>
 
   <h2>Exercises</h2>
   <ol style="list-style:none;padding-left:0">

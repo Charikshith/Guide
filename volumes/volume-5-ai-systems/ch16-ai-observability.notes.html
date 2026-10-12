@@ -250,53 +250,53 @@ a{color:var(--ink);text-decoration:underline dotted}
   </figure>
   <h2>Example</h2>
   <span class="lang">python</span>
-<pre class="code"><code># Manual OpenTelemetry spans with GenAI attributes around each LLM and tool call
-import time, anthropic
-from opentelemetry import trace, metrics
+<pre class="code"><code><span class="cm"># Manual OpenTelemetry spans with GenAI attributes around each LLM and tool call</span>
+<span class="kw">import</span> time, anthropic
+<span class="kw">from</span> opentelemetry <span class="kw">import</span> trace, metrics
 
-tracer = trace.get_tracer("support-agent")
-meter = metrics.get_meter("support-agent")
-tokens = meter.create_counter("gen_ai.client.token.usage", unit="{token}")
-cost_usd = meter.create_counter("llm_cost_usd", unit="USD")
-client = anthropic.Anthropic()
+tracer = trace.<span class="fn">get_tracer</span>(<span class="st">"support-agent"</span>)
+meter = metrics.<span class="fn">get_meter</span>(<span class="st">"support-agent"</span>)
+tokens = meter.<span class="fn">create_counter</span>(<span class="st">"gen_ai.client.token.usage"</span>, unit=<span class="st">"{token}"</span>)
+cost_usd = meter.<span class="fn">create_counter</span>(<span class="st">"llm_cost_usd"</span>, unit=<span class="st">"USD"</span>)
+client = anthropic.<span class="fn">Anthropic</span>()
 
-PRICE = {"claude-sonnet-5-5": (3.00, 15.00)}      # USD per 1M input/output tokens (example values — use your real price sheet)
+PRICE = {<span class="st">"claude-sonnet-5-5"</span>: (<span class="nu">3.00</span>, <span class="nu">15.00</span>)}      <span class="cm"># USD per 1M input/output tokens (example values — use your real price sheet)</span>
 
-def llm_call(messages, model="claude-sonnet-5-5", step=0, **kw):
-    with tracer.start_as_current_span(f"chat {model}") as span:
-        span.set_attributes({"gen_ai.operation.name": "chat", "gen_ai.request.model": model,
-                             "agent.step": step, "prompt.version": "v14"})
-        t0 = time.perf_counter()
-        resp = client.messages.create(model=model, messages=messages, max_tokens=1024, **kw)
+<span class="kw">def</span> <span class="fn">llm_call</span>(messages, model=<span class="st">"claude-sonnet-5-5"</span>, step=<span class="nu">0</span>, **kw):
+    <span class="kw">with</span> tracer.<span class="fn">start_as_current_span</span>(<span class="st">f"chat {model}"</span>) <span class="kw">as</span> span:
+        span.<span class="fn">set_attributes</span>({<span class="st">"gen_ai.operation.name"</span>: <span class="st">"chat"</span>, <span class="st">"gen_ai.request.model"</span>: model,
+                             <span class="st">"agent.step"</span>: step, <span class="st">"prompt.version"</span>: <span class="st">"v14"</span>})
+        t0 = time.<span class="fn">perf_counter</span>()
+        resp = client.messages.<span class="fn">create</span>(model=model, messages=messages, max_tokens=<span class="nu">1024</span>, **kw)
         u = resp.usage
-        span.set_attributes({"gen_ai.usage.input_tokens": u.input_tokens,
-                             "gen_ai.usage.output_tokens": u.output_tokens,
-                             "gen_ai.response.finish_reasons": [resp.stop_reason],
-                             "latency_ms": int((time.perf_counter() - t0) * 1000)})
-        tokens.add(u.input_tokens, {"gen_ai.token.type": "input", "model": model})
-        tokens.add(u.output_tokens, {"gen_ai.token.type": "output", "model": model})
+        span.<span class="fn">set_attributes</span>({<span class="st">"gen_ai.usage.input_tokens"</span>: u.input_tokens,
+                             <span class="st">"gen_ai.usage.output_tokens"</span>: u.output_tokens,
+                             <span class="st">"gen_ai.response.finish_reasons"</span>: [resp.stop_reason],
+                             <span class="st">"latency_ms"</span>: <span class="bi">int</span>((time.<span class="fn">perf_counter</span>() - t0) * <span class="nu">1000</span>)})
+        tokens.<span class="fn">add</span>(u.input_tokens, {<span class="st">"gen_ai.token.type"</span>: <span class="st">"input"</span>, <span class="st">"model"</span>: model})
+        tokens.<span class="fn">add</span>(u.output_tokens, {<span class="st">"gen_ai.token.type"</span>: <span class="st">"output"</span>, <span class="st">"model"</span>: model})
         pin, pout = PRICE[model]
-        cost_usd.add(u.input_tokens / 1e6 * pin + u.output_tokens / 1e6 * pout, {"model": model})
-        return resp
+        cost_usd.<span class="fn">add</span>(u.input_tokens / <span class="nu">1e6</span> * pin + u.output_tokens / <span class="nu">1e6</span> * pout, {<span class="st">"model"</span>: model})
+        <span class="kw">return</span> resp
 
-def tool_call(name, fn, **args):
-    with tracer.start_as_current_span(f"execute_tool {name}") as span:
-        span.set_attributes({"gen_ai.tool.name": name})
-        try:
-            return fn(**args)
-        except Exception as e:
-            span.record_exception(e); span.set_status(trace.Status(trace.StatusCode.ERROR)); raise</code></pre>
+<span class="kw">def</span> <span class="fn">tool_call</span>(name, fn, **args):
+    <span class="kw">with</span> tracer.<span class="fn">start_as_current_span</span>(<span class="st">f"execute_tool {name}"</span>) <span class="kw">as</span> span:
+        span.<span class="fn">set_attributes</span>({<span class="st">"gen_ai.tool.name"</span>: name})
+        <span class="kw">try</span>:
+            <span class="kw">return</span> <span class="fn">fn</span>(**args)
+        <span class="kw">except</span> <span class="bi">Exception</span> <span class="kw">as</span> e:
+            span.<span class="fn">record_exception</span>(e); span.<span class="fn">set_status</span>(trace.<span class="fn">Status</span>(trace.StatusCode.ERROR)); <span class="kw">raise</span></code></pre>
   <span class="lang">python</span>
-<pre class="code"><code># Or with Langfuse's decorator (it nests spans automatically)
-from langfuse import observe
+<pre class="code"><code><span class="cm"># Or with Langfuse's decorator (it nests spans automatically)</span>
+<span class="kw">from</span> langfuse <span class="kw">import</span> observe
 
-@observe()
-def retrieve(query): ...
+<span class="bi">@observe</span>()
+<span class="kw">def</span> <span class="fn">retrieve</span>(query): ...
 
-@observe()
-def answer(question):
-    docs = retrieve(question)
-    return llm_call([{"role": "user", "content": f"{docs}\n\n{question}"}])</code></pre>
+<span class="bi">@observe</span>()
+<span class="kw">def</span> <span class="fn">answer</span>(question):
+    docs = <span class="fn">retrieve</span>(question)
+    <span class="kw">return</span> <span class="fn">llm_call</span>([{<span class="st">"role"</span>: <span class="st">"user"</span>, <span class="st">"content"</span>: <span class="st">f"{docs}\n\n{question}"</span>}])</code></pre>
   <div class="pagebreak">~ page 2 ~</div>
 
   <h2>Exercises</h2>

@@ -179,12 +179,12 @@ a{color:var(--ink);text-decoration:underline dotted}
 
   <h3>What each catches</h3>
   <span class="lang">python</span>
-<pre class="code"><code>import os                       # linter: unused import (F401)
-def total(xs: list[int]) -&gt; int:
-    if xs == None:              # linter: use `is None` (E711)
-        return "0"              # type checker: str is not int
-    return sum(xs)
-total(["a"])                    # type checker: list[str] is not list[int]</code></pre>
+<pre class="code"><code><span class="kw">import</span> os                       <span class="cm"># linter: unused import (F401)</span>
+<span class="kw">def</span> <span class="fn">total</span>(xs: <span class="bi">list</span>[<span class="bi">int</span>]) -&gt; <span class="bi">int</span>:
+    <span class="kw">if</span> xs == <span class="kw">None</span>:              <span class="cm"># linter: use `is None` (E711)</span>
+        <span class="kw">return</span> <span class="st">"0"</span>              <span class="cm"># type checker: str is not int</span>
+    <span class="kw">return</span> <span class="bi">sum</span>(xs)
+<span class="fn">total</span>([<span class="st">"a"</span>])                    <span class="cm"># type checker: list[str] is not list[int]</span></code></pre>
 
   <h3>Gradual typing (Python/TS)</h3>
   <p>You can add types a module at a time. Strict mode turns on the checks that matter: no implicit <code>Any</code>, every function annotated, <code>Optional</code> handled.</p>
@@ -262,22 +262,22 @@ total(["a"])                    # type checker: list[str] is not list[int]</code
 
   <h2>Example</h2>
   <span class="lang">toml</span>
-<pre class="code"><code># pyproject.toml
-[tool.ruff]
-line-length = 100
-target-version = "py312"
+<pre class="code"><code><span class="cm"># pyproject.toml</span>
+<span class="kw">[tool.ruff]</span>
+<span class="bi">line-length</span> = <span class="nu">100</span>
+<span class="bi">target-version</span> = <span class="st">"py312"</span>
 
-[tool.ruff.lint]
-select = ["E", "F", "I", "B", "UP", "S", "SIM"]   # errors, pyflakes, isort, bugbear, pyupgrade, security, simplify
-ignore = ["E501"]
+<span class="kw">[tool.ruff.lint]</span>
+<span class="bi">select</span> = [<span class="st">"E"</span>, <span class="st">"F"</span>, <span class="st">"I"</span>, <span class="st">"B"</span>, <span class="st">"UP"</span>, <span class="st">"S"</span>, <span class="st">"SIM"</span>]   <span class="cm"># errors, pyflakes, isort, bugbear, pyupgrade, security, simplify</span>
+<span class="bi">ignore</span> = [<span class="st">"E501"</span>]
 
-[tool.mypy]
-strict = true
-python_version = "3.12"</code></pre>
+<span class="kw">[tool.mypy]</span>
+<span class="bi">strict</span> = <span class="kw">true</span>
+<span class="bi">python_version</span> = <span class="st">"3.12"</span></code></pre>
 
   <span class="lang">bash</span>
-<pre class="code"><code>ruff format .            # rewrite files
-ruff check . --fix       # lint and auto-fix what's safe
+<pre class="code"><code>ruff format .            <span class="cm"># rewrite files</span>
+ruff check . --fix       <span class="cm"># lint and auto-fix what's safe</span>
 mypy src/</code></pre>
 
 <pre class="code ascii"><code>src/billing.py:12: error: Incompatible return value type (got "str", expected "int")  [return-value]
@@ -285,22 +285,22 @@ src/billing.py:18: error: Item "None" of "User | None" has no attribute "email" 
 Found 2 errors in 1 file (checked 14 source files)</code></pre>
 
   <span class="lang">python</span>
-<pre class="code"><code>from typing import TypedDict
+<pre class="code"><code><span class="kw">from</span> typing <span class="kw">import</span> TypedDict
 
-class Order(TypedDict):
-    id: int
-    total_cents: int
+<span class="kw">class</span> <span class="fn">Order</span>(TypedDict):
+    <span class="bi">id</span>: <span class="bi">int</span>
+    total_cents: <span class="bi">int</span>
 
-def find(orders: list[Order], oid: int) -&gt; Order | None:
-    return next((o for o in orders if o["id"] == oid), None)
+<span class="kw">def</span> <span class="fn">find</span>(orders: <span class="bi">list</span>[Order], oid: <span class="bi">int</span>) -&gt; Order | <span class="kw">None</span>:
+    <span class="kw">return</span> <span class="bi">next</span>((o <span class="kw">for</span> o <span class="kw">in</span> orders <span class="kw">if</span> o[<span class="st">"id"</span>] == oid), <span class="kw">None</span>)
 
-o = find([], 1)
-print(o["total_cents"])        # mypy: Value of type "Order | None" is not indexable
-if o is not None:
-    print(o["total_cents"])    # ✓</code></pre>
+o = <span class="fn">find</span>([], <span class="nu">1</span>)
+<span class="bi">print</span>(o[<span class="st">"total_cents"</span>])        <span class="cm"># mypy: Value of type "Order | None" is not indexable</span>
+<span class="kw">if</span> o <span class="kw">is</span> <span class="kw">not</span> <span class="kw">None</span>:
+    <span class="bi">print</span>(o[<span class="st">"total_cents"</span>])    <span class="cm"># ✓</span></code></pre>
 
   <span class="lang">bash</span>
-<pre class="code"><code>cargo clippy -- -D warnings    # Rust: the compiler type-checks; clippy adds 700+ lints</code></pre>
+<pre class="code"><code>cargo clippy -- -D warnings    <span class="cm"># Rust: the compiler type-checks; clippy adds 700+ lints</span></code></pre>
 
   <h2>Exercises</h2>
   <ol style="list-style:none;padding-left:0">

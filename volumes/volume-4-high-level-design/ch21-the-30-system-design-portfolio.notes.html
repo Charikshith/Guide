@@ -244,41 +244,41 @@ a{color:var(--ink);text-decoration:underline dotted}
 </table></div>
 <p><b>7. Wrap-up</b> — monitor redirect p99, cache hit rate, 404 rate, ID-range exhaustion, and Kafka lag. Trade-offs made: counter-based IDs (simple and collision-free) over hashes; eventual consistency for analytics; 302 to keep click counts.</p>
 <span class="lang">python</span>
-<pre class="code"><code>import string
+<pre class="code"><code><span class="kw">import</span> string
 
-ALPHABET = string.digits + string.ascii_lowercase + string.ascii_uppercase   # 62 characters
+ALPHABET = string.digits + string.ascii_lowercase + string.ascii_uppercase   <span class="cm"># 62 characters</span>
 
-def encode(n: int) -&gt; str:
-    if n == 0:
-        return ALPHABET[0]
+<span class="kw">def</span> <span class="fn">encode</span>(n: <span class="bi">int</span>) -&gt; <span class="bi">str</span>:
+    <span class="kw">if</span> n == <span class="nu">0</span>:
+        <span class="kw">return</span> ALPHABET[<span class="nu">0</span>]
     out = []
-    while n:
-        n, r = divmod(n, 62)
-        out.append(ALPHABET[r])
-    return "".join(reversed(out))
+    <span class="kw">while</span> n:
+        n, r = <span class="bi">divmod</span>(n, <span class="nu">62</span>)
+        out.<span class="fn">append</span>(ALPHABET[r])
+    <span class="kw">return</span> <span class="st">""</span>.<span class="fn">join</span>(<span class="bi">reversed</span>(out))
 
-def decode(s: str) -&gt; int:
-    n = 0
-    for ch in s:
-        n = n * 62 + ALPHABET.index(ch)
-    return n
+<span class="kw">def</span> <span class="fn">decode</span>(s: <span class="bi">str</span>) -&gt; <span class="bi">int</span>:
+    n = <span class="nu">0</span>
+    <span class="kw">for</span> ch <span class="kw">in</span> s:
+        n = n * <span class="nu">62</span> + ALPHABET.<span class="fn">index</span>(ch)
+    <span class="kw">return</span> n
 
-class RangeAllocator:
-    """Each server leases a block of IDs, so creating a URL needs no coordination."""
-    def __init__(self, lease_block):       # lease_block() → (start, end), e.g. from etcd or a DB row
-        self.lease_block, self.next, self.end = lease_block, 0, 0
-    def next_id(self):
-        if self.next &gt;= self.end:
-            self.next, self.end = self.lease_block()
-        self.next += 1
-        return self.next - 1
+<span class="kw">class</span> RangeAllocator:
+    <span class="st">"""Each server leases a block of IDs, so creating a URL needs no coordination."""</span>
+    <span class="kw">def</span> <span class="fn">__init__</span>(<span class="bi">self</span>, lease_block):       <span class="cm"># lease_block() → (start, end), e.g. from etcd or a DB row</span>
+        <span class="bi">self</span>.lease_block, <span class="bi">self</span>.<span class="bi">next</span>, <span class="bi">self</span>.end = lease_block, <span class="nu">0</span>, <span class="nu">0</span>
+    <span class="kw">def</span> <span class="fn">next_id</span>(<span class="bi">self</span>):
+        <span class="kw">if</span> <span class="bi">self</span>.<span class="bi">next</span> &gt;= <span class="bi">self</span>.end:
+            <span class="bi">self</span>.<span class="bi">next</span>, <span class="bi">self</span>.end = <span class="bi">self</span>.<span class="fn">lease_block</span>()
+        <span class="bi">self</span>.<span class="bi">next</span> += <span class="nu">1</span>
+        <span class="kw">return</span> <span class="bi">self</span>.<span class="bi">next</span> - <span class="nu">1</span>
 
-counter = iter(range(0, 10**12, 10_000))
-alloc = RangeAllocator(lambda: (s := next(counter), s + 10_000))
-ids = [alloc.next_id() for _ in range(3)]
-print([encode(i + 56_800_235_584) for i in ids])   # 62**6 offset → always 7 characters: ['1000000', '1000001', '1000002']
-assert decode(encode(123_456_789)) == 123_456_789
-print(62**7)                                        # 3521614606208</code></pre>
+counter = <span class="bi">iter</span>(<span class="bi">range</span>(<span class="nu">0</span>, <span class="nu">10</span>**<span class="nu">12</span>, <span class="nu">10_000</span>))
+alloc = <span class="fn">RangeAllocator</span>(<span class="kw">lambda</span>: (s := <span class="bi">next</span>(counter), s + <span class="nu">10_000</span>))
+ids = [alloc.<span class="fn">next_id</span>() <span class="kw">for</span> _ <span class="kw">in</span> <span class="bi">range</span>(<span class="nu">3</span>)]
+<span class="bi">print</span>([<span class="fn">encode</span>(i + <span class="nu">56_800_235_584</span>) <span class="kw">for</span> i <span class="kw">in</span> ids])   <span class="cm"># 62**6 offset → always 7 characters: ['1000000', '1000001', '1000002']</span>
+<span class="kw">assert</span> <span class="fn">decode</span>(<span class="fn">encode</span>(<span class="nu">123_456_789</span>)) == <span class="nu">123_456_789</span>
+<span class="bi">print</span>(<span class="nu">62</span>**<span class="nu">7</span>)                                        <span class="cm"># 3521614606208</span></code></pre>
 <h2>Exercises</h2>
 <ol class="num">
 <li><span class="n">1.</span>Pick any system and draw its full design.

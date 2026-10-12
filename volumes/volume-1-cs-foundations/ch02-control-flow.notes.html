@@ -179,13 +179,13 @@ a{color:var(--ink);text-decoration:underline dotted}
 </table></div>
 <p><b>Pattern matching</b> goes beyond comparing values. It matches <i>structure</i> and binds names:</p>
 <span class="lang">python</span>
-<pre class="code"><code>match command.split():
-    case ["go", direction]:        # list of 2, first is "go"
-        move(direction)
-    case ["take", *items]:         # "take" followed by anything
-        pick_up(items)
-    case _:
-        print("unknown")</code></pre>
+<pre class="code"><code><span class="kw">match</span> command.<span class="fn">split</span>():
+    <span class="kw">case</span> [<span class="st">"go"</span>, direction]:        <span class="cm"># list of 2, first is "go"</span>
+        <span class="fn">move</span>(direction)
+    <span class="kw">case</span> [<span class="st">"take"</span>, *items]:         <span class="cm"># "take" followed by anything</span>
+        <span class="fn">pick_up</span>(items)
+    <span class="kw">case</span> _:
+        <span class="bi">print</span>(<span class="st">"unknown"</span>)</code></pre>
 <p><b>Off-by-one errors</b> — the most common loop bug. Use half-open ranges <code>[start, end)</code>: <code>range(0, n)</code> runs n times, and <code>range(a, b)</code> has <code>b − a</code> items.</p>
 <h2>Prereqs</h2>
 <ul>
@@ -271,70 +271,70 @@ a{color:var(--ink);text-decoration:underline dotted}
  }</code></pre>
 <h2>Example</h2>
 <span class="lang">rust</span>
-<pre class="code"><code>enum Shape {
-    Circle { r: f64 },
-    Rect { w: f64, h: f64 },
-    Triangle { b: f64, h: f64 },
+<pre class="code"><code><span class="kw">enum</span> Shape {
+    Circle { r: <span class="bi">f64</span> },
+    Rect { w: <span class="bi">f64</span>, h: <span class="bi">f64</span> },
+    Triangle { b: <span class="bi">f64</span>, h: <span class="bi">f64</span> },
 }
 
-fn area(s: &amp;Shape) -&gt; f64 {
-    match s {                                  // compiler checks every variant is handled
-        Shape::Circle { r } =&gt; std::f64::consts::PI * r * r,
+<span class="kw">fn</span> <span class="fn">area</span>(s: &amp;Shape) -&gt; <span class="bi">f64</span> {
+    <span class="kw">match</span> s {                                  <span class="cm">// compiler checks every variant is handled</span>
+        Shape::Circle { r } =&gt; std::<span class="bi">f64</span>::consts::PI * r * r,
         Shape::Rect { w, h } =&gt; w * h,
-        Shape::Triangle { b, h } =&gt; 0.5 * b * h,
+        Shape::Triangle { b, h } =&gt; <span class="nu">0.5</span> * b * h,
     }
 }
 
-fn main() {
-    let xs = [3, 1, 4, 1, 5];
-    let mut total = 0;
-    for x in xs {
+<span class="kw">fn</span> <span class="fn">main</span>() {
+    <span class="kw">let</span> xs = [<span class="nu">3</span>, <span class="nu">1</span>, <span class="nu">4</span>, <span class="nu">1</span>, <span class="nu">5</span>];
+    <span class="kw">let</span> <span class="kw">mut</span> total = <span class="nu">0</span>;
+    <span class="kw">for</span> x <span class="kw">in</span> xs {
         total += x;
     }
-    println!("{total}");                                   // 14
-    println!("{:.2}", area(&amp;Shape::Circle { r: 1.0 }));    // 3.14
+    <span class="fn">println!</span>(<span class="st">"{total}"</span>);                                   <span class="cm">// 14</span>
+    <span class="fn">println!</span>(<span class="st">"{:.2}"</span>, <span class="fn">area</span>(&amp;Shape::Circle { r: <span class="nu">1.0</span> }));    <span class="cm">// 3.14</span>
 }</code></pre>
 <span class="lang">python</span>
-<pre class="code"><code># Early return beats deeply nested ifs
-def shipping_cost(order):
-    if not order.items:
-        return 0
-    if order.total &gt;= 50:
-        return 0
-    if order.express:
-        return 15
-    return 5</code></pre>
+<pre class="code"><code><span class="cm"># Early return beats deeply nested ifs</span>
+<span class="kw">def</span> <span class="fn">shipping_cost</span>(order):
+    <span class="kw">if</span> <span class="kw">not</span> order.items:
+        <span class="kw">return</span> <span class="nu">0</span>
+    <span class="kw">if</span> order.total &gt;= <span class="nu">50</span>:
+        <span class="kw">return</span> <span class="nu">0</span>
+    <span class="kw">if</span> order.express:
+        <span class="kw">return</span> <span class="nu">15</span>
+    <span class="kw">return</span> <span class="nu">5</span></code></pre>
 <div class="pagebreak">~ page 3 ~</div>
 <h2>Exercises</h2>
 <ol style="list-style:none;padding-left:0">
 <li>1. Rewrite an if/else chain as a <code>match</code>.
 <span class="lang">python</span>
-<pre class="code"><code>if status == 200: msg = "ok"
-elif status == 404: msg = "not found"
-elif status in (500, 502, 503): msg = "server error"
-else: msg = "other"</code></pre>
+<pre class="code"><code><span class="kw">if</span> status == <span class="nu">200</span>: msg = <span class="st">"ok"</span>
+<span class="kw">elif</span> status == <span class="nu">404</span>: msg = <span class="st">"not found"</span>
+<span class="kw">elif</span> status <span class="kw">in</span> (<span class="nu">500</span>, <span class="nu">502</span>, <span class="nu">503</span>): msg = <span class="st">"server error"</span>
+<span class="kw">else</span>: msg = <span class="st">"other"</span></code></pre>
 <div class="box"><b>Solution</b>
 <span class="lang">python</span>
-<pre class="code"><code>match status:
-    case 200: msg = "ok"
-    case 404: msg = "not found"
-    case 500 | 502 | 503: msg = "server error"
-    case _: msg = "other"</code></pre>
+<pre class="code"><code><span class="kw">match</span> status:
+    <span class="kw">case</span> <span class="nu">200</span>: msg = <span class="st">"ok"</span>
+    <span class="kw">case</span> <span class="nu">404</span>: msg = <span class="st">"not found"</span>
+    <span class="kw">case</span> <span class="nu">500</span> | <span class="nu">502</span> | <span class="nu">503</span>: msg = <span class="st">"server error"</span>
+    <span class="kw">case</span> _: msg = <span class="st">"other"</span></code></pre>
 </div></li>
 <li>2. Implement FizzBuzz using both a loop and recursion.
 <div class="box"><b>Solution</b>
 <span class="lang">python</span>
-<pre class="code"><code>def fb(i):
-    return "FizzBuzz" if i % 15 == 0 else "Fizz" if i % 3 == 0 else "Buzz" if i % 5 == 0 else str(i)
+<pre class="code"><code><span class="kw">def</span> <span class="fn">fb</span>(i):
+    <span class="kw">return</span> <span class="st">"FizzBuzz"</span> <span class="kw">if</span> i % <span class="nu">15</span> == <span class="nu">0</span> <span class="kw">else</span> <span class="st">"Fizz"</span> <span class="kw">if</span> i % <span class="nu">3</span> == <span class="nu">0</span> <span class="kw">else</span> <span class="st">"Buzz"</span> <span class="kw">if</span> i % <span class="nu">5</span> == <span class="nu">0</span> <span class="kw">else</span> <span class="bi">str</span>(i)
 
-for i in range(1, 101):
-    print(fb(i))
+<span class="kw">for</span> i <span class="kw">in</span> <span class="bi">range</span>(<span class="nu">1</span>, <span class="nu">101</span>):
+    <span class="bi">print</span>(<span class="fn">fb</span>(i))
 
-def fizzbuzz_rec(i=1, n=100):
-    if i &gt; n:
-        return
-    print(fb(i))
-    fizzbuzz_rec(i + 1, n)</code></pre>
+<span class="kw">def</span> <span class="fn">fizzbuzz_rec</span>(i=<span class="nu">1</span>, n=<span class="nu">100</span>):
+    <span class="kw">if</span> i &gt; n:
+        <span class="kw">return</span>
+    <span class="bi">print</span>(<span class="fn">fb</span>(i))
+    <span class="fn">fizzbuzz_rec</span>(i + <span class="nu">1</span>, n)</code></pre>
 </div></li>
 <li>3. How many times does <code>for i in range(2, 10, 3)</code> run, and with which values?
 <div class="box"><b>Solution</b> 3 times: 2, 5, 8.</div></li>

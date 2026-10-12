@@ -248,41 +248,41 @@ a{color:var(--ink);text-decoration:underline dotted}
   <div class="pagebreak">~ page 3 ~</div>
   <h2>Example</h2>
   <span class="lang">bash</span>
-<pre class="code"><code>strace -e trace=openat,read,write,close cat hello.txt
-# openat(AT_FDCWD, "hello.txt", O_RDONLY) = 3
-# read(3, "hi\n", 131072)                 = 3
-# write(1, "hi\n", 3)                     = 3
-# read(3, "", 131072)                     = 0      ← EOF
-# close(3)                                = 0
-strace -c python -c "print(1)"            # count syscalls by type
-ls -i notes.txt; stat notes.txt           # inode number, links, blocks
-cat /proc/$$/maps                         # the address space of this shell
+<pre class="code"><code>strace -e trace=openat,read,write,close <span class="bi">cat</span> hello.txt
+<span class="cm"># openat(AT_FDCWD, "hello.txt", O_RDONLY) = 3</span>
+<span class="cm"># read(3, "hi\n", 131072)                 = 3</span>
+<span class="cm"># write(1, "hi\n", 3)                     = 3</span>
+<span class="cm"># read(3, "", 131072)                     = 0      ← EOF</span>
+<span class="cm"># close(3)                                = 0</span>
+strace -c <span class="bi">python</span> -c <span class="st">"print(1)"</span>            <span class="cm"># count syscalls by type</span>
+<span class="bi">ls</span> -i notes.txt; stat notes.txt           <span class="cm"># inode number, links, blocks</span>
+<span class="bi">cat</span> /proc/<span class="bi">$$</span>/maps                         <span class="cm"># the address space of this shell</span>
 </code></pre>
   <span class="lang">python</span>
-<pre class="code"><code>import os
+<pre class="code"><code><span class="kw">import</span> os
 
-r, w = os.pipe()
-pid = os.fork()                           # Unix only
-if pid == 0:                              # child: producer
-    os.close(r)
-    for i in range(5):
-        os.write(w, f"item {i}\n".encode())
-    os.close(w)                           # closing the write end → EOF for the reader
-    os._exit(0)
-else:                                     # parent: consumer
-    os.close(w)
-    with os.fdopen(r) as f:
-        for line in f:
-            print("got", line.strip())
-    os.waitpid(pid, 0)
+r, w = os.<span class="fn">pipe</span>()
+pid = os.<span class="fn">fork</span>()                           <span class="cm"># Unix only</span>
+<span class="kw">if</span> pid == <span class="nu">0</span>:                              <span class="cm"># child: producer</span>
+    os.<span class="fn">close</span>(r)
+    <span class="kw">for</span> i <span class="kw">in</span> <span class="bi">range</span>(<span class="nu">5</span>):
+        os.<span class="fn">write</span>(w, <span class="st">f"item {i}\n"</span>.<span class="fn">encode</span>())
+    os.<span class="fn">close</span>(w)                           <span class="cm"># closing the write end → EOF for the reader</span>
+    os.<span class="fn">_exit</span>(<span class="nu">0</span>)
+<span class="kw">else</span>:                                     <span class="cm"># parent: consumer</span>
+    os.<span class="fn">close</span>(w)
+    <span class="kw">with</span> os.<span class="fn">fdopen</span>(r) <span class="kw">as</span> f:
+        <span class="kw">for</span> line <span class="kw">in</span> f:
+            <span class="bi">print</span>(<span class="st">"got"</span>, line.<span class="fn">strip</span>())
+    os.<span class="fn">waitpid</span>(pid, <span class="nu">0</span>)
 </code></pre>
   <span class="lang">python</span>
-<pre class="code"><code>from multiprocessing import shared_memory
-import numpy as np
-shm = shared_memory.SharedMemory(create=True, size=8 * 1_000_000)
-arr = np.ndarray((1_000_000,), dtype=np.float64, buffer=shm.buf)   # no copy
-arr[:] = 1.0                        # another process can attach by shm.name
-shm.close(); shm.unlink()
+<pre class="code"><code><span class="kw">from</span> multiprocessing <span class="kw">import</span> shared_memory
+<span class="kw">import</span> numpy <span class="kw">as</span> np
+shm = shared_memory.<span class="fn">SharedMemory</span>(create=<span class="kw">True</span>, size=<span class="nu">8</span> * <span class="nu">1_000_000</span>)
+arr = np.<span class="fn">ndarray</span>((<span class="nu">1_000_000</span>,), dtype=np.float64, buffer=shm.buf)   <span class="cm"># no copy</span>
+arr[:] = <span class="nu">1.0</span>                        <span class="cm"># another process can attach by shm.name</span>
+shm.<span class="fn">close</span>(); shm.<span class="fn">unlink</span>()
 </code></pre>
   <h2>Exercises</h2>
   <ol style="list-style:none;padding-left:0">

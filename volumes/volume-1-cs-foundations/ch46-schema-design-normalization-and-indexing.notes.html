@@ -285,28 +285,28 @@ a{color:var(--ink);text-decoration:underline dotted}
   <div class="pagebreak">~ page 3 ~</div>
   <h2>Example</h2>
   <span class="lang">sql</span>
-<pre class="code"><code>-- Before: a sequential scan over 5M rows
-EXPLAIN ANALYZE
-SELECT id, total_cents FROM orders
-WHERE user_id = 7 ORDER BY created_at DESC LIMIT 20;
---  Limit  (actual time=812.4..812.4 rows=20)
---    -&gt;  Sort  (Sort Key: created_at DESC)  Sort Method: top-N heapsort
---          -&gt;  Seq Scan on orders  (rows=5000000)  Filter: (user_id = 7)  Rows Removed by Filter: 4999871
+<pre class="code"><code><span class="cm">-- Before: a sequential scan over 5M rows</span>
+<span class="kw">EXPLAIN</span> <span class="kw">ANALYZE</span>
+<span class="kw">SELECT</span> id, total_cents <span class="kw">FROM</span> orders
+<span class="kw">WHERE</span> user_id = <span class="nu">7</span> <span class="kw">ORDER</span> <span class="kw">BY</span> created_at <span class="kw">DESC</span> <span class="kw">LIMIT</span> <span class="nu">20</span>;
+<span class="cm">--  Limit  (actual time=812.4..812.4 rows=20)</span>
+<span class="cm">--    -&gt;  Sort  (Sort Key: created_at DESC)  Sort Method: top-N heapsort</span>
+<span class="cm">--          -&gt;  Seq Scan on orders  (rows=5000000)  Filter: (user_id = 7)  Rows Removed by Filter: 4999871</span>
 
-CREATE INDEX CONCURRENTLY orders_user_created_idx
-  ON orders (user_id, created_at DESC) INCLUDE (total_cents);
+<span class="kw">CREATE</span> <span class="kw">INDEX</span> CONCURRENTLY orders_user_created_idx
+  <span class="kw">ON</span> orders (user_id, created_at <span class="kw">DESC</span>) INCLUDE (total_cents);
 
--- After: an index-only scan, no sort
---  Limit  (actual time=0.041..0.052 rows=20)
---    -&gt;  Index Only Scan using orders_user_created_idx on orders  (rows=20)
---          Index Cond: (user_id = 7)   Heap Fetches: 0
+<span class="cm">-- After: an index-only scan, no sort</span>
+<span class="cm">--  Limit  (actual time=0.041..0.052 rows=20)</span>
+<span class="cm">--    -&gt;  Index Only Scan using orders_user_created_idx on orders  (rows=20)</span>
+<span class="cm">--          Index Cond: (user_id = 7)   Heap Fetches: 0</span>
 
--- Partial index: only the rows you actually query
-CREATE INDEX orders_pending_idx ON orders (created_at) WHERE status = 'pending';
+<span class="cm">-- Partial index: only the rows you actually query</span>
+<span class="kw">CREATE</span> <span class="kw">INDEX</span> orders_pending_idx <span class="kw">ON</span> orders (created_at) <span class="kw">WHERE</span> status = <span class="st">'pending'</span>;
 
--- Expression index for case-insensitive lookups
-CREATE UNIQUE INDEX users_email_lower_idx ON users (lower(email));
-SELECT * FROM users WHERE lower(email) = lower('Ada@Example.com');</code></pre>
+<span class="cm">-- Expression index for case-insensitive lookups</span>
+<span class="kw">CREATE</span> <span class="kw">UNIQUE</span> <span class="kw">INDEX</span> users_email_lower_idx <span class="kw">ON</span> users (lower(email));
+<span class="kw">SELECT</span> * <span class="kw">FROM</span> users <span class="kw">WHERE</span> lower(email) = lower(<span class="st">'Ada@Example.com'</span>);</code></pre>
   <p><b>Reading EXPLAIN</b> — look for: <code>Seq Scan</code> on big tables with selective filters; big gaps between <i>estimated</i> and <i>actual</i> rows (stale statistics → <code>ANALYZE</code>); <code>Sort</code> or <code>Hash</code> spilling to disk; <code>Nested Loop</code> with many loops over a scan; <code>Rows Removed by Filter</code> in the millions.</p>
   <h2>Exercises</h2>
   <ol style="list-style:none;padding-left:0">

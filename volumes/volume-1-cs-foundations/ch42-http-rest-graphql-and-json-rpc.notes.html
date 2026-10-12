@@ -337,41 +337,41 @@ a{color:var(--ink);text-decoration:underline dotted}
   <div class="pagebreak">~ page 3 ~</div>
   <h2>Example</h2>
   <span class="lang">python</span>
-<pre class="code"><code># REST with FastAPI
-from fastapi import FastAPI, HTTPException, Response, status
-from pydantic import BaseModel
+<pre class="code"><code><span class="cm"># REST with FastAPI</span>
+<span class="kw">from</span> fastapi <span class="kw">import</span> FastAPI, HTTPException, Response, status
+<span class="kw">from</span> pydantic <span class="kw">import</span> BaseModel
 
-app = FastAPI()
-USERS: dict[int, dict] = {1: {"id": 1, "email": "ada@example.com", "name": "Ada"}}
+app = <span class="fn">FastAPI</span>()
+USERS: <span class="bi">dict</span>[<span class="bi">int</span>, <span class="bi">dict</span>] = {<span class="nu">1</span>: {<span class="st">"id"</span>: <span class="nu">1</span>, <span class="st">"email"</span>: <span class="st">"ada@example.com"</span>, <span class="st">"name"</span>: <span class="st">"Ada"</span>}}
 
-class NewUser(BaseModel):
-    email: str
-    name: str
+<span class="kw">class</span> <span class="fn">NewUser</span>(BaseModel):
+    email: <span class="bi">str</span>
+    name: <span class="bi">str</span>
 
-@app.get("/users/{uid}")
-def get_user(uid: int):
-    if uid not in USERS:
-        raise HTTPException(404, "user not found")
-    return USERS[uid]
+<span class="bi">@app.get</span>(<span class="st">"/users/{uid}"</span>)
+<span class="kw">def</span> <span class="fn">get_user</span>(uid: <span class="bi">int</span>):
+    <span class="kw">if</span> uid <span class="kw">not</span> <span class="kw">in</span> USERS:
+        <span class="kw">raise</span> <span class="fn">HTTPException</span>(<span class="nu">404</span>, <span class="st">"user not found"</span>)
+    <span class="kw">return</span> USERS[uid]
 
-@app.post("/users", status_code=status.HTTP_201_CREATED)
-def create_user(u: NewUser, response: Response):
-    if any(x["email"] == u.email for x in USERS.values()):
-        raise HTTPException(409, "email already registered")      # duplicate create
-    uid = max(USERS) + 1
-    USERS[uid] = {"id": uid, **u.model_dump()}
-    response.headers["Location"] = f"/users/{uid}"
-    return USERS[uid]</code></pre>
+<span class="bi">@app.post</span>(<span class="st">"/users"</span>, status_code=status.HTTP_201_CREATED)
+<span class="kw">def</span> <span class="fn">create_user</span>(u: NewUser, response: Response):
+    <span class="kw">if</span> <span class="bi">any</span>(x[<span class="st">"email"</span>] == u.email <span class="kw">for</span> x <span class="kw">in</span> USERS.<span class="fn">values</span>()):
+        <span class="kw">raise</span> <span class="fn">HTTPException</span>(<span class="nu">409</span>, <span class="st">"email already registered"</span>)      <span class="cm"># duplicate create</span>
+    uid = <span class="bi">max</span>(USERS) + <span class="nu">1</span>
+    USERS[uid] = {<span class="st">"id"</span>: uid, **u.<span class="fn">model_dump</span>()}
+    response.headers[<span class="st">"Location"</span>] = <span class="st">f"/users/{uid}"</span>
+    <span class="kw">return</span> USERS[uid]</code></pre>
   <span class="lang">graphql</span>
-<pre class="code"><code>type User { id: ID!  name: String!  posts(last: Int = 10): [Post!]! }
-type Post { id: ID!  title: String!  author: User! }
-type Query { user(id: ID!): User }</code></pre>
+<pre class="code"><code><span class="kw">type</span> User { id: <span class="bi">ID</span>!  name: <span class="bi">String</span>!  posts(last: <span class="bi">Int</span> = <span class="nu">10</span>): [Post!]! }
+<span class="kw">type</span> Post { id: <span class="bi">ID</span>!  title: <span class="bi">String</span>!  author: User! }
+<span class="kw">type</span> Query { user(id: <span class="bi">ID</span>!): User }</code></pre>
   <span class="lang">json</span>
-<pre class="code"><code>{"jsonrpc": "2.0", "method": "add", "params": {"a": 2, "b": 3}, "id": 1}
-{"jsonrpc": "2.0", "result": 5, "id": 1}
-{"jsonrpc": "2.0", "error": {"code": -32601, "message": "Method not found"}, "id": 2}</code></pre>
+<pre class="code"><code>{<span class="bi">"jsonrpc"</span>: <span class="st">"2.0"</span>, <span class="bi">"method"</span>: <span class="st">"add"</span>, <span class="bi">"params"</span>: {<span class="bi">"a"</span>: <span class="nu">2</span>, <span class="bi">"b"</span>: <span class="nu">3</span>}, <span class="bi">"id"</span>: <span class="nu">1</span>}
+{<span class="bi">"jsonrpc"</span>: <span class="st">"2.0"</span>, <span class="bi">"result"</span>: <span class="nu">5</span>, <span class="bi">"id"</span>: <span class="nu">1</span>}
+{<span class="bi">"jsonrpc"</span>: <span class="st">"2.0"</span>, <span class="bi">"error"</span>: {<span class="bi">"code"</span>: <span class="nu">-32601</span>, <span class="bi">"message"</span>: <span class="st">"Method not found"</span>}, <span class="bi">"id"</span>: <span class="nu">2</span>}</code></pre>
   <span class="lang">bash</span>
-<pre class="code"><code>curl -i https://api.example.com/users/1 -H 'If-None-Match: "u1-v7"'   # → 304 if unchanged</code></pre>
+<pre class="code"><code><span class="bi">curl</span> -i https://api.example.com/users/<span class="nu">1</span> -H <span class="st">'If-None-Match: "u1-v7"'</span>   <span class="cm"># → 304 if unchanged</span></code></pre>
   <h2>Exercises</h2>
   <ol style="list-style:none;padding-left:0">
 <li>1. Design REST endpoints for a resource with nested relations.

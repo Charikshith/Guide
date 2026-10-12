@@ -305,89 +305,89 @@ a{color:var(--ink);text-decoration:underline dotted}
 <div class="pagebreak">~ page 3 ~</div>
 <h2>Example</h2>
 <span class="lang">python</span>
-<pre class="code"><code>from __future__ import annotations
-from dataclasses import dataclass, field
-from datetime import datetime, timezone
+<pre class="code"><code><span class="kw">from</span> __future__ <span class="kw">import</span> annotations
+<span class="kw">from</span> dataclasses <span class="kw">import</span> dataclass, field
+<span class="kw">from</span> datetime <span class="kw">import</span> datetime, timezone
 
-# ---- value objects: immutable, validated, equal by value ----------------------
-@dataclass(frozen=True)
-class Money:
-    cents: int
-    currency: str
-    def __post_init__(self):
-        if self.cents &lt; 0: raise ValueError("money cannot be negative")
-        if len(self.currency) != 3: raise ValueError("currency must be an ISO code")
-    def __add__(self, other: Money) -&gt; Money:
-        if other.currency != self.currency: raise ValueError("currency mismatch")
-        return Money(self.cents + other.cents, self.currency)
-    def times(self, n: int) -&gt; Money: return Money(self.cents * n, self.currency)
+<span class="cm"># ---- value objects: immutable, validated, equal by value ----------------------</span>
+<span class="bi">@dataclass</span>(frozen=<span class="kw">True</span>)
+<span class="kw">class</span> Money:
+    cents: <span class="bi">int</span>
+    currency: <span class="bi">str</span>
+    <span class="kw">def</span> <span class="fn">__post_init__</span>(<span class="bi">self</span>):
+        <span class="kw">if</span> <span class="bi">self</span>.cents &lt; <span class="nu">0</span>: <span class="kw">raise</span> <span class="bi">ValueError</span>(<span class="st">"money cannot be negative"</span>)
+        <span class="kw">if</span> <span class="bi">len</span>(<span class="bi">self</span>.currency) != <span class="nu">3</span>: <span class="kw">raise</span> <span class="bi">ValueError</span>(<span class="st">"currency must be an ISO code"</span>)
+    <span class="kw">def</span> <span class="fn">__add__</span>(<span class="bi">self</span>, other: Money) -&gt; Money:
+        <span class="kw">if</span> other.currency != <span class="bi">self</span>.currency: <span class="kw">raise</span> <span class="bi">ValueError</span>(<span class="st">"currency mismatch"</span>)
+        <span class="kw">return</span> <span class="fn">Money</span>(<span class="bi">self</span>.cents + other.cents, <span class="bi">self</span>.currency)
+    <span class="kw">def</span> <span class="fn">times</span>(<span class="bi">self</span>, n: <span class="bi">int</span>) -&gt; Money: <span class="kw">return</span> <span class="fn">Money</span>(<span class="bi">self</span>.cents * n, <span class="bi">self</span>.currency)
 
-assert Money(500, "EUR") == Money(500, "EUR")            # value equality
+<span class="kw">assert</span> <span class="fn">Money</span>(<span class="nu">500</span>, <span class="st">"EUR"</span>) == <span class="fn">Money</span>(<span class="nu">500</span>, <span class="st">"EUR"</span>)            <span class="cm"># value equality</span>
 
-# ---- domain events: past-tense facts ---------------------------------------------
-@dataclass(frozen=True)
-class OrderPlaced:
-    order_id: str
-    customer_id: str
+<span class="cm"># ---- domain events: past-tense facts ---------------------------------------------</span>
+<span class="bi">@dataclass</span>(frozen=<span class="kw">True</span>)
+<span class="kw">class</span> OrderPlaced:
+    order_id: <span class="bi">str</span>
+    customer_id: <span class="bi">str</span>
     total: Money
     at: datetime
 
-# ---- aggregate root ------------------------------------------------------------------
-class DomainError(Exception): ...
+<span class="cm"># ---- aggregate root ------------------------------------------------------------------</span>
+<span class="kw">class</span> <span class="fn">DomainError</span>(<span class="bi">Exception</span>): ...
 
-@dataclass
-class OrderLine:                                        # entity inside the aggregate
-    sku: str
-    quantity: int
+<span class="bi">@dataclass</span>
+<span class="kw">class</span> OrderLine:                                        <span class="cm"># entity inside the aggregate</span>
+    sku: <span class="bi">str</span>
+    quantity: <span class="bi">int</span>
     unit_price: Money
 
-@dataclass
-class Order:
-    id: str
-    customer_id: str                                     # reference by ID, not object
-    currency: str = "EUR"
-    status: str = "draft"
-    _lines: dict[str, OrderLine] = field(default_factory=dict)
-    events: list = field(default_factory=list)
+<span class="bi">@dataclass</span>
+<span class="kw">class</span> Order:
+    <span class="bi">id</span>: <span class="bi">str</span>
+    customer_id: <span class="bi">str</span>                                     <span class="cm"># reference by ID, not object</span>
+    currency: <span class="bi">str</span> = <span class="st">"EUR"</span>
+    status: <span class="bi">str</span> = <span class="st">"draft"</span>
+    _lines: <span class="bi">dict</span>[<span class="bi">str</span>, OrderLine] = <span class="fn">field</span>(default_factory=<span class="bi">dict</span>)
+    events: <span class="bi">list</span> = <span class="fn">field</span>(default_factory=<span class="bi">list</span>)
 
-    MAX_LINES = 10
+    MAX_LINES = <span class="nu">10</span>
 
-    def add_line(self, sku: str, qty: int, unit_price: Money) -&gt; None:
-        self._require_draft()
-        if qty &lt;= 0: raise DomainError("quantity must be positive")
-        if unit_price.currency != self.currency: raise DomainError("wrong currency")
-        if sku not in self._lines and len(self._lines) &gt;= self.MAX_LINES:
-            raise DomainError("an order has at most 10 lines")
-        if sku in self._lines:
-            self._lines[sku].quantity += qty
-        else:
-            self._lines[sku] = OrderLine(sku, qty, unit_price)
+    <span class="kw">def</span> <span class="fn">add_line</span>(<span class="bi">self</span>, sku: <span class="bi">str</span>, qty: <span class="bi">int</span>, unit_price: Money) -&gt; <span class="kw">None</span>:
+        <span class="bi">self</span>.<span class="fn">_require_draft</span>()
+        <span class="kw">if</span> qty &lt;= <span class="nu">0</span>: <span class="kw">raise</span> <span class="fn">DomainError</span>(<span class="st">"quantity must be positive"</span>)
+        <span class="kw">if</span> unit_price.currency != <span class="bi">self</span>.currency: <span class="kw">raise</span> <span class="fn">DomainError</span>(<span class="st">"wrong currency"</span>)
+        <span class="kw">if</span> sku <span class="kw">not</span> <span class="kw">in</span> <span class="bi">self</span>._lines <span class="kw">and</span> <span class="bi">len</span>(<span class="bi">self</span>._lines) &gt;= <span class="bi">self</span>.MAX_LINES:
+            <span class="kw">raise</span> <span class="fn">DomainError</span>(<span class="st">"an order has at most 10 lines"</span>)
+        <span class="kw">if</span> sku <span class="kw">in</span> <span class="bi">self</span>._lines:
+            <span class="bi">self</span>._lines[sku].quantity += qty
+        <span class="kw">else</span>:
+            <span class="bi">self</span>._lines[sku] = <span class="fn">OrderLine</span>(sku, qty, unit_price)
 
-    def total(self) -&gt; Money:
-        t = Money(0, self.currency)
-        for line in self._lines.values():
-            t = t + line.unit_price.times(line.quantity)
-        return t
+    <span class="kw">def</span> <span class="fn">total</span>(<span class="bi">self</span>) -&gt; Money:
+        t = <span class="fn">Money</span>(<span class="nu">0</span>, <span class="bi">self</span>.currency)
+        <span class="kw">for</span> line <span class="kw">in</span> <span class="bi">self</span>._lines.<span class="fn">values</span>():
+            t = t + line.unit_price.<span class="fn">times</span>(line.quantity)
+        <span class="kw">return</span> t
 
-    def place(self) -&gt; None:
-        self._require_draft()
-        if not self._lines: raise DomainError("cannot place an empty order")
-        self.status = "placed"
-        self.events.append(OrderPlaced(self.id, self.customer_id, self.total(),
-                                       datetime.now(timezone.utc)))
+    <span class="kw">def</span> <span class="fn">place</span>(<span class="bi">self</span>) -&gt; <span class="kw">None</span>:
+        <span class="bi">self</span>.<span class="fn">_require_draft</span>()
+        <span class="kw">if</span> <span class="kw">not</span> <span class="bi">self</span>._lines: <span class="kw">raise</span> <span class="fn">DomainError</span>(<span class="st">"cannot place an empty order"</span>)
+        <span class="bi">self</span>.status = <span class="st">"placed"</span>
+        <span class="bi">self</span>.events.<span class="fn">append</span>(<span class="fn">OrderPlaced</span>(<span class="bi">self</span>.<span class="bi">id</span>, <span class="bi">self</span>.customer_id, <span class="bi">self</span>.<span class="fn">total</span>(),
+                                       datetime.<span class="fn">now</span>(timezone.utc)))
 
-    def _require_draft(self):
-        if self.status != "draft": raise DomainError(f"order is {self.status}")
+    <span class="kw">def</span> <span class="fn">_require_draft</span>(<span class="bi">self</span>):
+        <span class="kw">if</span> <span class="bi">self</span>.status != <span class="st">"draft"</span>: <span class="kw">raise</span> <span class="fn">DomainError</span>(<span class="st">f"order is {self.status}"</span>)
 
-o = Order("o-1", "c-7")
-o.add_line("pen", 2, Money(150, "EUR"))
-o.add_line("pad", 1, Money(400, "EUR"))
-o.place()
-print(o.total(), type(o.events[0]).__name__)            # Money(cents=700, currency='EUR') OrderPlaced
-try:
-    o.add_line("ink", 1, Money(900, "EUR"))
-except DomainError as e:
-    print(e)                                              # order is placed</code></pre>
+o = <span class="fn">Order</span>(<span class="st">"o-1"</span>, <span class="st">"c-7"</span>)
+o.<span class="fn">add_line</span>(<span class="st">"pen"</span>, <span class="nu">2</span>, <span class="fn">Money</span>(<span class="nu">150</span>, <span class="st">"EUR"</span>))
+o.<span class="fn">add_line</span>(<span class="st">"pad"</span>, <span class="nu">1</span>, <span class="fn">Money</span>(<span class="nu">400</span>, <span class="st">"EUR"</span>))
+o.<span class="fn">place</span>()
+<span class="bi">print</span>(o.<span class="fn">total</span>(), <span class="bi">type</span>(o.events[<span class="nu">0</span>]).__name__)            <span class="cm"># Money(cents=700, currency='EUR') OrderPlaced</span>
+<span class="kw">try</span>:
+    o.<span class="fn">add_line</span>(<span class="st">"ink"</span>, <span class="nu">1</span>, <span class="fn">Money</span>(<span class="nu">900</span>, <span class="st">"EUR"</span>))
+<span class="kw">except</span> DomainError <span class="kw">as</span> e:
+    <span class="bi">print</span>(e)                                              <span class="cm"># order is placed</span></code></pre>
 <h2>Exercises</h2>
 <ol style="list-style:none;padding-left:0">
   <li>1. Model a domain as aggregates with invariants.

@@ -263,74 +263,74 @@ a{color:var(--ink);text-decoration:underline dotted}
 <div class="pagebreak">~ page 3 ~</div>
 <h2>Example</h2>
 <span class="lang">python</span>
-<pre class="code"><code>import threading, queue, time
-from concurrent.futures import ThreadPoolExecutor, as_completed
+<pre class="code"><code><span class="kw">import</span> threading, queue, time
+<span class="kw">from</span> concurrent.futures <span class="kw">import</span> ThreadPoolExecutor, as_completed
 
-# ---- 1. Mutex-protected counter (a monitor) --------------------------------------
-class Counter:
-    """Thread-safe: every access to _n holds _lock."""
-    def __init__(self): self._n, self._lock = 0, threading.Lock()
-    def incr(self):
-        with self._lock:
-            self._n += 1
-    @property
-    def value(self):
-        with self._lock:
-            return self._n
+<span class="cm"># ---- 1. Mutex-protected counter (a monitor) --------------------------------------</span>
+<span class="kw">class</span> Counter:
+    <span class="st">"""Thread-safe: every access to _n holds _lock."""</span>
+    <span class="kw">def</span> <span class="fn">__init__</span>(<span class="bi">self</span>): <span class="bi">self</span>._n, <span class="bi">self</span>._lock = <span class="nu">0</span>, threading.<span class="fn">Lock</span>()
+    <span class="kw">def</span> <span class="fn">incr</span>(<span class="bi">self</span>):
+        <span class="kw">with</span> <span class="bi">self</span>._lock:
+            <span class="bi">self</span>._n += <span class="nu">1</span>
+    <span class="bi">@property</span>
+    <span class="kw">def</span> <span class="fn">value</span>(<span class="bi">self</span>):
+        <span class="kw">with</span> <span class="bi">self</span>._lock:
+            <span class="kw">return</span> <span class="bi">self</span>._n
 
-c = Counter()
-threads = [threading.Thread(target=lambda: [c.incr() for _ in range(10_000)]) for _ in range(8)]
-for t in threads: t.start()
-for t in threads: t.join()
-print(c.value)                                              # 80000
+c = <span class="fn">Counter</span>()
+threads = [threading.<span class="fn">Thread</span>(target=<span class="kw">lambda</span>: [c.<span class="fn">incr</span>() <span class="kw">for</span> _ <span class="kw">in</span> <span class="bi">range</span>(<span class="nu">10_000</span>)]) <span class="kw">for</span> _ <span class="kw">in</span> <span class="bi">range</span>(<span class="nu">8</span>)]
+<span class="kw">for</span> t <span class="kw">in</span> threads: t.<span class="fn">start</span>()
+<span class="kw">for</span> t <span class="kw">in</span> threads: t.<span class="fn">join</span>()
+<span class="bi">print</span>(c.value)                                              <span class="cm"># 80000</span>
 
-# ---- 2. Channel-based worker pool: no shared mutable state -----------------------
-def worker_pool(tasks, fn, n_workers=4):
-    inbox, outbox = queue.Queue(maxsize=100), queue.Queue()
-    STOP = object()
-    def worker():
-        while (item := inbox.get()) is not STOP:
+<span class="cm"># ---- 2. Channel-based worker pool: no shared mutable state -----------------------</span>
+<span class="kw">def</span> <span class="fn">worker_pool</span>(tasks, fn, n_workers=<span class="nu">4</span>):
+    inbox, outbox = queue.<span class="fn">Queue</span>(maxsize=<span class="nu">100</span>), queue.<span class="fn">Queue</span>()
+    STOP = <span class="bi">object</span>()
+    <span class="kw">def</span> <span class="fn">worker</span>():
+        <span class="kw">while</span> (item := inbox.<span class="fn">get</span>()) <span class="kw">is</span> <span class="kw">not</span> STOP:
             idx, arg = item
-            try:
-                outbox.put((idx, fn(arg), None))
-            except Exception as e:
-                outbox.put((idx, None, e))                  # per-task error, pool keeps running
-    ws = [threading.Thread(target=worker) for _ in range(n_workers)]
-    for w in ws: w.start()
-    for i, t in enumerate(tasks): inbox.put((i, t))         # blocks when full → backpressure
-    for _ in ws: inbox.put(STOP)
-    for w in ws: w.join()
-    results = [outbox.get() for _ in tasks]
-    return [r for r in sorted(results, key=lambda r: r[0])]
+            <span class="kw">try</span>:
+                outbox.<span class="fn">put</span>((idx, <span class="fn">fn</span>(arg), <span class="kw">None</span>))
+            <span class="kw">except</span> <span class="bi">Exception</span> <span class="kw">as</span> e:
+                outbox.<span class="fn">put</span>((idx, <span class="kw">None</span>, e))                  <span class="cm"># per-task error, pool keeps running</span>
+    ws = [threading.<span class="fn">Thread</span>(target=worker) <span class="kw">for</span> _ <span class="kw">in</span> <span class="bi">range</span>(n_workers)]
+    <span class="kw">for</span> w <span class="kw">in</span> ws: w.<span class="fn">start</span>()
+    <span class="kw">for</span> i, t <span class="kw">in</span> <span class="bi">enumerate</span>(tasks): inbox.<span class="fn">put</span>((i, t))         <span class="cm"># blocks when full → backpressure</span>
+    <span class="kw">for</span> _ <span class="kw">in</span> ws: inbox.<span class="fn">put</span>(STOP)
+    <span class="kw">for</span> w <span class="kw">in</span> ws: w.<span class="fn">join</span>()
+    results = [outbox.<span class="fn">get</span>() <span class="kw">for</span> _ <span class="kw">in</span> tasks]
+    <span class="kw">return</span> [r <span class="kw">for</span> r <span class="kw">in</span> <span class="bi">sorted</span>(results, key=<span class="kw">lambda</span> r: r[<span class="nu">0</span>])]
 
-out = worker_pool([1, 2, 0, 4], lambda x: 10 // x)
-print([(i, v, type(e).__name__ if e else None) for i, v, e in out])
-# [(0, 10, None), (1, 5, None), (2, None, 'ZeroDivisionError'), (3, 2, None)]
+out = <span class="fn">worker_pool</span>([<span class="nu">1</span>, <span class="nu">2</span>, <span class="nu">0</span>, <span class="nu">4</span>], <span class="kw">lambda</span> x: <span class="nu">10</span> // x)
+<span class="bi">print</span>([(i, v, <span class="bi">type</span>(e).__name__ <span class="kw">if</span> e <span class="kw">else</span> <span class="kw">None</span>) <span class="kw">for</span> i, v, e <span class="kw">in</span> out])
+<span class="cm"># [(0, 10, None), (1, 5, None), (2, None, 'ZeroDivisionError'), (3, 2, None)]</span>
 
-# ---- 3. An actor with a mailbox -------------------------------------------------
-class AccountActor(threading.Thread):
-    def __init__(self):
-        super().__init__(daemon=True)
-        self.mailbox, self._balance = queue.Queue(), 0      # _balance is touched ONLY by run()
-    def run(self):
-        while True:
-            msg, arg, reply = self.mailbox.get()
-            if msg == "deposit": self._balance += arg
-            elif msg == "withdraw" and arg &lt;= self._balance: self._balance -= arg
-            elif msg == "balance": reply.put(self._balance)
-    def tell(self, msg, arg=None): self.mailbox.put((msg, arg, None))
-    def ask(self, msg):
-        reply = queue.Queue(maxsize=1); self.mailbox.put((msg, None, reply)); return reply.get(timeout=1)
+<span class="cm"># ---- 3. An actor with a mailbox -------------------------------------------------</span>
+<span class="kw">class</span> <span class="fn">AccountActor</span>(threading.Thread):
+    <span class="kw">def</span> <span class="fn">__init__</span>(<span class="bi">self</span>):
+        <span class="bi">super</span>().<span class="fn">__init__</span>(daemon=<span class="kw">True</span>)
+        <span class="bi">self</span>.mailbox, <span class="bi">self</span>._balance = queue.<span class="fn">Queue</span>(), <span class="nu">0</span>      <span class="cm"># _balance is touched ONLY by run()</span>
+    <span class="kw">def</span> <span class="fn">run</span>(<span class="bi">self</span>):
+        <span class="kw">while</span> <span class="kw">True</span>:
+            msg, arg, reply = <span class="bi">self</span>.mailbox.<span class="fn">get</span>()
+            <span class="kw">if</span> msg == <span class="st">"deposit"</span>: <span class="bi">self</span>._balance += arg
+            <span class="kw">elif</span> msg == <span class="st">"withdraw"</span> <span class="kw">and</span> arg &lt;= <span class="bi">self</span>._balance: <span class="bi">self</span>._balance -= arg
+            <span class="kw">elif</span> msg == <span class="st">"balance"</span>: reply.<span class="fn">put</span>(<span class="bi">self</span>._balance)
+    <span class="kw">def</span> <span class="fn">tell</span>(<span class="bi">self</span>, msg, arg=<span class="kw">None</span>): <span class="bi">self</span>.mailbox.<span class="fn">put</span>((msg, arg, <span class="kw">None</span>))
+    <span class="kw">def</span> <span class="fn">ask</span>(<span class="bi">self</span>, msg):
+        reply = queue.<span class="fn">Queue</span>(maxsize=<span class="nu">1</span>); <span class="bi">self</span>.mailbox.<span class="fn">put</span>((msg, <span class="kw">None</span>, reply)); <span class="kw">return</span> reply.<span class="fn">get</span>(timeout=<span class="nu">1</span>)
 
-acct = AccountActor(); acct.start()
-for _ in range(100): acct.tell("deposit", 5)
-acct.tell("withdraw", 120)
-print(acct.ask("balance"))                                  # 380
+acct = <span class="fn">AccountActor</span>(); acct.<span class="fn">start</span>()
+<span class="kw">for</span> _ <span class="kw">in</span> <span class="bi">range</span>(<span class="nu">100</span>): acct.<span class="fn">tell</span>(<span class="st">"deposit"</span>, <span class="nu">5</span>)
+acct.<span class="fn">tell</span>(<span class="st">"withdraw"</span>, <span class="nu">120</span>)
+<span class="bi">print</span>(acct.<span class="fn">ask</span>(<span class="st">"balance"</span>))                                  <span class="cm"># 380</span>
 
-# ---- 4. The standard library does most of this for you --------------------------
-with ThreadPoolExecutor(max_workers=8) as pool:             # bounded worker pool + futures
-    futs = {pool.submit(time.sleep, 0.01): i for i in range(20)}
-    print(sum(1 for f in as_completed(futs) if f.exception() is None))   # 20</code></pre>
+<span class="cm"># ---- 4. The standard library does most of this for you --------------------------</span>
+<span class="kw">with</span> <span class="fn">ThreadPoolExecutor</span>(max_workers=<span class="nu">8</span>) <span class="kw">as</span> pool:             <span class="cm"># bounded worker pool + futures</span>
+    futs = {pool.<span class="fn">submit</span>(time.sleep, <span class="nu">0.01</span>): i <span class="kw">for</span> i <span class="kw">in</span> <span class="bi">range</span>(<span class="nu">20</span>)}
+    <span class="bi">print</span>(<span class="bi">sum</span>(<span class="nu">1</span> <span class="kw">for</span> f <span class="kw">in</span> <span class="fn">as_completed</span>(futs) <span class="kw">if</span> f.<span class="fn">exception</span>() <span class="kw">is</span> <span class="kw">None</span>))   <span class="cm"># 20</span></code></pre>
 <h2>Exercises</h2>
 <ol style="list-style:none;padding-left:0">
   <li>1. Implement a thread-safe worker pool.

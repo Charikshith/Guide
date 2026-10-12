@@ -271,60 +271,60 @@ a{color:var(--ink);text-decoration:underline dotted}
 
   <h2>Example</h2>
   <span class="lang">python</span>
-<pre class="code"><code># pricing.py
-from dataclasses import dataclass
-from datetime import datetime
+<pre class="code"><code><span class="cm"># pricing.py</span>
+<span class="kw">from</span> dataclasses <span class="kw">import</span> dataclass
+<span class="kw">from</span> datetime <span class="kw">import</span> datetime
 
-@dataclass
-class Clock:
-    def now(self) -&gt; datetime: return datetime.now()
+<span class="bi">@dataclass</span>
+<span class="kw">class</span> Clock:
+    <span class="kw">def</span> <span class="fn">now</span>(<span class="bi">self</span>) -&gt; datetime: <span class="kw">return</span> datetime.<span class="fn">now</span>()
 
-def price(amount_cents: int, clock: Clock) -&gt; int:
-    """10% off on weekends."""
-    return amount_cents * 90 // 100 if clock.now().weekday() &gt;= 5 else amount_cents</code></pre>
+<span class="kw">def</span> <span class="fn">price</span>(amount_cents: <span class="bi">int</span>, clock: Clock) -&gt; <span class="bi">int</span>:
+    <span class="st">"""10% off on weekends."""</span>
+    <span class="kw">return</span> amount_cents * <span class="nu">90</span> // <span class="nu">100</span> <span class="kw">if</span> clock.<span class="fn">now</span>().<span class="fn">weekday</span>() &gt;= <span class="nu">5</span> <span class="kw">else</span> amount_cents</code></pre>
 
   <span class="lang">python</span>
-<pre class="code"><code># test_pricing.py — unit tests with a fake clock
-from datetime import datetime
-import pytest
-from pricing import price
+<pre class="code"><code><span class="cm"># test_pricing.py — unit tests with a fake clock</span>
+<span class="kw">from</span> datetime <span class="kw">import</span> datetime
+<span class="kw">import</span> pytest
+<span class="kw">from</span> pricing <span class="kw">import</span> price
 
-class FakeClock:
-    def __init__(self, t): self.t = t
-    def now(self): return self.t
+<span class="kw">class</span> FakeClock:
+    <span class="kw">def</span> <span class="fn">__init__</span>(<span class="bi">self</span>, t): <span class="bi">self</span>.t = t
+    <span class="kw">def</span> <span class="fn">now</span>(<span class="bi">self</span>): <span class="kw">return</span> <span class="bi">self</span>.t
 
-@pytest.mark.parametrize("day, expected", [
-    (datetime(2024, 6, 8), 450),     # Saturday
-    (datetime(2024, 6, 10), 500),    # Monday
+<span class="bi">@pytest.mark.parametrize</span>(<span class="st">"day, expected"</span>, [
+    (<span class="fn">datetime</span>(<span class="nu">2024</span>, <span class="nu">6</span>, <span class="nu">8</span>), <span class="nu">450</span>),     <span class="cm"># Saturday</span>
+    (<span class="fn">datetime</span>(<span class="nu">2024</span>, <span class="nu">6</span>, <span class="nu">10</span>), <span class="nu">500</span>),    <span class="cm"># Monday</span>
 ])
-def test_weekend_discount(day, expected):
-    assert price(500, FakeClock(day)) == expected       # arrange / act / assert</code></pre>
+<span class="kw">def</span> <span class="fn">test_weekend_discount</span>(day, expected):
+    <span class="kw">assert</span> <span class="fn">price</span>(<span class="nu">500</span>, <span class="fn">FakeClock</span>(day)) == expected       <span class="cm"># arrange / act / assert</span></code></pre>
 
   <span class="lang">python</span>
-<pre class="code"><code># A mock at the seam: verify the interaction with an external API
-from unittest.mock import Mock
+<pre class="code"><code><span class="cm"># A mock at the seam: verify the interaction with an external API</span>
+<span class="kw">from</span> unittest.mock <span class="kw">import</span> Mock
 
-def checkout(order, gateway):
-    gateway.charge(order["total"], currency="EUR")
-    return "ok"
+<span class="kw">def</span> <span class="fn">checkout</span>(order, gateway):
+    gateway.<span class="fn">charge</span>(order[<span class="st">"total"</span>], currency=<span class="st">"EUR"</span>)
+    <span class="kw">return</span> <span class="st">"ok"</span>
 
-def test_checkout_charges_once():
-    gw = Mock()
-    assert checkout({"total": 500}, gw) == "ok"
-    gw.charge.assert_called_once_with(500, currency="EUR")</code></pre>
+<span class="kw">def</span> <span class="fn">test_checkout_charges_once</span>():
+    gw = <span class="fn">Mock</span>()
+    <span class="kw">assert</span> <span class="fn">checkout</span>({<span class="st">"total"</span>: <span class="nu">500</span>}, gw) == <span class="st">"ok"</span>
+    gw.charge.<span class="fn">assert_called_once_with</span>(<span class="nu">500</span>, currency=<span class="st">"EUR"</span>)</code></pre>
 
   <span class="lang">python</span>
-<pre class="code"><code># Integration test against a real Postgres in a container
-import psycopg
-from testcontainers.postgres import PostgresContainer
+<pre class="code"><code><span class="cm"># Integration test against a real Postgres in a container</span>
+<span class="kw">import</span> psycopg
+<span class="kw">from</span> testcontainers.postgres <span class="kw">import</span> PostgresContainer
 
-def test_save_and_load_order():
-    with PostgresContainer("postgres:16") as pg:
-        url = pg.get_connection_url().replace("+psycopg2", "")
-        with psycopg.connect(url) as conn:
-            conn.execute("CREATE TABLE orders (id serial PRIMARY KEY, total int)")
-            conn.execute("INSERT INTO orders (total) VALUES (500)")
-            assert conn.execute("SELECT total FROM orders").fetchone() == (500,)</code></pre>
+<span class="kw">def</span> <span class="fn">test_save_and_load_order</span>():
+    <span class="kw">with</span> <span class="fn">PostgresContainer</span>(<span class="st">"postgres:16"</span>) <span class="kw">as</span> pg:
+        url = pg.<span class="fn">get_connection_url</span>().<span class="fn">replace</span>(<span class="st">"+psycopg2"</span>, <span class="st">""</span>)
+        <span class="kw">with</span> psycopg.<span class="fn">connect</span>(url) <span class="kw">as</span> conn:
+            conn.<span class="fn">execute</span>(<span class="st">"CREATE TABLE orders (id serial PRIMARY KEY, total int)"</span>)
+            conn.<span class="fn">execute</span>(<span class="st">"INSERT INTO orders (total) VALUES (500)"</span>)
+            <span class="kw">assert</span> conn.<span class="fn">execute</span>(<span class="st">"SELECT total FROM orders"</span>).<span class="fn">fetchone</span>() == (<span class="nu">500</span>,)</code></pre>
 
   <span class="lang">bash</span>
 <pre class="code"><code>pytest -q --cov=src --cov-branch --cov-report=term-missing</code></pre>

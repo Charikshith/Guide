@@ -274,77 +274,77 @@ a{color:var(--ink);text-decoration:underline dotted}
   <div class="pagebreak">~ page 3 ~</div>
   <h2>Example</h2>
   <span class="lang">python</span>
-  <pre class="code"><code>from typing import Protocol
-  from datetime import datetime, timezone
+  <pre class="code"><code><span class="kw">from</span> typing <span class="kw">import</span> Protocol
+  <span class="kw">from</span> datetime <span class="kw">import</span> datetime, timezone
   
-  class PaymentGateway(Protocol):
-      def charge(self, customer_id: str, cents: int) -&gt; str: ...
+  <span class="kw">class</span> <span class="fn">PaymentGateway</span>(Protocol):
+      <span class="kw">def</span> <span class="fn">charge</span>(<span class="bi">self</span>, customer_id: <span class="bi">str</span>, cents: <span class="bi">int</span>) -&gt; <span class="bi">str</span>: ...
   
-  class OrderRepo(Protocol):
-      def save(self, order: dict) -&gt; None: ...
+  <span class="kw">class</span> <span class="fn">OrderRepo</span>(Protocol):
+      <span class="kw">def</span> <span class="fn">save</span>(<span class="bi">self</span>, order: <span class="bi">dict</span>) -&gt; <span class="kw">None</span>: ...
   
-  class Clock(Protocol):
-      def now(self) -&gt; datetime: ...
+  <span class="kw">class</span> <span class="fn">Clock</span>(Protocol):
+      <span class="kw">def</span> <span class="fn">now</span>(<span class="bi">self</span>) -&gt; datetime: ...
   
-  class OrderService:
-      def __init__(self, repo: OrderRepo, payments: PaymentGateway, clock: Clock):
-          self.repo, self.payments, self.clock = repo, payments, clock      # no `new` here
+  <span class="kw">class</span> OrderService:
+      <span class="kw">def</span> <span class="fn">__init__</span>(<span class="bi">self</span>, repo: OrderRepo, payments: PaymentGateway, clock: Clock):
+          <span class="bi">self</span>.repo, <span class="bi">self</span>.payments, <span class="bi">self</span>.clock = repo, payments, clock      <span class="cm"># no `new` here</span>
   
-      def place(self, customer_id: str, cents: int) -&gt; dict:
-          charge_id = self.payments.charge(customer_id, cents)
-          order = {"customer": customer_id, "cents": cents,
-                   "charge": charge_id, "placed_at": self.clock.now()}
-          self.repo.save(order)
-          return order
+      <span class="kw">def</span> <span class="fn">place</span>(<span class="bi">self</span>, customer_id: <span class="bi">str</span>, cents: <span class="bi">int</span>) -&gt; <span class="bi">dict</span>:
+          charge_id = <span class="bi">self</span>.payments.<span class="fn">charge</span>(customer_id, cents)
+          order = {<span class="st">"customer"</span>: customer_id, <span class="st">"cents"</span>: cents,
+                   <span class="st">"charge"</span>: charge_id, <span class="st">"placed_at"</span>: <span class="bi">self</span>.clock.<span class="fn">now</span>()}
+          <span class="bi">self</span>.repo.<span class="fn">save</span>(order)
+          <span class="kw">return</span> order
   
-  # Production adapters
-  class StripePayments:
-      def __init__(self, api_key: str): self.api_key = api_key
-      def charge(self, customer_id, cents): ...          # calls the Stripe API
+  <span class="cm"># Production adapters</span>
+  <span class="kw">class</span> StripePayments:
+      <span class="kw">def</span> <span class="fn">__init__</span>(<span class="bi">self</span>, api_key: <span class="bi">str</span>): <span class="bi">self</span>.api_key = api_key
+      <span class="kw">def</span> <span class="fn">charge</span>(<span class="bi">self</span>, customer_id, cents): ...          <span class="cm"># calls the Stripe API</span>
   
-  class SystemClock:
-      def now(self): return datetime.now(timezone.utc)
+  <span class="kw">class</span> SystemClock:
+      <span class="kw">def</span> <span class="fn">now</span>(<span class="bi">self</span>): <span class="kw">return</span> datetime.<span class="fn">now</span>(timezone.utc)
   
-  # Composition root
-  def build_app(cfg):
-      repo = PostgresOrderRepo(cfg.database_url)
-      payments = StripePayments(cfg.stripe_key) if cfg.payments == "stripe" else SandboxPayments()
-      return OrderService(repo, payments, SystemClock())</code></pre>
+  <span class="cm"># Composition root</span>
+  <span class="kw">def</span> <span class="fn">build_app</span>(cfg):
+      repo = <span class="fn">PostgresOrderRepo</span>(cfg.database_url)
+      payments = <span class="fn">StripePayments</span>(cfg.stripe_key) <span class="kw">if</span> cfg.payments == <span class="st">"stripe"</span> <span class="kw">else</span> <span class="fn">SandboxPayments</span>()
+      <span class="kw">return</span> <span class="fn">OrderService</span>(repo, payments, <span class="fn">SystemClock</span>())</code></pre>
   <span class="lang">python</span>
-  <pre class="code"><code># Test: swap real clients for fakes — zero production changes
-  class FakePayments:
-      def __init__(self): self.calls = []
-      def charge(self, customer_id, cents):
-          self.calls.append((customer_id, cents)); return "ch_test_1"
+  <pre class="code"><code><span class="cm"># Test: swap real clients for fakes — zero production changes</span>
+  <span class="kw">class</span> FakePayments:
+      <span class="kw">def</span> <span class="fn">__init__</span>(<span class="bi">self</span>): <span class="bi">self</span>.calls = []
+      <span class="kw">def</span> <span class="fn">charge</span>(<span class="bi">self</span>, customer_id, cents):
+          <span class="bi">self</span>.calls.<span class="fn">append</span>((customer_id, cents)); <span class="kw">return</span> <span class="st">"ch_test_1"</span>
   
-  class InMemoryRepo:
-      def __init__(self): self.saved = []
-      def save(self, order): self.saved.append(order)
+  <span class="kw">class</span> InMemoryRepo:
+      <span class="kw">def</span> <span class="fn">__init__</span>(<span class="bi">self</span>): <span class="bi">self</span>.saved = []
+      <span class="kw">def</span> <span class="fn">save</span>(<span class="bi">self</span>, order): <span class="bi">self</span>.saved.<span class="fn">append</span>(order)
   
-  class FixedClock:
-      def __init__(self, t): self.t = t
-      def now(self): return self.t
+  <span class="kw">class</span> FixedClock:
+      <span class="kw">def</span> <span class="fn">__init__</span>(<span class="bi">self</span>, t): <span class="bi">self</span>.t = t
+      <span class="kw">def</span> <span class="fn">now</span>(<span class="bi">self</span>): <span class="kw">return</span> <span class="bi">self</span>.t
   
-  def test_place_order_charges_and_saves():
-      pay, repo = FakePayments(), InMemoryRepo()
-      t = datetime(2024, 1, 1, tzinfo=timezone.utc)
-      order = OrderService(repo, pay, FixedClock(t)).place("c1", 500)
-      assert pay.calls == [("c1", 500)]
-      assert repo.saved == [order] and order["placed_at"] == t</code></pre>
+  <span class="kw">def</span> <span class="fn">test_place_order_charges_and_saves</span>():
+      pay, repo = <span class="fn">FakePayments</span>(), <span class="fn">InMemoryRepo</span>()
+      t = <span class="fn">datetime</span>(<span class="nu">2024</span>, <span class="nu">1</span>, <span class="nu">1</span>, tzinfo=timezone.utc)
+      order = <span class="fn">OrderService</span>(repo, pay, <span class="fn">FixedClock</span>(t)).<span class="fn">place</span>(<span class="st">"c1"</span>, <span class="nu">500</span>)
+      <span class="kw">assert</span> pay.calls == [(<span class="st">"c1"</span>, <span class="nu">500</span>)]
+      <span class="kw">assert</span> repo.saved == [order] <span class="kw">and</span> order[<span class="st">"placed_at"</span>] == t</code></pre>
   <span class="lang">rust</span>
-  <pre class="code"><code>trait Db { fn get_user(&amp;self, id: u64) -&gt; Option&lt;String&gt;; }
+  <pre class="code"><code><span class="kw">trait</span> Db { <span class="kw">fn</span> <span class="fn">get_user</span>(&amp;<span class="kw">self</span>, id: <span class="bi">u64</span>) -&gt; <span class="bi">Option</span>&lt;<span class="bi">String</span>&gt;; }
   
-  struct UserService&lt;D: Db&gt; { db: D }            // static dispatch; or Box&lt;dyn Db&gt; for runtime choice
-  impl&lt;D: Db&gt; UserService&lt;D&gt; {
-      fn new(db: D) -&gt; Self { Self { db } }
-      fn greet(&amp;self, id: u64) -&gt; String {
-          self.db.get_user(id).map_or("hello, stranger".into(), |n| format!("hello, {n}"))
+  <span class="kw">struct</span> UserService&lt;D: Db&gt; { db: D }            <span class="cm">// static dispatch; or Box&lt;dyn Db&gt; for runtime choice</span>
+  <span class="kw">impl</span>&lt;D: Db&gt; UserService&lt;D&gt; {
+      <span class="kw">fn</span> <span class="fn">new</span>(db: D) -&gt; <span class="kw">Self</span> { <span class="kw">Self</span> { db } }
+      <span class="kw">fn</span> <span class="fn">greet</span>(&amp;<span class="kw">self</span>, id: <span class="bi">u64</span>) -&gt; <span class="bi">String</span> {
+          <span class="kw">self</span>.db.<span class="fn">get_user</span>(id).<span class="fn">map_or</span>(<span class="st">"hello, stranger"</span>.<span class="fn">into</span>(), |n| <span class="fn">format!</span>(<span class="st">"hello, {n}"</span>))
       }
   }
   
-  struct MemDb;
-  impl Db for MemDb { fn get_user(&amp;self, _: u64) -&gt; Option&lt;String&gt; { Some("Ada".into()) } }
-  // test: UserService::new(MemDb).greet(1) == "hello, Ada"</code></pre>
+  <span class="kw">struct</span> MemDb;
+  <span class="kw">impl</span> Db <span class="kw">for</span> MemDb { <span class="kw">fn</span> <span class="fn">get_user</span>(&amp;<span class="kw">self</span>, _: <span class="bi">u64</span>) -&gt; <span class="bi">Option</span>&lt;<span class="bi">String</span>&gt; { <span class="bi">Some</span>(<span class="st">"Ada"</span>.<span class="fn">into</span>()) } }
+  <span class="cm">// test: UserService::new(MemDb).greet(1) == "hello, Ada"</span></code></pre>
   <h2>Exercises</h2>
   <ol style="list-style:none;padding-left:0">
     <li>1. Refactor a hardcoded dependency to constructor injection.

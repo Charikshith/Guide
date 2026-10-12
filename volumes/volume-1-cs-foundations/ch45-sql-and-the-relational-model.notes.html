@@ -285,45 +285,45 @@ a{color:var(--ink);text-decoration:underline dotted}
   <div class="pagebreak">~ page 3 ~</div>
   <h2>Example</h2>
   <span class="lang">sql</span>
-<pre class="code"><code>CREATE TABLE users (
-  id         bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-  email      text NOT NULL UNIQUE,
-  name       text NOT NULL,
-  manager_id bigint REFERENCES users(id),
-  created_at timestamptz NOT NULL DEFAULT now()
+<pre class="code"><code><span class="kw">CREATE</span> <span class="kw">TABLE</span> users (
+  id         <span class="bi">bigint</span> GENERATED ALWAYS <span class="kw">AS</span> IDENTITY <span class="kw">PRIMARY</span> <span class="kw">KEY</span>,
+  email      <span class="bi">text</span> <span class="kw">NOT</span> <span class="kw">NULL</span> <span class="kw">UNIQUE</span>,
+  name       <span class="bi">text</span> <span class="kw">NOT</span> <span class="kw">NULL</span>,
+  manager_id <span class="bi">bigint</span> <span class="kw">REFERENCES</span> users(id),
+  created_at timestamptz <span class="kw">NOT</span> <span class="kw">NULL</span> <span class="kw">DEFAULT</span> <span class="bi">now</span>()
 );
-CREATE TABLE orders (
-  id          bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-  user_id     bigint NOT NULL REFERENCES users(id),
-  status      text NOT NULL CHECK (status IN ('pending', 'paid', 'shipped', 'cancelled')),
-  total_cents int  NOT NULL CHECK (total_cents &gt;= 0),
-  created_at  timestamptz NOT NULL DEFAULT now()
+<span class="kw">CREATE</span> <span class="kw">TABLE</span> orders (
+  id          <span class="bi">bigint</span> GENERATED ALWAYS <span class="kw">AS</span> IDENTITY <span class="kw">PRIMARY</span> <span class="kw">KEY</span>,
+  user_id     <span class="bi">bigint</span> <span class="kw">NOT</span> <span class="kw">NULL</span> <span class="kw">REFERENCES</span> users(id),
+  status      <span class="bi">text</span> <span class="kw">NOT</span> <span class="kw">NULL</span> <span class="kw">CHECK</span> (status <span class="kw">IN</span> (<span class="st">'pending'</span>, <span class="st">'paid'</span>, <span class="st">'shipped'</span>, <span class="st">'cancelled'</span>)),
+  total_cents <span class="bi">int</span>  <span class="kw">NOT</span> <span class="kw">NULL</span> <span class="kw">CHECK</span> (total_cents &gt;= <span class="nu">0</span>),
+  created_at  timestamptz <span class="kw">NOT</span> <span class="kw">NULL</span> <span class="kw">DEFAULT</span> <span class="bi">now</span>()
 );
 
--- Orders per user, including users with none
-SELECT u.name, COUNT(o.id) AS orders, COALESCE(SUM(o.total_cents), 0) AS spent
-FROM users u
-LEFT JOIN orders o ON o.user_id = u.id AND o.status = 'paid'   -- filter in ON keeps the LEFT semantics
-GROUP BY u.id, u.name
-HAVING COUNT(o.id) &lt; 5
-ORDER BY spent DESC;
+<span class="cm">-- Orders per user, including users with none</span>
+<span class="kw">SELECT</span> u.name, <span class="bi">COUNT</span>(o.id) <span class="kw">AS</span> orders, <span class="bi">COALESCE</span>(<span class="bi">SUM</span>(o.total_cents), <span class="nu">0</span>) <span class="kw">AS</span> spent
+<span class="kw">FROM</span> users u
+<span class="kw">LEFT</span> <span class="kw">JOIN</span> orders o <span class="kw">ON</span> o.user_id = u.id <span class="kw">AND</span> o.status = <span class="st">'paid'</span>   <span class="cm">-- filter in ON keeps the LEFT semantics</span>
+<span class="kw">GROUP</span> <span class="kw">BY</span> u.id, u.name
+<span class="kw">HAVING</span> <span class="bi">COUNT</span>(o.id) &lt; <span class="nu">5</span>
+<span class="kw">ORDER</span> <span class="kw">BY</span> spent <span class="kw">DESC</span>;
 
--- Self-join: each employee with their manager
-SELECT e.name AS employee, m.name AS manager
-FROM users e LEFT JOIN users m ON m.id = e.manager_id;
+<span class="cm">-- Self-join: each employee with their manager</span>
+<span class="kw">SELECT</span> e.name <span class="kw">AS</span> employee, m.name <span class="kw">AS</span> manager
+<span class="kw">FROM</span> users e <span class="kw">LEFT</span> <span class="kw">JOIN</span> users m <span class="kw">ON</span> m.id = e.manager_id;
 
--- Subquery / anti-join: users who never ordered
-SELECT name FROM users u WHERE NOT EXISTS (SELECT 1 FROM orders o WHERE o.user_id = u.id);
+<span class="cm">-- Subquery / anti-join: users who never ordered</span>
+<span class="kw">SELECT</span> name <span class="kw">FROM</span> users u <span class="kw">WHERE</span> <span class="kw">NOT</span> <span class="kw">EXISTS</span> (<span class="kw">SELECT</span> <span class="nu">1</span> <span class="kw">FROM</span> orders o <span class="kw">WHERE</span> o.user_id = u.id);
 
--- Find duplicate rows by email (case-insensitive)
-SELECT lower(email), COUNT(*) FROM users GROUP BY lower(email) HAVING COUNT(*) &gt; 1;
+<span class="cm">-- Find duplicate rows by email (case-insensitive)</span>
+<span class="kw">SELECT</span> lower(email), <span class="bi">COUNT</span>(*) <span class="kw">FROM</span> users <span class="kw">GROUP</span> <span class="kw">BY</span> lower(email) <span class="kw">HAVING</span> <span class="bi">COUNT</span>(*) &gt; <span class="nu">1</span>;
 
--- CTE + window function: each user's latest order
-WITH ranked AS (
-  SELECT o.*, ROW_NUMBER() OVER (PARTITION BY user_id ORDER BY created_at DESC) AS rn
-  FROM orders o
+<span class="cm">-- CTE + window function: each user's latest order</span>
+<span class="kw">WITH</span> ranked <span class="kw">AS</span> (
+  <span class="kw">SELECT</span> o.*, <span class="bi">ROW_NUMBER</span>() <span class="kw">OVER</span> (<span class="kw">PARTITION</span> <span class="kw">BY</span> user_id <span class="kw">ORDER</span> <span class="kw">BY</span> created_at <span class="kw">DESC</span>) <span class="kw">AS</span> rn
+  <span class="kw">FROM</span> orders o
 )
-SELECT * FROM ranked WHERE rn = 1;</code></pre>
+<span class="kw">SELECT</span> * <span class="kw">FROM</span> ranked <span class="kw">WHERE</span> rn = <span class="nu">1</span>;</code></pre>
   <h2>Exercises</h2>
   <ol style="list-style:none;padding-left:0">
 <li>1. Write a query with a self-join.

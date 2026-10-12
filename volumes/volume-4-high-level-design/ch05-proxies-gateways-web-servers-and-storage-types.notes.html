@@ -364,71 +364,71 @@ a{color:var(--ink);text-decoration:underline dotted}
 
   <h2>Example</h2>
   <span class="lang">nginx</span>
-<pre class="code"><code># nginx as TLS-terminating reverse proxy + web server in front of a Gunicorn app
-upstream app {
-    server 127.0.0.1:8000;          # gunicorn
-    server 127.0.0.1:8001;
-    keepalive 32;
+<pre class="code"><code><span class="cm"># nginx as TLS-terminating reverse proxy + web server in front of a Gunicorn app</span>
+<span class="kw">upstream</span> app {
+<span class="kw">    server</span> <span class="nu">127.0</span>.<span class="nu">0.1</span>:<span class="nu">8000</span>;          <span class="cm"># gunicorn</span>
+<span class="kw">    server</span> <span class="nu">127.0</span>.<span class="nu">0.1</span>:<span class="nu">8001</span>;
+<span class="kw">    keepalive</span> <span class="nu">32</span>;
 }
 
-server {
-    listen 443 ssl;
-    server_name shop.example.com;
-    ssl_certificate     /etc/ssl/shop.crt;
-    ssl_certificate_key /etc/ssl/shop.key;
+<span class="kw">server</span> {
+<span class="kw">    listen</span> <span class="nu">443</span> ssl;
+<span class="kw">    server_name</span> shop.example.com;
+<span class="kw">    ssl_certificate</span>     /etc/ssl/shop.crt;
+<span class="kw">    ssl_certificate_key</span> /etc/ssl/shop.key;
 
-    location /static/ {             # web server job: files straight from disk
-        root /var/www;
-        expires 30d;
-        add_header Cache-Control "public, immutable";
+<span class="kw">    location</span> /static/ {             <span class="cm"># web server job: files straight from disk</span>
+<span class="kw">        root</span> /var/www;
+<span class="kw">        expires</span> <span class="nu">30d</span>;
+<span class="kw">        add_header</span> Cache-Control <span class="st">"public, immutable"</span>;
     }
 
-    location /api/ {                # reverse proxy job: pass to the app server
-        proxy_pass http://app;
-        proxy_set_header Host $host;
-        proxy_set_header X-Forwarded-For $remote_addr;
-        proxy_http_version 1.1;
-        proxy_set_header Connection "";
+<span class="kw">    location</span> /api/ {                <span class="cm"># reverse proxy job: pass to the app server</span>
+<span class="kw">        proxy_pass</span> http://app;
+<span class="kw">        proxy_set_header</span> Host <span class="bi">$host</span>;
+<span class="kw">        proxy_set_header</span> X-Forwarded-For <span class="bi">$remote_addr</span>;
+<span class="kw">        proxy_http_version</span> <span class="nu">1.1</span>;
+<span class="kw">        proxy_set_header</span> Connection <span class="st">""</span>;
     }
 }</code></pre>
   <span class="lang">bash</span>
-<pre class="code"><code># app server: pre-forked worker processes (2 x cores + 1 is a common starting point)
-gunicorn app:app --workers 5 --bind 127.0.0.1:8000</code></pre>
+<pre class="code"><code><span class="cm"># app server: pre-forked worker processes (2 x cores + 1 is a common starting point)</span>
+gunicorn app:app --workers <span class="nu">5</span> --bind <span class="nu">127</span>.<span class="nu">0</span>.<span class="nu">0</span>.<span class="nu">1</span>:<span class="nu">8000</span></code></pre>
   <span class="lang">python</span>
-<pre class="code"><code># Gateway aggregation: one client call, three backend calls in parallel
-import asyncio, httpx
+<pre class="code"><code><span class="cm"># Gateway aggregation: one client call, three backend calls in parallel</span>
+<span class="kw">import</span> asyncio, httpx
 
-async def home(user_id: str) -&gt; dict:
-    async with httpx.AsyncClient(timeout=0.5) as c:
-        u, o, p = await asyncio.gather(
-            c.get(f"http://users/users/{user_id}"),
-            c.get(f"http://orders/orders?user={user_id}&amp;limit=3"),
-            c.get("http://products/featured"),
-            return_exceptions=True,          # partial failure: do not fail the whole page
+<span class="kw">async</span> <span class="kw">def</span> <span class="fn">home</span>(user_id: <span class="bi">str</span>) -&gt; <span class="bi">dict</span>:
+    <span class="kw">async</span> <span class="kw">with</span> httpx.<span class="fn">AsyncClient</span>(timeout=<span class="nu">0.5</span>) <span class="kw">as</span> c:
+        u, o, p = <span class="kw">await</span> asyncio.<span class="fn">gather</span>(
+            c.<span class="fn">get</span>(<span class="st">f"http://users/users/{user_id}"</span>),
+            c.<span class="fn">get</span>(<span class="st">f"http://orders/orders?user={user_id}&amp;limit=3"</span>),
+            c.<span class="fn">get</span>(<span class="st">"http://products/featured"</span>),
+            return_exceptions=<span class="kw">True</span>,          <span class="cm"># partial failure: do not fail the whole page</span>
         )
-    return {
-        "user": u.json() if not isinstance(u, Exception) else None,
-        "orders": o.json() if not isinstance(o, Exception) else [],
-        "featured": p.json() if not isinstance(p, Exception) else [],
+    <span class="kw">return</span> {
+        <span class="st">"user"</span>: u.<span class="fn">json</span>() <span class="kw">if</span> <span class="kw">not</span> <span class="bi">isinstance</span>(u, <span class="bi">Exception</span>) <span class="kw">else</span> <span class="kw">None</span>,
+        <span class="st">"orders"</span>: o.<span class="fn">json</span>() <span class="kw">if</span> <span class="kw">not</span> <span class="bi">isinstance</span>(o, <span class="bi">Exception</span>) <span class="kw">else</span> [],
+        <span class="st">"featured"</span>: p.<span class="fn">json</span>() <span class="kw">if</span> <span class="kw">not</span> <span class="bi">isinstance</span>(p, <span class="bi">Exception</span>) <span class="kw">else</span> [],
     }</code></pre>
   <span class="lang">cypher</span>
-<pre class="code"><code>// Property graph: friends-of-friends recommendation (Cypher)
-MATCH (me:User {id: 42})-[:FOLLOWS]-&gt;(:User)-[:FOLLOWS]-&gt;(rec:User)
-WHERE rec &lt;&gt; me AND NOT (me)-[:FOLLOWS]-&gt;(rec)
-RETURN rec.name, count(*) AS mutual
-ORDER BY mutual DESC
-LIMIT 10;</code></pre>
+<pre class="code"><code><span class="cm">// Property graph: friends-of-friends recommendation (Cypher)</span>
+<span class="kw">MATCH</span> (me<span class="bi">:User</span> {id: <span class="nu">42</span>})-[<span class="bi">:FOLLOWS</span>]-&gt;(<span class="bi">:User</span>)-[<span class="bi">:FOLLOWS</span>]-&gt;(rec<span class="bi">:User</span>)
+<span class="kw">WHERE</span> rec &lt;&gt; me <span class="kw">AND</span> <span class="kw">NOT</span> (me)-[<span class="bi">:FOLLOWS</span>]-&gt;(rec)
+<span class="kw">RETURN</span> rec.name, <span class="fn">count</span>(*) <span class="kw">AS</span> mutual
+<span class="kw">ORDER</span> <span class="kw">BY</span> mutual DESC
+<span class="kw">LIMIT</span> <span class="nu">10</span>;</code></pre>
   <span class="lang">sql</span>
-<pre class="code"><code>-- the same two-hop query in SQL needs a self-join per hop
-SELECT f2.followee_id, COUNT(*) AS mutual
-FROM follows f1
-JOIN follows f2 ON f2.follower_id = f1.followee_id
-WHERE f1.follower_id = 42
-  AND f2.followee_id &lt;&gt; 42
-  AND f2.followee_id NOT IN (SELECT followee_id FROM follows WHERE follower_id = 42)
-GROUP BY f2.followee_id
-ORDER BY mutual DESC
-LIMIT 10;</code></pre>
+<pre class="code"><code><span class="cm">-- the same two-hop query in SQL needs a self-join per hop</span>
+<span class="kw">SELECT</span> f2.followee_id, <span class="bi">COUNT</span>(*) <span class="kw">AS</span> mutual
+<span class="kw">FROM</span> follows f1
+<span class="kw">JOIN</span> follows f2 <span class="kw">ON</span> f2.follower_id = f1.followee_id
+<span class="kw">WHERE</span> f1.follower_id = <span class="nu">42</span>
+  <span class="kw">AND</span> f2.followee_id &lt;&gt; <span class="nu">42</span>
+  <span class="kw">AND</span> f2.followee_id <span class="kw">NOT</span> <span class="kw">IN</span> (<span class="kw">SELECT</span> followee_id <span class="kw">FROM</span> follows <span class="kw">WHERE</span> follower_id = <span class="nu">42</span>)
+<span class="kw">GROUP</span> <span class="kw">BY</span> f2.followee_id
+<span class="kw">ORDER</span> <span class="kw">BY</span> mutual <span class="kw">DESC</span>
+<span class="kw">LIMIT</span> <span class="nu">10</span>;</code></pre>
   <h2>Exercises</h2>
   <ol style="list-style:none;padding-left:0">
     <li>1. Explain the difference between a forward proxy and a reverse proxy, and name one real product for each.

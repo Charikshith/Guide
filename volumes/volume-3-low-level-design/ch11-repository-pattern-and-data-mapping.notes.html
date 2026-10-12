@@ -269,83 +269,83 @@ a{color:var(--ink);text-decoration:underline dotted}
 <div class="pagebreak">~ page 3 ~</div>
 <h2>Example</h2>
 <span class="lang">python</span>
-<pre class="code"><code>import sqlite3
-from dataclasses import dataclass, field
-from typing import Protocol
+<pre class="code"><code><span class="kw">import</span> sqlite3
+<span class="kw">from</span> dataclasses <span class="kw">import</span> dataclass, field
+<span class="kw">from</span> typing <span class="kw">import</span> Protocol
 
-# ---- domain (no persistence code) ------------------------------------------------
-@dataclass
-class OrderLine:
-    sku: str
-    qty: int
-    price_cents: int
+<span class="cm"># ---- domain (no persistence code) ------------------------------------------------</span>
+<span class="bi">@dataclass</span>
+<span class="kw">class</span> OrderLine:
+    sku: <span class="bi">str</span>
+    qty: <span class="bi">int</span>
+    price_cents: <span class="bi">int</span>
 
-@dataclass
-class Order:
-    id: str
-    customer_id: str
-    status: str = "draft"
-    lines: list[OrderLine] = field(default_factory=list)
-    def total(self): return sum(l.qty * l.price_cents for l in self.lines)
+<span class="bi">@dataclass</span>
+<span class="kw">class</span> Order:
+    <span class="bi">id</span>: <span class="bi">str</span>
+    customer_id: <span class="bi">str</span>
+    status: <span class="bi">str</span> = <span class="st">"draft"</span>
+    lines: <span class="bi">list</span>[OrderLine] = <span class="fn">field</span>(default_factory=<span class="bi">list</span>)
+    <span class="kw">def</span> <span class="fn">total</span>(<span class="bi">self</span>): <span class="kw">return</span> <span class="bi">sum</span>(l.qty * l.price_cents <span class="kw">for</span> l <span class="kw">in</span> <span class="bi">self</span>.lines)
 
-class OrderRepository(Protocol):
-    def get(self, order_id: str) -&gt; Order | None: ...
-    def add(self, order: Order) -&gt; None: ...
-    def for_customer(self, customer_id: str) -&gt; list[Order]: ...
+<span class="kw">class</span> <span class="fn">OrderRepository</span>(Protocol):
+    <span class="kw">def</span> <span class="fn">get</span>(<span class="bi">self</span>, order_id: <span class="bi">str</span>) -&gt; Order | <span class="kw">None</span>: ...
+    <span class="kw">def</span> <span class="fn">add</span>(<span class="bi">self</span>, order: Order) -&gt; <span class="kw">None</span>: ...
+    <span class="kw">def</span> <span class="fn">for_customer</span>(<span class="bi">self</span>, customer_id: <span class="bi">str</span>) -&gt; <span class="bi">list</span>[Order]: ...
 
-# ---- adapter 1: in memory -----------------------------------------------------------
-class InMemoryOrders:
-    def __init__(self): self._rows: dict[str, Order] = {}
-    def get(self, order_id): return self._rows.get(order_id)
-    def add(self, order): self._rows[order.id] = order
-    def for_customer(self, cid): return [o for o in self._rows.values() if o.customer_id == cid]
+<span class="cm"># ---- adapter 1: in memory -----------------------------------------------------------</span>
+<span class="kw">class</span> InMemoryOrders:
+    <span class="kw">def</span> <span class="fn">__init__</span>(<span class="bi">self</span>): <span class="bi">self</span>._rows: <span class="bi">dict</span>[<span class="bi">str</span>, Order] = {}
+    <span class="kw">def</span> <span class="fn">get</span>(<span class="bi">self</span>, order_id): <span class="kw">return</span> <span class="bi">self</span>._rows.<span class="fn">get</span>(order_id)
+    <span class="kw">def</span> <span class="fn">add</span>(<span class="bi">self</span>, order): <span class="bi">self</span>._rows[order.<span class="bi">id</span>] = order
+    <span class="kw">def</span> <span class="fn">for_customer</span>(<span class="bi">self</span>, cid): <span class="kw">return</span> [o <span class="kw">for</span> o <span class="kw">in</span> <span class="bi">self</span>._rows.<span class="fn">values</span>() <span class="kw">if</span> o.customer_id == cid]
 
-# ---- adapter 2: SQL with an explicit data mapper --------------------------------------
-class SqlOrders:
-    def __init__(self, conn: sqlite3.Connection): self.conn = conn
-    def get(self, order_id):
-        row = self.conn.execute("SELECT id, customer_id, status FROM orders WHERE id = ?",
-                                (order_id,)).fetchone()
-        return self._to_domain(row) if row else None
-    def add(self, order):                                        # upsert the whole aggregate
-        self.conn.execute("INSERT INTO orders (id, customer_id, status) VALUES (?, ?, ?) "
-                          "ON CONFLICT(id) DO UPDATE SET status = excluded.status",
-                          (order.id, order.customer_id, order.status))
-        self.conn.execute("DELETE FROM order_lines WHERE order_id = ?", (order.id,))
-        self.conn.executemany("INSERT INTO order_lines VALUES (?, ?, ?, ?)",
-                              [(order.id, l.sku, l.qty, l.price_cents) for l in order.lines])
-    def for_customer(self, cid):
-        rows = self.conn.execute("SELECT id, customer_id, status FROM orders WHERE customer_id = ?",
-                                 (cid,)).fetchall()
-        return [self._to_domain(r) for r in rows]
-    def _to_domain(self, row):                                   # the mapper: rows → aggregate
-        lines = [OrderLine(s, q, p) for s, q, p in self.conn.execute(
-            "SELECT sku, qty, price_cents FROM order_lines WHERE order_id = ?", (row[0],))]
-        return Order(row[0], row[1], row[2], lines)
+<span class="cm"># ---- adapter 2: SQL with an explicit data mapper --------------------------------------</span>
+<span class="kw">class</span> SqlOrders:
+    <span class="kw">def</span> <span class="fn">__init__</span>(<span class="bi">self</span>, conn: sqlite3.Connection): <span class="bi">self</span>.conn = conn
+    <span class="kw">def</span> <span class="fn">get</span>(<span class="bi">self</span>, order_id):
+        row = <span class="bi">self</span>.conn.<span class="fn">execute</span>(<span class="st">"SELECT id, customer_id, status FROM orders WHERE id = ?"</span>,
+                                (order_id,)).<span class="fn">fetchone</span>()
+        <span class="kw">return</span> <span class="bi">self</span>.<span class="fn">_to_domain</span>(row) <span class="kw">if</span> row <span class="kw">else</span> <span class="kw">None</span>
+    <span class="kw">def</span> <span class="fn">add</span>(<span class="bi">self</span>, order):                                        <span class="cm"># upsert the whole aggregate</span>
+        <span class="bi">self</span>.conn.<span class="fn">execute</span>(<span class="st">"INSERT INTO orders (id, customer_id, status) VALUES (?, ?, ?) "</span>
+                          <span class="st">"ON CONFLICT(id) DO UPDATE SET status = excluded.status"</span>,
+                          (order.<span class="bi">id</span>, order.customer_id, order.status))
+        <span class="bi">self</span>.conn.<span class="fn">execute</span>(<span class="st">"DELETE FROM order_lines WHERE order_id = ?"</span>, (order.<span class="bi">id</span>,))
+        <span class="bi">self</span>.conn.<span class="fn">executemany</span>(<span class="st">"INSERT INTO order_lines VALUES (?, ?, ?, ?)"</span>,
+                              [(order.<span class="bi">id</span>, l.sku, l.qty, l.price_cents) <span class="kw">for</span> l <span class="kw">in</span> order.lines])
+    <span class="kw">def</span> <span class="fn">for_customer</span>(<span class="bi">self</span>, cid):
+        rows = <span class="bi">self</span>.conn.<span class="fn">execute</span>(<span class="st">"SELECT id, customer_id, status FROM orders WHERE customer_id = ?"</span>,
+                                 (cid,)).<span class="fn">fetchall</span>()
+        <span class="kw">return</span> [<span class="bi">self</span>.<span class="fn">_to_domain</span>(r) <span class="kw">for</span> r <span class="kw">in</span> rows]
+    <span class="kw">def</span> <span class="fn">_to_domain</span>(<span class="bi">self</span>, row):                                   <span class="cm"># the mapper: rows → aggregate</span>
+        lines = [<span class="fn">OrderLine</span>(s, q, p) <span class="kw">for</span> s, q, p <span class="kw">in</span> <span class="bi">self</span>.conn.<span class="fn">execute</span>(
+            <span class="st">"SELECT sku, qty, price_cents FROM order_lines WHERE order_id = ?"</span>, (row[<span class="nu">0</span>],))]
+        <span class="kw">return</span> <span class="fn">Order</span>(row[<span class="nu">0</span>], row[<span class="nu">1</span>], row[<span class="nu">2</span>], lines)
 
-# ---- unit of work ---------------------------------------------------------------------
-class SqlUnitOfWork:
-    def __init__(self, path=":memory:"):
-        self.conn = sqlite3.connect(path, isolation_level=None)  # we control transactions
-        self.conn.executescript("""
+<span class="cm"># ---- unit of work ---------------------------------------------------------------------</span>
+<span class="kw">class</span> SqlUnitOfWork:
+    <span class="kw">def</span> <span class="fn">__init__</span>(<span class="bi">self</span>, path=<span class="st">":memory:"</span>):
+        <span class="bi">self</span>.conn = sqlite3.<span class="fn">connect</span>(path, isolation_level=<span class="kw">None</span>)  <span class="cm"># we control transactions</span>
+        <span class="bi">self</span>.conn.<span class="fn">executescript</span>(<span class="st">"""
             CREATE TABLE IF NOT EXISTS orders (id TEXT PRIMARY KEY, customer_id TEXT, status TEXT);
-            CREATE TABLE IF NOT EXISTS order_lines (order_id TEXT, sku TEXT, qty INT, price_cents INT);""")
-        self.orders = SqlOrders(self.conn)
-    def __enter__(self): self.conn.execute("BEGIN"); return self
-    def __exit__(self, exc_type, *_):
-        self.conn.execute("ROLLBACK" if exc_type else "COMMIT")  # all or nothing
-        return False
+            CREATE TABLE IF NOT EXISTS order_lines (order_id TEXT, sku TEXT, qty INT, price_cents INT);"""</span>)
+        <span class="bi">self</span>.orders = <span class="fn">SqlOrders</span>(<span class="bi">self</span>.conn)
+    <span class="kw">def</span> <span class="fn">__enter__</span>(<span class="bi">self</span>): <span class="bi">self</span>.conn.<span class="fn">execute</span>(<span class="st">"BEGIN"</span>); <span class="kw">return</span> <span class="bi">self</span>
+    <span class="kw">def</span> <span class="fn">__exit__</span>(<span class="bi">self</span>, exc_type, *_):
+        <span class="bi">self</span>.conn.<span class="fn">execute</span>(<span class="st">"ROLLBACK"</span> <span class="kw">if</span> exc_type <span class="kw">else</span> <span class="st">"COMMIT"</span>)  <span class="cm"># all or nothing</span>
+        <span class="kw">return</span> <span class="kw">False</span>
 
-uow = SqlUnitOfWork()
-with uow:
-    uow.orders.add(Order("o-1", "c-7", "placed", [OrderLine("pen", 2, 150), OrderLine("pad", 1, 400)]))
-try:
-    with uow:
-        uow.orders.add(Order("o-2", "c-7"))
-        raise RuntimeError("payment failed")                     # → rollback: o-2 is not saved
-except RuntimeError:
-    pass
-print(uow.orders.get("o-1").total(), uow.orders.get("o-2"))      # 700 None</code></pre>
+uow = <span class="fn">SqlUnitOfWork</span>()
+<span class="kw">with</span> uow:
+    uow.orders.<span class="fn">add</span>(<span class="fn">Order</span>(<span class="st">"o-1"</span>, <span class="st">"c-7"</span>, <span class="st">"placed"</span>, [<span class="fn">OrderLine</span>(<span class="st">"pen"</span>, <span class="nu">2</span>, <span class="nu">150</span>), <span class="fn">OrderLine</span>(<span class="st">"pad"</span>, <span class="nu">1</span>, <span class="nu">400</span>)]))
+<span class="kw">try</span>:
+    <span class="kw">with</span> uow:
+        uow.orders.<span class="fn">add</span>(<span class="fn">Order</span>(<span class="st">"o-2"</span>, <span class="st">"c-7"</span>))
+        <span class="kw">raise</span> <span class="fn">RuntimeError</span>(<span class="st">"payment failed"</span>)                     <span class="cm"># → rollback: o-2 is not saved</span>
+<span class="kw">except</span> RuntimeError:
+    <span class="kw">pass</span>
+<span class="bi">print</span>(uow.orders.<span class="fn">get</span>(<span class="st">"o-1"</span>).<span class="fn">total</span>(), uow.orders.<span class="fn">get</span>(<span class="st">"o-2"</span>))      <span class="cm"># 700 None</span></code></pre>
 <h2>Exercises</h2>
 <ol style="list-style:none;padding-left:0">
   <li>1. Implement a repository over SQL and over in-memory.

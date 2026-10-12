@@ -259,54 +259,54 @@ a{color:var(--ink);text-decoration:underline dotted}
 <h3>An <code>OrderPlaced</code> event consumed by billing, shipping, and analytics</h3>
 <span class="lang">json</span>
 <pre class="code"><code>{
-  "event_id": "4f1c2a9e-8b1d-4c1e-9a55-2b6f0d3c7e11",
-  "type": "OrderPlaced",
-  "version": 2,
-  "occurred_at": "2024-05-01T10:02:11.330Z",
-  "producer": "order-service",
-  "correlation_id": "r-8f2a",
-  "key": "order-123",
-  "data": {
-    "order_id": "order-123",
-    "customer_id": "c-7",
-    "items": [{"sku": "SKU-1", "qty": 2, "unit_price_cents": 1500}],
-    "total_cents": 3000,
-    "currency": "EUR",
-    "shipping_country": "DE"
+  <span class="bi">"event_id"</span>: <span class="st">"4f1c2a9e-8b1d-4c1e-9a55-2b6f0d3c7e11"</span>,
+  <span class="bi">"type"</span>: <span class="st">"OrderPlaced"</span>,
+  <span class="bi">"version"</span>: <span class="nu">2</span>,
+  <span class="bi">"occurred_at"</span>: <span class="st">"2024-05-01T10:02:11.330Z"</span>,
+  <span class="bi">"producer"</span>: <span class="st">"order-service"</span>,
+  <span class="bi">"correlation_id"</span>: <span class="st">"r-8f2a"</span>,
+  <span class="bi">"key"</span>: <span class="st">"order-123"</span>,
+  <span class="bi">"data"</span>: {
+    <span class="bi">"order_id"</span>: <span class="st">"order-123"</span>,
+    <span class="bi">"customer_id"</span>: <span class="st">"c-7"</span>,
+    <span class="bi">"items"</span>: [{<span class="bi">"sku"</span>: <span class="st">"SKU-1"</span>, <span class="bi">"qty"</span>: <span class="nu">2</span>, <span class="bi">"unit_price_cents"</span>: <span class="nu">1500</span>}],
+    <span class="bi">"total_cents"</span>: <span class="nu">3000</span>,
+    <span class="bi">"currency"</span>: <span class="st">"EUR"</span>,
+    <span class="bi">"shipping_country"</span>: <span class="st">"DE"</span>
   }
 }</code></pre>
 <span class="lang">python</span>
-<pre class="code"><code># Transactional outbox: write the state change and the event together
-import json, uuid
-def place_order(conn, order):
-    with conn.transaction():
-        conn.execute("INSERT INTO orders (id, customer_id, total_cents) VALUES (%s, %s, %s)",
-                     (order["id"], order["customer_id"], order["total_cents"]))
-        event = {"event_id": str(uuid.uuid4()), "type": "OrderPlaced", "version": 2,
-                 "key": order["id"], "data": order}
-        conn.execute("INSERT INTO outbox (id, topic, key, payload) VALUES (%s, %s, %s, %s)",
-                     (event["event_id"], "orders", order["id"], json.dumps(event)))
+<pre class="code"><code><span class="cm"># Transactional outbox: write the state change and the event together</span>
+<span class="kw">import</span> json, uuid
+<span class="kw">def</span> <span class="fn">place_order</span>(conn, order):
+    <span class="kw">with</span> conn.<span class="fn">transaction</span>():
+        conn.<span class="fn">execute</span>(<span class="st">"INSERT INTO orders (id, customer_id, total_cents) VALUES (%s, %s, %s)"</span>,
+                     (order[<span class="st">"id"</span>], order[<span class="st">"customer_id"</span>], order[<span class="st">"total_cents"</span>]))
+        event = {<span class="st">"event_id"</span>: <span class="bi">str</span>(uuid.<span class="fn">uuid4</span>()), <span class="st">"type"</span>: <span class="st">"OrderPlaced"</span>, <span class="st">"version"</span>: <span class="nu">2</span>,
+                 <span class="st">"key"</span>: order[<span class="st">"id"</span>], <span class="st">"data"</span>: order}
+        conn.<span class="fn">execute</span>(<span class="st">"INSERT INTO outbox (id, topic, key, payload) VALUES (%s, %s, %s, %s)"</span>,
+                     (event[<span class="st">"event_id"</span>], <span class="st">"orders"</span>, order[<span class="st">"id"</span>], json.<span class="fn">dumps</span>(event)))
 
-# Relay: publish unsent outbox rows (at-least-once)
-def relay(conn, producer):
-    rows = conn.execute("SELECT id, topic, key, payload FROM outbox WHERE sent_at IS NULL "
-                        "ORDER BY created_at LIMIT 500 FOR UPDATE SKIP LOCKED").fetchall()
-    for id_, topic, key, payload in rows:
-        producer.produce(topic, key=key, value=payload)
-    producer.flush()
-    conn.execute("UPDATE outbox SET sent_at = now() WHERE id = ANY(%s)", ([r[0] for r in rows],))</code></pre>
+<span class="cm"># Relay: publish unsent outbox rows (at-least-once)</span>
+<span class="kw">def</span> <span class="fn">relay</span>(conn, producer):
+    rows = conn.<span class="fn">execute</span>(<span class="st">"SELECT id, topic, key, payload FROM outbox WHERE sent_at IS NULL "</span>
+                        <span class="st">"ORDER BY created_at LIMIT 500 FOR UPDATE SKIP LOCKED"</span>).<span class="fn">fetchall</span>()
+    <span class="kw">for</span> id_, topic, key, payload <span class="kw">in</span> rows:
+        producer.<span class="fn">produce</span>(topic, key=key, value=payload)
+    producer.<span class="fn">flush</span>()
+    conn.<span class="fn">execute</span>(<span class="st">"UPDATE outbox SET sent_at = now() WHERE id = ANY(%s)"</span>, ([r[<span class="nu">0</span>] <span class="kw">for</span> r <span class="kw">in</span> rows],))</code></pre>
 <span class="lang">python</span>
-<pre class="code"><code># Idempotent consumer: dedup and side effect in ONE transaction
-def handle_order_placed(conn, event):
-    with conn.transaction():
-        inserted = conn.execute(
-            "INSERT INTO processed_events (consumer, event_id) VALUES ('billing', %s) "
-            "ON CONFLICT DO NOTHING", (event["event_id"],)).rowcount
-        if inserted == 0:
-            return                          # already handled: a redelivery
-        d = event["data"]
-        conn.execute("INSERT INTO invoices (order_id, amount_cents, currency) VALUES (%s, %s, %s)",
-                     (d["order_id"], d["total_cents"], d["currency"]))</code></pre>
+<pre class="code"><code><span class="cm"># Idempotent consumer: dedup and side effect in ONE transaction</span>
+<span class="kw">def</span> <span class="fn">handle_order_placed</span>(conn, event):
+    <span class="kw">with</span> conn.<span class="fn">transaction</span>():
+        inserted = conn.<span class="fn">execute</span>(
+            <span class="st">"INSERT INTO processed_events (consumer, event_id) VALUES ('billing', %s) "</span>
+            <span class="st">"ON CONFLICT DO NOTHING"</span>, (event[<span class="st">"event_id"</span>],)).rowcount
+        <span class="kw">if</span> inserted == <span class="nu">0</span>:
+            <span class="kw">return</span>                          <span class="cm"># already handled: a redelivery</span>
+        d = event[<span class="st">"data"</span>]
+        conn.<span class="fn">execute</span>(<span class="st">"INSERT INTO invoices (order_id, amount_cents, currency) VALUES (%s, %s, %s)"</span>,
+                     (d[<span class="st">"order_id"</span>], d[<span class="st">"total_cents"</span>], d[<span class="st">"currency"</span>]))</code></pre>
 <h2>Exercises</h2>
 <ol class="num">
 <li><span class="n">1.</span>Design an event schema with versioning.

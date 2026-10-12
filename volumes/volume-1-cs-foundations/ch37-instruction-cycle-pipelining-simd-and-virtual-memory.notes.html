@@ -230,32 +230,32 @@ a{color:var(--ink);text-decoration:underline dotted}
   <div class="pagebreak">~ page 2 ~</div>
   <h2>Example</h2>
   <span class="lang">python</span>
-<pre class="code"><code>import numpy as np, time
-a = np.random.rand(10_000_000).astype(np.float32)
-b = np.random.rand(10_000_000).astype(np.float32)
+<pre class="code"><code><span class="kw">import</span> numpy <span class="kw">as</span> np, time
+a = np.random.<span class="fn">rand</span>(<span class="nu">10_000_000</span>).<span class="fn">astype</span>(np.float32)
+b = np.random.<span class="fn">rand</span>(<span class="nu">10_000_000</span>).<span class="fn">astype</span>(np.float32)
 
-t = time.perf_counter(); c = [x + y for x, y in zip(a[:1_000_000], b[:1_000_000])]; slow = time.perf_counter() - t
-t = time.perf_counter(); c = a + b; fast = time.perf_counter() - t    # vectorized, uses SIMD
-print(f"python loop (1M): {slow:.3f}s   numpy (10M): {fast:.3f}s")
+t = time.<span class="fn">perf_counter</span>(); c = [x + y <span class="kw">for</span> x, y <span class="kw">in</span> <span class="bi">zip</span>(a[:<span class="nu">1_000_000</span>], b[:<span class="nu">1_000_000</span>])]; slow = time.<span class="fn">perf_counter</span>() - t
+t = time.<span class="fn">perf_counter</span>(); c = a + b; fast = time.<span class="fn">perf_counter</span>() - t    <span class="cm"># vectorized, uses SIMD</span>
+<span class="bi">print</span>(<span class="st">f"python loop (1M): {slow:.3f}s   numpy (10M): {fast:.3f}s"</span>)
 </code></pre>
   <span class="lang">python</span>
-<pre class="code"><code># Branch prediction: the same work on sorted vs shuffled data (a classic)
-import random, time
-data = [random.randint(0, 255) for _ in range(2_000_000)]
-for label, xs in (("shuffled", data), ("sorted", sorted(data))):
-    t = time.perf_counter()
-    s = 0
-    for x in xs:
-        if x &gt;= 128:
+<pre class="code"><code><span class="cm"># Branch prediction: the same work on sorted vs shuffled data (a classic)</span>
+<span class="kw">import</span> random, time
+data = [random.<span class="fn">randint</span>(<span class="nu">0</span>, <span class="nu">255</span>) <span class="kw">for</span> _ <span class="kw">in</span> <span class="bi">range</span>(<span class="nu">2_000_000</span>)]
+<span class="kw">for</span> label, xs <span class="kw">in</span> ((<span class="st">"shuffled"</span>, data), (<span class="st">"sorted"</span>, <span class="bi">sorted</span>(data))):
+    t = time.<span class="fn">perf_counter</span>()
+    s = <span class="nu">0</span>
+    <span class="kw">for</span> x <span class="kw">in</span> xs:
+        <span class="kw">if</span> x &gt;= <span class="nu">128</span>:
             s += x
-    print(label, round(time.perf_counter() - t, 3))
-# The gap is small in Python (interpreter overhead hides it) but 2–6× in C/Rust.
+    <span class="bi">print</span>(label, <span class="bi">round</span>(time.<span class="fn">perf_counter</span>() - t, <span class="nu">3</span>))
+<span class="cm"># The gap is small in Python (interpreter overhead hides it) but 2–6× in C/Rust.</span>
 </code></pre>
   <span class="lang">bash</span>
-<pre class="code"><code>getconf PAGESIZE                             # 4096
-cat /proc/self/maps | head                   # this process's virtual memory regions
-perf stat -e branch-misses,dTLB-load-misses ./app   # count mispredictions and TLB misses
-grep -o -w 'avx2\|avx512f' /proc/cpuinfo | sort -u   # which SIMD sets this CPU supports
+<pre class="code"><code>getconf PAGESIZE                             <span class="cm"># 4096</span>
+<span class="bi">cat</span> /proc/self/maps | <span class="bi">head</span>                   <span class="cm"># this process's virtual memory regions</span>
+perf stat -e branch-misses,dTLB-load-misses ./app   <span class="cm"># count mispredictions and TLB misses</span>
+<span class="bi">grep</span> -o -w <span class="st">'avx2\|avx512f'</span> /proc/cpuinfo | <span class="bi">sort</span> -u   <span class="cm"># which SIMD sets this CPU supports</span>
 </code></pre>
   <h2>Exercises</h2>
   <ol style="list-style:none;padding-left:0">

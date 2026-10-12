@@ -241,31 +241,31 @@ a{color:var(--ink);text-decoration:underline dotted}
  a &gt;&gt; 2 = 0011   shift right (÷4)</code></pre>
 <h2>Example</h2>
 <span class="lang">python</span>
-<pre class="code"><code>x = 5
-y = x * 2
-is_even = (y % 2 == 0)
-print(type(x), type(y), type(is_even))    # &lt;class 'int'&gt; &lt;class 'int'&gt; &lt;class 'bool'&gt;
+<pre class="code"><code>x = <span class="nu">5</span>
+y = x * <span class="nu">2</span>
+is_even = (y % <span class="nu">2</span> == <span class="nu">0</span>)
+<span class="bi">print</span>(<span class="bi">type</span>(x), <span class="bi">type</span>(y), <span class="bi">type</span>(is_even))    <span class="cm"># &lt;class 'int'&gt; &lt;class 'int'&gt; &lt;class 'bool'&gt;</span>
 
-# Name tags, not boxes
-a = [1, 2, 3]
+<span class="cm"># Name tags, not boxes</span>
+a = [<span class="nu">1</span>, <span class="nu">2</span>, <span class="nu">3</span>]
 b = a
-b.append(4)
-print(a)          # [1, 2, 3, 4] — same object
-c = a.copy()
-c.append(5)
-print(a)          # [1, 2, 3, 4] — c is a new object
+b.<span class="fn">append</span>(<span class="nu">4</span>)
+<span class="bi">print</span>(a)          <span class="cm"># [1, 2, 3, 4] — same object</span>
+c = a.<span class="fn">copy</span>()
+c.<span class="fn">append</span>(<span class="nu">5</span>)
+<span class="bi">print</span>(a)          <span class="cm"># [1, 2, 3, 4] — c is a new object</span>
 
-print(7 / 2, 7 // 2, -7 // 2, 7 % 3)      # 3.5 3 -4 1   (// floors toward −∞)
-print(2 ** 100)                           # Python ints never overflow</code></pre>
+<span class="bi">print</span>(<span class="nu">7</span> / <span class="nu">2</span>, <span class="nu">7</span> // <span class="nu">2</span>, -<span class="nu">7</span> // <span class="nu">2</span>, <span class="nu">7</span> % <span class="nu">3</span>)      <span class="cm"># 3.5 3 -4 1   (// floors toward −∞)</span>
+<span class="bi">print</span>(<span class="nu">2</span> ** <span class="nu">100</span>)                           <span class="cm"># Python ints never overflow</span></code></pre>
 <span class="lang">rust</span>
-<pre class="code"><code>fn main() {
-    let x: i32 = 5;
-    let y = x * 2;
-    let is_even = y % 2 == 0;
-    let label = if is_even { "even" } else { "odd" };   // `if` is an expression
-    println!("{y} {is_even} {label}");
-    println!("{}", 7 / 2);        // 3   — integer division
-    println!("{}", 7.0 / 2.0);    // 3.5
+<pre class="code"><code><span class="kw">fn</span> <span class="fn">main</span>() {
+    <span class="kw">let</span> x: <span class="bi">i32</span> = <span class="nu">5</span>;
+    <span class="kw">let</span> y = x * <span class="nu">2</span>;
+    <span class="kw">let</span> is_even = y % <span class="nu">2</span> == <span class="nu">0</span>;
+    <span class="kw">let</span> label = <span class="kw">if</span> is_even { <span class="st">"even"</span> } <span class="kw">else</span> { <span class="st">"odd"</span> };   <span class="cm">// `if` is an expression</span>
+    <span class="fn">println!</span>(<span class="st">"{y} {is_even} {label}"</span>);
+    <span class="fn">println!</span>(<span class="st">"{}"</span>, <span class="nu">7</span> / <span class="nu">2</span>);        <span class="cm">// 3   — integer division</span>
+    <span class="fn">println!</span>(<span class="st">"{}"</span>, <span class="nu">7.0</span> / <span class="nu">2.0</span>);    <span class="cm">// 3.5</span>
 }</code></pre>
 <div class="pagebreak">~ page 3 ~</div>
 <h2>Exercises</h2>

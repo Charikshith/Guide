@@ -271,56 +271,56 @@ a{color:var(--ink);text-decoration:underline dotted}
 
   <h2>Example</h2>
   <span class="lang">python</span>
-<pre class="code"><code>import hashlib, json, anthropic, numpy as np
-client = anthropic.Anthropic()
+<pre class="code"><code><span class="kw">import</span> hashlib, json, anthropic, numpy <span class="kw">as</span> np
+client = anthropic.<span class="fn">Anthropic</span>()
 
-# 1) Exact cache
-EXACT: dict[str, str] = {}
-def exact_key(model, system, user): return hashlib.sha256(json.dumps([model, system, user]).encode()).hexdigest()
+<span class="cm"># 1) Exact cache</span>
+EXACT: <span class="bi">dict</span>[<span class="bi">str</span>, <span class="bi">str</span>] = {}
+<span class="kw">def</span> <span class="fn">exact_key</span>(model, system, user): <span class="kw">return</span> hashlib.<span class="fn">sha256</span>(json.<span class="fn">dumps</span>([model, system, user]).<span class="fn">encode</span>()).<span class="fn">hexdigest</span>()
 
-# 2) Semantic cache — scoped by tenant, only for "static" intents, strict threshold
-class SemanticCache:
-    def __init__(self, embed, threshold=0.95):
-        self.embed, self.threshold, self.items = embed, threshold, []   # (tenant, vector, answer)
-    def get(self, tenant, query):
-        q = self.embed(query)
-        best = max(((float(q @ v), a) for t, v, a in self.items if t == tenant), default=(0, None))
-        return best[1] if best[0] &gt;= self.threshold else None
-    def put(self, tenant, query, answer):
-        self.items.append((tenant, self.embed(query), answer))
+<span class="cm"># 2) Semantic cache — scoped by tenant, only for "static" intents, strict threshold</span>
+<span class="kw">class</span> SemanticCache:
+    <span class="kw">def</span> <span class="fn">__init__</span>(<span class="bi">self</span>, embed, threshold=<span class="nu">0.95</span>):
+        <span class="bi">self</span>.embed, <span class="bi">self</span>.threshold, <span class="bi">self</span>.items = embed, threshold, []   <span class="cm"># (tenant, vector, answer)</span>
+    <span class="kw">def</span> <span class="fn">get</span>(<span class="bi">self</span>, tenant, query):
+        q = <span class="bi">self</span>.<span class="fn">embed</span>(query)
+        best = <span class="bi">max</span>(((<span class="bi">float</span>(q @ v), a) <span class="kw">for</span> t, v, a <span class="kw">in</span> <span class="bi">self</span>.items <span class="kw">if</span> t == tenant), default=(<span class="nu">0</span>, <span class="kw">None</span>))
+        <span class="kw">return</span> best[<span class="nu">1</span>] <span class="kw">if</span> best[<span class="nu">0</span>] &gt;= <span class="bi">self</span>.threshold <span class="kw">else</span> <span class="kw">None</span>
+    <span class="kw">def</span> <span class="fn">put</span>(<span class="bi">self</span>, tenant, query, answer):
+        <span class="bi">self</span>.items.<span class="fn">append</span>((tenant, <span class="bi">self</span>.<span class="fn">embed</span>(query), answer))
 
-# 3) Router: rules first, then a cheap classifier call
-def route(user_msg: str) -&gt; str:
-    if len(user_msg) &lt; 200 and any(k in user_msg.lower() for k in ("opening hours", "price", "reset password")):
-        return "claude-haiku-4-5-20251001"
-    verdict = client.messages.create(model="claude-haiku-4-5-20251001", max_tokens=5,
-        messages=[{"role": "user", "content": f"Answer EASY or HARD only. Is this request simple FAQ/lookup (EASY) or multi-step reasoning/code (HARD)?\n\n{user_msg}"}])
-    return "claude-opus-5-5" if "HARD" in verdict.content[0].text else "claude-haiku-4-5-20251001"
+<span class="cm"># 3) Router: rules first, then a cheap classifier call</span>
+<span class="kw">def</span> <span class="fn">route</span>(user_msg: <span class="bi">str</span>) -&gt; <span class="bi">str</span>:
+    <span class="kw">if</span> <span class="bi">len</span>(user_msg) &lt; <span class="nu">200</span> <span class="kw">and</span> <span class="bi">any</span>(k <span class="kw">in</span> user_msg.<span class="fn">lower</span>() <span class="kw">for</span> k <span class="kw">in</span> (<span class="st">"opening hours"</span>, <span class="st">"price"</span>, <span class="st">"reset password"</span>)):
+        <span class="kw">return</span> <span class="st">"claude-haiku-4-5-20251001"</span>
+    verdict = client.messages.<span class="fn">create</span>(model=<span class="st">"claude-haiku-4-5-20251001"</span>, max_tokens=<span class="nu">5</span>,
+        messages=[{<span class="st">"role"</span>: <span class="st">"user"</span>, <span class="st">"content"</span>: <span class="st">f"Answer EASY or HARD only. Is this request simple FAQ/lookup (EASY) or multi-step reasoning/code (HARD)?\n\n{user_msg}"</span>}])
+    <span class="kw">return</span> <span class="st">"claude-opus-5-5"</span> <span class="kw">if</span> <span class="st">"HARD"</span> <span class="kw">in</span> verdict.content[<span class="nu">0</span>].text <span class="kw">else</span> <span class="st">"claude-haiku-4-5-20251001"</span>
 
-# 4) Provider prompt caching: mark the large, stable prefix as cacheable
-POLICY_DOC = open("policy.md").read()          # thousands of tokens, identical every call
-def answer(user_msg: str, tenant="t1", sem: SemanticCache | None = None) -&gt; str:
-    key = exact_key("any", "support-v14", user_msg)
-    if key in EXACT: return EXACT[key]
-    if sem and (hit := sem.get(tenant, user_msg)): return hit
-    model = route(user_msg)
-    with client.messages.stream(
-        model=model, max_tokens=400,
-        system=[{"type": "text", "text": "You are a concise support agent. Answer in at most 120 words."},
-                {"type": "text", "text": POLICY_DOC, "cache_control": {"type": "ephemeral"}}],
-        messages=[{"role": "user", "content": user_msg}],
-    ) as stream:
-        text = "".join(stream.text_stream)        # in a UI, forward each chunk as it arrives
+<span class="cm"># 4) Provider prompt caching: mark the large, stable prefix as cacheable</span>
+POLICY_DOC = <span class="bi">open</span>(<span class="st">"policy.md"</span>).<span class="fn">read</span>()          <span class="cm"># thousands of tokens, identical every call</span>
+<span class="kw">def</span> <span class="fn">answer</span>(user_msg: <span class="bi">str</span>, tenant=<span class="st">"t1"</span>, sem: SemanticCache | <span class="kw">None</span> = <span class="kw">None</span>) -&gt; <span class="bi">str</span>:
+    key = <span class="fn">exact_key</span>(<span class="st">"any"</span>, <span class="st">"support-v14"</span>, user_msg)
+    <span class="kw">if</span> key <span class="kw">in</span> EXACT: <span class="kw">return</span> EXACT[key]
+    <span class="kw">if</span> sem <span class="kw">and</span> (hit := sem.<span class="fn">get</span>(tenant, user_msg)): <span class="kw">return</span> hit
+    model = <span class="fn">route</span>(user_msg)
+    <span class="kw">with</span> client.messages.<span class="fn">stream</span>(
+        model=model, max_tokens=<span class="nu">400</span>,
+        system=[{<span class="st">"type"</span>: <span class="st">"text"</span>, <span class="st">"text"</span>: <span class="st">"You are a concise support agent. Answer in at most 120 words."</span>},
+                {<span class="st">"type"</span>: <span class="st">"text"</span>, <span class="st">"text"</span>: POLICY_DOC, <span class="st">"cache_control"</span>: {<span class="st">"type"</span>: <span class="st">"ephemeral"</span>}}],
+        messages=[{<span class="st">"role"</span>: <span class="st">"user"</span>, <span class="st">"content"</span>: user_msg}],
+    ) <span class="kw">as</span> stream:
+        text = <span class="st">""</span>.<span class="fn">join</span>(stream.text_stream)        <span class="cm"># in a UI, forward each chunk as it arrives</span>
     EXACT[key] = text
-    if sem: sem.put(tenant, user_msg, text)
-    return text</code></pre>
+    <span class="kw">if</span> sem: sem.<span class="fn">put</span>(tenant, user_msg, text)
+    <span class="kw">return</span> text</code></pre>
   <span class="lang">python</span>
-<pre class="code"><code># Offline work → the Message Batches API (asynchronous, discounted)
-batch = client.messages.batches.create(requests=[
-    {"custom_id": f"doc-{i}", "params": {"model": "claude-haiku-4-5-20251001", "max_tokens": 50,
-     "messages": [{"role": "user", "content": f"Classify the sentiment: {t}"}]}}
-    for i, t in enumerate(reviews)])
-# poll client.messages.batches.retrieve(batch.id); then read results</code></pre>
+<pre class="code"><code><span class="cm"># Offline work → the Message Batches API (asynchronous, discounted)</span>
+batch = client.messages.batches.<span class="fn">create</span>(requests=[
+    {<span class="st">"custom_id"</span>: <span class="st">f"doc-{i}"</span>, <span class="st">"params"</span>: {<span class="st">"model"</span>: <span class="st">"claude-haiku-4-5-20251001"</span>, <span class="st">"max_tokens"</span>: <span class="nu">50</span>,
+     <span class="st">"messages"</span>: [{<span class="st">"role"</span>: <span class="st">"user"</span>, <span class="st">"content"</span>: <span class="st">f"Classify the sentiment: {t}"</span>}]}}
+    <span class="kw">for</span> i, t <span class="kw">in</span> <span class="bi">enumerate</span>(reviews)])
+<span class="cm"># poll client.messages.batches.retrieve(batch.id); then read results</span></code></pre>
   <h2>Exercises</h2>
   <ol style="list-style:none;padding-left:0">
     <li>1. Add a semantic cache.

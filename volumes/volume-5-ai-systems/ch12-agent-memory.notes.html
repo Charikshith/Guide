@@ -276,55 +276,55 @@ a{color:var(--ink);text-decoration:underline dotted}
 
   <h2>Example</h2>
   <span class="lang">python</span>
-<pre class="code"><code>import anthropic
-client = anthropic.Anthropic()
-KEEP_RECENT = 6
+<pre class="code"><code><span class="kw">import</span> anthropic
+client = anthropic.<span class="fn">Anthropic</span>()
+KEEP_RECENT = <span class="nu">6</span>
 
-def summarize(old_summary: str, turns: list[dict]) -&gt; str:
-    text = "\n".join(f"{t['role']}: {t['content']}" for t in turns)
-    resp = client.messages.create(
-        model="claude-haiku-4-5-20251001", max_tokens=300,
-        messages=[{"role": "user", "content":
-            "Update the running summary of this conversation. Keep facts, decisions, open "
-            "questions, and user preferences. Drop small talk. Max 150 words.\n\n"
-            f"Current summary:\n{old_summary or '(none)'}\n\nNew turns:\n{text}"}])
-    return resp.content[0].text
+<span class="kw">def</span> <span class="fn">summarize</span>(old_summary: <span class="bi">str</span>, turns: <span class="bi">list</span>[<span class="bi">dict</span>]) -&gt; <span class="bi">str</span>:
+    text = <span class="st">"\n"</span>.<span class="fn">join</span>(<span class="st">f"{t['role']}: {t['content']}"</span> <span class="kw">for</span> t <span class="kw">in</span> turns)
+    resp = client.messages.<span class="fn">create</span>(
+        model=<span class="st">"claude-haiku-4-5-20251001"</span>, max_tokens=<span class="nu">300</span>,
+        messages=[{<span class="st">"role"</span>: <span class="st">"user"</span>, <span class="st">"content"</span>:
+            <span class="st">"Update the running summary of this conversation. Keep facts, decisions, open "</span>
+            <span class="st">"questions, and user preferences. Drop small talk. Max 150 words.\n\n"</span>
+            <span class="st">f"Current summary:\n{old_summary or '(none)'}\n\nNew turns:\n{text}"</span>}])
+    <span class="kw">return</span> resp.content[<span class="nu">0</span>].text
 
-class Conversation:
-    def __init__(self):
-        self.summary, self.turns = "", []
+<span class="kw">class</span> Conversation:
+    <span class="kw">def</span> <span class="fn">__init__</span>(<span class="bi">self</span>):
+        <span class="bi">self</span>.summary, <span class="bi">self</span>.turns = <span class="st">""</span>, []
 
-    def add(self, role, content):
-        self.turns.append({"role": role, "content": content})
-        if len(self.turns) &gt; KEEP_RECENT + 2:                 # compress in chunks, not every turn
-            old, self.turns = self.turns[:-KEEP_RECENT], self.turns[-KEEP_RECENT:]
-            self.summary = summarize(self.summary, old)
+    <span class="kw">def</span> <span class="fn">add</span>(<span class="bi">self</span>, role, content):
+        <span class="bi">self</span>.turns.<span class="fn">append</span>({<span class="st">"role"</span>: role, <span class="st">"content"</span>: content})
+        <span class="kw">if</span> <span class="bi">len</span>(<span class="bi">self</span>.turns) &gt; KEEP_RECENT + <span class="nu">2</span>:                 <span class="cm"># compress in chunks, not every turn</span>
+            old, <span class="bi">self</span>.turns = <span class="bi">self</span>.turns[:-KEEP_RECENT], <span class="bi">self</span>.turns[-KEEP_RECENT:]
+            <span class="bi">self</span>.summary = <span class="fn">summarize</span>(<span class="bi">self</span>.summary, old)
 
-    def context(self, memories: list[str]) -&gt; tuple[str, list[dict]]:
-        system = "You are a helpful travel assistant."
-        if memories:
-            system += "\n\nKnown about this user:\n" + "\n".join(f"- {m}" for m in memories)
-        if self.summary:
-            system += f"\n\nEarlier in this conversation:\n{self.summary}"
-        return system, self.turns</code></pre>
+    <span class="kw">def</span> <span class="fn">context</span>(<span class="bi">self</span>, memories: <span class="bi">list</span>[<span class="bi">str</span>]) -&gt; <span class="bi">tuple</span>[<span class="bi">str</span>, <span class="bi">list</span>[<span class="bi">dict</span>]]:
+        system = <span class="st">"You are a helpful travel assistant."</span>
+        <span class="kw">if</span> memories:
+            system += <span class="st">"\n\nKnown about this user:\n"</span> + <span class="st">"\n"</span>.<span class="fn">join</span>(<span class="st">f"- {m}"</span> <span class="kw">for</span> m <span class="kw">in</span> memories)
+        <span class="kw">if</span> <span class="bi">self</span>.summary:
+            system += <span class="st">f"\n\nEarlier in this conversation:\n{self.summary}"</span>
+        <span class="kw">return</span> system, <span class="bi">self</span>.turns</code></pre>
   <span class="lang">python</span>
-<pre class="code"><code># Long-term memory with embeddings (any embedding model + a vector store; here Chroma)
-import chromadb, uuid
-store = chromadb.PersistentClient("memdb").get_or_create_collection("memories")
+<pre class="code"><code><span class="cm"># Long-term memory with embeddings (any embedding model + a vector store; here Chroma)</span>
+<span class="kw">import</span> chromadb, uuid
+store = chromadb.<span class="fn">PersistentClient</span>(<span class="st">"memdb"</span>).<span class="fn">get_or_create_collection</span>(<span class="st">"memories"</span>)
 
-def remember(user_id: str, fact: str):
-    hits = store.query(query_texts=[fact], n_results=1, where={"user_id": user_id})
-    if hits["ids"][0] and hits["distances"][0][0] &lt; 0.15:      # near-duplicate → update
-        store.update(ids=[hits["ids"][0][0]], documents=[fact])
-    else:
-        store.add(ids=[str(uuid.uuid4())], documents=[fact], metadatas=[{"user_id": user_id}])
+<span class="kw">def</span> <span class="fn">remember</span>(user_id: <span class="bi">str</span>, fact: <span class="bi">str</span>):
+    hits = store.<span class="fn">query</span>(query_texts=[fact], n_results=<span class="nu">1</span>, where={<span class="st">"user_id"</span>: user_id})
+    <span class="kw">if</span> hits[<span class="st">"ids"</span>][<span class="nu">0</span>] <span class="kw">and</span> hits[<span class="st">"distances"</span>][<span class="nu">0</span>][<span class="nu">0</span>] &lt; <span class="nu">0.15</span>:      <span class="cm"># near-duplicate → update</span>
+        store.<span class="fn">update</span>(ids=[hits[<span class="st">"ids"</span>][<span class="nu">0</span>][<span class="nu">0</span>]], documents=[fact])
+    <span class="kw">else</span>:
+        store.<span class="fn">add</span>(ids=[<span class="bi">str</span>(uuid.<span class="fn">uuid4</span>())], documents=[fact], metadatas=[{<span class="st">"user_id"</span>: user_id}])
 
-def recall(user_id: str, query: str, k: int = 5) -&gt; list[str]:
-    res = store.query(query_texts=[query], n_results=k, where={"user_id": user_id})
-    return res["documents"][0]
+<span class="kw">def</span> <span class="fn">recall</span>(user_id: <span class="bi">str</span>, query: <span class="bi">str</span>, k: <span class="bi">int</span> = <span class="nu">5</span>) -&gt; <span class="bi">list</span>[<span class="bi">str</span>]:
+    res = store.<span class="fn">query</span>(query_texts=[query], n_results=k, where={<span class="st">"user_id"</span>: user_id})
+    <span class="kw">return</span> res[<span class="st">"documents"</span>][<span class="nu">0</span>]
 
-remember("u1", "Prefers window seats and vegetarian meals")
-print(recall("u1", "book me a flight to Lisbon"))</code></pre>
+<span class="fn">remember</span>(<span class="st">"u1"</span>, <span class="st">"Prefers window seats and vegetarian meals"</span>)
+<span class="bi">print</span>(<span class="fn">recall</span>(<span class="st">"u1"</span>, <span class="st">"book me a flight to Lisbon"</span>))</code></pre>
   <h2>Exercises</h2>
   <ol style="list-style:none;padding-left:0">
     <li>1. Implement conversation summarization.

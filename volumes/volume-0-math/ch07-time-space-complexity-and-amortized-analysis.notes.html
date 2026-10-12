@@ -286,30 +286,30 @@ a{color:var(--ink);text-decoration:underline dotted}
 
   <h2>Example</h2>
   <span class="lang">python</span>
-<pre class="code"><code>import sys
+<pre class="code"><code><span class="kw">import</span> sys
 
 lst = []
-last = sys.getsizeof(lst)
-for i in range(64):
-    lst.append(i)
-    size = sys.getsizeof(lst)
-    if size != last:
-        print(f"len={len(lst):&gt;3}  bytes={size}")   # jumps only occasionally
+last = sys.<span class="fn">getsizeof</span>(lst)
+<span class="kw">for</span> i <span class="kw">in</span> <span class="bi">range</span>(<span class="nu">64</span>):
+    lst.<span class="fn">append</span>(i)
+    size = sys.<span class="fn">getsizeof</span>(lst)
+    <span class="kw">if</span> size != last:
+        <span class="bi">print</span>(<span class="st">f"len={len(lst):&gt;3}  bytes={size}"</span>)   <span class="cm"># jumps only occasionally</span>
         last = size</code></pre>
   <p>CPython grows lists by roughly 1.125× plus a constant, not 2×. Any constant growth factor &gt; 1 still gives amortized O(1).</p>
 
   <h3>Space: recursive vs iterative sum</h3>
   <span class="lang">python</span>
-<pre class="code"><code>def sum_rec(xs, i=0):          # O(n) stack space — one frame per element
-    return 0 if i == len(xs) else xs[i] + sum_rec(xs, i + 1)
+<pre class="code"><code><span class="kw">def</span> <span class="fn">sum_rec</span>(xs, i=<span class="nu">0</span>):          <span class="cm"># O(n) stack space — one frame per element</span>
+    <span class="kw">return</span> <span class="nu">0</span> <span class="kw">if</span> i == <span class="bi">len</span>(xs) <span class="kw">else</span> xs[i] + <span class="fn">sum_rec</span>(xs, i + <span class="nu">1</span>)
 
-def sum_iter(xs):              # O(1) auxiliary space
-    s = 0
-    for x in xs:
+<span class="kw">def</span> <span class="fn">sum_iter</span>(xs):              <span class="cm"># O(1) auxiliary space</span>
+    s = <span class="nu">0</span>
+    <span class="kw">for</span> x <span class="kw">in</span> xs:
         s += x
-    return s
+    <span class="kw">return</span> s
 
-sum_rec(list(range(5000)))     # RecursionError: default limit is ~1000 frames</code></pre>
+<span class="fn">sum_rec</span>(<span class="bi">list</span>(<span class="bi">range</span>(<span class="nu">5000</span>)))     <span class="cm"># RecursionError: default limit is ~1000 frames</span></code></pre>
 
   <h3>Why growing by +1 is a trap</h3>
   <div class="wrap"><table>

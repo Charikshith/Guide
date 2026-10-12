@@ -260,53 +260,53 @@ a{color:var(--ink);text-decoration:underline dotted}
 <div class="pagebreak">~ page 3 ~</div>
 <h2>Example</h2>
 <span class="lang">python</span>
-<pre class="code"><code>import functools, time, re, contextlib, inspect
+<pre class="code"><code><span class="kw">import</span> functools, time, re, contextlib, inspect
 
-def timed(fn):
-    @functools.wraps(fn)                       # keep name, docstring, signature
-    def wrapper(*args, **kwargs):
-        start = time.perf_counter()
-        try:
-            return fn(*args, **kwargs)
-        finally:
-            print(f"{fn.__name__} took {time.perf_counter() - start:.4f}s")
-    return wrapper
+<span class="kw">def</span> <span class="fn">timed</span>(fn):
+    <span class="bi">@functools.wraps</span>(fn)                       <span class="cm"># keep name, docstring, signature</span>
+    <span class="kw">def</span> <span class="fn">wrapper</span>(*args, **kwargs):
+        start = time.<span class="fn">perf_counter</span>()
+        <span class="kw">try</span>:
+            <span class="kw">return</span> <span class="fn">fn</span>(*args, **kwargs)
+        <span class="kw">finally</span>:
+            <span class="bi">print</span>(<span class="st">f"{fn.__name__} took {time.perf_counter() - start:.4f}s"</span>)
+    <span class="kw">return</span> wrapper
 
-@functools.lru_cache(maxsize=None)
-def fib(n):
-    return n if n &lt; 2 else fib(n - 1) + fib(n - 2)
+<span class="bi">@functools.lru_cache</span>(maxsize=<span class="kw">None</span>)
+<span class="kw">def</span> <span class="fn">fib</span>(n):
+    <span class="kw">return</span> n <span class="kw">if</span> n &lt; <span class="nu">2</span> <span class="kw">else</span> <span class="fn">fib</span>(n - <span class="nu">1</span>) + <span class="fn">fib</span>(n - <span class="nu">2</span>)
 
-@timed
-def compute():
-    return fib(200)
+<span class="bi">@timed</span>
+<span class="kw">def</span> <span class="fn">compute</span>():
+    <span class="kw">return</span> <span class="fn">fib</span>(<span class="nu">200</span>)
 
-compute()
+<span class="fn">compute</span>()
 
-def fib_gen():
-    a, b = 0, 1
-    while True:                                # infinite, but lazy
-        yield a
+<span class="kw">def</span> <span class="fn">fib_gen</span>():
+    a, b = <span class="nu">0</span>, <span class="nu">1</span>
+    <span class="kw">while</span> <span class="kw">True</span>:                                <span class="cm"># infinite, but lazy</span>
+        <span class="kw">yield</span> a
         a, b = b, a + b
 
-from itertools import islice
-print(list(islice(fib_gen(), 10)))             # [0, 1, 1, 2, 3, 5, 8, 13, 21, 34]
+<span class="kw">from</span> itertools <span class="kw">import</span> islice
+<span class="bi">print</span>(<span class="bi">list</span>(<span class="fn">islice</span>(<span class="fn">fib_gen</span>(), <span class="nu">10</span>)))             <span class="cm"># [0, 1, 1, 2, 3, 5, 8, 13, 21, 34]</span>
 
-positives = (x for x in [-2, 5, -1, 7] if x &gt; 0)   # generator expression
+positives = (x <span class="kw">for</span> x <span class="kw">in</span> [-<span class="nu">2</span>, <span class="nu">5</span>, -<span class="nu">1</span>, <span class="nu">7</span>] <span class="kw">if</span> x &gt; <span class="nu">0</span>)   <span class="cm"># generator expression</span>
 
-@contextlib.contextmanager
-def timer(label):
-    start = time.perf_counter()
-    yield
-    print(label, time.perf_counter() - start)
+<span class="bi">@contextlib.contextmanager</span>
+<span class="kw">def</span> <span class="fn">timer</span>(label):
+    start = time.<span class="fn">perf_counter</span>()
+    <span class="kw">yield</span>
+    <span class="bi">print</span>(label, time.<span class="fn">perf_counter</span>() - start)
 
-with timer("block"):
-    sum(range(10**6))
+<span class="kw">with</span> <span class="fn">timer</span>(<span class="st">"block"</span>):
+    <span class="bi">sum</span>(<span class="bi">range</span>(<span class="nu">10</span>**<span class="nu">6</span>))
 
-m = re.search(r"(?P&lt;status&gt;\d{3}) (?P&lt;ms&gt;\d+)ms", "GET /api 200 35ms")
-print(m["status"], int(m["ms"]))               # 200 35
+m = re.<span class="fn">search</span>(<span class="st">r"(?P&lt;status&gt;\d{3}) (?P&lt;ms&gt;\d+)ms"</span>, <span class="st">"GET /api 200 35ms"</span>)
+<span class="bi">print</span>(m[<span class="st">"status"</span>], <span class="bi">int</span>(m[<span class="st">"ms"</span>]))               <span class="cm"># 200 35</span>
 
-print(inspect.signature(fib.__wrapped__))      # (n) — reflection
-print(getattr(m, "group")(0))                  # call a method by name</code></pre>
+<span class="bi">print</span>(inspect.<span class="fn">signature</span>(fib.__wrapped__))      <span class="cm"># (n) — reflection</span>
+<span class="bi">print</span>(<span class="bi">getattr</span>(m, <span class="st">"group"</span>)(<span class="nu">0</span>))                  <span class="cm"># call a method by name</span></code></pre>
 <h2>Exercises</h2>
 <ol style="list-style:none;padding-left:0">
 <li><p>1. Write a decorator that times a function.</p>

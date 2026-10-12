@@ -265,43 +265,43 @@ a{color:var(--ink);text-decoration:underline dotted}
  add verification steps and fewer hand-offs to keep this high</code></pre>
   <h2>Example</h2>
   <span class="lang">python</span>
-<pre class="code"><code>import asyncio, json, anthropic
-client = anthropic.AsyncAnthropic()
+<pre class="code"><code><span class="kw">import</span> asyncio, json, anthropic
+client = anthropic.<span class="fn">AsyncAnthropic</span>()
 
-async def ask(system: str, prompt: str, model="claude-sonnet-5-5", max_tokens=1500) -&gt; str:
-    r = await client.messages.create(model=model, max_tokens=max_tokens, system=system,
-                                     messages=[{"role": "user", "content": prompt}])
-    return r.content[0].text
+<span class="kw">async</span> <span class="kw">def</span> <span class="fn">ask</span>(system: <span class="bi">str</span>, prompt: <span class="bi">str</span>, model=<span class="st">"claude-sonnet-5-5"</span>, max_tokens=<span class="nu">1500</span>) -&gt; <span class="bi">str</span>:
+    r = <span class="kw">await</span> client.messages.<span class="fn">create</span>(model=model, max_tokens=max_tokens, system=system,
+                                     messages=[{<span class="st">"role"</span>: <span class="st">"user"</span>, <span class="st">"content"</span>: prompt}])
+    <span class="kw">return</span> r.content[<span class="nu">0</span>].text
 
-async def researcher(sub_question: str) -&gt; dict:
-    text = await ask("You are a careful researcher. Return JSON: "
-                     '{"claims": [{"text": str, "source": str}], "open_questions": [str]}',
+<span class="kw">async</span> <span class="kw">def</span> <span class="fn">researcher</span>(sub_question: <span class="bi">str</span>) -&gt; <span class="bi">dict</span>:
+    text = <span class="kw">await</span> <span class="fn">ask</span>(<span class="st">"You are a careful researcher. Return JSON: "</span>
+                     <span class="st">'{"claims": [{"text": str, "source": str}], "open_questions": [str]}'</span>,
                      sub_question)
-    return json.loads(text)
+    <span class="kw">return</span> json.<span class="fn">loads</span>(text)
 
-async def writer(task: str, findings: list[dict], feedback: str = "") -&gt; str:
-    return await ask("You write clear 1-page briefs. Use only the given findings; cite sources.",
-                     f"Task: {task}\nFindings: {json.dumps(findings)}\nFeedback to address: {feedback}")
+<span class="kw">async</span> <span class="kw">def</span> <span class="fn">writer</span>(task: <span class="bi">str</span>, findings: <span class="bi">list</span>[<span class="bi">dict</span>], feedback: <span class="bi">str</span> = <span class="st">""</span>) -&gt; <span class="bi">str</span>:
+    <span class="kw">return</span> <span class="kw">await</span> <span class="fn">ask</span>(<span class="st">"You write clear 1-page briefs. Use only the given findings; cite sources."</span>,
+                     <span class="st">f"Task: {task}\nFindings: {json.dumps(findings)}\nFeedback to address: {feedback}"</span>)
 
-async def critic(task: str, draft: str) -&gt; dict:
-    text = await ask("You grade briefs 1-10 on accuracy, sourcing, clarity. Return JSON "
-                     '{"score": int, "feedback": str}.', f"Task: {task}\nDraft:\n{draft}",
-                     model="claude-opus-5-5", max_tokens=500)
-    return json.loads(text)
+<span class="kw">async</span> <span class="kw">def</span> <span class="fn">critic</span>(task: <span class="bi">str</span>, draft: <span class="bi">str</span>) -&gt; <span class="bi">dict</span>:
+    text = <span class="kw">await</span> <span class="fn">ask</span>(<span class="st">"You grade briefs 1-10 on accuracy, sourcing, clarity. Return JSON "</span>
+                     <span class="st">'{"score": int, "feedback": str}.'</span>, <span class="st">f"Task: {task}\nDraft:\n{draft}"</span>,
+                     model=<span class="st">"claude-opus-5-5"</span>, max_tokens=<span class="nu">500</span>)
+    <span class="kw">return</span> json.<span class="fn">loads</span>(text)
 
-async def run(task: str, max_rounds: int = 3) -&gt; str:
-    plan = json.loads(await ask('Split the task into 3 independent research questions. JSON {"questions": [str]}', task))
-    findings = await asyncio.gather(*(researcher(q) for q in plan["questions"]))   # fan-out, parallel
-    draft, feedback = "", ""
-    for _ in range(max_rounds):                                                   # bounded critic loop
-        draft = await writer(task, findings, feedback)
-        review = await critic(task, draft)
-        if review["score"] &gt;= 8:
-            break
-        feedback = review["feedback"]
-    return draft
+<span class="kw">async</span> <span class="kw">def</span> <span class="fn">run</span>(task: <span class="bi">str</span>, max_rounds: <span class="bi">int</span> = <span class="nu">3</span>) -&gt; <span class="bi">str</span>:
+    plan = json.<span class="fn">loads</span>(<span class="kw">await</span> <span class="fn">ask</span>(<span class="st">'Split the task into 3 independent research questions. JSON {"questions": [str]}'</span>, task))
+    findings = <span class="kw">await</span> asyncio.<span class="fn">gather</span>(*(<span class="fn">researcher</span>(q) <span class="kw">for</span> q <span class="kw">in</span> plan[<span class="st">"questions"</span>]))   <span class="cm"># fan-out, parallel</span>
+    draft, feedback = <span class="st">""</span>, <span class="st">""</span>
+    <span class="kw">for</span> _ <span class="kw">in</span> <span class="bi">range</span>(max_rounds):                                                   <span class="cm"># bounded critic loop</span>
+        draft = <span class="kw">await</span> <span class="fn">writer</span>(task, findings, feedback)
+        review = <span class="kw">await</span> <span class="fn">critic</span>(task, draft)
+        <span class="kw">if</span> review[<span class="st">"score"</span>] &gt;= <span class="nu">8</span>:
+            <span class="kw">break</span>
+        feedback = review[<span class="st">"feedback"</span>]
+    <span class="kw">return</span> draft
 
-print(asyncio.run(run("Write a brief on heat pumps for a city council")))</code></pre>
+<span class="bi">print</span>(asyncio.<span class="fn">run</span>(<span class="fn">run</span>(<span class="st">"Write a brief on heat pumps for a city council"</span>)))</code></pre>
   <p>(In production, validate each JSON response with a schema and retry on parse errors — see <a href="ch06-prompt-engineering-and-structured-output.notes.html">Ch 6</a>.)</p>
   <div class="pagebreak">~ page 2 ~</div>
 

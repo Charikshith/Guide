@@ -339,44 +339,44 @@ a{color:var(--ink);text-decoration:underline dotted}
  token 3 ([1,1]) matches itself best, so it keeps ~50% of its own value.</code></pre>
 
   <span class="lang">python</span>
-<pre class="code"><code>import numpy as np
+<pre class="code"><code><span class="kw">import</span> numpy <span class="kw">as</span> np
 
-def softmax(z, axis=-1):
-    z = z - z.max(axis=axis, keepdims=True)
-    e = np.exp(z)
-    return e / e.sum(axis=axis, keepdims=True)
+<span class="kw">def</span> <span class="fn">softmax</span>(z, axis=-<span class="nu">1</span>):
+    z = z - z.<span class="bi">max</span>(axis=axis, keepdims=<span class="kw">True</span>)
+    e = np.<span class="fn">exp</span>(z)
+    <span class="kw">return</span> e / e.<span class="bi">sum</span>(axis=axis, keepdims=<span class="kw">True</span>)
 
-def attention(Q, K, V, causal=False):
-    d_k = Q.shape[-1]
-    scores = Q @ K.swapaxes(-1, -2) / np.sqrt(d_k)          # [..., n, n]
-    if causal:
-        n = scores.shape[-1]
-        scores = np.where(np.tril(np.ones((n, n), bool)), scores, -np.inf)
-    w = softmax(scores)
-    return w @ V, w
+<span class="kw">def</span> <span class="fn">attention</span>(Q, K, V, causal=<span class="kw">False</span>):
+    d_k = Q.shape[-<span class="nu">1</span>]
+    scores = Q @ K.<span class="fn">swapaxes</span>(-<span class="nu">1</span>, -<span class="nu">2</span>) / np.<span class="fn">sqrt</span>(d_k)          <span class="cm"># [..., n, n]</span>
+    <span class="kw">if</span> causal:
+        n = scores.shape[-<span class="nu">1</span>]
+        scores = np.<span class="fn">where</span>(np.<span class="fn">tril</span>(np.<span class="fn">ones</span>((n, n), <span class="bi">bool</span>)), scores, -np.inf)
+    w = <span class="fn">softmax</span>(scores)
+    <span class="kw">return</span> w @ V, w
 
-X = np.array([[1, 0], [0, 1], [1, 1]], float)
-V = np.array([[1, 0], [0, 2], [1, 1]], float)
-out, w = attention(X, X, V)
-print(w.round(3)); print(out.round(3))                      # matches the hand calculation
+X = np.<span class="fn">array</span>([[<span class="nu">1</span>, <span class="nu">0</span>], [<span class="nu">0</span>, <span class="nu">1</span>], [<span class="nu">1</span>, <span class="nu">1</span>]], <span class="bi">float</span>)
+V = np.<span class="fn">array</span>([[<span class="nu">1</span>, <span class="nu">0</span>], [<span class="nu">0</span>, <span class="nu">2</span>], [<span class="nu">1</span>, <span class="nu">1</span>]], <span class="bi">float</span>)
+out, w = <span class="fn">attention</span>(X, X, V)
+<span class="bi">print</span>(w.<span class="bi">round</span>(<span class="nu">3</span>)); <span class="bi">print</span>(out.<span class="bi">round</span>(<span class="nu">3</span>))                      <span class="cm"># matches the hand calculation</span>
 
-def multi_head(X, Wq, Wk, Wv, Wo, h, causal=True):
+<span class="kw">def</span> <span class="fn">multi_head</span>(X, Wq, Wk, Wv, Wo, h, causal=<span class="kw">True</span>):
     n, d = X.shape
-    split = lambda M: M.reshape(n, h, d // h).transpose(1, 0, 2)   # [h, n, d/h]
-    heads, _ = attention(split(X @ Wq), split(X @ Wk), split(X @ Wv), causal)
-    return heads.transpose(1, 0, 2).reshape(n, d) @ Wo
+    split = <span class="kw">lambda</span> M: M.<span class="fn">reshape</span>(n, h, d // h).<span class="fn">transpose</span>(<span class="nu">1</span>, <span class="nu">0</span>, <span class="nu">2</span>)   <span class="cm"># [h, n, d/h]</span>
+    heads, _ = <span class="fn">attention</span>(<span class="fn">split</span>(X @ Wq), <span class="fn">split</span>(X @ Wk), <span class="fn">split</span>(X @ Wv), causal)
+    <span class="kw">return</span> heads.<span class="fn">transpose</span>(<span class="nu">1</span>, <span class="nu">0</span>, <span class="nu">2</span>).<span class="fn">reshape</span>(n, d) @ Wo
 
-rng = np.random.default_rng(0)
-d, h, n = 8, 2, 5
-W = [rng.normal(size=(d, d)) / np.sqrt(d) for _ in range(4)]
-print(multi_head(rng.normal(size=(n, d)), *W, h=h).shape)    # (5, 8)</code></pre>
+rng = np.random.<span class="fn">default_rng</span>(<span class="nu">0</span>)
+d, h, n = <span class="nu">8</span>, <span class="nu">2</span>, <span class="nu">5</span>
+W = [rng.<span class="fn">normal</span>(size=(d, d)) / np.<span class="fn">sqrt</span>(d) <span class="kw">for</span> _ <span class="kw">in</span> <span class="bi">range</span>(<span class="nu">4</span>)]
+<span class="bi">print</span>(<span class="fn">multi_head</span>(rng.<span class="fn">normal</span>(size=(n, d)), *W, h=h).shape)    <span class="cm"># (5, 8)</span></code></pre>
 
   <span class="lang">python</span>
-<pre class="code"><code># Verify against PyTorch's reference implementation
-import torch, torch.nn.functional as F
-q = torch.tensor(X)[None, None]; v = torch.tensor(V)[None, None]
-ref = F.scaled_dot_product_attention(q, q, v)
-print(np.allclose(ref[0, 0].numpy(), out))                  # True</code></pre>
+<pre class="code"><code><span class="cm"># Verify against PyTorch's reference implementation</span>
+<span class="kw">import</span> torch, torch.nn.functional <span class="kw">as</span> F
+q = torch.<span class="fn">tensor</span>(X)[<span class="kw">None</span>, <span class="kw">None</span>]; v = torch.<span class="fn">tensor</span>(V)[<span class="kw">None</span>, <span class="kw">None</span>]
+ref = F.<span class="fn">scaled_dot_product_attention</span>(q, q, v)
+<span class="bi">print</span>(np.<span class="fn">allclose</span>(ref[<span class="nu">0</span>, <span class="nu">0</span>].<span class="fn">numpy</span>(), out))                  <span class="cm"># True</span></code></pre>
 
   <h2>Exercises</h2>
   <ol style="list-style:none;padding-left:0">

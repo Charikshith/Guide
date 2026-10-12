@@ -312,51 +312,51 @@ a{color:var(--ink);text-decoration:underline dotted}
 
   <h2>Example</h2>
   <span class="lang">python</span>
-<pre class="code"><code>import bisect, hashlib
+<pre class="code"><code><span class="kw">import</span> bisect, hashlib
 
-class HashRing:
-    def __init__(self, nodes, vnodes=100):
-        self.ring = []                               # sorted list of (hash, node)
-        for n in nodes:
-            self.add(n, vnodes)
+<span class="kw">class</span> HashRing:
+    <span class="kw">def</span> <span class="fn">__init__</span>(<span class="bi">self</span>, nodes, vnodes=<span class="nu">100</span>):
+        <span class="bi">self</span>.ring = []                               <span class="cm"># sorted list of (hash, node)</span>
+        <span class="kw">for</span> n <span class="kw">in</span> nodes:
+            <span class="bi">self</span>.<span class="fn">add</span>(n, vnodes)
 
-    @staticmethod
-    def _h(key: str) -&gt; int:
-        return int.from_bytes(hashlib.md5(key.encode()).digest()[:8], "big")
+    <span class="bi">@staticmethod</span>
+    <span class="kw">def</span> <span class="fn">_h</span>(key: <span class="bi">str</span>) -&gt; <span class="bi">int</span>:
+        <span class="kw">return</span> <span class="bi">int</span>.<span class="fn">from_bytes</span>(hashlib.<span class="fn">md5</span>(key.<span class="fn">encode</span>()).<span class="fn">digest</span>()[:<span class="nu">8</span>], <span class="st">"big"</span>)
 
-    def add(self, node, vnodes=100):
-        for i in range(vnodes):
-            bisect.insort(self.ring, (self._h(f"{node}#{i}"), node))
+    <span class="kw">def</span> <span class="fn">add</span>(<span class="bi">self</span>, node, vnodes=<span class="nu">100</span>):
+        <span class="kw">for</span> i <span class="kw">in</span> <span class="bi">range</span>(vnodes):
+            bisect.<span class="fn">insort</span>(<span class="bi">self</span>.ring, (<span class="bi">self</span>.<span class="fn">_h</span>(<span class="st">f"{node}#{i}"</span>), node))
 
-    def get(self, key):
-        i = bisect.bisect(self.ring, (self._h(key), "")) % len(self.ring)
-        return self.ring[i][1]
+    <span class="kw">def</span> <span class="fn">get</span>(<span class="bi">self</span>, key):
+        i = bisect.<span class="fn">bisect</span>(<span class="bi">self</span>.ring, (<span class="bi">self</span>.<span class="fn">_h</span>(key), <span class="st">""</span>)) % <span class="bi">len</span>(<span class="bi">self</span>.ring)
+        <span class="kw">return</span> <span class="bi">self</span>.ring[i][<span class="nu">1</span>]
 
-ring = HashRing(["A", "B", "C"])
-before = {k: ring.get(k) for k in (f"user:{i}" for i in range(10_000))}
-ring.add("D")
-moved = sum(before[k] != ring.get(k) for k in before)
-print(f"{moved / len(before):.0%} of keys moved")      # ≈ 25%, not ≈ 75% as with mod N</code></pre>
+ring = <span class="fn">HashRing</span>([<span class="st">"A"</span>, <span class="st">"B"</span>, <span class="st">"C"</span>])
+before = {k: ring.<span class="fn">get</span>(k) <span class="kw">for</span> k <span class="kw">in</span> (<span class="st">f"user:{i}"</span> <span class="kw">for</span> i <span class="kw">in</span> <span class="bi">range</span>(<span class="nu">10_000</span>))}
+ring.<span class="fn">add</span>(<span class="st">"D"</span>)
+moved = <span class="bi">sum</span>(before[k] != ring.<span class="fn">get</span>(k) <span class="kw">for</span> k <span class="kw">in</span> before)
+<span class="bi">print</span>(<span class="st">f"{moved / len(before):.0%} of keys moved"</span>)      <span class="cm"># ≈ 25%, not ≈ 75% as with mod N</span></code></pre>
 
   <span class="lang">python</span>
-<pre class="code"><code># Lease + fencing token (sketch). The store refuses stale tokens.
-class Store:
-    def __init__(self): self.max_token = 0; self.data = {}
-    def write(self, key, value, token):
-        if token &lt; self.max_token:
-            raise PermissionError(f"stale fencing token {token} &lt; {self.max_token}")
-        self.max_token = token; self.data[key] = value
+<pre class="code"><code><span class="cm"># Lease + fencing token (sketch). The store refuses stale tokens.</span>
+<span class="kw">class</span> Store:
+    <span class="kw">def</span> <span class="fn">__init__</span>(<span class="bi">self</span>): <span class="bi">self</span>.max_token = <span class="nu">0</span>; <span class="bi">self</span>.data = {}
+    <span class="kw">def</span> <span class="fn">write</span>(<span class="bi">self</span>, key, value, token):
+        <span class="kw">if</span> token &lt; <span class="bi">self</span>.max_token:
+            <span class="kw">raise</span> <span class="fn">PermissionError</span>(<span class="st">f"stale fencing token {token} &lt; {self.max_token}"</span>)
+        <span class="bi">self</span>.max_token = token; <span class="bi">self</span>.data[key] = value
 
-# lock service grants: client A → token 33, lease 10 s
-# A pauses 15 s (GC); the lease expires; client B → token 34, writes
-# A wakes up and writes with token 33 → rejected. No split-brain damage.</code></pre>
+<span class="cm"># lock service grants: client A → token 33, lease 10 s</span>
+<span class="cm"># A pauses 15 s (GC); the lease expires; client B → token 34, writes</span>
+<span class="cm"># A wakes up and writes with token 33 → rejected. No split-brain damage.</span></code></pre>
 
   <span class="lang">go</span>
-<pre class="code"><code>// etcd election (Go client): campaign for leadership with a lease
-session, _ := concurrency.NewSession(cli, concurrency.WithTTL(10))
-e := concurrency.NewElection(session, "/service/leader")
-e.Campaign(ctx, "node-2")            // blocks until this node is the leader
-// the leader key disappears if the session's lease expires → someone else wins</code></pre>
+<pre class="code"><code><span class="cm">// etcd election (Go client): campaign for leadership with a lease</span>
+session, _ := concurrency.<span class="fn">NewSession</span>(cli, concurrency.<span class="fn">WithTTL</span>(<span class="nu">10</span>))
+e := concurrency.<span class="fn">NewElection</span>(session, <span class="st">"/service/leader"</span>)
+e.<span class="fn">Campaign</span>(ctx, <span class="st">"node-2"</span>)            <span class="cm">// blocks until this node is the leader</span>
+<span class="cm">// the leader key disappears if the session's lease expires → someone else wins</span></code></pre>
 
   <div class="pagebreak">~ page 4 ~</div>
 

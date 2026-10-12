@@ -281,42 +281,42 @@ a{color:var(--ink);text-decoration:underline dotted}
 
   <h2>Example</h2>
   <span class="lang">python</span>
-<pre class="code"><code># Undirected triangle as an adjacency list
-G = {0: {1, 2}, 1: {0, 2}, 2: {0, 1}}
+<pre class="code"><code><span class="cm"># Undirected triangle as an adjacency list</span>
+G = {<span class="nu">0</span>: {<span class="nu">1</span>, <span class="nu">2</span>}, <span class="nu">1</span>: {<span class="nu">0</span>, <span class="nu">2</span>}, <span class="nu">2</span>: {<span class="nu">0</span>, <span class="nu">1</span>}}
 
-degrees = {v: len(nbrs) for v, nbrs in G.items()}
-edges = sum(degrees.values()) // 2                 # handshaking lemma
-print(degrees, edges)                              # {0: 2, 1: 2, 2: 2} 3
+degrees = {v: <span class="bi">len</span>(nbrs) <span class="kw">for</span> v, nbrs <span class="kw">in</span> G.<span class="fn">items</span>()}
+edges = <span class="bi">sum</span>(degrees.<span class="fn">values</span>()) // <span class="nu">2</span>                 <span class="cm"># handshaking lemma</span>
+<span class="bi">print</span>(degrees, edges)                              <span class="cm"># {0: 2, 1: 2, 2: 2} 3</span>
 
-def has_path(g, start, goal):
-    seen, stack = set(), [start]
-    while stack:
-        v = stack.pop()
-        if v == goal:
-            return True
-        if v not in seen:
-            seen.add(v)
-            stack.extend(g[v] - seen)
-    return False
+<span class="kw">def</span> <span class="fn">has_path</span>(g, start, goal):
+    seen, stack = <span class="bi">set</span>(), [start]
+    <span class="kw">while</span> stack:
+        v = stack.<span class="fn">pop</span>()
+        <span class="kw">if</span> v == goal:
+            <span class="kw">return</span> <span class="kw">True</span>
+        <span class="kw">if</span> v <span class="kw">not</span> <span class="kw">in</span> seen:
+            seen.<span class="fn">add</span>(v)
+            stack.<span class="fn">extend</span>(g[v] - seen)
+    <span class="kw">return</span> <span class="kw">False</span>
 
-def has_cycle_undirected(g):
-    seen = set()
-    for root in g:
-        if root in seen:
-            continue
-        stack = [(root, None)]
-        while stack:
-            v, parent = stack.pop()
-            if v in seen:
-                return True                        # reached again by another route
-            seen.add(v)
-            stack.extend((n, v) for n in g[v] if n != parent)
-    return False
+<span class="kw">def</span> <span class="fn">has_cycle_undirected</span>(g):
+    seen = <span class="bi">set</span>()
+    <span class="kw">for</span> root <span class="kw">in</span> g:
+        <span class="kw">if</span> root <span class="kw">in</span> seen:
+            <span class="kw">continue</span>
+        stack = [(root, <span class="kw">None</span>)]
+        <span class="kw">while</span> stack:
+            v, parent = stack.<span class="fn">pop</span>()
+            <span class="kw">if</span> v <span class="kw">in</span> seen:
+                <span class="kw">return</span> <span class="kw">True</span>                        <span class="cm"># reached again by another route</span>
+            seen.<span class="fn">add</span>(v)
+            stack.<span class="fn">extend</span>((n, v) <span class="kw">for</span> n <span class="kw">in</span> g[v] <span class="kw">if</span> n != parent)
+    <span class="kw">return</span> <span class="kw">False</span>
 
-print(has_path(G, 0, 2), has_cycle_undirected(G))  # True True
+<span class="bi">print</span>(<span class="fn">has_path</span>(G, <span class="nu">0</span>, <span class="nu">2</span>), <span class="fn">has_cycle_undirected</span>(G))  <span class="cm"># True True</span>
 
-tree = {0: {1, 2}, 1: {0}, 2: {0}}
-print(has_cycle_undirected(tree))                  # False — 3 vertices, 2 edges</code></pre>
+tree = {<span class="nu">0</span>: {<span class="nu">1</span>, <span class="nu">2</span>}, <span class="nu">1</span>: {<span class="nu">0</span>}, <span class="nu">2</span>: {<span class="nu">0</span>}}
+<span class="bi">print</span>(<span class="fn">has_cycle_undirected</span>(tree))                  <span class="cm"># False — 3 vertices, 2 edges</span></code></pre>
 
   <h2>Exercises</h2>
   <ol style="list-style:none;padding-left:0">

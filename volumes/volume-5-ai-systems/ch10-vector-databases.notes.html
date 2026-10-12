@@ -305,63 +305,63 @@ a{color:var(--ink);text-decoration:underline dotted}
 
   <h2>Example</h2>
   <span class="lang">python</span>
-<pre class="code"><code># Qdrant: collection, upsert with payload, filtered cosine search
-from qdrant_client import QdrantClient, models
-from sentence_transformers import SentenceTransformer
+<pre class="code"><code><span class="cm"># Qdrant: collection, upsert with payload, filtered cosine search</span>
+<span class="kw">from</span> qdrant_client <span class="kw">import</span> QdrantClient, models
+<span class="kw">from</span> sentence_transformers <span class="kw">import</span> SentenceTransformer
 
-client = QdrantClient(":memory:")                     # or QdrantClient(url="http://localhost:6333")
-emb = SentenceTransformer("all-MiniLM-L6-v2")
+client = <span class="fn">QdrantClient</span>(<span class="st">":memory:"</span>)                     <span class="cm"># or QdrantClient(url="http://localhost:6333")</span>
+emb = <span class="fn">SentenceTransformer</span>(<span class="st">"all-MiniLM-L6-v2"</span>)
 
-client.create_collection(
-    "kb",
-    vectors_config=models.VectorParams(size=384, distance=models.Distance.COSINE),
-    hnsw_config=models.HnswConfigDiff(m=16, ef_construct=128),
+client.<span class="fn">create_collection</span>(
+    <span class="st">"kb"</span>,
+    vectors_config=models.<span class="fn">VectorParams</span>(size=<span class="nu">384</span>, distance=models.Distance.COSINE),
+    hnsw_config=models.<span class="fn">HnswConfigDiff</span>(m=<span class="nu">16</span>, ef_construct=<span class="nu">128</span>),
 )
-client.create_payload_index("kb", field_name="tenant", field_schema="keyword")
+client.<span class="fn">create_payload_index</span>(<span class="st">"kb"</span>, field_name=<span class="st">"tenant"</span>, field_schema=<span class="st">"keyword"</span>)
 
 docs = [
-    (1, "Annual plans can be refunded within 30 days.", {"tenant": "acme", "lang": "en"}),
-    (2, "Use 'Forgot password' on the login page.", {"tenant": "acme", "lang": "en"}),
-    (3, "Error E4012 means the export exceeded 10,000 rows.", {"tenant": "acme", "lang": "en"}),
-    (4, "Refunds are not available for monthly plans.", {"tenant": "globex", "lang": "en"}),
+    (<span class="nu">1</span>, <span class="st">"Annual plans can be refunded within 30 days."</span>, {<span class="st">"tenant"</span>: <span class="st">"acme"</span>, <span class="st">"lang"</span>: <span class="st">"en"</span>}),
+    (<span class="nu">2</span>, <span class="st">"Use 'Forgot password' on the login page."</span>, {<span class="st">"tenant"</span>: <span class="st">"acme"</span>, <span class="st">"lang"</span>: <span class="st">"en"</span>}),
+    (<span class="nu">3</span>, <span class="st">"Error E4012 means the export exceeded 10,000 rows."</span>, {<span class="st">"tenant"</span>: <span class="st">"acme"</span>, <span class="st">"lang"</span>: <span class="st">"en"</span>}),
+    (<span class="nu">4</span>, <span class="st">"Refunds are not available for monthly plans."</span>, {<span class="st">"tenant"</span>: <span class="st">"globex"</span>, <span class="st">"lang"</span>: <span class="st">"en"</span>}),
 ]
-client.upsert("kb", [
-    models.PointStruct(id=i, vector=emb.encode(t, normalize_embeddings=True).tolist(), payload={"text": t, **p})
-    for i, t, p in docs
+client.<span class="fn">upsert</span>(<span class="st">"kb"</span>, [
+    models.<span class="fn">PointStruct</span>(<span class="bi">id</span>=i, vector=emb.<span class="fn">encode</span>(t, normalize_embeddings=<span class="kw">True</span>).<span class="fn">tolist</span>(), payload={<span class="st">"text"</span>: t, **p})
+    <span class="kw">for</span> i, t, p <span class="kw">in</span> docs
 ])
 
-hits = client.query_points(
-    "kb",
-    query=emb.encode("can I get my money back?", normalize_embeddings=True).tolist(),
-    query_filter=models.Filter(must=[models.FieldCondition(key="tenant", match=models.MatchValue(value="acme"))]),
-    search_params=models.SearchParams(hnsw_ef=64),
-    limit=2,
+hits = client.<span class="fn">query_points</span>(
+    <span class="st">"kb"</span>,
+    query=emb.<span class="fn">encode</span>(<span class="st">"can I get my money back?"</span>, normalize_embeddings=<span class="kw">True</span>).<span class="fn">tolist</span>(),
+    query_filter=models.<span class="fn">Filter</span>(must=[models.<span class="fn">FieldCondition</span>(key=<span class="st">"tenant"</span>, <span class="kw">match</span>=models.<span class="fn">MatchValue</span>(value=<span class="st">"acme"</span>))]),
+    search_params=models.<span class="fn">SearchParams</span>(hnsw_ef=<span class="nu">64</span>),
+    limit=<span class="nu">2</span>,
 ).points
-for h in hits:
-    print(round(h.score, 3), h.payload["text"])        # the acme refund doc first; globex is never returned</code></pre>
+<span class="kw">for</span> h <span class="kw">in</span> hits:
+    <span class="bi">print</span>(<span class="bi">round</span>(h.score, <span class="nu">3</span>), h.payload[<span class="st">"text"</span>])        <span class="cm"># the acme refund doc first; globex is never returned</span></code></pre>
 
   <span class="lang">python</span>
-<pre class="code"><code># Hybrid: fuse dense and keyword rankings with Reciprocal Rank Fusion
-def rrf(*rankings, k=60):
+<pre class="code"><code><span class="cm"># Hybrid: fuse dense and keyword rankings with Reciprocal Rank Fusion</span>
+<span class="kw">def</span> <span class="fn">rrf</span>(*rankings, k=<span class="nu">60</span>):
     scores = {}
-    for ranking in rankings:
-        for rank, doc_id in enumerate(ranking, start=1):
-            scores[doc_id] = scores.get(doc_id, 0.0) + 1.0 / (k + rank)
-    return sorted(scores, key=scores.get, reverse=True)
+    <span class="kw">for</span> ranking <span class="kw">in</span> rankings:
+        <span class="kw">for</span> rank, doc_id <span class="kw">in</span> <span class="bi">enumerate</span>(ranking, start=<span class="nu">1</span>):
+            scores[doc_id] = scores.<span class="fn">get</span>(doc_id, <span class="nu">0.0</span>) + <span class="nu">1.0</span> / (k + rank)
+    <span class="kw">return</span> <span class="bi">sorted</span>(scores, key=scores.get, reverse=<span class="kw">True</span>)
 
-dense = [2, 1, 3]          # ids ranked by vector similarity
-keyword = [3, 1]           # ids ranked by BM25 (exact 'E4012' match)
-print(rrf(dense, keyword)) # [3, 1, 2] — docs found by both lists rise above dense-only doc 2</code></pre>
+dense = [<span class="nu">2</span>, <span class="nu">1</span>, <span class="nu">3</span>]          <span class="cm"># ids ranked by vector similarity</span>
+keyword = [<span class="nu">3</span>, <span class="nu">1</span>]           <span class="cm"># ids ranked by BM25 (exact 'E4012' match)</span>
+<span class="bi">print</span>(<span class="fn">rrf</span>(dense, keyword)) <span class="cm"># [3, 1, 2] — docs found by both lists rise above dense-only doc 2</span></code></pre>
 
   <span class="lang">python</span>
-<pre class="code"><code># Compare metrics: on normalized vectors, cosine and dot give identical rankings
-import numpy as np
-rng = np.random.default_rng(0)
-X = rng.normal(size=(1000, 64)); X /= np.linalg.norm(X, axis=1, keepdims=True)
-q = X[0] + 0.1 * rng.normal(size=64)
-cos = X @ q / np.linalg.norm(q); dot = X @ q; l2 = -np.linalg.norm(X - q, axis=1)
-print(np.array_equal(np.argsort(-cos)[:10], np.argsort(-dot)[:10]),
-      np.array_equal(np.argsort(-cos)[:10], np.argsort(-l2)[:10]))   # True True</code></pre>
+<pre class="code"><code><span class="cm"># Compare metrics: on normalized vectors, cosine and dot give identical rankings</span>
+<span class="kw">import</span> numpy <span class="kw">as</span> np
+rng = np.random.<span class="fn">default_rng</span>(<span class="nu">0</span>)
+X = rng.<span class="fn">normal</span>(size=(<span class="nu">1000</span>, <span class="nu">64</span>)); X /= np.linalg.<span class="fn">norm</span>(X, axis=<span class="nu">1</span>, keepdims=<span class="kw">True</span>)
+q = X[<span class="nu">0</span>] + <span class="nu">0.1</span> * rng.<span class="fn">normal</span>(size=<span class="nu">64</span>)
+cos = X @ q / np.linalg.<span class="fn">norm</span>(q); dot = X @ q; l2 = -np.linalg.<span class="fn">norm</span>(X - q, axis=<span class="nu">1</span>)
+<span class="bi">print</span>(np.<span class="fn">array_equal</span>(np.<span class="fn">argsort</span>(-cos)[:<span class="nu">10</span>], np.<span class="fn">argsort</span>(-dot)[:<span class="nu">10</span>]),
+      np.<span class="fn">array_equal</span>(np.<span class="fn">argsort</span>(-cos)[:<span class="nu">10</span>], np.<span class="fn">argsort</span>(-l2)[:<span class="nu">10</span>]))   <span class="cm"># True True</span></code></pre>
 
   <h2>Exercises</h2>
   <ol style="list-style:none;padding-left:0">

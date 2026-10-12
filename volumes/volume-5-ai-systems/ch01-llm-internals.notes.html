@@ -310,39 +310,39 @@ a{color:var(--ink);text-decoration:underline dotted}
 
   <h2>Example</h2>
   <span class="lang">python</span>
-<pre class="code"><code>import numpy as np
+<pre class="code"><code><span class="kw">import</span> numpy <span class="kw">as</span> np
 
-def softmax(z):
-    z = z - z.max()                     # numerical stability
-    e = np.exp(z)
-    return e / e.sum()
+<span class="kw">def</span> <span class="fn">softmax</span>(z):
+    z = z - z.<span class="bi">max</span>()                     <span class="cm"># numerical stability</span>
+    e = np.<span class="fn">exp</span>(z)
+    <span class="kw">return</span> e / e.<span class="bi">sum</span>()
 
-vocab = ["mat", "floor", "moon"]
-logits = np.array([2.0, 1.0, 0.1])
-p = softmax(logits)
-print(dict(zip(vocab, p.round(3))))     # {'mat': 0.659, 'floor': 0.242, 'moon': 0.099}
+vocab = [<span class="st">"mat"</span>, <span class="st">"floor"</span>, <span class="st">"moon"</span>]
+logits = np.<span class="fn">array</span>([<span class="nu">2.0</span>, <span class="nu">1.0</span>, <span class="nu">0.1</span>])
+p = <span class="fn">softmax</span>(logits)
+<span class="bi">print</span>(<span class="bi">dict</span>(<span class="bi">zip</span>(vocab, p.<span class="bi">round</span>(<span class="nu">3</span>))))     <span class="cm"># {'mat': 0.659, 'floor': 0.242, 'moon': 0.099}</span>
 
-# The training signal for this position, if the true next token is "mat":
-print(-np.log(p[0]))                    # loss ≈ 0.417 (lower is better; 0 = certain and right)</code></pre>
+<span class="cm"># The training signal for this position, if the true next token is "mat":</span>
+<span class="bi">print</span>(-np.<span class="fn">log</span>(p[<span class="nu">0</span>]))                    <span class="cm"># loss ≈ 0.417 (lower is better; 0 = certain and right)</span></code></pre>
 
   <span class="lang">python</span>
-<pre class="code"><code># A real forward pass with Hugging Face (small model, runs on CPU)
-from transformers import AutoTokenizer, AutoModelForCausalLM
-import torch
+<pre class="code"><code><span class="cm"># A real forward pass with Hugging Face (small model, runs on CPU)</span>
+<span class="kw">from</span> transformers <span class="kw">import</span> AutoTokenizer, AutoModelForCausalLM
+<span class="kw">import</span> torch
 
-name = "gpt2"
-tok = AutoTokenizer.from_pretrained(name)
-model = AutoModelForCausalLM.from_pretrained(name)
+name = <span class="st">"gpt2"</span>
+tok = AutoTokenizer.<span class="fn">from_pretrained</span>(name)
+model = AutoModelForCausalLM.<span class="fn">from_pretrained</span>(name)
 
-ids = tok("The cat sat on the", return_tensors="pt").input_ids
-with torch.no_grad():
-    logits = model(ids).logits          # shape [1, seq_len, vocab_size]
-probs = logits[0, -1].softmax(-1)       # distribution for the NEXT token
-top = probs.topk(5)
-for p, i in zip(top.values, top.indices):
-    print(f"{tok.decode(i)!r:10} {p:.3f}")
+ids = <span class="fn">tok</span>(<span class="st">"The cat sat on the"</span>, return_tensors=<span class="st">"pt"</span>).input_ids
+<span class="kw">with</span> torch.<span class="fn">no_grad</span>():
+    logits = <span class="fn">model</span>(ids).logits          <span class="cm"># shape [1, seq_len, vocab_size]</span>
+probs = logits[<span class="nu">0</span>, -<span class="nu">1</span>].<span class="fn">softmax</span>(-<span class="nu">1</span>)       <span class="cm"># distribution for the NEXT token</span>
+top = probs.<span class="fn">topk</span>(<span class="nu">5</span>)
+<span class="kw">for</span> p, i <span class="kw">in</span> <span class="bi">zip</span>(top.values, top.indices):
+    <span class="bi">print</span>(<span class="st">f"{tok.decode(i)!r:10} {p:.3f}"</span>)
 
-print(sum(p.numel() for p in model.parameters()) / 1e6, "M parameters")   # ~124 M</code></pre>
+<span class="bi">print</span>(<span class="bi">sum</span>(p.<span class="fn">numel</span>() <span class="kw">for</span> p <span class="kw">in</span> model.<span class="fn">parameters</span>()) / <span class="nu">1e6</span>, <span class="st">"M parameters"</span>)   <span class="cm"># ~124 M</span></code></pre>
 
   <h2>Exercises</h2>
   <ol style="list-style:none;padding-left:0">

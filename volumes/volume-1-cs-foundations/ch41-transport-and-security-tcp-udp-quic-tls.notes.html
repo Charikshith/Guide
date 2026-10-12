@@ -248,28 +248,28 @@ a{color:var(--ink);text-decoration:underline dotted}
   <div class="pagebreak">~ page 3 ~</div>
   <h2>Example</h2>
   <span class="lang">bash</span>
-<pre class="code"><code># A TCP server and client in two terminals
-nc -l 9000                       # server
-nc localhost 9000                # client: type lines and watch them arrive
+<pre class="code"><code><span class="cm"># A TCP server and client in two terminals</span>
+nc -l <span class="nu">9000</span>                       <span class="cm"># server</span>
+nc localhost <span class="nu">9000</span>                <span class="cm"># client: type lines and watch them arrive</span>
 
-# Watch the handshake
-sudo tcpdump -i lo -nn 'tcp port 9000 and (tcp[tcpflags] &amp; (tcp-syn|tcp-fin) != 0)'
-# … Flags [S]  … Flags [S.]  … Flags [.]   ← SYN, SYN-ACK, ACK
+<span class="cm"># Watch the handshake</span>
+<span class="bi">sudo</span> tcpdump -i lo -nn <span class="st">'tcp port 9000 and (tcp[tcpflags] &amp; (tcp-syn|tcp-fin) != 0)'</span>
+<span class="cm"># … Flags [S]  … Flags [S.]  … Flags [.]   ← SYN, SYN-ACK, ACK</span>
 
-# Inspect a TLS chain and the negotiated parameters
-openssl s_client -connect example.com:443 -servername example.com &lt;/dev/null 2&gt;/dev/null \
-  | grep -E 'subject=|issuer=|Protocol|Cipher'
-curl -sv --http3 https://cloudflare.com -o /dev/null 2&gt;&amp;1 | grep -i 'http/3\|alpn'
-ss -ti dst example.com          # live TCP info: rtt, cwnd, retransmits</code></pre>
+<span class="cm"># Inspect a TLS chain and the negotiated parameters</span>
+<span class="bi">openssl</span> s_client -connect example.com:<span class="nu">443</span> -servername example.com &lt;/dev/null <span class="nu">2</span>&gt;/dev/null \
+  | <span class="bi">grep</span> -E <span class="st">'subject=|issuer=|Protocol|Cipher'</span>
+<span class="bi">curl</span> -sv --http3 https://cloudflare.com -o /dev/null <span class="nu">2</span>&gt;&amp;<span class="nu">1</span> | <span class="bi">grep</span> -i <span class="st">'http/3\|alpn'</span>
+ss -ti dst example.com          <span class="cm"># live TCP info: rtt, cwnd, retransmits</span></code></pre>
   <span class="lang">python</span>
-<pre class="code"><code>import socket, ssl
-ctx = ssl.create_default_context()                 # verifies the chain and hostname by default
-with socket.create_connection(("example.com", 443)) as raw:
-    with ctx.wrap_socket(raw, server_hostname="example.com") as tls:
-        print(tls.version(), tls.cipher()[0])      # TLSv1.3 TLS_AES_256_GCM_SHA384
-        print(tls.getpeercert()["subject"])
-        tls.sendall(b"GET / HTTP/1.1\r\nHost: example.com\r\nConnection: close\r\n\r\n")
-        print(tls.recv(64))</code></pre>
+<pre class="code"><code><span class="kw">import</span> socket, ssl
+ctx = ssl.<span class="fn">create_default_context</span>()                 <span class="cm"># verifies the chain and hostname by default</span>
+<span class="kw">with</span> socket.<span class="fn">create_connection</span>((<span class="st">"example.com"</span>, <span class="nu">443</span>)) <span class="kw">as</span> raw:
+    <span class="kw">with</span> ctx.<span class="fn">wrap_socket</span>(raw, server_hostname=<span class="st">"example.com"</span>) <span class="kw">as</span> tls:
+        <span class="bi">print</span>(tls.<span class="fn">version</span>(), tls.<span class="fn">cipher</span>()[<span class="nu">0</span>])      <span class="cm"># TLSv1.3 TLS_AES_256_GCM_SHA384</span>
+        <span class="bi">print</span>(tls.<span class="fn">getpeercert</span>()[<span class="st">"subject"</span>])
+        tls.<span class="fn">sendall</span>(<span class="st">b"GET / HTTP/1.1\r\nHost: example.com\r\nConnection: close\r\n\r\n"</span>)
+        <span class="bi">print</span>(tls.<span class="fn">recv</span>(<span class="nu">64</span>))</code></pre>
   <h2>Exercises</h2>
   <ol style="list-style:none;padding-left:0">
 <li>1. Explain TCP's reliability mechanisms.

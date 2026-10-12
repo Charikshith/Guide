@@ -227,59 +227,59 @@ a{color:var(--ink);text-decoration:underline dotted}
   <div class="pagebreak">~ page 2 ~</div>
   <h2>Example</h2>
   <span class="lang">python</span>
-<pre class="code"><code>from dataclasses import dataclass
+<pre class="code"><code><span class="kw">from</span> dataclasses <span class="kw">import</span> dataclass
 
-@dataclass(frozen=True)                # frozen → __hash__ generated from fields
-class Point:
-    x: int
-    y: int
+<span class="bi">@dataclass</span>(frozen=<span class="kw">True</span>)                <span class="cm"># frozen → __hash__ generated from fields</span>
+<span class="kw">class</span> Point:
+    x: <span class="bi">int</span>
+    y: <span class="bi">int</span>
 
-seen = {Point(1, 2): "a"}
-print(seen[Point(1, 2)])               # 'a' — equal objects, equal hashes
+seen = {<span class="fn">Point</span>(<span class="nu">1</span>, <span class="nu">2</span>): <span class="st">"a"</span>}
+<span class="bi">print</span>(seen[<span class="fn">Point</span>(<span class="nu">1</span>, <span class="nu">2</span>)])               <span class="cm"># 'a' — equal objects, equal hashes</span>
 
-class Money:
-    def __init__(self, cents, cur): self.cents, self.cur = cents, cur
-    def __eq__(self, o): return (self.cents, self.cur) == (o.cents, o.cur)
-    def __hash__(self): return hash((self.cents, self.cur))   # consistent with __eq__
+<span class="kw">class</span> Money:
+    <span class="kw">def</span> <span class="fn">__init__</span>(<span class="bi">self</span>, cents, cur): <span class="bi">self</span>.cents, <span class="bi">self</span>.cur = cents, cur
+    <span class="kw">def</span> <span class="fn">__eq__</span>(<span class="bi">self</span>, o): <span class="kw">return</span> (<span class="bi">self</span>.cents, <span class="bi">self</span>.cur) == (o.cents, o.cur)
+    <span class="kw">def</span> <span class="fn">__hash__</span>(<span class="bi">self</span>): <span class="kw">return</span> <span class="bi">hash</span>((<span class="bi">self</span>.cents, <span class="bi">self</span>.cur))   <span class="cm"># consistent with __eq__</span>
 
-# Weighted adjacency list
-G = {0: [(1, 5), (2, 3)], 1: [(2, 2)], 2: [(3, 7)], 3: []}
-out_degree = {u: len(vs) for u, vs in G.items()}
-in_degree = {u: 0 for u in G}
-for u, vs in G.items():
-    for v, _w in vs:
-        in_degree[v] += 1
-print(out_degree, in_degree)
+<span class="cm"># Weighted adjacency list</span>
+G = {<span class="nu">0</span>: [(<span class="nu">1</span>, <span class="nu">5</span>), (<span class="nu">2</span>, <span class="nu">3</span>)], <span class="nu">1</span>: [(<span class="nu">2</span>, <span class="nu">2</span>)], <span class="nu">2</span>: [(<span class="nu">3</span>, <span class="nu">7</span>)], <span class="nu">3</span>: []}
+out_degree = {u: <span class="bi">len</span>(vs) <span class="kw">for</span> u, vs <span class="kw">in</span> G.<span class="fn">items</span>()}
+in_degree = {u: <span class="nu">0</span> <span class="kw">for</span> u <span class="kw">in</span> G}
+<span class="kw">for</span> u, vs <span class="kw">in</span> G.<span class="fn">items</span>():
+    <span class="kw">for</span> v, _w <span class="kw">in</span> vs:
+        in_degree[v] += <span class="nu">1</span>
+<span class="bi">print</span>(out_degree, in_degree)
 </code></pre>
   <span class="lang">python</span>
-<pre class="code"><code>class HashMap:
-    def __init__(self, capacity=8):
-        self._buckets = [[] for _ in range(capacity)]
-        self._size = 0
+<pre class="code"><code><span class="kw">class</span> HashMap:
+    <span class="kw">def</span> <span class="fn">__init__</span>(<span class="bi">self</span>, capacity=<span class="nu">8</span>):
+        <span class="bi">self</span>._buckets = [[] <span class="kw">for</span> _ <span class="kw">in</span> <span class="bi">range</span>(capacity)]
+        <span class="bi">self</span>._size = <span class="nu">0</span>
 
-    def _bucket(self, key):
-        return self._buckets[hash(key) % len(self._buckets)]
+    <span class="kw">def</span> <span class="fn">_bucket</span>(<span class="bi">self</span>, key):
+        <span class="kw">return</span> <span class="bi">self</span>._buckets[<span class="bi">hash</span>(key) % <span class="bi">len</span>(<span class="bi">self</span>._buckets)]
 
-    def put(self, key, value):
-        b = self._bucket(key)
-        for i, (k, _) in enumerate(b):
-            if k == key:
-                b[i] = (key, value); return
-        b.append((key, value)); self._size += 1
-        if self._size / len(self._buckets) &gt; 0.75:
-            self._resize(2 * len(self._buckets))
+    <span class="kw">def</span> <span class="fn">put</span>(<span class="bi">self</span>, key, value):
+        b = <span class="bi">self</span>.<span class="fn">_bucket</span>(key)
+        <span class="kw">for</span> i, (k, _) <span class="kw">in</span> <span class="bi">enumerate</span>(b):
+            <span class="kw">if</span> k == key:
+                b[i] = (key, value); <span class="kw">return</span>
+        b.<span class="fn">append</span>((key, value)); <span class="bi">self</span>._size += <span class="nu">1</span>
+        <span class="kw">if</span> <span class="bi">self</span>._size / <span class="bi">len</span>(<span class="bi">self</span>._buckets) &gt; <span class="nu">0.75</span>:
+            <span class="bi">self</span>.<span class="fn">_resize</span>(<span class="nu">2</span> * <span class="bi">len</span>(<span class="bi">self</span>._buckets))
 
-    def get(self, key, default=None):
-        for k, v in self._bucket(key):
-            if k == key: return v
-        return default
+    <span class="kw">def</span> <span class="fn">get</span>(<span class="bi">self</span>, key, default=<span class="kw">None</span>):
+        <span class="kw">for</span> k, v <span class="kw">in</span> <span class="bi">self</span>.<span class="fn">_bucket</span>(key):
+            <span class="kw">if</span> k == key: <span class="kw">return</span> v
+        <span class="kw">return</span> default
 
-    def _resize(self, new_cap):
-        old = self._buckets
-        self._buckets = [[] for _ in range(new_cap)]
-        for bucket in old:
-            for k, v in bucket:
-                self._bucket(k).append((k, v))
+    <span class="kw">def</span> <span class="fn">_resize</span>(<span class="bi">self</span>, new_cap):
+        old = <span class="bi">self</span>._buckets
+        <span class="bi">self</span>._buckets = [[] <span class="kw">for</span> _ <span class="kw">in</span> <span class="bi">range</span>(new_cap)]
+        <span class="kw">for</span> bucket <span class="kw">in</span> old:
+            <span class="kw">for</span> k, v <span class="kw">in</span> bucket:
+                <span class="bi">self</span>.<span class="fn">_bucket</span>(k).<span class="fn">append</span>((k, v))
 </code></pre>
   <h2>Exercises</h2>
   <ol style="list-style:none;padding-left:0">

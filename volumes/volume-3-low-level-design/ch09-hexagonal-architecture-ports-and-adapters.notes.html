@@ -260,75 +260,75 @@ a{color:var(--ink);text-decoration:underline dotted}
 <div class="pagebreak">~ page 3 ~</div>
 <h2>Example</h2>
 <span class="lang">python</span>
-<pre class="code"><code>from dataclasses import dataclass
-from typing import Protocol
+<pre class="code"><code><span class="kw">from</span> dataclasses <span class="kw">import</span> dataclass
+<span class="kw">from</span> typing <span class="kw">import</span> Protocol
 
-# ---- core: domain types + ports --------------------------------------------
-@dataclass(frozen=True)
-class Money:
-    cents: int
-    currency: str
+<span class="cm"># ---- core: domain types + ports --------------------------------------------</span>
+<span class="bi">@dataclass</span>(frozen=<span class="kw">True</span>)
+<span class="kw">class</span> Money:
+    cents: <span class="bi">int</span>
+    currency: <span class="bi">str</span>
 
-class PaymentDeclined(Exception):
-    """A domain error — adapters translate vendor errors into this."""
+<span class="kw">class</span> <span class="fn">PaymentDeclined</span>(<span class="bi">Exception</span>):
+    <span class="st">"""A domain error — adapters translate vendor errors into this."""</span>
 
-class PaymentGateway(Protocol):                    # driven port, in the domain's language
-    def charge(self, amount: Money, card_token: str) -&gt; str: ...
+<span class="kw">class</span> <span class="fn">PaymentGateway</span>(Protocol):                    <span class="cm"># driven port, in the domain's language</span>
+    <span class="kw">def</span> <span class="fn">charge</span>(<span class="bi">self</span>, amount: Money, card_token: <span class="bi">str</span>) -&gt; <span class="bi">str</span>: ...
 
-@dataclass
-class Invoice:
-    id: str
+<span class="bi">@dataclass</span>
+<span class="kw">class</span> Invoice:
+    <span class="bi">id</span>: <span class="bi">str</span>
     amount: Money
-    paid: bool = False
-    charge_id: str | None = None
+    paid: <span class="bi">bool</span> = <span class="kw">False</span>
+    charge_id: <span class="bi">str</span> | <span class="kw">None</span> = <span class="kw">None</span>
 
-class InvoiceRepository(Protocol):
-    def get(self, invoice_id: str) -&gt; Invoice: ...
-    def save(self, invoice: Invoice) -&gt; None: ...
+<span class="kw">class</span> <span class="fn">InvoiceRepository</span>(Protocol):
+    <span class="kw">def</span> <span class="fn">get</span>(<span class="bi">self</span>, invoice_id: <span class="bi">str</span>) -&gt; Invoice: ...
+    <span class="kw">def</span> <span class="fn">save</span>(<span class="bi">self</span>, invoice: Invoice) -&gt; <span class="kw">None</span>: ...
 
-class PayInvoice:                                   # driving port = this use case's API
-    def __init__(self, invoices: InvoiceRepository, payments: PaymentGateway):
-        self.invoices, self.payments = invoices, payments
-    def execute(self, invoice_id: str, card_token: str) -&gt; str:
-        inv = self.invoices.get(invoice_id)
-        if inv.paid:
-            return inv.charge_id                    # idempotent: paying twice is a no-op
-        inv.charge_id = self.payments.charge(inv.amount, card_token)
-        inv.paid = True
-        self.invoices.save(inv)
-        return inv.charge_id
+<span class="kw">class</span> PayInvoice:                                   <span class="cm"># driving port = this use case's API</span>
+    <span class="kw">def</span> <span class="fn">__init__</span>(<span class="bi">self</span>, invoices: InvoiceRepository, payments: PaymentGateway):
+        <span class="bi">self</span>.invoices, <span class="bi">self</span>.payments = invoices, payments
+    <span class="kw">def</span> <span class="fn">execute</span>(<span class="bi">self</span>, invoice_id: <span class="bi">str</span>, card_token: <span class="bi">str</span>) -&gt; <span class="bi">str</span>:
+        inv = <span class="bi">self</span>.invoices.<span class="fn">get</span>(invoice_id)
+        <span class="kw">if</span> inv.paid:
+            <span class="kw">return</span> inv.charge_id                    <span class="cm"># idempotent: paying twice is a no-op</span>
+        inv.charge_id = <span class="bi">self</span>.payments.<span class="fn">charge</span>(inv.amount, card_token)
+        inv.paid = <span class="kw">True</span>
+        <span class="bi">self</span>.invoices.<span class="fn">save</span>(inv)
+        <span class="kw">return</span> inv.charge_id
 
-# ---- driven adapters ---------------------------------------------------------
-class FakeGateway:
-    def __init__(self, decline_tokens=()): self.decline, self.charges = set(decline_tokens), []
-    def charge(self, amount, card_token):
-        if card_token in self.decline: raise PaymentDeclined(card_token)
-        self.charges.append((amount, card_token)); return f"ch_{len(self.charges)}"
+<span class="cm"># ---- driven adapters ---------------------------------------------------------</span>
+<span class="kw">class</span> FakeGateway:
+    <span class="kw">def</span> <span class="fn">__init__</span>(<span class="bi">self</span>, decline_tokens=()): <span class="bi">self</span>.decline, <span class="bi">self</span>.charges = <span class="bi">set</span>(decline_tokens), []
+    <span class="kw">def</span> <span class="fn">charge</span>(<span class="bi">self</span>, amount, card_token):
+        <span class="kw">if</span> card_token <span class="kw">in</span> <span class="bi">self</span>.decline: <span class="kw">raise</span> <span class="fn">PaymentDeclined</span>(card_token)
+        <span class="bi">self</span>.charges.<span class="fn">append</span>((amount, card_token)); <span class="kw">return</span> <span class="st">f"ch_{len(self.charges)}"</span>
 
-class StripeGateway:
-    def __init__(self, stripe): self.stripe = stripe          # the real SDK, injected
-    def charge(self, amount, card_token):
-        try:
-            pi = self.stripe.PaymentIntent.create(amount=amount.cents, currency=amount.currency.lower(),
-                                                  payment_method=card_token, confirm=True)
-        except self.stripe.error.CardError as e:
-            raise PaymentDeclined(str(e)) from e              # vendor error → domain error
-        return pi.id
+<span class="kw">class</span> StripeGateway:
+    <span class="kw">def</span> <span class="fn">__init__</span>(<span class="bi">self</span>, stripe): <span class="bi">self</span>.stripe = stripe          <span class="cm"># the real SDK, injected</span>
+    <span class="kw">def</span> <span class="fn">charge</span>(<span class="bi">self</span>, amount, card_token):
+        <span class="kw">try</span>:
+            pi = <span class="bi">self</span>.stripe.PaymentIntent.<span class="fn">create</span>(amount=amount.cents, currency=amount.currency.<span class="fn">lower</span>(),
+                                                  payment_method=card_token, confirm=<span class="kw">True</span>)
+        <span class="kw">except</span> <span class="bi">self</span>.stripe.error.CardError <span class="kw">as</span> e:
+            <span class="kw">raise</span> <span class="fn">PaymentDeclined</span>(<span class="bi">str</span>(e)) <span class="kw">from</span> e              <span class="cm"># vendor error → domain error</span>
+        <span class="kw">return</span> pi.<span class="bi">id</span>
 
-class InMemoryInvoices:
-    def __init__(self, *invoices): self.rows = {i.id: i for i in invoices}
-    def get(self, invoice_id): return self.rows[invoice_id]
-    def save(self, invoice): self.rows[invoice.id] = invoice
+<span class="kw">class</span> InMemoryInvoices:
+    <span class="kw">def</span> <span class="fn">__init__</span>(<span class="bi">self</span>, *invoices): <span class="bi">self</span>.rows = {i.<span class="bi">id</span>: i <span class="kw">for</span> i <span class="kw">in</span> invoices}
+    <span class="kw">def</span> <span class="fn">get</span>(<span class="bi">self</span>, invoice_id): <span class="kw">return</span> <span class="bi">self</span>.rows[invoice_id]
+    <span class="kw">def</span> <span class="fn">save</span>(<span class="bi">self</span>, invoice): <span class="bi">self</span>.rows[invoice.<span class="bi">id</span>] = invoice
 
-# ---- test: the core with fake adapters, no network -------------------------------
-gw = FakeGateway(decline_tokens={"tok_declined"})
-repo = InMemoryInvoices(Invoice("inv-1", Money(4200, "EUR")), Invoice("inv-2", Money(99, "EUR")))
-pay = PayInvoice(repo, gw)
-print(pay.execute("inv-1", "tok_visa"), pay.execute("inv-1", "tok_visa"), len(gw.charges))   # ch_1 ch_1 1
-try:
-    pay.execute("inv-2", "tok_declined")
-except PaymentDeclined:
-    print("declined; paid =", repo.get("inv-2").paid)          # declined; paid = False</code></pre>
+<span class="cm"># ---- test: the core with fake adapters, no network -------------------------------</span>
+gw = <span class="fn">FakeGateway</span>(decline_tokens={<span class="st">"tok_declined"</span>})
+repo = <span class="fn">InMemoryInvoices</span>(<span class="fn">Invoice</span>(<span class="st">"inv-1"</span>, <span class="fn">Money</span>(<span class="nu">4200</span>, <span class="st">"EUR"</span>)), <span class="fn">Invoice</span>(<span class="st">"inv-2"</span>, <span class="fn">Money</span>(<span class="nu">99</span>, <span class="st">"EUR"</span>)))
+pay = <span class="fn">PayInvoice</span>(repo, gw)
+<span class="bi">print</span>(pay.<span class="fn">execute</span>(<span class="st">"inv-1"</span>, <span class="st">"tok_visa"</span>), pay.<span class="fn">execute</span>(<span class="st">"inv-1"</span>, <span class="st">"tok_visa"</span>), <span class="bi">len</span>(gw.charges))   <span class="cm"># ch_1 ch_1 1</span>
+<span class="kw">try</span>:
+    pay.<span class="fn">execute</span>(<span class="st">"inv-2"</span>, <span class="st">"tok_declined"</span>)
+<span class="kw">except</span> PaymentDeclined:
+    <span class="bi">print</span>(<span class="st">"declined; paid ="</span>, repo.<span class="fn">get</span>(<span class="st">"inv-2"</span>).paid)          <span class="cm"># declined; paid = False</span></code></pre>
 <h2>Exercises</h2>
 <ol style="list-style:none;padding-left:0">
   <li>1. Define a port and two adapters.

@@ -308,61 +308,61 @@ a{color:var(--ink);text-decoration:underline dotted}
 
   <h2>Example</h2>
   <span class="lang">bash</span>
-<pre class="code"><code># Observe (read-only)
-kubectl -n shop get pods -o wide                   # restarts? which nodes?
-kubectl -n shop describe pod api-7d9f-abc | tail -20   # OOMKilled? probe failures? events
-kubectl -n shop logs deploy/api --since=15m | jq -c 'select(.level=="error")' | head
-kubectl -n shop top pods
-kubectl -n shop rollout history deploy/api         # what changed recently?
+<pre class="code"><code><span class="cm"># Observe (read-only)</span>
+<span class="bi">kubectl</span> -n shop get pods -o wide                   <span class="cm"># restarts? which nodes?</span>
+<span class="bi">kubectl</span> -n shop describe pod api-7d9f-abc | <span class="bi">tail</span> -<span class="nu">20</span>   <span class="cm"># OOMKilled? probe failures? events</span>
+<span class="bi">kubectl</span> -n shop logs deploy/api --since=15m | jq -c <span class="st">'select(.level=="error")'</span> | <span class="bi">head</span>
+<span class="bi">kubectl</span> -n shop <span class="bi">top</span> pods
+<span class="bi">kubectl</span> -n shop rollout history deploy/api         <span class="cm"># what changed recently?</span>
 
-# Capture evidence before restarting anything
-kubectl -n shop debug -it api-7d9f-abc --image=python:3.12 --target=api -- bash
-#   inside: pip install py-spy &amp;&amp; py-spy dump --pid 1      # where is every thread stuck?
-#   memray attach 1 --duration 30 -o /tmp/leak.bin         # memory growth
-strace -f -p &lt;pid&gt; -e trace=network,read,write -T 2&gt;&amp;1 | head   # blocked on which socket?</code></pre>
+<span class="cm"># Capture evidence before restarting anything</span>
+<span class="bi">kubectl</span> -n shop debug -it api-7d9f-abc --image=<span class="bi">python</span>:<span class="nu">3</span>.<span class="nu">12</span> --target=api -- bash
+<span class="cm">#   inside: pip install py-spy &amp;&amp; py-spy dump --pid 1      # where is every thread stuck?</span>
+<span class="cm">#   memray attach 1 --duration 30 -o /tmp/leak.bin         # memory growth</span>
+strace -f -p &lt;pid&gt; -e trace=network,read,write -T <span class="nu">2</span>&gt;&amp;<span class="nu">1</span> | <span class="bi">head</span>   <span class="cm"># blocked on which socket?</span></code></pre>
 
   <span class="lang">python</span>
-<pre class="code"><code># A circuit breaker with a fallback (minimal version; use pybreaker/resilience4j in real code)
-import time
+<pre class="code"><code><span class="cm"># A circuit breaker with a fallback (minimal version; use pybreaker/resilience4j in real code)</span>
+<span class="kw">import</span> time
 
-class CircuitBreaker:
-    def __init__(self, max_failures=5, reset_after=30.0, clock=time.monotonic):
-        self.max_failures, self.reset_after, self.clock = max_failures, reset_after, clock
-        self.failures, self.opened_at = 0, None
+<span class="kw">class</span> CircuitBreaker:
+    <span class="kw">def</span> <span class="fn">__init__</span>(<span class="bi">self</span>, max_failures=<span class="nu">5</span>, reset_after=<span class="nu">30.0</span>, clock=time.monotonic):
+        <span class="bi">self</span>.max_failures, <span class="bi">self</span>.reset_after, <span class="bi">self</span>.clock = max_failures, reset_after, clock
+        <span class="bi">self</span>.failures, <span class="bi">self</span>.opened_at = <span class="nu">0</span>, <span class="kw">None</span>
 
-    def call(self, fn, fallback):
-        if self.opened_at is not None:
-            if self.clock() - self.opened_at &lt; self.reset_after:
-                return fallback()                       # OPEN: fail fast
-            self.opened_at = None                       # HALF-OPEN: allow one trial
-            self.failures = self.max_failures - 1
-        try:
-            result = fn()
-        except Exception:
-            self.failures += 1
-            if self.failures &gt;= self.max_failures:
-                self.opened_at = self.clock()           # trip → OPEN
-            return fallback()
-        self.failures = 0                               # success → CLOSED
-        return result
+    <span class="kw">def</span> <span class="fn">call</span>(<span class="bi">self</span>, fn, fallback):
+        <span class="kw">if</span> <span class="bi">self</span>.opened_at <span class="kw">is</span> <span class="kw">not</span> <span class="kw">None</span>:
+            <span class="kw">if</span> <span class="bi">self</span>.<span class="fn">clock</span>() - <span class="bi">self</span>.opened_at &lt; <span class="bi">self</span>.reset_after:
+                <span class="kw">return</span> <span class="fn">fallback</span>()                       <span class="cm"># OPEN: fail fast</span>
+            <span class="bi">self</span>.opened_at = <span class="kw">None</span>                       <span class="cm"># HALF-OPEN: allow one trial</span>
+            <span class="bi">self</span>.failures = <span class="bi">self</span>.max_failures - <span class="nu">1</span>
+        <span class="kw">try</span>:
+            result = <span class="fn">fn</span>()
+        <span class="kw">except</span> <span class="bi">Exception</span>:
+            <span class="bi">self</span>.failures += <span class="nu">1</span>
+            <span class="kw">if</span> <span class="bi">self</span>.failures &gt;= <span class="bi">self</span>.max_failures:
+                <span class="bi">self</span>.opened_at = <span class="bi">self</span>.<span class="fn">clock</span>()           <span class="cm"># trip → OPEN</span>
+            <span class="kw">return</span> <span class="fn">fallback</span>()
+        <span class="bi">self</span>.failures = <span class="nu">0</span>                               <span class="cm"># success → CLOSED</span>
+        <span class="kw">return</span> result
 
-recs_breaker = CircuitBreaker()
+recs_breaker = <span class="fn">CircuitBreaker</span>()
 
-def recommendations(user_id):
-    if not flags.is_enabled("recs"):                    # kill switch
-        return BESTSELLERS
-    return recs_breaker.call(lambda: recs_client.get(user_id, timeout=0.3),
-                             fallback=lambda: BESTSELLERS)</code></pre>
+<span class="kw">def</span> <span class="fn">recommendations</span>(user_id):
+    <span class="kw">if</span> <span class="kw">not</span> flags.<span class="fn">is_enabled</span>(<span class="st">"recs"</span>):                    <span class="cm"># kill switch</span>
+        <span class="kw">return</span> BESTSELLERS
+    <span class="kw">return</span> recs_breaker.<span class="fn">call</span>(<span class="kw">lambda</span>: recs_client.<span class="fn">get</span>(user_id, timeout=<span class="nu">0.3</span>),
+                             fallback=<span class="kw">lambda</span>: BESTSELLERS)</code></pre>
 
   <span class="lang">sql</span>
-<pre class="code"><code>-- Safe manual data fix: reviewed, scoped, transactional, with a check before COMMIT
-BEGIN;
-UPDATE orders SET status = 'paid'
-WHERE id IN (SELECT order_id FROM payments WHERE captured_at &gt; '2024-06-12 14:09' AND status = 'captured')
-  AND status = 'pending';
--- expect ~412 rows; the client reports the count
-SELECT count(*) FROM orders WHERE status = 'pending' AND created_at &gt; '2024-06-12 14:00';
-COMMIT;   -- or ROLLBACK if the numbers don't match the review</code></pre>
+<pre class="code"><code><span class="cm">-- Safe manual data fix: reviewed, scoped, transactional, with a check before COMMIT</span>
+<span class="kw">BEGIN</span>;
+<span class="kw">UPDATE</span> orders <span class="kw">SET</span> status = <span class="st">'paid'</span>
+<span class="kw">WHERE</span> id <span class="kw">IN</span> (<span class="kw">SELECT</span> order_id <span class="kw">FROM</span> payments <span class="kw">WHERE</span> captured_at &gt; <span class="st">'2024-06-12 14:09'</span> <span class="kw">AND</span> status = <span class="st">'captured'</span>)
+  <span class="kw">AND</span> status = <span class="st">'pending'</span>;
+<span class="cm">-- expect ~412 rows; the client reports the count</span>
+<span class="kw">SELECT</span> <span class="bi">count</span>(*) <span class="kw">FROM</span> orders <span class="kw">WHERE</span> status = <span class="st">'pending'</span> <span class="kw">AND</span> created_at &gt; <span class="st">'2024-06-12 14:00'</span>;
+<span class="kw">COMMIT</span>;   <span class="cm">-- or ROLLBACK if the numbers don't match the review</span></code></pre>
 
   <h2>Exercises</h2>
   <ol style="list-style:none;padding-left:0">

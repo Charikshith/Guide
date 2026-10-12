@@ -287,41 +287,41 @@ a{color:var(--ink);text-decoration:underline dotted}
   <div class="pagebreak">~ page 3 ~</div>
   <h2>Example</h2>
   <span class="lang">bash</span>
-  <pre class="code"><code>uv build                                           # dist/mylib-1.4.0-py3-none-any.whl
-  uv publish --publish-url http://localhost:3141/root/dev/   # a local devpi index
+  <pre class="code"><code>uv build                                           <span class="cm"># dist/mylib-1.4.0-py3-none-any.whl</span>
+  uv publish --publish-url http://localhost:<span class="nu">3141</span>/root/dev/   <span class="cm"># a local devpi index</span>
   cargo package &amp;&amp; cargo publish --dry-run
-  docker build -t ghcr.io/acme/api:1.4.0 . &amp;&amp; docker push ghcr.io/acme/api:1.4.0
-  cosign sign ghcr.io/acme/api@sha256:3f9a…          # sign the digest, not the tag</code></pre>
+  <span class="bi">docker</span> build -t ghcr.io/acme/api:<span class="nu">1</span>.<span class="nu">4</span>.<span class="nu">0</span> . &amp;&amp; <span class="bi">docker</span> push ghcr.io/acme/api:<span class="nu">1</span>.<span class="nu">4</span>.<span class="nu">0</span>
+  cosign sign ghcr.io/acme/api@sha256:3f9a…          <span class="cm"># sign the digest, not the tag</span></code></pre>
   <span class="lang">python</span>
-  <pre class="code"><code># A feature flag with a kill switch and a safe default (OpenFeature-style API)
-  from openfeature import api
-  client = api.get_client()
+  <pre class="code"><code><span class="cm"># A feature flag with a kill switch and a safe default (OpenFeature-style API)</span>
+  <span class="kw">from</span> openfeature <span class="kw">import</span> api
+  client = api.<span class="fn">get_client</span>()
   
-  def checkout(cart, user):
-      if client.get_boolean_value("new-checkout", False, evaluation_context_for(user)):
-          return new_checkout(cart)          # released gradually: 5% → 50% → 100%
-      return old_checkout(cart)
+  <span class="kw">def</span> <span class="fn">checkout</span>(cart, user):
+      <span class="kw">if</span> client.<span class="fn">get_boolean_value</span>(<span class="st">"new-checkout"</span>, <span class="kw">False</span>, <span class="fn">evaluation_context_for</span>(user)):
+          <span class="kw">return</span> <span class="fn">new_checkout</span>(cart)          <span class="cm"># released gradually: 5% → 50% → 100%</span>
+      <span class="kw">return</span> <span class="fn">old_checkout</span>(cart)
   
-  def recommendations(user):
-      if not client.get_boolean_value("recs-enabled", True):   # kill switch for ops
-          return []                           # graceful degradation
-      return recs_service.for_user(user)</code></pre>
+  <span class="kw">def</span> <span class="fn">recommendations</span>(user):
+      <span class="kw">if</span> <span class="kw">not</span> client.<span class="fn">get_boolean_value</span>(<span class="st">"recs-enabled"</span>, <span class="kw">True</span>):   <span class="cm"># kill switch for ops</span>
+          <span class="kw">return</span> []                           <span class="cm"># graceful degradation</span>
+      <span class="kw">return</span> recs_service.<span class="fn">for_user</span>(user)</code></pre>
   <span class="lang">yaml</span>
-  <pre class="code"><code># Argo Rollouts canary (Kubernetes) with automatic analysis
-  apiVersion: argoproj.io/v1alpha1
-  kind: Rollout
-  metadata: { name: api }
-  spec:
-    strategy:
-      canary:
-        steps:
-          - setWeight: 1
-          - pause: { duration: 10m }
-          - analysis: { templates: [{ templateName: error-rate }] }   # fails → automatic abort
-          - setWeight: 10
-          - pause: { duration: 10m }
-          - setWeight: 50
-          - pause: { duration: 10m }</code></pre>
+  <pre class="code"><code><span class="cm"># Argo Rollouts canary (Kubernetes) with automatic analysis</span>
+<span class="bi">  apiVersion</span>: argoproj.io/v1alpha1
+<span class="bi">  kind</span>: Rollout
+<span class="bi">  metadata</span>: { name: api }
+<span class="bi">  spec</span>:
+<span class="bi">    strategy</span>:
+<span class="bi">      canary</span>:
+<span class="bi">        steps</span>:
+<span class="bi">          - setWeight</span>: <span class="nu">1</span>
+<span class="bi">          - pause</span>: { duration: <span class="nu">10m</span> }
+<span class="bi">          - analysis</span>: { templates: [{ templateName: error-rate }] }   <span class="cm"># fails → automatic abort</span>
+<span class="bi">          - setWeight</span>: <span class="nu">10</span>
+<span class="bi">          - pause</span>: { duration: <span class="nu">10m</span> }
+<span class="bi">          - setWeight</span>: <span class="nu">50</span>
+<span class="bi">          - pause</span>: { duration: <span class="nu">10m</span> }</code></pre>
   <h2>Exercises</h2>
   <ol style="list-style:none;padding-left:0">
     <li>1. Package a library and publish it to a local index.

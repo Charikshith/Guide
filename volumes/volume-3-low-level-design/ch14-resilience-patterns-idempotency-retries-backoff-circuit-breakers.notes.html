@@ -279,89 +279,89 @@ a{color:var(--ink);text-decoration:underline dotted}
 <div class="pagebreak">~ page 3 ~</div>
 <h2>Example</h2>
 <span class="lang">python</span>
-<pre class="code"><code>import random, time, threading, functools
+<pre class="code"><code><span class="kw">import</span> random, time, threading, functools
 
-# ---- retry with exponential backoff + full jitter ---------------------------------
-class TransientError(Exception): ...
+<span class="cm"># ---- retry with exponential backoff + full jitter ---------------------------------</span>
+<span class="kw">class</span> <span class="fn">TransientError</span>(<span class="bi">Exception</span>): ...
 
-def retry(times=5, base=0.1, cap=5.0, retry_on=(TransientError, TimeoutError), sleep=time.sleep):
-    def deco(fn):
-        @functools.wraps(fn)
-        def wrapper(*args, **kwargs):
-            for attempt in range(times):
-                try:
-                    return fn(*args, **kwargs)
-                except retry_on:
-                    if attempt == times - 1:
-                        raise                                         # out of attempts
-                    backoff = min(cap, base * 2 ** attempt)
-                    sleep(random.uniform(0, backoff))                 # full jitter
-        return wrapper
-    return deco
+<span class="kw">def</span> <span class="fn">retry</span>(times=<span class="nu">5</span>, base=<span class="nu">0.1</span>, cap=<span class="nu">5.0</span>, retry_on=(TransientError, TimeoutError), sleep=time.sleep):
+    <span class="kw">def</span> <span class="fn">deco</span>(fn):
+        <span class="bi">@functools.wraps</span>(fn)
+        <span class="kw">def</span> <span class="fn">wrapper</span>(*args, **kwargs):
+            <span class="kw">for</span> attempt <span class="kw">in</span> <span class="bi">range</span>(times):
+                <span class="kw">try</span>:
+                    <span class="kw">return</span> <span class="fn">fn</span>(*args, **kwargs)
+                <span class="kw">except</span> retry_on:
+                    <span class="kw">if</span> attempt == times - <span class="nu">1</span>:
+                        <span class="kw">raise</span>                                         <span class="cm"># out of attempts</span>
+                    backoff = <span class="bi">min</span>(cap, base * <span class="nu">2</span> ** attempt)
+                    <span class="fn">sleep</span>(random.<span class="fn">uniform</span>(<span class="nu">0</span>, backoff))                 <span class="cm"># full jitter</span>
+        <span class="kw">return</span> wrapper
+    <span class="kw">return</span> deco
 
-calls = {"n": 0}
-@retry(times=4, sleep=lambda s: None)                                 # no real sleeping in the demo
-def flaky():
-    calls["n"] += 1
-    if calls["n"] &lt; 3: raise TransientError("503")
-    return "ok"
-print(flaky(), calls["n"])                                            # ok 3
+calls = {<span class="st">"n"</span>: <span class="nu">0</span>}
+<span class="bi">@retry</span>(times=<span class="nu">4</span>, sleep=<span class="kw">lambda</span> s: <span class="kw">None</span>)                                 <span class="cm"># no real sleeping in the demo</span>
+<span class="kw">def</span> <span class="fn">flaky</span>():
+    calls[<span class="st">"n"</span>] += <span class="nu">1</span>
+    <span class="kw">if</span> calls[<span class="st">"n"</span>] &lt; <span class="nu">3</span>: <span class="kw">raise</span> <span class="fn">TransientError</span>(<span class="st">"503"</span>)
+    <span class="kw">return</span> <span class="st">"ok"</span>
+<span class="bi">print</span>(<span class="fn">flaky</span>(), calls[<span class="st">"n"</span>])                                            <span class="cm"># ok 3</span>
 
-# ---- circuit breaker ------------------------------------------------------------
-class CircuitOpenError(Exception): ...
+<span class="cm"># ---- circuit breaker ------------------------------------------------------------</span>
+<span class="kw">class</span> <span class="fn">CircuitOpenError</span>(<span class="bi">Exception</span>): ...
 
-class CircuitBreaker:
-    def __init__(self, threshold=3, reset_timeout=10.0, clock=time.monotonic):
-        self.threshold, self.reset_timeout, self.clock = threshold, reset_timeout, clock
-        self.state, self.failures, self.opened_at = "closed", 0, 0.0
-        self._lock = threading.Lock()
+<span class="kw">class</span> CircuitBreaker:
+    <span class="kw">def</span> <span class="fn">__init__</span>(<span class="bi">self</span>, threshold=<span class="nu">3</span>, reset_timeout=<span class="nu">10.0</span>, clock=time.monotonic):
+        <span class="bi">self</span>.threshold, <span class="bi">self</span>.reset_timeout, <span class="bi">self</span>.clock = threshold, reset_timeout, clock
+        <span class="bi">self</span>.state, <span class="bi">self</span>.failures, <span class="bi">self</span>.opened_at = <span class="st">"closed"</span>, <span class="nu">0</span>, <span class="nu">0.0</span>
+        <span class="bi">self</span>._lock = threading.<span class="fn">Lock</span>()
 
-    def call(self, fn, *args, **kwargs):
-        with self._lock:
-            if self.state == "open":
-                if self.clock() - self.opened_at &lt; self.reset_timeout:
-                    raise CircuitOpenError("failing fast")
-                self.state = "half_open"                             # allow one probe
-        try:
-            result = fn(*args, **kwargs)
-        except Exception:
-            with self._lock:
-                self.failures += 1
-                if self.state == "half_open" or self.failures &gt;= self.threshold:
-                    self.state, self.opened_at = "open", self.clock()
-            raise
-        with self._lock:
-            self.state, self.failures = "closed", 0
-        return result
+    <span class="kw">def</span> <span class="fn">call</span>(<span class="bi">self</span>, fn, *args, **kwargs):
+        <span class="kw">with</span> <span class="bi">self</span>._lock:
+            <span class="kw">if</span> <span class="bi">self</span>.state == <span class="st">"open"</span>:
+                <span class="kw">if</span> <span class="bi">self</span>.<span class="fn">clock</span>() - <span class="bi">self</span>.opened_at &lt; <span class="bi">self</span>.reset_timeout:
+                    <span class="kw">raise</span> <span class="fn">CircuitOpenError</span>(<span class="st">"failing fast"</span>)
+                <span class="bi">self</span>.state = <span class="st">"half_open"</span>                             <span class="cm"># allow one probe</span>
+        <span class="kw">try</span>:
+            result = <span class="fn">fn</span>(*args, **kwargs)
+        <span class="kw">except</span> <span class="bi">Exception</span>:
+            <span class="kw">with</span> <span class="bi">self</span>._lock:
+                <span class="bi">self</span>.failures += <span class="nu">1</span>
+                <span class="kw">if</span> <span class="bi">self</span>.state == <span class="st">"half_open"</span> <span class="kw">or</span> <span class="bi">self</span>.failures &gt;= <span class="bi">self</span>.threshold:
+                    <span class="bi">self</span>.state, <span class="bi">self</span>.opened_at = <span class="st">"open"</span>, <span class="bi">self</span>.<span class="fn">clock</span>()
+            <span class="kw">raise</span>
+        <span class="kw">with</span> <span class="bi">self</span>._lock:
+            <span class="bi">self</span>.state, <span class="bi">self</span>.failures = <span class="st">"closed"</span>, <span class="nu">0</span>
+        <span class="kw">return</span> result
 
-now = [0.0]
-cb = CircuitBreaker(threshold=2, reset_timeout=10, clock=lambda: now[0])
-def down(): raise ConnectionError("refused")
-for _ in range(2):
-    try: cb.call(down)
-    except ConnectionError: pass
-print(cb.state)                                                       # open
-try: cb.call(down)
-except CircuitOpenError as e: print(e)                                # failing fast (no call made)
-now[0] = 11                                                           # cooldown passes
-print(cb.call(lambda: "recovered"), cb.state)                          # recovered closed
+now = [<span class="nu">0.0</span>]
+cb = <span class="fn">CircuitBreaker</span>(threshold=<span class="nu">2</span>, reset_timeout=<span class="nu">10</span>, clock=<span class="kw">lambda</span>: now[<span class="nu">0</span>])
+<span class="kw">def</span> <span class="fn">down</span>(): <span class="kw">raise</span> <span class="fn">ConnectionError</span>(<span class="st">"refused"</span>)
+<span class="kw">for</span> _ <span class="kw">in</span> <span class="bi">range</span>(<span class="nu">2</span>):
+    <span class="kw">try</span>: cb.<span class="fn">call</span>(down)
+    <span class="kw">except</span> ConnectionError: <span class="kw">pass</span>
+<span class="bi">print</span>(cb.state)                                                       <span class="cm"># open</span>
+<span class="kw">try</span>: cb.<span class="fn">call</span>(down)
+<span class="kw">except</span> CircuitOpenError <span class="kw">as</span> e: <span class="bi">print</span>(e)                                <span class="cm"># failing fast (no call made)</span>
+now[<span class="nu">0</span>] = <span class="nu">11</span>                                                           <span class="cm"># cooldown passes</span>
+<span class="bi">print</span>(cb.<span class="fn">call</span>(<span class="kw">lambda</span>: <span class="st">"recovered"</span>), cb.state)                          <span class="cm"># recovered closed</span>
 
-# ---- idempotency key (server side) ------------------------------------------------
-_store: dict[str, tuple[int, dict]] = {}                              # in production: a DB table, same transaction
-def create_payment(idem_key: str, body: dict, charge=lambda b: {"id": f"ch_{len(_store) + 1}"}):
-    fingerprint = hash(frozenset(body.items()))
-    if idem_key in _store:
+<span class="cm"># ---- idempotency key (server side) ------------------------------------------------</span>
+_store: <span class="bi">dict</span>[<span class="bi">str</span>, <span class="bi">tuple</span>[<span class="bi">int</span>, <span class="bi">dict</span>]] = {}                              <span class="cm"># in production: a DB table, same transaction</span>
+<span class="kw">def</span> <span class="fn">create_payment</span>(idem_key: <span class="bi">str</span>, body: <span class="bi">dict</span>, charge=<span class="kw">lambda</span> b: {<span class="st">"id"</span>: <span class="st">f"ch_{len(_store) + 1}"</span>}):
+    fingerprint = <span class="bi">hash</span>(<span class="bi">frozenset</span>(body.<span class="fn">items</span>()))
+    <span class="kw">if</span> idem_key <span class="kw">in</span> _store:
         fp, response = _store[idem_key]
-        if fp != fingerprint:
-            return 422, {"error": "idempotency key reused with a different request"}
-        return 201, response                                          # replay: no second charge
-    response = charge(body)
+        <span class="kw">if</span> fp != fingerprint:
+            <span class="kw">return</span> <span class="nu">422</span>, {<span class="st">"error"</span>: <span class="st">"idempotency key reused with a different request"</span>}
+        <span class="kw">return</span> <span class="nu">201</span>, response                                          <span class="cm"># replay: no second charge</span>
+    response = <span class="fn">charge</span>(body)
     _store[idem_key] = (fingerprint, response)
-    return 201, response
+    <span class="kw">return</span> <span class="nu">201</span>, response
 
-print(create_payment("k1", {"amount": 500}), create_payment("k1", {"amount": 500}))
-# (201, {'id': 'ch_1'}) (201, {'id': 'ch_1'})
-print(create_payment("k1", {"amount": 900})[0])                        # 422</code></pre>
+<span class="bi">print</span>(<span class="fn">create_payment</span>(<span class="st">"k1"</span>, {<span class="st">"amount"</span>: <span class="nu">500</span>}), <span class="fn">create_payment</span>(<span class="st">"k1"</span>, {<span class="st">"amount"</span>: <span class="nu">500</span>}))
+<span class="cm"># (201, {'id': 'ch_1'}) (201, {'id': 'ch_1'})</span>
+<span class="bi">print</span>(<span class="fn">create_payment</span>(<span class="st">"k1"</span>, {<span class="st">"amount"</span>: <span class="nu">900</span>})[<span class="nu">0</span>])                        <span class="cm"># 422</span></code></pre>
 <h2>Exercises</h2>
 <ol style="list-style:none;padding-left:0">
   <li>1. Add idempotency to a payment endpoint.

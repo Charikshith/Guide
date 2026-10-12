@@ -268,27 +268,27 @@ a{color:var(--ink);text-decoration:underline dotted}
 
   <h2>Example</h2>
   <span class="lang">python</span>
-<pre class="code"><code>import math
-from itertools import permutations, combinations
+<pre class="code"><code><span class="kw">import</span> math
+<span class="kw">from</span> itertools <span class="kw">import</span> permutations, combinations
 
-print(math.comb(10, 3))            # 120 — 3 from 10, order ignored
-print(math.perm(10, 3))            # 720 — 3 from 10, order matters
-print(math.factorial(5))           # 120
+<span class="bi">print</span>(math.<span class="fn">comb</span>(<span class="nu">10</span>, <span class="nu">3</span>))            <span class="cm"># 120 — 3 from 10, order ignored</span>
+<span class="bi">print</span>(math.<span class="fn">perm</span>(<span class="nu">10</span>, <span class="nu">3</span>))            <span class="cm"># 720 — 3 from 10, order matters</span>
+<span class="bi">print</span>(math.<span class="fn">factorial</span>(<span class="nu">5</span>))           <span class="cm"># 120</span>
 
-# Brute force agrees with the formula
-assert len(list(combinations(range(10), 3))) == math.comb(10, 3)
+<span class="cm"># Brute force agrees with the formula</span>
+<span class="kw">assert</span> <span class="bi">len</span>(<span class="bi">list</span>(<span class="fn">combinations</span>(<span class="bi">range</span>(<span class="nu">10</span>), <span class="nu">3</span>))) == math.<span class="fn">comb</span>(<span class="nu">10</span>, <span class="nu">3</span>)
 
-# Duplicates: distinct arrangements of BANANA
-from collections import Counter
-word = "BANANA"
-n = math.factorial(len(word))
-for count in Counter(word).values():
-    n //= math.factorial(count)
-print(n)                           # 60  (6! / (3! · 2! · 1!))
-assert n == len(set(permutations(word)))
+<span class="cm"># Duplicates: distinct arrangements of BANANA</span>
+<span class="kw">from</span> collections <span class="kw">import</span> Counter
+word = <span class="st">"BANANA"</span>
+n = math.<span class="fn">factorial</span>(<span class="bi">len</span>(word))
+<span class="kw">for</span> count <span class="kw">in</span> <span class="fn">Counter</span>(word).<span class="fn">values</span>():
+    n //= math.<span class="fn">factorial</span>(count)
+<span class="bi">print</span>(n)                           <span class="cm"># 60  (6! / (3! · 2! · 1!))</span>
+<span class="kw">assert</span> n == <span class="bi">len</span>(<span class="bi">set</span>(<span class="fn">permutations</span>(word)))
 
-# Complement: P(at least one 6 in 4 dice rolls)
-print(1 - (5/6)**4)                # ≈ 0.518</code></pre>
+<span class="cm"># Complement: P(at least one 6 in 4 dice rolls)</span>
+<span class="bi">print</span>(<span class="nu">1</span> - (<span class="nu">5</span>/<span class="nu">6</span>)**<span class="nu">4</span>)                <span class="cm"># ≈ 0.518</span></code></pre>
 
   <h3>Search-space sizing — why password length beats complexity</h3>
   <div class="wrap"><table>

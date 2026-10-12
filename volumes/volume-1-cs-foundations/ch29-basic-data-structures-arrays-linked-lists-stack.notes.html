@@ -310,52 +310,52 @@ a{color:var(--ink);text-decoration:underline dotted}
 
   <h2>Example</h2>
   <span class="lang">python</span>
-<pre class="code"><code>from collections import deque
+<pre class="code"><code><span class="kw">from</span> collections <span class="kw">import</span> deque
 
 stack = []
-stack.append(1); stack.append(2); stack.append(3)
-print(stack.pop())                  # 3
+stack.<span class="fn">append</span>(<span class="nu">1</span>); stack.<span class="fn">append</span>(<span class="nu">2</span>); stack.<span class="fn">append</span>(<span class="nu">3</span>)
+<span class="bi">print</span>(stack.<span class="fn">pop</span>())                  <span class="cm"># 3</span>
 
-q = deque([1, 2])
-q.append(3)                         # enqueue
-print(q.popleft())                  # 1 — O(1); list.pop(0) would be O(n)
+q = <span class="fn">deque</span>([<span class="nu">1</span>, <span class="nu">2</span>])
+q.<span class="fn">append</span>(<span class="nu">3</span>)                         <span class="cm"># enqueue</span>
+<span class="bi">print</span>(q.<span class="fn">popleft</span>())                  <span class="cm"># 1 — O(1); list.pop(0) would be O(n)</span>
 
-class Node:
-    __slots__ = ("val", "next")
-    def __init__(self, val, next=None):
-        self.val, self.next = val, next
+<span class="kw">class</span> Node:
+    __slots__ = (<span class="st">"val"</span>, <span class="st">"next"</span>)
+    <span class="kw">def</span> <span class="fn">__init__</span>(<span class="bi">self</span>, val, <span class="bi">next</span>=<span class="kw">None</span>):
+        <span class="bi">self</span>.val, <span class="bi">self</span>.<span class="bi">next</span> = val, <span class="bi">next</span>
 
-class LinkedList:
-    def __init__(self):
-        self.head = None
+<span class="kw">class</span> LinkedList:
+    <span class="kw">def</span> <span class="fn">__init__</span>(<span class="bi">self</span>):
+        <span class="bi">self</span>.head = <span class="kw">None</span>
 
-    def push_front(self, val):                  # O(1)
-        self.head = Node(val, self.head)
+    <span class="kw">def</span> <span class="fn">push_front</span>(<span class="bi">self</span>, val):                  <span class="cm"># O(1)</span>
+        <span class="bi">self</span>.head = <span class="fn">Node</span>(val, <span class="bi">self</span>.head)
 
-    def insert_after(self, node, val):          # O(1) once you have the node
-        node.next = Node(val, node.next)
+    <span class="kw">def</span> <span class="fn">insert_after</span>(<span class="bi">self</span>, node, val):          <span class="cm"># O(1) once you have the node</span>
+        node.<span class="bi">next</span> = <span class="fn">Node</span>(val, node.<span class="bi">next</span>)
 
-    def delete(self, val):                      # O(n): must find it first
-        dummy = Node(None, self.head)           # dummy head avoids a special case
+    <span class="kw">def</span> <span class="fn">delete</span>(<span class="bi">self</span>, val):                      <span class="cm"># O(n): must find it first</span>
+        dummy = <span class="fn">Node</span>(<span class="kw">None</span>, <span class="bi">self</span>.head)           <span class="cm"># dummy head avoids a special case</span>
         prev = dummy
-        while prev.next and prev.next.val != val:
-            prev = prev.next
-        if prev.next:
-            prev.next = prev.next.next
-        self.head = dummy.next
+        <span class="kw">while</span> prev.<span class="bi">next</span> <span class="kw">and</span> prev.<span class="bi">next</span>.val != val:
+            prev = prev.<span class="bi">next</span>
+        <span class="kw">if</span> prev.<span class="bi">next</span>:
+            prev.<span class="bi">next</span> = prev.<span class="bi">next</span>.<span class="bi">next</span>
+        <span class="bi">self</span>.head = dummy.<span class="bi">next</span>
 
-    def __iter__(self):
-        cur = self.head
-        while cur:
-            yield cur.val
-            cur = cur.next
+    <span class="kw">def</span> <span class="fn">__iter__</span>(<span class="bi">self</span>):
+        cur = <span class="bi">self</span>.head
+        <span class="kw">while</span> cur:
+            <span class="kw">yield</span> cur.val
+            cur = cur.<span class="bi">next</span>
 
-ll = LinkedList()
-for v in (30, 20, 10):
-    ll.push_front(v)
-ll.insert_after(ll.head, 15)
-ll.delete(20)
-print(list(ll))                                  # [10, 15, 30]</code></pre>
+ll = <span class="fn">LinkedList</span>()
+<span class="kw">for</span> v <span class="kw">in</span> (<span class="nu">30</span>, <span class="nu">20</span>, <span class="nu">10</span>):
+    ll.<span class="fn">push_front</span>(v)
+ll.<span class="fn">insert_after</span>(ll.head, <span class="nu">15</span>)
+ll.<span class="fn">delete</span>(<span class="nu">20</span>)
+<span class="bi">print</span>(<span class="bi">list</span>(ll))                                  <span class="cm"># [10, 15, 30]</span></code></pre>
 
   <h2>Exercises</h2>
   <ol style="list-style:none;padding-left:0">
@@ -364,14 +364,14 @@ print(list(ll))                                  # [10, 15, 30]</code></pre>
     <li>2. Implement a queue using two stacks.
       <div class="box"><b>Solution</b>
 <span class="lang">python</span>
-<pre class="code"><code>class TwoStackQueue:
-    def __init__(self): self.inbox, self.outbox = [], []
-    def enqueue(self, x): self.inbox.append(x)
-    def dequeue(self):
-        if not self.outbox:
-            while self.inbox:
-                self.outbox.append(self.inbox.pop())   # reverse the order once
-        return self.outbox.pop()</code></pre>
+<pre class="code"><code><span class="kw">class</span> TwoStackQueue:
+    <span class="kw">def</span> <span class="fn">__init__</span>(<span class="bi">self</span>): <span class="bi">self</span>.inbox, <span class="bi">self</span>.outbox = [], []
+    <span class="kw">def</span> <span class="fn">enqueue</span>(<span class="bi">self</span>, x): <span class="bi">self</span>.inbox.<span class="fn">append</span>(x)
+    <span class="kw">def</span> <span class="fn">dequeue</span>(<span class="bi">self</span>):
+        <span class="kw">if</span> <span class="kw">not</span> <span class="bi">self</span>.outbox:
+            <span class="kw">while</span> <span class="bi">self</span>.inbox:
+                <span class="bi">self</span>.outbox.<span class="fn">append</span>(<span class="bi">self</span>.inbox.<span class="fn">pop</span>())   <span class="cm"># reverse the order once</span>
+        <span class="kw">return</span> <span class="bi">self</span>.outbox.<span class="fn">pop</span>()</code></pre>
         <p>Each element moves from inbox to outbox at most once, so any sequence of n operations costs O(n): O(1) amortized per operation.</p>
       </div></li>
     <li>3. Reverse a singly linked list in place.

@@ -268,24 +268,24 @@ a{color:var(--ink);text-decoration:underline dotted}
 
   <h3>A loop invariant, made checkable</h3>
   <span class="lang">python</span>
-<pre class="code"><code>def total(xs):
-    s, i = 0, 0
-    # Invariant: s == sum(xs[:i])
-    while i &lt; len(xs):
-        assert s == sum(xs[:i])      # holds at the top of every iteration
+<pre class="code"><code><span class="kw">def</span> <span class="fn">total</span>(xs):
+    s, i = <span class="nu">0</span>, <span class="nu">0</span>
+    <span class="cm"># Invariant: s == sum(xs[:i])</span>
+    <span class="kw">while</span> i &lt; <span class="bi">len</span>(xs):
+        <span class="kw">assert</span> s == <span class="bi">sum</span>(xs[:i])      <span class="cm"># holds at the top of every iteration</span>
         s += xs[i]
-        i += 1
-    # Exit: i == len(xs), so s == sum(xs[:len(xs)]) == sum(xs)
-    return s</code></pre>
+        i += <span class="nu">1</span>
+    <span class="cm"># Exit: i == len(xs), so s == sum(xs[:len(xs)]) == sum(xs)</span>
+    <span class="kw">return</span> s</code></pre>
 
   <h3>Recursion correctness is induction</h3>
   <span class="lang">python</span>
-<pre class="code"><code>def power(x, n):
-    """Return x**n for n &gt;= 0."""
-    if n == 0:
-        return 1                     # base case: x^0 = 1
-    half = power(x, n // 2)          # strong IH: correct for all m &lt; n
-    return half * half * (x if n % 2 else 1)</code></pre>
+<pre class="code"><code><span class="kw">def</span> <span class="fn">power</span>(x, n):
+    <span class="st">"""Return x**n for n &gt;= 0."""</span>
+    <span class="kw">if</span> n == <span class="nu">0</span>:
+        <span class="kw">return</span> <span class="nu">1</span>                     <span class="cm"># base case: x^0 = 1</span>
+    half = <span class="fn">power</span>(x, n // <span class="nu">2</span>)          <span class="cm"># strong IH: correct for all m &lt; n</span>
+    <span class="kw">return</span> half * half * (x <span class="kw">if</span> n % <span class="nu">2</span> <span class="kw">else</span> <span class="nu">1</span>)</code></pre>
   <p>Proof sketch (strong induction on n): n = 0 is correct. For n &gt; 0, <code>n // 2 &lt; n</code>, so by the IH <code>half = x^(n//2)</code>. If n is even, <code>half² = x^n</code>; if odd, <code>half² · x = x^(n−1) · x = x^n</code>. ✓</p>
 
   <h2>Exercises</h2>

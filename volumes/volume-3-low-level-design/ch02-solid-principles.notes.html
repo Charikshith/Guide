@@ -290,76 +290,76 @@ a{color:var(--ink);text-decoration:underline dotted}
 
   <h2>Example</h2>
   <span class="lang">python</span>
-<pre class="code"><code>from abc import ABC, abstractmethod
-from typing import Protocol
+<pre class="code"><code><span class="kw">from</span> abc <span class="kw">import</span> ABC, abstractmethod
+<span class="kw">from</span> typing <span class="kw">import</span> Protocol
 
-# ---- O: open for extension via a strategy registry ----
-class DiscountRule(Protocol):
-    def applies(self, order) -&gt; bool: ...
-    def amount(self, order) -&gt; int: ...
+<span class="cm"># ---- O: open for extension via a strategy registry ----</span>
+<span class="kw">class</span> <span class="fn">DiscountRule</span>(Protocol):
+    <span class="kw">def</span> <span class="fn">applies</span>(<span class="bi">self</span>, order) -&gt; <span class="bi">bool</span>: ...
+    <span class="kw">def</span> <span class="fn">amount</span>(<span class="bi">self</span>, order) -&gt; <span class="bi">int</span>: ...
 
-class BulkDiscount:
-    def applies(self, o): return sum(i.qty for i in o.items) &gt;= 10
-    def amount(self, o): return o.subtotal * 5 // 100
+<span class="kw">class</span> BulkDiscount:
+    <span class="kw">def</span> <span class="fn">applies</span>(<span class="bi">self</span>, o): <span class="kw">return</span> <span class="bi">sum</span>(i.qty <span class="kw">for</span> i <span class="kw">in</span> o.items) &gt;= <span class="nu">10</span>
+    <span class="kw">def</span> <span class="fn">amount</span>(<span class="bi">self</span>, o): <span class="kw">return</span> o.subtotal * <span class="nu">5</span> // <span class="nu">100</span>
 
-class LoyaltyDiscount:
-    def applies(self, o): return o.customer.years &gt;= 3
-    def amount(self, o): return 500
+<span class="kw">class</span> LoyaltyDiscount:
+    <span class="kw">def</span> <span class="fn">applies</span>(<span class="bi">self</span>, o): <span class="kw">return</span> o.customer.years &gt;= <span class="nu">3</span>
+    <span class="kw">def</span> <span class="fn">amount</span>(<span class="bi">self</span>, o): <span class="kw">return</span> <span class="nu">500</span>
 
-RULES: list[DiscountRule] = [BulkDiscount(), LoyaltyDiscount()]   # a new rule = a new class + one line
+RULES: <span class="bi">list</span>[DiscountRule] = [<span class="fn">BulkDiscount</span>(), <span class="fn">LoyaltyDiscount</span>()]   <span class="cm"># a new rule = a new class + one line</span>
 
-def best_discount(order) -&gt; int:
-    return max((r.amount(order) for r in RULES if r.applies(order)), default=0)
+<span class="kw">def</span> <span class="fn">best_discount</span>(order) -&gt; <span class="bi">int</span>:
+    <span class="kw">return</span> <span class="bi">max</span>((r.<span class="fn">amount</span>(order) <span class="kw">for</span> r <span class="kw">in</span> RULES <span class="kw">if</span> r.<span class="fn">applies</span>(order)), default=<span class="nu">0</span>)
 
-# ---- L: a violation and its fix ----
-class Bird(ABC):
-    @abstractmethod
-    def move(self) -&gt; str: ...
+<span class="cm"># ---- L: a violation and its fix ----</span>
+<span class="kw">class</span> <span class="fn">Bird</span>(ABC):
+    <span class="bi">@abstractmethod</span>
+    <span class="kw">def</span> <span class="fn">move</span>(<span class="bi">self</span>) -&gt; <span class="bi">str</span>: ...
 
-class FlyingBird(Bird):
-    def move(self): return "flies"
-    def fly_to(self, place): return f"flies to {place}"
+<span class="kw">class</span> <span class="fn">FlyingBird</span>(Bird):
+    <span class="kw">def</span> <span class="fn">move</span>(<span class="bi">self</span>): <span class="kw">return</span> <span class="st">"flies"</span>
+    <span class="kw">def</span> <span class="fn">fly_to</span>(<span class="bi">self</span>, place): <span class="kw">return</span> <span class="st">f"flies to {place}"</span>
 
-class Sparrow(FlyingBird): ...
-class Penguin(Bird):                       # NOT a FlyingBird — so it can never be asked to fly_to
-    def move(self): return "swims"
+<span class="kw">class</span> <span class="fn">Sparrow</span>(FlyingBird): ...
+<span class="kw">class</span> <span class="fn">Penguin</span>(Bird):                       <span class="cm"># NOT a FlyingBird — so it can never be asked to fly_to</span>
+    <span class="kw">def</span> <span class="fn">move</span>(<span class="bi">self</span>): <span class="kw">return</span> <span class="st">"swims"</span>
 
-# (the violation would be: class Penguin(FlyingBird): def fly_to(...): raise NotImplementedError)
+<span class="cm"># (the violation would be: class Penguin(FlyingBird): def fly_to(...): raise NotImplementedError)</span>
 
-# ---- I: role interfaces instead of one fat one ----
-class Printer(Protocol):
-    def print(self, doc) -&gt; None: ...
-class Scanner(Protocol):
-    def scan(self) -&gt; bytes: ...
+<span class="cm"># ---- I: role interfaces instead of one fat one ----</span>
+<span class="kw">class</span> <span class="fn">Printer</span>(Protocol):
+    <span class="kw">def</span> <span class="bi">print</span>(<span class="bi">self</span>, doc) -&gt; <span class="kw">None</span>: ...
+<span class="kw">class</span> <span class="fn">Scanner</span>(Protocol):
+    <span class="kw">def</span> <span class="fn">scan</span>(<span class="bi">self</span>) -&gt; <span class="bi">bytes</span>: ...
 
-class BasicPrinter:                        # implements only what it can do
-    def print(self, doc): ...
-class OfficeMachine:                       # implements both
-    def print(self, doc): ...
-    def scan(self): return b"..."
+<span class="kw">class</span> BasicPrinter:                        <span class="cm"># implements only what it can do</span>
+    <span class="kw">def</span> <span class="bi">print</span>(<span class="bi">self</span>, doc): ...
+<span class="kw">class</span> OfficeMachine:                       <span class="cm"># implements both</span>
+    <span class="kw">def</span> <span class="bi">print</span>(<span class="bi">self</span>, doc): ...
+    <span class="kw">def</span> <span class="fn">scan</span>(<span class="bi">self</span>): <span class="kw">return</span> <span class="st">b"..."</span>
 
-def print_invoices(p: Printer, docs):      # depends only on the role it needs
-    for d in docs: p.print(d)
+<span class="kw">def</span> <span class="fn">print_invoices</span>(p: Printer, docs):      <span class="cm"># depends only on the role it needs</span>
+    <span class="kw">for</span> d <span class="kw">in</span> docs: p.<span class="bi">print</span>(d)
 
-# ---- D: policy depends on abstractions it owns ----
-class OrderRepo(Protocol):
-    def save(self, order) -&gt; None: ...
+<span class="cm"># ---- D: policy depends on abstractions it owns ----</span>
+<span class="kw">class</span> <span class="fn">OrderRepo</span>(Protocol):
+    <span class="kw">def</span> <span class="fn">save</span>(<span class="bi">self</span>, order) -&gt; <span class="kw">None</span>: ...
 
-class OrderService:
-    def __init__(self, repo: OrderRepo):   # not PostgresOrderRepo()
-        self.repo = repo</code></pre>
+<span class="kw">class</span> OrderService:
+    <span class="kw">def</span> <span class="fn">__init__</span>(<span class="bi">self</span>, repo: OrderRepo):   <span class="cm"># not PostgresOrderRepo()</span>
+        <span class="bi">self</span>.repo = repo</code></pre>
 
   <h2>Exercises</h2>
   <ol style="list-style:none;padding-left:0">
     <li>1. Find and fix an LSP violation.
       <span class="lang">python</span>
-<pre class="code"><code>class FileStore:
-    def save(self, key: str, data: bytes) -&gt; None: ...
-    def load(self, key: str) -&gt; bytes: ...
+<pre class="code"><code><span class="kw">class</span> FileStore:
+    <span class="kw">def</span> <span class="fn">save</span>(<span class="bi">self</span>, key: <span class="bi">str</span>, data: <span class="bi">bytes</span>) -&gt; <span class="kw">None</span>: ...
+    <span class="kw">def</span> <span class="fn">load</span>(<span class="bi">self</span>, key: <span class="bi">str</span>) -&gt; <span class="bi">bytes</span>: ...
 
-class ReadOnlyFileStore(FileStore):
-    def save(self, key, data):
-        raise PermissionError("read-only")</code></pre>
+<span class="kw">class</span> <span class="fn">ReadOnlyFileStore</span>(FileStore):
+    <span class="kw">def</span> <span class="fn">save</span>(<span class="bi">self</span>, key, data):
+        <span class="kw">raise</span> <span class="fn">PermissionError</span>(<span class="st">"read-only"</span>)</code></pre>
       <div class="box"><b>Solution</b> Code that receives a <code>FileStore</code> expects <code>save</code> to work; the subclass adds a new failure mode (a weaker postcondition), so it can't substitute. Fix: split the roles — <code>Readable</code> (<code>load</code>) and <code>Writable</code> (<code>save</code>) interfaces; <code>FileStore</code> implements both, <code>ReadOnlyFileStore</code> only <code>Readable</code>. Functions that only read take a <code>Readable</code>. (This is ISP fixing LSP.)</div></li>
     <li>2. Apply DIP to decouple a high-level module from a low-level one.
       <div class="box"><b>Solution</b> A <code>ReportService</code> that calls <code>boto3.client("s3").put_object(...)</code> directly: define <code>ReportStorage(Protocol)</code> with <code>put(name, data)</code> in the reports module; implement <code>S3ReportStorage</code> in an infrastructure module; inject it at the composition root. Now the report logic has no AWS imports, can be tested with an in-memory storage, and a switch to GCS touches only one adapter.</div></li>

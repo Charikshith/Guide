@@ -321,46 +321,46 @@ a{color:var(--ink);text-decoration:underline dotted}
 
   <h2>Example</h2>
   <span class="lang">python</span>
-<pre class="code"><code>import numpy as np
+<pre class="code"><code><span class="kw">import</span> numpy <span class="kw">as</span> np
 
-def quantize_affine(x, bits=8):
-    qmin, qmax = 0, 2**bits - 1
-    scale = (x.max() - x.min()) / (qmax - qmin)
-    zero = int(round(-x.min() / scale))
-    q = np.clip(np.round(x / scale) + zero, qmin, qmax).astype(np.int32)
-    return q, scale, zero
+<span class="kw">def</span> <span class="fn">quantize_affine</span>(x, bits=<span class="nu">8</span>):
+    qmin, qmax = <span class="nu">0</span>, <span class="nu">2</span>**bits - <span class="nu">1</span>
+    scale = (x.<span class="bi">max</span>() - x.<span class="bi">min</span>()) / (qmax - qmin)
+    zero = <span class="bi">int</span>(<span class="bi">round</span>(-x.<span class="bi">min</span>() / scale))
+    q = np.<span class="fn">clip</span>(np.<span class="bi">round</span>(x / scale) + zero, qmin, qmax).<span class="fn">astype</span>(np.int32)
+    <span class="kw">return</span> q, scale, zero
 
-def dequantize(q, scale, zero):
-    return (q - zero) * scale
+<span class="kw">def</span> <span class="fn">dequantize</span>(q, scale, zero):
+    <span class="kw">return</span> (q - zero) * scale
 
-x = np.array([0.12, -1.5, 0.8, 2.3, -0.4])
-q, s, z = quantize_affine(x, 8)
-print(q, round(s, 4), z)                          # [109   0 155 255  74] 0.0149 101
-print(np.abs(dequantize(q, s, z) - x).max())      # ≈ 0.005
+x = np.<span class="fn">array</span>([<span class="nu">0.12</span>, -<span class="nu">1.5</span>, <span class="nu">0.8</span>, <span class="nu">2.3</span>, -<span class="nu">0.4</span>])
+q, s, z = <span class="fn">quantize_affine</span>(x, <span class="nu">8</span>)
+<span class="bi">print</span>(q, <span class="bi">round</span>(s, <span class="nu">4</span>), z)                          <span class="cm"># [109   0 155 255  74] 0.0149 101</span>
+<span class="bi">print</span>(np.<span class="bi">abs</span>(<span class="fn">dequantize</span>(q, s, z) - x).<span class="bi">max</span>())      <span class="cm"># ≈ 0.005</span>
 
-# Error grows as bits shrink (random "weights", per-group of 128)
-w = np.random.default_rng(0).normal(0, 0.02, size=4096 * 128)
-for bits in (8, 4, 3, 2):
-    groups = w.reshape(-1, 128)
-    err = np.mean([np.abs(dequantize(*quantize_affine(g, bits)) - g).mean() for g in groups[:256]])
-    print(bits, f"mean abs error {err:.6f}")</code></pre>
+<span class="cm"># Error grows as bits shrink (random "weights", per-group of 128)</span>
+w = np.random.<span class="fn">default_rng</span>(<span class="nu">0</span>).<span class="fn">normal</span>(<span class="nu">0</span>, <span class="nu">0.02</span>, size=<span class="nu">4096</span> * <span class="nu">128</span>)
+<span class="kw">for</span> bits <span class="kw">in</span> (<span class="nu">8</span>, <span class="nu">4</span>, <span class="nu">3</span>, <span class="nu">2</span>):
+    groups = w.<span class="fn">reshape</span>(-<span class="nu">1</span>, <span class="nu">128</span>)
+    err = np.<span class="fn">mean</span>([np.<span class="bi">abs</span>(<span class="fn">dequantize</span>(*<span class="fn">quantize_affine</span>(g, bits)) - g).<span class="fn">mean</span>() <span class="kw">for</span> g <span class="kw">in</span> groups[:<span class="nu">256</span>]])
+    <span class="bi">print</span>(bits, <span class="st">f"mean abs error {err:.6f}"</span>)</code></pre>
 
   <span class="lang">python</span>
-<pre class="code"><code># Load a 4-bit model on a GPU with bitsandbytes (NF4)
-import torch
-from transformers import AutoModelForCausalLM, BitsAndBytesConfig
-cfg = BitsAndBytesConfig(load_in_4bit=True, bnb_4bit_quant_type="nf4",
-                         bnb_4bit_compute_dtype=torch.bfloat16, bnb_4bit_use_double_quant=True)
-model = AutoModelForCausalLM.from_pretrained("Qwen/Qwen2.5-7B-Instruct",
-                                             quantization_config=cfg, device_map="auto")
-print(model.get_memory_footprint() / 1e9, "GB")   # ~5 GB instead of ~15 GB</code></pre>
+<pre class="code"><code><span class="cm"># Load a 4-bit model on a GPU with bitsandbytes (NF4)</span>
+<span class="kw">import</span> torch
+<span class="kw">from</span> transformers <span class="kw">import</span> AutoModelForCausalLM, BitsAndBytesConfig
+cfg = <span class="fn">BitsAndBytesConfig</span>(load_in_4bit=<span class="kw">True</span>, bnb_4bit_quant_type=<span class="st">"nf4"</span>,
+                         bnb_4bit_compute_dtype=torch.bfloat16, bnb_4bit_use_double_quant=<span class="kw">True</span>)
+model = AutoModelForCausalLM.<span class="fn">from_pretrained</span>(<span class="st">"Qwen/Qwen2.5-7B-Instruct"</span>,
+                                             quantization_config=cfg, device_map=<span class="st">"auto"</span>)
+<span class="bi">print</span>(model.<span class="fn">get_memory_footprint</span>() / <span class="nu">1e9</span>, <span class="st">"GB"</span>)   <span class="cm"># ~5 GB instead of ~15 GB</span></code></pre>
 
   <span class="lang">bash</span>
-<pre class="code"><code># llama.cpp: convert, quantize to GGUF Q4_K_M, run on CPU / Apple Silicon
-python convert_hf_to_gguf.py ./Qwen2.5-7B-Instruct --outfile qwen7b-f16.gguf
+<pre class="code"><code><span class="cm"># llama.cpp: convert, quantize to GGUF Q4_K_M, run on CPU / Apple Silicon</span>
+<span class="bi">python</span> convert_hf_to_gguf.py ./Qwen2.<span class="nu">5</span>-7B-Instruct --outfile qwen7b-f16.gguf
 ./llama-quantize qwen7b-f16.gguf qwen7b-Q4_K_M.gguf Q4_K_M
-./llama-cli -m qwen7b-Q4_K_M.gguf -p "Explain quantization in one line." -n 64
-./llama-perplexity -m qwen7b-Q4_K_M.gguf -f wiki.test.raw      # compare with the f16 model</code></pre>
+./llama-cli -m qwen7b-Q4_K_M.gguf -p <span class="st">"Explain quantization in one line."</span> -n <span class="nu">64</span>
+./llama-perplexity -m qwen7b-Q4_K_M.gguf -f wiki.test.raw      <span class="cm"># compare with the f16 model</span></code></pre>
 
   <h2>Exercises</h2>
   <ol style="list-style:none;padding-left:0">

@@ -283,8 +283,8 @@ a{color:var(--ink);text-decoration:underline dotted}
 
   <h2>Example</h2>
   <span class="lang">python</span>
-<pre class="code"><code>def transfer(src: Account, dst: Account, amount_cents: int) -&gt; Receipt:
-    """Move money between two accounts atomically.
+<pre class="code"><code><span class="kw">def</span> <span class="fn">transfer</span>(src: Account, dst: Account, amount_cents: <span class="bi">int</span>) -&gt; Receipt:
+    <span class="st">"""Move money between two accounts atomically.
 
     Args:
         src: Account to debit. Must belong to the caller.
@@ -302,23 +302,23 @@ a{color:var(--ink);text-decoration:underline dotted}
         &gt;&gt;&gt; r = transfer(alice, bob, 500)
         &gt;&gt;&gt; r.src_balance
         9500
-    """</code></pre>
+    """</span></code></pre>
 
   <span class="lang">rust</span>
-<pre class="code"><code>/// Returns the largest element, or `None` for an empty slice.
-///
-/// # Examples
-///
-/// ```
-/// assert_eq!(mylib::largest(&amp;[3, 9, 2]), Some(&amp;9));
-/// assert_eq!(mylib::largest::&lt;i32&gt;(&amp;[]), None);
-/// ```
-pub fn largest&lt;T: Ord&gt;(xs: &amp;[T]) -&gt; Option&lt;&amp;T&gt; { xs.iter().max() }</code></pre>
+<pre class="code"><code><span class="cm">/// Returns the largest element, or `None` for an empty slice.</span>
+<span class="cm">///</span>
+<span class="cm">/// # Examples</span>
+<span class="cm">///</span>
+<span class="cm">/// ```</span>
+<span class="cm">/// assert_eq!(mylib::largest(&amp;[3, 9, 2]), Some(&amp;9));</span>
+<span class="cm">/// assert_eq!(mylib::largest::&lt;i32&gt;(&amp;[]), None);</span>
+<span class="cm">/// ```</span>
+<span class="kw">pub</span> <span class="kw">fn</span> largest&lt;T: Ord&gt;(xs: &amp;[T]) -&gt; <span class="bi">Option</span>&lt;&amp;T&gt; { xs.<span class="fn">iter</span>().<span class="fn">max</span>() }</code></pre>
 
   <p>A good inline comment explains <i>why</i>:</p>
   <span class="lang">python</span>
-<pre class="code"><code># Retry once: the payment provider returns 409 on the first call after
-# a token refresh (vendor ticket #4412). Remove when they fix it.</code></pre>
+<pre class="code"><code><span class="cm"># Retry once: the payment provider returns 409 on the first call after</span>
+<span class="cm"># a token refresh (vendor ticket #4412). Remove when they fix it.</span></code></pre>
 
   <h2>Exercises</h2>
   <ol style="list-style:none;padding-left:0">

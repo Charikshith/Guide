@@ -295,27 +295,27 @@ a{color:var(--ink);text-decoration:underline dotted}
          cost ≈ $1,600–2,000/month → about 65% saved</code></pre>
 
   <span class="lang">python</span>
-<pre class="code"><code># Unit cost per 1,000 requests, per service — the number to track weekly
-monthly_cost = {"checkout": 7200.0, "search": 4100.0, "images": 2600.0}   # from tagged billing export
-monthly_requests = {"checkout": 18e6, "search": 240e6, "images": 900e6}   # from metrics
+<pre class="code"><code><span class="cm"># Unit cost per 1,000 requests, per service — the number to track weekly</span>
+monthly_cost = {<span class="st">"checkout"</span>: <span class="nu">7200.0</span>, <span class="st">"search"</span>: <span class="nu">4100.0</span>, <span class="st">"images"</span>: <span class="nu">2600.0</span>}   <span class="cm"># from tagged billing export</span>
+monthly_requests = {<span class="st">"checkout"</span>: <span class="nu">18e6</span>, <span class="st">"search"</span>: <span class="nu">240e6</span>, <span class="st">"images"</span>: <span class="nu">900e6</span>}   <span class="cm"># from metrics</span>
 
-for svc, cost in monthly_cost.items():
-    per_k = cost / (monthly_requests[svc] / 1000)
-    print(f"{svc:9s} ${per_k:.4f} per 1k requests")
-# checkout  $0.4000 per 1k requests   ← expensive per request: look here first
-# search    $0.0171 per 1k requests
-# images    $0.0029 per 1k requests</code></pre>
+<span class="kw">for</span> svc, cost <span class="kw">in</span> monthly_cost.<span class="fn">items</span>():
+    per_k = cost / (monthly_requests[svc] / <span class="nu">1000</span>)
+    <span class="bi">print</span>(<span class="st">f"{svc:9s} ${per_k:.4f} per 1k requests"</span>)
+<span class="cm"># checkout  $0.4000 per 1k requests   ← expensive per request: look here first</span>
+<span class="cm"># search    $0.0171 per 1k requests</span>
+<span class="cm"># images    $0.0029 per 1k requests</span></code></pre>
 
   <span class="lang">sql</span>
-<pre class="code"><code>-- Top cost drivers from an AWS Cost and Usage Report (CUR) in Athena
-SELECT line_item_product_code AS service,
-       resource_tags_user_team AS team,
-       ROUND(SUM(line_item_unblended_cost), 2) AS cost
-FROM cur
-WHERE line_item_usage_start_date &gt;= date_trunc('month', current_date - interval '1' month)
-GROUP BY 1, 2
-ORDER BY cost DESC
-LIMIT 10;</code></pre>
+<pre class="code"><code><span class="cm">-- Top cost drivers from an AWS Cost and Usage Report (CUR) in Athena</span>
+<span class="kw">SELECT</span> line_item_product_code <span class="kw">AS</span> service,
+       resource_tags_user_team <span class="kw">AS</span> team,
+       ROUND(<span class="bi">SUM</span>(line_item_unblended_cost), <span class="nu">2</span>) <span class="kw">AS</span> cost
+<span class="kw">FROM</span> cur
+<span class="kw">WHERE</span> line_item_usage_start_date &gt;= date_trunc(<span class="st">'month'</span>, current_date - interval <span class="st">'1'</span> month)
+<span class="kw">GROUP</span> <span class="kw">BY</span> <span class="nu">1</span>, <span class="nu">2</span>
+<span class="kw">ORDER</span> <span class="kw">BY</span> cost <span class="kw">DESC</span>
+<span class="kw">LIMIT</span> <span class="nu">10</span>;</code></pre>
 
   <h2>Exercises</h2>
   <ol style="list-style:none;padding-left:0">

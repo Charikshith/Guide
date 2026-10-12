@@ -307,47 +307,47 @@ a{color:var(--ink);text-decoration:underline dotted}
 
   <h2>Example</h2>
   <span class="lang">python</span>
-<pre class="code"><code># Auto + manual instrumentation with OpenTelemetry (Python)
-# pip install opentelemetry-distro opentelemetry-exporter-otlp
-# opentelemetry-bootstrap -a install
-# run: OTEL_SERVICE_NAME=checkout opentelemetry-instrument uvicorn app:app
-from opentelemetry import trace, metrics
+<pre class="code"><code><span class="cm"># Auto + manual instrumentation with OpenTelemetry (Python)</span>
+<span class="cm"># pip install opentelemetry-distro opentelemetry-exporter-otlp</span>
+<span class="cm"># opentelemetry-bootstrap -a install</span>
+<span class="cm"># run: OTEL_SERVICE_NAME=checkout opentelemetry-instrument uvicorn app:app</span>
+<span class="kw">from</span> opentelemetry <span class="kw">import</span> trace, metrics
 
-tracer = trace.get_tracer("checkout")
-meter = metrics.get_meter("checkout")
-orders = meter.create_counter("orders_total", description="orders placed")
-latency = meter.create_histogram("checkout_duration_seconds", unit="s")
+tracer = trace.<span class="fn">get_tracer</span>(<span class="st">"checkout"</span>)
+meter = metrics.<span class="fn">get_meter</span>(<span class="st">"checkout"</span>)
+orders = meter.<span class="fn">create_counter</span>(<span class="st">"orders_total"</span>, description=<span class="st">"orders placed"</span>)
+latency = meter.<span class="fn">create_histogram</span>(<span class="st">"checkout_duration_seconds"</span>, unit=<span class="st">"s"</span>)
 
-def checkout(cart):
-    with tracer.start_as_current_span("checkout") as span:
-        span.set_attribute("cart.items", len(cart.items))       # high cardinality is OK on spans
-        with tracer.start_as_current_span("reserve_inventory"):
-            reserve(cart)
-        with tracer.start_as_current_span("charge") as s:
-            try:
-                charge(cart)
-            except PaymentError as e:
-                s.record_exception(e)
-                s.set_status(trace.Status(trace.StatusCode.ERROR))
-                raise
-        orders.add(1, {"payment_method": cart.method})          # LOW cardinality labels only</code></pre>
+<span class="kw">def</span> <span class="fn">checkout</span>(cart):
+    <span class="kw">with</span> tracer.<span class="fn">start_as_current_span</span>(<span class="st">"checkout"</span>) <span class="kw">as</span> span:
+        span.<span class="fn">set_attribute</span>(<span class="st">"cart.items"</span>, <span class="bi">len</span>(cart.items))       <span class="cm"># high cardinality is OK on spans</span>
+        <span class="kw">with</span> tracer.<span class="fn">start_as_current_span</span>(<span class="st">"reserve_inventory"</span>):
+            <span class="fn">reserve</span>(cart)
+        <span class="kw">with</span> tracer.<span class="fn">start_as_current_span</span>(<span class="st">"charge"</span>) <span class="kw">as</span> s:
+            <span class="kw">try</span>:
+                <span class="fn">charge</span>(cart)
+            <span class="kw">except</span> PaymentError <span class="kw">as</span> e:
+                s.<span class="fn">record_exception</span>(e)
+                s.<span class="fn">set_status</span>(trace.<span class="fn">Status</span>(trace.StatusCode.ERROR))
+                <span class="kw">raise</span>
+        orders.<span class="fn">add</span>(<span class="nu">1</span>, {<span class="st">"payment_method"</span>: cart.method})          <span class="cm"># LOW cardinality labels only</span></code></pre>
 
   <span class="lang">python</span>
-<pre class="code"><code># Prometheus client directly
-from prometheus_client import Counter, Histogram, start_http_server
-REQS = Counter("http_requests_total", "requests", ["route", "status"])
-DUR = Histogram("http_request_duration_seconds", "latency", ["route"],
-                buckets=[0.01, 0.05, 0.1, 0.25, 0.5, 1, 2.5])
-start_http_server(9100)                                          # scrape target: /metrics
-with DUR.labels("/checkout").time():
+<pre class="code"><code><span class="cm"># Prometheus client directly</span>
+<span class="kw">from</span> prometheus_client <span class="kw">import</span> Counter, Histogram, start_http_server
+REQS = <span class="fn">Counter</span>(<span class="st">"http_requests_total"</span>, <span class="st">"requests"</span>, [<span class="st">"route"</span>, <span class="st">"status"</span>])
+DUR = <span class="fn">Histogram</span>(<span class="st">"http_request_duration_seconds"</span>, <span class="st">"latency"</span>, [<span class="st">"route"</span>],
+                buckets=[<span class="nu">0.01</span>, <span class="nu">0.05</span>, <span class="nu">0.1</span>, <span class="nu">0.25</span>, <span class="nu">0.5</span>, <span class="nu">1</span>, <span class="nu">2.5</span>])
+<span class="fn">start_http_server</span>(<span class="nu">9100</span>)                                          <span class="cm"># scrape target: /metrics</span>
+<span class="kw">with</span> DUR.<span class="fn">labels</span>(<span class="st">"/checkout"</span>).<span class="fn">time</span>():
     ...
-REQS.labels("/checkout", "200").inc()</code></pre>
+REQS.<span class="fn">labels</span>(<span class="st">"/checkout"</span>, <span class="st">"200"</span>).<span class="fn">inc</span>()</code></pre>
 
   <span class="lang">promql</span>
-<pre class="code"><code># Error ratio over 5 minutes
-sum(rate(http_requests_total{status=~"5.."}[5m])) / sum(rate(http_requests_total[5m]))
-# p99 latency per route
-histogram_quantile(0.99, sum by (le, route) (rate(http_request_duration_seconds_bucket[5m])))</code></pre>
+<pre class="code"><code><span class="cm"># Error ratio over 5 minutes</span>
+<span class="fn">sum</span>(<span class="fn">rate</span>(http_requests_total{status=~<span class="st">"5.."</span>}[<span class="nu">5m</span>])) / <span class="fn">sum</span>(<span class="fn">rate</span>(http_requests_total[<span class="nu">5m</span>]))
+<span class="cm"># p99 latency per route</span>
+<span class="fn">histogram_quantile</span>(<span class="nu">0.99</span>, sum <span class="kw">by</span> (le, route) (<span class="fn">rate</span>(http_request_duration_seconds_bucket[<span class="nu">5m</span>])))</code></pre>
 
   <h2>Exercises</h2>
   <ol style="list-style:none;padding-left:0">

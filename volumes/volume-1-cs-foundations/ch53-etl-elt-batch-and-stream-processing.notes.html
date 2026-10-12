@@ -281,47 +281,47 @@ a{color:var(--ink);text-decoration:underline dotted}
 
   <h2>Example</h2>
   <span class="lang">sql</span>
-<pre class="code"><code>-- ELT: a dbt model (models/marts/daily_revenue.sql) over raw loaded data
-&#123;&#123; config(materialized='incremental', unique_key='day') }}
-SELECT
-  date_trunc('day', paid_at) AS day,
-  SUM(amount_cents) / 100.0  AS revenue,
-  COUNT(DISTINCT order_id)   AS orders
-FROM &#123;&#123; ref('stg_payments') }}          -- a staging model: cleaned raw.payments
-WHERE status = 'captured'
+<pre class="code"><code><span class="cm">-- ELT: a dbt model (models/marts/daily_revenue.sql) over raw loaded data</span>
+{{ config(materialized=<span class="st">'incremental'</span>, unique_key=<span class="st">'day'</span>) }}
+<span class="kw">SELECT</span>
+  date_trunc(<span class="st">'day'</span>, paid_at) <span class="kw">AS</span> day,
+  <span class="bi">SUM</span>(amount_cents) / <span class="nu">100.0</span>  <span class="kw">AS</span> revenue,
+  <span class="bi">COUNT</span>(<span class="kw">DISTINCT</span> order_id)   <span class="kw">AS</span> orders
+<span class="kw">FROM</span> {{ ref(<span class="st">'stg_payments'</span>) }}          <span class="cm">-- a staging model: cleaned raw.payments</span>
+<span class="kw">WHERE</span> status = <span class="st">'captured'</span>
 {% if is_incremental() %}
-  AND paid_at &gt;= (SELECT max(day) FROM &#123;&#123; this }})   -- only reprocess the latest day
+  <span class="kw">AND</span> paid_at &gt;= (<span class="kw">SELECT</span> <span class="bi">max</span>(day) <span class="kw">FROM</span> {{ this }})   <span class="cm">-- only reprocess the latest day</span>
 {% endif %}
-GROUP BY 1</code></pre>
+<span class="kw">GROUP</span> <span class="kw">BY</span> <span class="nu">1</span></code></pre>
 
   <span class="lang">python</span>
-<pre class="code"><code># Batch: a nightly aggregate with pandas (rerunnable for any date)
-import pandas as pd, sys
-day = sys.argv[1]                                  # "2024-05-01"
-df = pd.read_parquet(f"lake/payments/date={day}/")
-out = df[df.status == "captured"].groupby("country").amount_cents.sum().reset_index()
-out.to_parquet(f"lake/marts/revenue_by_country/date={day}/part.parquet")   # overwrite = idempotent</code></pre>
+<pre class="code"><code><span class="cm"># Batch: a nightly aggregate with pandas (rerunnable for any date)</span>
+<span class="kw">import</span> pandas <span class="kw">as</span> pd, sys
+day = sys.argv[<span class="nu">1</span>]                                  <span class="cm"># "2024-05-01"</span>
+df = pd.<span class="fn">read_parquet</span>(<span class="st">f"lake/payments/date={day}/"</span>)
+out = df[df.status == <span class="st">"captured"</span>].<span class="fn">groupby</span>(<span class="st">"country"</span>).amount_cents.<span class="bi">sum</span>().<span class="fn">reset_index</span>()
+out.<span class="fn">to_parquet</span>(<span class="st">f"lake/marts/revenue_by_country/date={day}/part.parquet"</span>)   <span class="cm"># overwrite = idempotent</span></code></pre>
 
   <span class="lang">python</span>
-<pre class="code"><code># Stream: a windowed count with event time + dedup (framework-agnostic sketch)
-from collections import defaultdict
-WINDOW, LATENESS = 60, 30
-counts, seen, watermark = defaultdict(int), set(), 0
+<pre class="code"><code><span class="cm"># Stream: a windowed count with event time + dedup (framework-agnostic sketch)</span>
+<span class="kw">from</span> collections <span class="kw">import</span> defaultdict
+WINDOW, LATENESS = <span class="nu">60</span>, <span class="nu">30</span>
+counts, seen, watermark = <span class="fn">defaultdict</span>(<span class="bi">int</span>), <span class="bi">set</span>(), <span class="nu">0</span>
 
-def on_event(e):                     # e = {"id", "ts", "word"}
-    global watermark
-    if e["id"] in seen:
-        return                       # duplicate from at-least-once delivery
-    seen.add(e["id"])
-    start = e["ts"] - e["ts"] % WINDOW
-    if start + WINDOW + LATENESS &lt; watermark:
-        return print("too late, dropped", e)
-    counts[(start, e["word"])] += 1
-    watermark = max(watermark, e["ts"] - 5)  # heuristic: events are at most 5 s out of order
-    for (s, w), c in list(counts.items()):
-        if s + WINDOW &lt;= watermark:
-            print(f"window {s} {w} = {c}")   # emit (downstream must handle updates from late data)
-            del counts[(s, w)]</code></pre>
+<span class="kw">def</span> <span class="fn">on_event</span>(e):                     <span class="cm"># e = {"id", "ts", "word"}</span>
+    <span class="kw">global</span> watermark
+    <span class="kw">if</span> e[<span class="st">"id"</span>] <span class="kw">in</span> seen:
+        <span class="kw">return</span>                       <span class="cm"># duplicate from at-least-once delivery</span>
+    seen.<span class="fn">add</span>(e[<span class="st">"id"</span>])
+    start = e[<span class="st">"ts"</span>] - e[<span class="st">"ts"</span>] % WINDOW
+    <span class="kw">if</span> start + WINDOW + LATENESS &lt; watermark:
+        <span class="kw">return</span> <span class="bi">print</span>(<span class="st">"too late, dropped"</span>, e)
+    counts[(start, e[<span class="st">"word"</span>])] += <span class="nu">1</span>
+    watermark = <span class="bi">max</span>(watermark, e[<span class="st">"ts"</span>] - <span class="nu">5</span>)  <span class="cm"># heuristic: events are at most 5 s out of order</span>
+    <span class="kw">for</span> (s, w), c <span class="kw">in</span> <span class="bi">list</span>(counts.<span class="fn">items</span>()):
+        <span class="kw">if</span> s + WINDOW &lt;= watermark:
+            <span class="bi">print</span>(<span class="st">f"window {s} {w} = {c}"</span>)   <span class="cm"># emit (downstream must handle updates from late data)</span>
+            <span class="kw">del</span> counts[(s, w)]</code></pre>
 
   <h2>Exercises</h2>
   <ol style="list-style:none;padding-left:0">

@@ -274,50 +274,50 @@ a{color:var(--ink);text-decoration:underline dotted}
 
   <h2>Example</h2>
   <span class="lang">python</span>
-<pre class="code"><code># A minimal streaming loop (conceptual): STT → LLM → TTS with sentence chunking and barge-in.
-import asyncio, re, anthropic
-client = anthropic.AsyncAnthropic()
-SYSTEM = ("You are a friendly voice assistant. Speak in short sentences. No lists, markdown, "
-          "or URLs. Say numbers as words when natural.")
-SENTENCE_END = re.compile(r"([.!?])\s")
+<pre class="code"><code><span class="cm"># A minimal streaming loop (conceptual): STT → LLM → TTS with sentence chunking and barge-in.</span>
+<span class="kw">import</span> asyncio, re, anthropic
+client = anthropic.<span class="fn">AsyncAnthropic</span>()
+SYSTEM = (<span class="st">"You are a friendly voice assistant. Speak in short sentences. No lists, markdown, "</span>
+          <span class="st">"or URLs. Say numbers as words when natural."</span>)
+SENTENCE_END = re.<span class="fn">compile</span>(<span class="st">r"([.!?])\s"</span>)
 
-async def speak_reply(history, tts, player, interrupted: asyncio.Event):
-    spoken, buf = [], ""
-    async with client.messages.stream(model="claude-haiku-4-5-20251001", max_tokens=300,
-                                      system=SYSTEM, messages=history) as stream:
-        async for text in stream.text_stream:
-            if interrupted.is_set():
-                break                                   # barge-in: stop generating
+<span class="kw">async</span> <span class="kw">def</span> <span class="fn">speak_reply</span>(history, tts, player, interrupted: asyncio.Event):
+    spoken, buf = [], <span class="st">""</span>
+    <span class="kw">async</span> <span class="kw">with</span> client.messages.<span class="fn">stream</span>(model=<span class="st">"claude-haiku-4-5-20251001"</span>, max_tokens=<span class="nu">300</span>,
+                                      system=SYSTEM, messages=history) <span class="kw">as</span> stream:
+        <span class="kw">async</span> <span class="kw">for</span> text <span class="kw">in</span> stream.text_stream:
+            <span class="kw">if</span> interrupted.<span class="fn">is_set</span>():
+                <span class="kw">break</span>                                   <span class="cm"># barge-in: stop generating</span>
             buf += text
-            while (m := SENTENCE_END.search(buf)):      # send whole sentences to TTS ASAP
-                sentence, buf = buf[:m.end()].strip(), buf[m.end():]
-                await player.play(tts.stream(sentence), stop_event=interrupted)
-                if interrupted.is_set():
-                    break
-                spoken.append(sentence)
-    if buf.strip() and not interrupted.is_set():
-        await player.play(tts.stream(buf.strip()), stop_event=interrupted)
-        spoken.append(buf.strip())
-    # Record ONLY what the user actually heard
-    history.append({"role": "assistant", "content": " ".join(spoken) or "(interrupted)"})
+            <span class="kw">while</span> (m := SENTENCE_END.<span class="fn">search</span>(buf)):      <span class="cm"># send whole sentences to TTS ASAP</span>
+                sentence, buf = buf[:m.<span class="fn">end</span>()].<span class="fn">strip</span>(), buf[m.<span class="fn">end</span>():]
+                <span class="kw">await</span> player.<span class="fn">play</span>(tts.<span class="fn">stream</span>(sentence), stop_event=interrupted)
+                <span class="kw">if</span> interrupted.<span class="fn">is_set</span>():
+                    <span class="kw">break</span>
+                spoken.<span class="fn">append</span>(sentence)
+    <span class="kw">if</span> buf.<span class="fn">strip</span>() <span class="kw">and</span> <span class="kw">not</span> interrupted.<span class="fn">is_set</span>():
+        <span class="kw">await</span> player.<span class="fn">play</span>(tts.<span class="fn">stream</span>(buf.<span class="fn">strip</span>()), stop_event=interrupted)
+        spoken.<span class="fn">append</span>(buf.<span class="fn">strip</span>())
+    <span class="cm"># Record ONLY what the user actually heard</span>
+    history.<span class="fn">append</span>({<span class="st">"role"</span>: <span class="st">"assistant"</span>, <span class="st">"content"</span>: <span class="st">" "</span>.<span class="fn">join</span>(spoken) <span class="kw">or</span> <span class="st">"(interrupted)"</span>})
 
-async def conversation(mic, stt, tts, player, vad):
+<span class="kw">async</span> <span class="kw">def</span> <span class="fn">conversation</span>(mic, stt, tts, player, vad):
     history = []
-    while True:
-        user_text = await stt.listen_until_end_of_turn(mic, vad)    # streaming STT + endpointing
-        history.append({"role": "user", "content": user_text})
-        interrupted = asyncio.Event()
-        watcher = asyncio.create_task(vad.wait_for_speech(set_event=interrupted))  # barge-in detector
-        await speak_reply(history, tts, player, interrupted)
-        watcher.cancel()</code></pre>
+    <span class="kw">while</span> <span class="kw">True</span>:
+        user_text = <span class="kw">await</span> stt.<span class="fn">listen_until_end_of_turn</span>(mic, vad)    <span class="cm"># streaming STT + endpointing</span>
+        history.<span class="fn">append</span>({<span class="st">"role"</span>: <span class="st">"user"</span>, <span class="st">"content"</span>: user_text})
+        interrupted = asyncio.<span class="fn">Event</span>()
+        watcher = asyncio.<span class="fn">create_task</span>(vad.<span class="fn">wait_for_speech</span>(set_event=interrupted))  <span class="cm"># barge-in detector</span>
+        <span class="kw">await</span> <span class="fn">speak_reply</span>(history, tts, player, interrupted)
+        watcher.<span class="fn">cancel</span>()</code></pre>
   <span class="lang">python</span>
-<pre class="code"><code># Real frameworks wire this for you. Pipecat, for example, composes processors into a pipeline:
-# pipeline = Pipeline([transport.input(), stt, context_aggregator.user(), llm, tts,
-#                      transport.output(), context_aggregator.assistant()])
-# with VAD-based interruptions enabled in the transport params.</code></pre>
+<pre class="code"><code><span class="cm"># Real frameworks wire this for you. Pipecat, for example, composes processors into a pipeline:</span>
+<span class="cm"># pipeline = Pipeline([transport.input(), stt, context_aggregator.user(), llm, tts,</span>
+<span class="cm">#                      transport.output(), context_aggregator.assistant()])</span>
+<span class="cm"># with VAD-based interruptions enabled in the transport params.</span></code></pre>
   <span class="lang">bash</span>
-<pre class="code"><code># Measure each stage — log timestamps per turn
-# turn 7: speech_end=0 ms  stt_final=+160  llm_first_token=+410  tts_first_audio=+540  → 540 ms ✅</code></pre>
+<pre class="code"><code><span class="cm"># Measure each stage — log timestamps per turn</span>
+<span class="cm"># turn 7: speech_end=0 ms  stt_final=+160  llm_first_token=+410  tts_first_audio=+540  → 540 ms ✅</span></code></pre>
   <h2>Exercises</h2>
   <ol style="list-style:none;padding-left:0">
     <li>1. Wire STT → LLM → TTS into one loop.

@@ -292,50 +292,50 @@ a{color:var(--ink);text-decoration:underline dotted}
 
   <h2>Example</h2>
   <span class="lang">yaml</span>
-<pre class="code"><code># Prometheus recording + alerting rules for a 99.9% availability SLO
-groups:
-  - name: checkout-slo
-    rules:
-      - record: sli:checkout_errors:ratio_rate5m
-        expr: |
-          sum(rate(http_requests_total{route="/checkout",status=~"5.."}[5m]))
-          / sum(rate(http_requests_total{route="/checkout"}[5m]))
-      - record: sli:checkout_errors:ratio_rate1h
-        expr: |
-          sum(rate(http_requests_total{route="/checkout",status=~"5.."}[1h]))
-          / sum(rate(http_requests_total{route="/checkout"}[1h]))
+<pre class="code"><code><span class="cm"># Prometheus recording + alerting rules for a 99.9% availability SLO</span>
+<span class="bi">groups</span>:
+<span class="bi">  - name</span>: checkout-slo
+<span class="bi">    rules</span>:
+<span class="bi">      - record</span>: sli:checkout_errors:ratio_rate5m
+<span class="bi">        expr</span>: |
+          sum(rate(http_requests_total{route=<span class="st">"/checkout"</span>,status=~<span class="st">"5.."</span>}[<span class="nu">5m</span>]))
+          / sum(rate(http_requests_total{route=<span class="st">"/checkout"</span>}[<span class="nu">5m</span>]))
+<span class="bi">      - record</span>: sli:checkout_errors:ratio_rate1h
+<span class="bi">        expr</span>: |
+          sum(rate(http_requests_total{route=<span class="st">"/checkout"</span>,status=~<span class="st">"5.."</span>}[<span class="nu">1h</span>]))
+          / sum(rate(http_requests_total{route=<span class="st">"/checkout"</span>}[<span class="nu">1h</span>]))
 
-      - alert: CheckoutErrorBudgetFastBurn
-        expr: |
-          sli:checkout_errors:ratio_rate1h &gt; (14.4 * 0.001)
+<span class="bi">      - alert</span>: CheckoutErrorBudgetFastBurn
+<span class="bi">        expr</span>: |
+          sli:checkout_errors:ratio_rate1h &gt; (<span class="nu">14.4</span> * <span class="nu">0.001</span>)
           and
-          sli:checkout_errors:ratio_rate5m &gt; (14.4 * 0.001)
-        labels: { severity: page }
-        annotations:
-          summary: "Checkout is burning its 30-day error budget 14x too fast"
-          runbook_url: https://docs.acme.dev/runbooks/checkout/#fast-burn</code></pre>
+          sli:checkout_errors:ratio_rate5m &gt; (<span class="nu">14.4</span> * <span class="nu">0.001</span>)
+<span class="bi">        labels</span>: { severity: page }
+<span class="bi">        annotations</span>:
+<span class="bi">          summary</span>: <span class="st">"Checkout is burning its 30-day error budget 14x too fast"</span>
+<span class="bi">          runbook_url</span>: https://docs.acme.dev/runbooks/checkout/#fast-burn</code></pre>
 
   <span class="lang">python</span>
-<pre class="code"><code># Error-budget math you should be able to do on a whiteboard
-slo = 0.999
-window_min = 30 * 24 * 60
-budget_min = (1 - slo) * window_min
-print(round(budget_min, 1))                 # 43.2 minutes of full outage allowed
+<pre class="code"><code><span class="cm"># Error-budget math you should be able to do on a whiteboard</span>
+slo = <span class="nu">0.999</span>
+window_min = <span class="nu">30</span> * <span class="nu">24</span> * <span class="nu">60</span>
+budget_min = (<span class="nu">1</span> - slo) * window_min
+<span class="bi">print</span>(<span class="bi">round</span>(budget_min, <span class="nu">1</span>))                 <span class="cm"># 43.2 minutes of full outage allowed</span>
 
-burn_rate = 14.4
-print(round(window_min / burn_rate / 60, 1))   # 50.0 hours to exhaust the whole budget at 14.4x
-print(round(burn_rate * 60 / window_min * 100, 1))   # 2.0 % of the budget spent in 1 hour</code></pre>
+burn_rate = <span class="nu">14.4</span>
+<span class="bi">print</span>(<span class="bi">round</span>(window_min / burn_rate / <span class="nu">60</span>, <span class="nu">1</span>))   <span class="cm"># 50.0 hours to exhaust the whole budget at 14.4x</span>
+<span class="bi">print</span>(<span class="bi">round</span>(burn_rate * <span class="nu">60</span> / window_min * <span class="nu">100</span>, <span class="nu">1</span>))   <span class="cm"># 2.0 % of the budget spent in 1 hour</span></code></pre>
 
   <span class="lang">python</span>
-<pre class="code"><code># Latency SLI with an exemplar link to traces (prometheus_client)
-from prometheus_client import Histogram
-from opentelemetry import trace
-LAT = Histogram("http_request_duration_seconds", "latency", ["route"],
-                buckets=[0.05, 0.1, 0.2, 0.3, 0.5, 1, 2])
+<pre class="code"><code><span class="cm"># Latency SLI with an exemplar link to traces (prometheus_client)</span>
+<span class="kw">from</span> prometheus_client <span class="kw">import</span> Histogram
+<span class="kw">from</span> opentelemetry <span class="kw">import</span> trace
+LAT = <span class="fn">Histogram</span>(<span class="st">"http_request_duration_seconds"</span>, <span class="st">"latency"</span>, [<span class="st">"route"</span>],
+                buckets=[<span class="nu">0.05</span>, <span class="nu">0.1</span>, <span class="nu">0.2</span>, <span class="nu">0.3</span>, <span class="nu">0.5</span>, <span class="nu">1</span>, <span class="nu">2</span>])
 
-def observe(route, seconds):
-    ctx = trace.get_current_span().get_span_context()
-    LAT.labels(route).observe(seconds, exemplar={"trace_id": format(ctx.trace_id, "032x")})</code></pre>
+<span class="kw">def</span> <span class="fn">observe</span>(route, seconds):
+    ctx = trace.<span class="fn">get_current_span</span>().<span class="fn">get_span_context</span>()
+    LAT.<span class="fn">labels</span>(route).<span class="fn">observe</span>(seconds, exemplar={<span class="st">"trace_id"</span>: <span class="bi">format</span>(ctx.trace_id, <span class="st">"032x"</span>)})</code></pre>
 
   <h2>Exercises</h2>
   <ol style="list-style:none;padding-left:0">

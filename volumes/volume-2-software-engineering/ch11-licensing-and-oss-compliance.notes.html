@@ -332,27 +332,27 @@ This product includes software developed by The Apache Software Foundation
 (https://www.apache.org/): Apache Commons CSV, licensed under Apache-2.0.</code></pre>
 
   <span class="lang">python</span>
-<pre class="code"><code># SPDX-License-Identifier: Apache-2.0
-# Copyright 2024 Acme Corp.
-"""Per-file headers let tools identify the license without guessing."""</code></pre>
+<pre class="code"><code><span class="cm"># SPDX-License-Identifier: Apache-2.0</span>
+<span class="cm"># Copyright 2024 Acme Corp.</span>
+<span class="st">"""Per-file headers let tools identify the license without guessing."""</span></code></pre>
 
   <span class="lang">toml</span>
-<pre class="code"><code># deny.toml — cargo-deny policy
-[licenses]
-allow = ["MIT", "Apache-2.0", "BSD-2-Clause", "BSD-3-Clause", "ISC", "Unicode-3.0", "MPL-2.0"]
-confidence-threshold = 0.9
-exceptions = [
-  { allow = ["LGPL-2.1"], crate = "some-dynamic-lib" },   # reviewed 2024-05, ticket LEGAL-42
+<pre class="code"><code><span class="cm"># deny.toml — cargo-deny policy</span>
+<span class="kw">[licenses]</span>
+<span class="bi">allow</span> = [<span class="st">"MIT"</span>, <span class="st">"Apache-2.0"</span>, <span class="st">"BSD-2-Clause"</span>, <span class="st">"BSD-3-Clause"</span>, <span class="st">"ISC"</span>, <span class="st">"Unicode-3.0"</span>, <span class="st">"MPL-2.0"</span>]
+<span class="bi">confidence-threshold</span> = <span class="nu">0.9</span>
+<span class="bi">exceptions</span> = [
+  { allow = [<span class="st">"LGPL-2.1"</span>], crate = <span class="st">"some-dynamic-lib"</span> },   <span class="cm"># reviewed 2024-05, ticket LEGAL-42</span>
 ]
 
-[advisories]
-yanked = "deny"                 # also fail on known security advisories</code></pre>
+<span class="kw">[advisories]</span>
+<span class="bi">yanked</span> = <span class="st">"deny"</span>                 <span class="cm"># also fail on known security advisories</span></code></pre>
 
   <span class="lang">bash</span>
 <pre class="code"><code>cargo deny check licenses advisories
-pip-licenses --format=markdown --with-urls --order=license &gt; THIRD_PARTY_LICENSES.md
-pip-licenses --fail-on="GNU General Public License v3 (GPLv3);GNU Affero General Public License v3"
-npx license-checker --production --failOn "GPL;AGPL"
+<span class="bi">pip</span>-licenses --format=markdown --with-urls --order=license &gt; THIRD_PARTY_LICENSES.md
+<span class="bi">pip</span>-licenses --fail-on=<span class="st">"GNU General Public License v3 (GPLv3);GNU Affero General Public License v3"</span>
+npx license-checker --production --failOn <span class="st">"GPL;AGPL"</span>
 syft dir:. -o cyclonedx-json &gt; sbom.cdx.json</code></pre>
 
   <h2>Exercises</h2>

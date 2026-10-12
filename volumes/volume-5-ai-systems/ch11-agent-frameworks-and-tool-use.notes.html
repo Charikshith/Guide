@@ -310,61 +310,61 @@ a{color:var(--ink);text-decoration:underline dotted}
 
   <h2>Example</h2>
   <span class="lang">python</span>
-<pre class="code"><code>import json, anthropic
+<pre class="code"><code><span class="kw">import</span> json, anthropic
 
-client = anthropic.Anthropic()
+client = anthropic.<span class="fn">Anthropic</span>()
 
 TOOLS = [
-    {"name": "search",
-     "description": "Search the web. Returns short text snippets. Use for facts you don't know.",
-     "input_schema": {"type": "object",
-                      "properties": {"query": {"type": "string"}},
-                      "required": ["query"]}},
-    {"name": "calculator",
-     "description": "Evaluate an arithmetic expression like '0.17 * 14000000'. Only + - * / ( ) and numbers.",
-     "input_schema": {"type": "object",
-                      "properties": {"expression": {"type": "string"}},
-                      "required": ["expression"]}},
+    {<span class="st">"name"</span>: <span class="st">"search"</span>,
+     <span class="st">"description"</span>: <span class="st">"Search the web. Returns short text snippets. Use for facts you don't know."</span>,
+     <span class="st">"input_schema"</span>: {<span class="st">"type"</span>: <span class="st">"object"</span>,
+                      <span class="st">"properties"</span>: {<span class="st">"query"</span>: {<span class="st">"type"</span>: <span class="st">"string"</span>}},
+                      <span class="st">"required"</span>: [<span class="st">"query"</span>]}},
+    {<span class="st">"name"</span>: <span class="st">"calculator"</span>,
+     <span class="st">"description"</span>: <span class="st">"Evaluate an arithmetic expression like '0.17 * 14000000'. Only + - * / ( ) and numbers."</span>,
+     <span class="st">"input_schema"</span>: {<span class="st">"type"</span>: <span class="st">"object"</span>,
+                      <span class="st">"properties"</span>: {<span class="st">"expression"</span>: {<span class="st">"type"</span>: <span class="st">"string"</span>}},
+                      <span class="st">"required"</span>: [<span class="st">"expression"</span>]}},
 ]
 
-def search(query: str) -&gt; str:
-    return "Tokyo Metropolis population: about 14 million (2024)."   # stub; call a real API here
+<span class="kw">def</span> <span class="fn">search</span>(query: <span class="bi">str</span>) -&gt; <span class="bi">str</span>:
+    <span class="kw">return</span> <span class="st">"Tokyo Metropolis population: about 14 million (2024)."</span>   <span class="cm"># stub; call a real API here</span>
 
-def calculator(expression: str) -&gt; str:
-    if not set(expression) &lt;= set("0123456789.+-*/() "):
-        raise ValueError("only numbers and + - * / ( ) are allowed")
-    return str(eval(expression, {"__builtins__": {}}))              # restricted after the check
+<span class="kw">def</span> <span class="fn">calculator</span>(expression: <span class="bi">str</span>) -&gt; <span class="bi">str</span>:
+    <span class="kw">if</span> <span class="kw">not</span> <span class="bi">set</span>(expression) &lt;= <span class="bi">set</span>(<span class="st">"0123456789.+-*/() "</span>):
+        <span class="kw">raise</span> <span class="bi">ValueError</span>(<span class="st">"only numbers and + - * / ( ) are allowed"</span>)
+    <span class="kw">return</span> <span class="bi">str</span>(<span class="fn">eval</span>(expression, {<span class="st">"__builtins__"</span>: {}}))              <span class="cm"># restricted after the check</span>
 
-HANDLERS = {"search": search, "calculator": calculator}
+HANDLERS = {<span class="st">"search"</span>: search, <span class="st">"calculator"</span>: calculator}
 
-def run_agent(goal: str, max_steps: int = 8) -&gt; str:
-    messages = [{"role": "user", "content": goal}]
-    seen = set()
-    for step in range(max_steps):
-        resp = client.messages.create(model="claude-sonnet-5-5", max_tokens=1024,
+<span class="kw">def</span> <span class="fn">run_agent</span>(goal: <span class="bi">str</span>, max_steps: <span class="bi">int</span> = <span class="nu">8</span>) -&gt; <span class="bi">str</span>:
+    messages = [{<span class="st">"role"</span>: <span class="st">"user"</span>, <span class="st">"content"</span>: goal}]
+    seen = <span class="bi">set</span>()
+    <span class="kw">for</span> step <span class="kw">in</span> <span class="bi">range</span>(max_steps):
+        resp = client.messages.<span class="fn">create</span>(model=<span class="st">"claude-sonnet-5-5"</span>, max_tokens=<span class="nu">1024</span>,
                                       tools=TOOLS, messages=messages)
-        messages.append({"role": "assistant", "content": resp.content})
-        if resp.stop_reason != "tool_use":
-            return "".join(b.text for b in resp.content if b.type == "text")
+        messages.<span class="fn">append</span>({<span class="st">"role"</span>: <span class="st">"assistant"</span>, <span class="st">"content"</span>: resp.content})
+        <span class="kw">if</span> resp.stop_reason != <span class="st">"tool_use"</span>:
+            <span class="kw">return</span> <span class="st">""</span>.<span class="fn">join</span>(b.text <span class="kw">for</span> b <span class="kw">in</span> resp.content <span class="kw">if</span> b.<span class="bi">type</span> == <span class="st">"text"</span>)
 
         results = []
-        for block in resp.content:
-            if block.type != "tool_use":
-                continue
-            key = (block.name, json.dumps(block.input, sort_keys=True))
-            try:
-                if key in seen:
-                    raise RuntimeError("you already made this exact call; use the earlier result")
-                seen.add(key)
-                out, err = HANDLERS[block.name](**block.input), False
-            except Exception as e:                          # errors go BACK to the model
-                out, err = f"error: {e}", True
-            results.append({"type": "tool_result", "tool_use_id": block.id,
-                            "content": out, "is_error": err})
-        messages.append({"role": "user", "content": results})
-    return "Stopped: step limit reached. Partial progress is in the transcript."
+        <span class="kw">for</span> block <span class="kw">in</span> resp.content:
+            <span class="kw">if</span> block.<span class="bi">type</span> != <span class="st">"tool_use"</span>:
+                <span class="kw">continue</span>
+            key = (block.name, json.<span class="fn">dumps</span>(block.<span class="bi">input</span>, sort_keys=<span class="kw">True</span>))
+            <span class="kw">try</span>:
+                <span class="kw">if</span> key <span class="kw">in</span> seen:
+                    <span class="kw">raise</span> <span class="fn">RuntimeError</span>(<span class="st">"you already made this exact call; use the earlier result"</span>)
+                seen.<span class="fn">add</span>(key)
+                out, err = HANDLERS[block.name](**block.<span class="bi">input</span>), <span class="kw">False</span>
+            <span class="kw">except</span> <span class="bi">Exception</span> <span class="kw">as</span> e:                          <span class="cm"># errors go BACK to the model</span>
+                out, err = <span class="st">f"error: {e}"</span>, <span class="kw">True</span>
+            results.<span class="fn">append</span>({<span class="st">"type"</span>: <span class="st">"tool_result"</span>, <span class="st">"tool_use_id"</span>: block.<span class="bi">id</span>,
+                            <span class="st">"content"</span>: out, <span class="st">"is_error"</span>: err})
+        messages.<span class="fn">append</span>({<span class="st">"role"</span>: <span class="st">"user"</span>, <span class="st">"content"</span>: results})
+    <span class="kw">return</span> <span class="st">"Stopped: step limit reached. Partial progress is in the transcript."</span>
 
-print(run_agent("What is 17% of Tokyo's population?"))</code></pre>
+<span class="bi">print</span>(<span class="fn">run_agent</span>(<span class="st">"What is 17% of Tokyo's population?"</span>))</code></pre>
   <h2>Exercises</h2>
   <ol style="list-style:none;padding-left:0">
     <li>1. Build an agent with two tools.

@@ -310,66 +310,66 @@ a{color:var(--ink);text-decoration:underline dotted}
 
   <h2>Example</h2>
   <span class="lang">python</span>
-<pre class="code"><code># An MCP server exposing a get_weather tool (official Python SDK, FastMCP API)
-# pip install "mcp[cli]"
-from mcp.server.fastmcp import FastMCP
+<pre class="code"><code><span class="cm"># An MCP server exposing a get_weather tool (official Python SDK, FastMCP API)</span>
+<span class="cm"># pip install "mcp[cli]"</span>
+<span class="kw">from</span> mcp.server.fastmcp <span class="kw">import</span> FastMCP
 
-mcp = FastMCP("weather")
+mcp = <span class="fn">FastMCP</span>(<span class="st">"weather"</span>)
 
-@mcp.tool()
-def get_weather(city: str) -&gt; str:
-    """Current weather for a city. Returns temperature (C) and conditions."""
-    fake = {"lisbon": "22 C, sunny", "oslo": "9 C, rain"}
-    return fake.get(city.lower(), f"no data for {city}")
+<span class="bi">@mcp.tool</span>()
+<span class="kw">def</span> <span class="fn">get_weather</span>(city: <span class="bi">str</span>) -&gt; <span class="bi">str</span>:
+    <span class="st">"""Current weather for a city. Returns temperature (C) and conditions."""</span>
+    fake = {<span class="st">"lisbon"</span>: <span class="st">"22 C, sunny"</span>, <span class="st">"oslo"</span>: <span class="st">"9 C, rain"</span>}
+    <span class="kw">return</span> fake.<span class="fn">get</span>(city.<span class="fn">lower</span>(), <span class="st">f"no data for {city}"</span>)
 
-@mcp.resource("weather://cities")
-def cities() -&gt; str:
-    """The list of supported cities."""
-    return "Lisbon, Oslo"
+<span class="bi">@mcp.resource</span>(<span class="st">"weather://cities"</span>)
+<span class="kw">def</span> <span class="fn">cities</span>() -&gt; <span class="bi">str</span>:
+    <span class="st">"""The list of supported cities."""</span>
+    <span class="kw">return</span> <span class="st">"Lisbon, Oslo"</span>
 
-@mcp.prompt()
-def packing_advice(city: str) -&gt; str:
-    return f"Check the weather in {city} with get_weather and suggest what to pack."
+<span class="bi">@mcp.prompt</span>()
+<span class="kw">def</span> <span class="fn">packing_advice</span>(city: <span class="bi">str</span>) -&gt; <span class="bi">str</span>:
+    <span class="kw">return</span> <span class="st">f"Check the weather in {city} with get_weather and suggest what to pack."</span>
 
-if __name__ == "__main__":
-    mcp.run()          # stdio by default; mcp.run(transport="streamable-http") for a remote server</code></pre>
+<span class="kw">if</span> __name__ == <span class="st">"__main__"</span>:
+    mcp.<span class="fn">run</span>()          <span class="cm"># stdio by default; mcp.run(transport="streamable-http") for a remote server</span></code></pre>
   <span class="lang">python</span>
-<pre class="code"><code># An MCP client: launch the server over stdio, list tools, call one
-import asyncio
-from mcp import ClientSession, StdioServerParameters
-from mcp.client.stdio import stdio_client
+<pre class="code"><code><span class="cm"># An MCP client: launch the server over stdio, list tools, call one</span>
+<span class="kw">import</span> asyncio
+<span class="kw">from</span> mcp <span class="kw">import</span> ClientSession, StdioServerParameters
+<span class="kw">from</span> mcp.client.stdio <span class="kw">import</span> stdio_client
 
-async def main():
-    params = StdioServerParameters(command="python", args=["weather_server.py"])
-    async with stdio_client(params) as (read, write):
-        async with ClientSession(read, write) as session:
-            await session.initialize()
-            tools = await session.list_tools()
-            print([t.name for t in tools.tools])                    # ['get_weather']
-            result = await session.call_tool("get_weather", {"city": "Lisbon"})
-            print(result.content[0].text)                           # 22 C, sunny
+<span class="kw">async</span> <span class="kw">def</span> <span class="fn">main</span>():
+    params = <span class="fn">StdioServerParameters</span>(command=<span class="st">"python"</span>, args=[<span class="st">"weather_server.py"</span>])
+    <span class="kw">async</span> <span class="kw">with</span> <span class="fn">stdio_client</span>(params) <span class="kw">as</span> (read, write):
+        <span class="kw">async</span> <span class="kw">with</span> <span class="fn">ClientSession</span>(read, write) <span class="kw">as</span> session:
+            <span class="kw">await</span> session.<span class="fn">initialize</span>()
+            tools = <span class="kw">await</span> session.<span class="fn">list_tools</span>()
+            <span class="bi">print</span>([t.name <span class="kw">for</span> t <span class="kw">in</span> tools.tools])                    <span class="cm"># ['get_weather']</span>
+            result = <span class="kw">await</span> session.<span class="fn">call_tool</span>(<span class="st">"get_weather"</span>, {<span class="st">"city"</span>: <span class="st">"Lisbon"</span>})
+            <span class="bi">print</span>(result.content[<span class="nu">0</span>].text)                           <span class="cm"># 22 C, sunny</span>
 
-asyncio.run(main())</code></pre>
+asyncio.<span class="fn">run</span>(<span class="fn">main</span>())</code></pre>
   <span class="lang">json</span>
 <pre class="code"><code>// Register the server in a host (e.g. claude_desktop_config.json or .mcp.json)
-{ "mcpServers": { "weather": { "command": "python", "args": ["weather_server.py"] } } }</code></pre>
+{ <span class="bi">"mcpServers"</span>: { <span class="bi">"weather"</span>: { <span class="bi">"command"</span>: <span class="st">"python"</span>, <span class="bi">"args"</span>: [<span class="st">"weather_server.py"</span>] } } }</code></pre>
   <span class="lang">json</span>
 <pre class="code"><code>// A2A: an Agent Card (abridged) and a JSON-RPC task request
 {
-  "name": "Hotel Booking Agent",
-  "description": "Finds and books hotels.",
-  "url": "https://hotels.example.com/a2a",
-  "version": "1.0.0",
-  "capabilities": { "streaming": true, "pushNotifications": true },
-  "defaultInputModes": ["text/plain"],
-  "defaultOutputModes": ["text/plain", "application/json"],
-  "skills": [{ "id": "book_hotel", "name": "Book a hotel",
-               "description": "Book rooms given a city, dates, and budget." }]
+  <span class="bi">"name"</span>: <span class="st">"Hotel Booking Agent"</span>,
+  <span class="bi">"description"</span>: <span class="st">"Finds and books hotels."</span>,
+  <span class="bi">"url"</span>: <span class="st">"https://hotels.example.com/a2a"</span>,
+  <span class="bi">"version"</span>: <span class="st">"1.0.0"</span>,
+  <span class="bi">"capabilities"</span>: { <span class="bi">"streaming"</span>: <span class="kw">true</span>, <span class="bi">"pushNotifications"</span>: <span class="kw">true</span> },
+  <span class="bi">"defaultInputModes"</span>: [<span class="st">"text/plain"</span>],
+  <span class="bi">"defaultOutputModes"</span>: [<span class="st">"text/plain"</span>, <span class="st">"application/json"</span>],
+  <span class="bi">"skills"</span>: [{ <span class="bi">"id"</span>: <span class="st">"book_hotel"</span>, <span class="bi">"name"</span>: <span class="st">"Book a hotel"</span>,
+               <span class="bi">"description"</span>: <span class="st">"Book rooms given a city, dates, and budget."</span> }]
 }
 
-{ "jsonrpc": "2.0", "id": 1, "method": "message/send",
-  "params": { "message": { "role": "user", "messageId": "m-1",
-    "parts": [{ "kind": "text", "text": "Book 2 nights in Lisbon from May 3, under 150 EUR" }] } } }</code></pre>
+{ <span class="bi">"jsonrpc"</span>: <span class="st">"2.0"</span>, <span class="bi">"id"</span>: <span class="nu">1</span>, <span class="bi">"method"</span>: <span class="st">"message/send"</span>,
+  <span class="bi">"params"</span>: { <span class="bi">"message"</span>: { <span class="bi">"role"</span>: <span class="st">"user"</span>, <span class="bi">"messageId"</span>: <span class="st">"m-1"</span>,
+    <span class="bi">"parts"</span>: [{ <span class="bi">"kind"</span>: <span class="st">"text"</span>, <span class="bi">"text"</span>: <span class="st">"Book 2 nights in Lisbon from May 3, under 150 EUR"</span> }] } } }</code></pre>
   <p>(Field names follow the A2A spec at the time of writing; check the current spec version before building.)</p>
   <h2>Exercises</h2>
   <ol style="list-style:none;padding-left:0">

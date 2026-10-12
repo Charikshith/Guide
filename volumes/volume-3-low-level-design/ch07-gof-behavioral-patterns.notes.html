@@ -319,85 +319,85 @@ a{color:var(--ink);text-decoration:underline dotted}
 
   <h2>Example</h2>
   <span class="lang">python</span>
-<pre class="code"><code>from typing import Protocol, Callable
-from collections import defaultdict
+<pre class="code"><code><span class="kw">from</span> typing <span class="kw">import</span> Protocol, Callable
+<span class="kw">from</span> collections <span class="kw">import</span> defaultdict
 
-# ---- Strategy ------------------------------------------------------------
-class PricingStrategy(Protocol):
-    def apply(self, cents: int) -&gt; int: ...
+<span class="cm"># ---- Strategy ------------------------------------------------------------</span>
+<span class="kw">class</span> <span class="fn">PricingStrategy</span>(Protocol):
+    <span class="kw">def</span> <span class="fn">apply</span>(<span class="bi">self</span>, cents: <span class="bi">int</span>) -&gt; <span class="bi">int</span>: ...
 
-class Regular:
-    def apply(self, cents): return cents
+<span class="kw">class</span> Regular:
+    <span class="kw">def</span> <span class="fn">apply</span>(<span class="bi">self</span>, cents): <span class="kw">return</span> cents
 
-class PercentOff:
-    def __init__(self, pct): self.pct = pct
-    def apply(self, cents): return cents * (100 - self.pct) // 100
+<span class="kw">class</span> PercentOff:
+    <span class="kw">def</span> <span class="fn">__init__</span>(<span class="bi">self</span>, pct): <span class="bi">self</span>.pct = pct
+    <span class="kw">def</span> <span class="fn">apply</span>(<span class="bi">self</span>, cents): <span class="kw">return</span> cents * (<span class="nu">100</span> - <span class="bi">self</span>.pct) // <span class="nu">100</span>
 
-class Checkout:
-    def __init__(self, pricing: PricingStrategy): self.pricing = pricing
-    def total(self, items): return self.pricing.apply(sum(items))
+<span class="kw">class</span> Checkout:
+    <span class="kw">def</span> <span class="fn">__init__</span>(<span class="bi">self</span>, pricing: PricingStrategy): <span class="bi">self</span>.pricing = pricing
+    <span class="kw">def</span> <span class="fn">total</span>(<span class="bi">self</span>, items): <span class="kw">return</span> <span class="bi">self</span>.pricing.<span class="fn">apply</span>(<span class="bi">sum</span>(items))
 
-print(Checkout(Regular()).total([1000, 500]), Checkout(PercentOff(20)).total([1000, 500]))   # 1500 1200
+<span class="bi">print</span>(<span class="fn">Checkout</span>(<span class="fn">Regular</span>()).<span class="fn">total</span>([<span class="nu">1000</span>, <span class="nu">500</span>]), <span class="fn">Checkout</span>(<span class="fn">PercentOff</span>(<span class="nu">20</span>)).<span class="fn">total</span>([<span class="nu">1000</span>, <span class="nu">500</span>]))   <span class="cm"># 1500 1200</span>
 
-# ---- Observer ------------------------------------------------------------
-class EventSource:
-    def __init__(self): self._subs: dict[str, list[Callable]] = defaultdict(list)
-    def subscribe(self, event, fn):
-        self._subs[event].append(fn)
-        return lambda: self._subs[event].remove(fn)        # unsubscribe handle
-    def emit(self, event, payload):
-        for fn in list(self._subs[event]):
-            try:
-                fn(payload)
-            except Exception as e:                          # one bad observer must not break others
-                print(f"observer failed: {e!r}")
+<span class="cm"># ---- Observer ------------------------------------------------------------</span>
+<span class="kw">class</span> EventSource:
+    <span class="kw">def</span> <span class="fn">__init__</span>(<span class="bi">self</span>): <span class="bi">self</span>._subs: <span class="bi">dict</span>[<span class="bi">str</span>, <span class="bi">list</span>[Callable]] = <span class="fn">defaultdict</span>(<span class="bi">list</span>)
+    <span class="kw">def</span> <span class="fn">subscribe</span>(<span class="bi">self</span>, event, fn):
+        <span class="bi">self</span>._subs[event].<span class="fn">append</span>(fn)
+        <span class="kw">return</span> <span class="kw">lambda</span>: <span class="bi">self</span>._subs[event].<span class="fn">remove</span>(fn)        <span class="cm"># unsubscribe handle</span>
+    <span class="kw">def</span> <span class="fn">emit</span>(<span class="bi">self</span>, event, payload):
+        <span class="kw">for</span> fn <span class="kw">in</span> <span class="bi">list</span>(<span class="bi">self</span>._subs[event]):
+            <span class="kw">try</span>:
+                <span class="fn">fn</span>(payload)
+            <span class="kw">except</span> <span class="bi">Exception</span> <span class="kw">as</span> e:                          <span class="cm"># one bad observer must not break others</span>
+                <span class="bi">print</span>(<span class="st">f"observer failed: {e!r}"</span>)
 
-orders = EventSource()
-orders.subscribe("paid", lambda o: print("email receipt", o["id"]))
-unsub = orders.subscribe("paid", lambda o: print("reserve stock", o["id"]))
-orders.emit("paid", {"id": 42})
-unsub(); orders.emit("paid", {"id": 43})                    # only the email observer now
+orders = <span class="fn">EventSource</span>()
+orders.<span class="fn">subscribe</span>(<span class="st">"paid"</span>, <span class="kw">lambda</span> o: <span class="bi">print</span>(<span class="st">"email receipt"</span>, o[<span class="st">"id"</span>]))
+unsub = orders.<span class="fn">subscribe</span>(<span class="st">"paid"</span>, <span class="kw">lambda</span> o: <span class="bi">print</span>(<span class="st">"reserve stock"</span>, o[<span class="st">"id"</span>]))
+orders.<span class="fn">emit</span>(<span class="st">"paid"</span>, {<span class="st">"id"</span>: <span class="nu">42</span>})
+<span class="fn">unsub</span>(); orders.<span class="fn">emit</span>(<span class="st">"paid"</span>, {<span class="st">"id"</span>: <span class="nu">43</span>})                    <span class="cm"># only the email observer now</span>
 
-# ---- State ---------------------------------------------------------------
-class OrderState:
-    name = "?"
-    def pay(self, o): raise ValueError(f"cannot pay when {self.name}")
-    def ship(self, o): raise ValueError(f"cannot ship when {self.name}")
-    def cancel(self, o): raise ValueError(f"cannot cancel when {self.name}")
+<span class="cm"># ---- State ---------------------------------------------------------------</span>
+<span class="kw">class</span> OrderState:
+    name = <span class="st">"?"</span>
+    <span class="kw">def</span> <span class="fn">pay</span>(<span class="bi">self</span>, o): <span class="kw">raise</span> <span class="bi">ValueError</span>(<span class="st">f"cannot pay when {self.name}"</span>)
+    <span class="kw">def</span> <span class="fn">ship</span>(<span class="bi">self</span>, o): <span class="kw">raise</span> <span class="bi">ValueError</span>(<span class="st">f"cannot ship when {self.name}"</span>)
+    <span class="kw">def</span> <span class="fn">cancel</span>(<span class="bi">self</span>, o): <span class="kw">raise</span> <span class="bi">ValueError</span>(<span class="st">f"cannot cancel when {self.name}"</span>)
 
-class Pending(OrderState):
-    name = "pending"
-    def pay(self, o): o.state = Paid()
-    def cancel(self, o): o.state = Cancelled()
+<span class="kw">class</span> <span class="fn">Pending</span>(OrderState):
+    name = <span class="st">"pending"</span>
+    <span class="kw">def</span> <span class="fn">pay</span>(<span class="bi">self</span>, o): o.state = <span class="fn">Paid</span>()
+    <span class="kw">def</span> <span class="fn">cancel</span>(<span class="bi">self</span>, o): o.state = <span class="fn">Cancelled</span>()
 
-class Paid(OrderState):
-    name = "paid"
-    def ship(self, o): o.state = Shipped()
+<span class="kw">class</span> <span class="fn">Paid</span>(OrderState):
+    name = <span class="st">"paid"</span>
+    <span class="kw">def</span> <span class="fn">ship</span>(<span class="bi">self</span>, o): o.state = <span class="fn">Shipped</span>()
 
-class Shipped(OrderState): name = "shipped"
-class Cancelled(OrderState): name = "cancelled"
+<span class="kw">class</span> <span class="fn">Shipped</span>(OrderState): name = <span class="st">"shipped"</span>
+<span class="kw">class</span> <span class="fn">Cancelled</span>(OrderState): name = <span class="st">"cancelled"</span>
 
-class Order:
-    def __init__(self): self.state = Pending()
-    def pay(self): self.state.pay(self)
-    def ship(self): self.state.ship(self)
-    def cancel(self): self.state.cancel(self)
+<span class="kw">class</span> Order:
+    <span class="kw">def</span> <span class="fn">__init__</span>(<span class="bi">self</span>): <span class="bi">self</span>.state = <span class="fn">Pending</span>()
+    <span class="kw">def</span> <span class="fn">pay</span>(<span class="bi">self</span>): <span class="bi">self</span>.state.<span class="fn">pay</span>(<span class="bi">self</span>)
+    <span class="kw">def</span> <span class="fn">ship</span>(<span class="bi">self</span>): <span class="bi">self</span>.state.<span class="fn">ship</span>(<span class="bi">self</span>)
+    <span class="kw">def</span> <span class="fn">cancel</span>(<span class="bi">self</span>): <span class="bi">self</span>.state.<span class="fn">cancel</span>(<span class="bi">self</span>)
 
-o = Order(); o.pay(); o.ship(); print(o.state.name)        # shipped
-try: o.cancel()
-except ValueError as e: print(e)                           # cannot cancel when shipped
+o = <span class="fn">Order</span>(); o.<span class="fn">pay</span>(); o.<span class="fn">ship</span>(); <span class="bi">print</span>(o.state.name)        <span class="cm"># shipped</span>
+<span class="kw">try</span>: o.<span class="fn">cancel</span>()
+<span class="kw">except</span> <span class="bi">ValueError</span> <span class="kw">as</span> e: <span class="bi">print</span>(e)                           <span class="cm"># cannot cancel when shipped</span>
 
-# ---- Command with undo -----------------------------------------------------
-class AddItem:
-    def __init__(self, cart, item): self.cart, self.item = cart, item
-    def do(self): self.cart.append(self.item)
-    def undo(self): self.cart.remove(self.item)
+<span class="cm"># ---- Command with undo -----------------------------------------------------</span>
+<span class="kw">class</span> AddItem:
+    <span class="kw">def</span> <span class="fn">__init__</span>(<span class="bi">self</span>, cart, item): <span class="bi">self</span>.cart, <span class="bi">self</span>.item = cart, item
+    <span class="kw">def</span> <span class="fn">do</span>(<span class="bi">self</span>): <span class="bi">self</span>.cart.<span class="fn">append</span>(<span class="bi">self</span>.item)
+    <span class="kw">def</span> <span class="fn">undo</span>(<span class="bi">self</span>): <span class="bi">self</span>.cart.<span class="fn">remove</span>(<span class="bi">self</span>.item)
 
 cart, history = [], []
-for cmd in (AddItem(cart, "pen"), AddItem(cart, "ink")):
-    cmd.do(); history.append(cmd)
-history.pop().undo()
-print(cart)                                                 # ['pen']</code></pre>
+<span class="kw">for</span> cmd <span class="kw">in</span> (<span class="fn">AddItem</span>(cart, <span class="st">"pen"</span>), <span class="fn">AddItem</span>(cart, <span class="st">"ink"</span>)):
+    cmd.<span class="fn">do</span>(); history.<span class="fn">append</span>(cmd)
+history.<span class="fn">pop</span>().<span class="fn">undo</span>()
+<span class="bi">print</span>(cart)                                                 <span class="cm"># ['pen']</span></code></pre>
 
   <h2>Exercises</h2>
   <ol style="list-style:none;padding-left:0">
@@ -405,13 +405,13 @@ print(cart)                                                 # ['pen']</code></pr
       <div class="box"><b>Solution</b>
         <span class="lang">python</span>
 <pre class="code"><code>SORTS = {
-    "price_asc":  lambda ps: sorted(ps, key=lambda p: p.price),
-    "price_desc": lambda ps: sorted(ps, key=lambda p: -p.price),
-    "newest":     lambda ps: sorted(ps, key=lambda p: p.created, reverse=True),
-    "relevance":  lambda ps: sorted(ps, key=lambda p: -p.score),
+    <span class="st">"price_asc"</span>:  <span class="kw">lambda</span> ps: <span class="bi">sorted</span>(ps, key=<span class="kw">lambda</span> p: p.price),
+    <span class="st">"price_desc"</span>: <span class="kw">lambda</span> ps: <span class="bi">sorted</span>(ps, key=<span class="kw">lambda</span> p: -p.price),
+    <span class="st">"newest"</span>:     <span class="kw">lambda</span> ps: <span class="bi">sorted</span>(ps, key=<span class="kw">lambda</span> p: p.created, reverse=<span class="kw">True</span>),
+    <span class="st">"relevance"</span>:  <span class="kw">lambda</span> ps: <span class="bi">sorted</span>(ps, key=<span class="kw">lambda</span> p: -p.score),
 }
-def list_products(products, sort="relevance"):
-    return SORTS[sort](products)            # add a strategy = add a dict entry</code></pre>
+<span class="kw">def</span> <span class="fn">list_products</span>(products, sort=<span class="st">"relevance"</span>):
+    <span class="kw">return</span> SORTS[sort](products)            <span class="cm"># add a strategy = add a dict entry</span></code></pre>
         <p>Validate <code>sort</code> against the keys at the API boundary.</p>
       </div></li>
     <li>2. Build an observer that decouples producer and consumers.

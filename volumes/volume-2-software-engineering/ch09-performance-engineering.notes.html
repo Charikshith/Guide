@@ -278,43 +278,43 @@ a{color:var(--ink);text-decoration:underline dotted}
 
   <h2>Example</h2>
   <span class="lang">bash</span>
-<pre class="code"><code># 1. Measure end to end
-k6 run --vus 100 --duration 2m search.js          # p95/p99 and rps
-# 2. Profile the running service (no code changes needed)
-py-spy record -o flame.svg --pid $(pgrep -f uvicorn) --duration 30
-perf record -g -p &lt;pid&gt; -- sleep 30 &amp;&amp; perf script | stackcollapse-perf.pl | flamegraph.pl &gt; cpu.svg</code></pre>
+<pre class="code"><code><span class="cm"># 1. Measure end to end</span>
+k6 run --vus <span class="nu">100</span> --duration 2m search.js          <span class="cm"># p95/p99 and rps</span>
+<span class="cm"># 2. Profile the running service (no code changes needed)</span>
+py-spy record -o flame.svg --pid $(pgrep -f uvicorn) --duration <span class="nu">30</span>
+perf record -g -p &lt;pid&gt; -- sleep <span class="nu">30</span> &amp;&amp; perf script | stackcollapse-perf.pl | flamegraph.pl &gt; cpu.svg</code></pre>
 
   <span class="lang">python</span>
-<pre class="code"><code># Before: the regex is compiled and the docs re-tokenized on every request
-import re
-def score(query, doc):
-    words = set(re.findall(r"\w+", doc.lower()))
-    return sum(w in words for w in re.findall(r"\w+", query.lower()))
+<pre class="code"><code><span class="cm"># Before: the regex is compiled and the docs re-tokenized on every request</span>
+<span class="kw">import</span> re
+<span class="kw">def</span> <span class="fn">score</span>(query, doc):
+    words = <span class="bi">set</span>(re.<span class="fn">findall</span>(<span class="st">r"\w+"</span>, doc.<span class="fn">lower</span>()))
+    <span class="kw">return</span> <span class="bi">sum</span>(w <span class="kw">in</span> words <span class="kw">for</span> w <span class="kw">in</span> re.<span class="fn">findall</span>(<span class="st">r"\w+"</span>, query.<span class="fn">lower</span>()))
 
-# After: compile once; tokenize documents once at index time
-WORD = re.compile(r"\w+")
-def tokenize(s): return frozenset(WORD.findall(s.lower()))
-INDEX = {doc_id: tokenize(text) for doc_id, text in corpus.items()}   # built once
-def score_fast(query_tokens, doc_tokens): return len(query_tokens &amp; doc_tokens)</code></pre>
+<span class="cm"># After: compile once; tokenize documents once at index time</span>
+WORD = re.<span class="fn">compile</span>(<span class="st">r"\w+"</span>)
+<span class="kw">def</span> <span class="fn">tokenize</span>(s): <span class="kw">return</span> <span class="bi">frozenset</span>(WORD.<span class="fn">findall</span>(s.<span class="fn">lower</span>()))
+INDEX = {doc_id: <span class="fn">tokenize</span>(text) <span class="kw">for</span> doc_id, text <span class="kw">in</span> corpus.<span class="fn">items</span>()}   <span class="cm"># built once</span>
+<span class="kw">def</span> <span class="fn">score_fast</span>(query_tokens, doc_tokens): <span class="kw">return</span> <span class="bi">len</span>(query_tokens &amp; doc_tokens)</code></pre>
 
   <span class="lang">python</span>
-<pre class="code"><code># A benchmark with statistics (pytest-benchmark, or pyperf for serious work)
-def test_score_speed(benchmark):
-    q = tokenize("fast red running shoes")
-    result = benchmark(lambda: [score_fast(q, t) for t in INDEX.values()])
-    assert result                         # prevents "optimizing away" the work
-# pytest --benchmark-compare --benchmark-compare-fail=mean:10%   ← fail CI on a 10% regression</code></pre>
+<pre class="code"><code><span class="cm"># A benchmark with statistics (pytest-benchmark, or pyperf for serious work)</span>
+<span class="kw">def</span> <span class="fn">test_score_speed</span>(benchmark):
+    q = <span class="fn">tokenize</span>(<span class="st">"fast red running shoes"</span>)
+    result = <span class="fn">benchmark</span>(<span class="kw">lambda</span>: [<span class="fn">score_fast</span>(q, t) <span class="kw">for</span> t <span class="kw">in</span> INDEX.<span class="fn">values</span>()])
+    <span class="kw">assert</span> result                         <span class="cm"># prevents "optimizing away" the work</span>
+<span class="cm"># pytest --benchmark-compare --benchmark-compare-fail=mean:10%   ← fail CI on a 10% regression</span></code></pre>
 
   <span class="lang">rust</span>
-<pre class="code"><code>// criterion.rs: warm-up, many samples, confidence intervals, change detection
-use criterion::{black_box, criterion_group, criterion_main, Criterion};
-fn bench(c: &amp;mut Criterion) {
-    let data: Vec&lt;u64&gt; = (0..100_000).collect();
-    c.bench_function("sum", |b| b.iter(|| black_box(&amp;data).iter().sum::&lt;u64&gt;()));
+<pre class="code"><code><span class="cm">// criterion.rs: warm-up, many samples, confidence intervals, change detection</span>
+<span class="kw">use</span> criterion::{black_box, criterion_group, criterion_main, Criterion};
+<span class="kw">fn</span> <span class="fn">bench</span>(c: &amp;<span class="kw">mut</span> Criterion) {
+    <span class="kw">let</span> data: <span class="bi">Vec</span>&lt;<span class="bi">u64</span>&gt; = (<span class="nu">0</span>..<span class="nu">100_000</span>).<span class="fn">collect</span>();
+    c.<span class="fn">bench_function</span>(<span class="st">"sum"</span>, |b| b.<span class="fn">iter</span>(|| <span class="fn">black_box</span>(&amp;data).<span class="fn">iter</span>().sum::&lt;<span class="bi">u64</span>&gt;()));
 }
-criterion_group!(benches, bench);
-criterion_main!(benches);
-// output: time: [41.2 µs 41.5 µs 41.9 µs]  change: -38.1% (p = 0.00 &lt; 0.05) Performance has improved.</code></pre>
+<span class="fn">criterion_group!</span>(benches, bench);
+<span class="fn">criterion_main!</span>(benches);
+<span class="cm">// output: time: [41.2 µs 41.5 µs 41.9 µs]  change: -38.1% (p = 0.00 &lt; 0.05) Performance has improved.</span></code></pre>
 
   <h2>Exercises</h2>
   <ol style="list-style:none;padding-left:0">

@@ -287,82 +287,82 @@ a{color:var(--ink);text-decoration:underline dotted}
 
   <h2>Example</h2>
   <span class="lang">python</span>
-<pre class="code"><code>from typing import Protocol
-import functools, time, logging
+<pre class="code"><code><span class="kw">from</span> typing <span class="kw">import</span> Protocol
+<span class="kw">import</span> functools, time, logging
 
-# ---- Adapter: our port, their SDK ---------------------------------------
-class PaymentGateway(Protocol):
-    def charge(self, cents: int, token: str) -&gt; str: ...
+<span class="cm"># ---- Adapter: our port, their SDK ---------------------------------------</span>
+<span class="kw">class</span> <span class="fn">PaymentGateway</span>(Protocol):
+    <span class="kw">def</span> <span class="fn">charge</span>(<span class="bi">self</span>, cents: <span class="bi">int</span>, token: <span class="bi">str</span>) -&gt; <span class="bi">str</span>: ...
 
-class FakeStripeSDK:                                  # stands in for the real third-party SDK
-    def create_payment_intent(self, amount, currency, payment_method, confirm):
-        return {"id": f"pi_{amount}", "status": "succeeded"}
+<span class="kw">class</span> FakeStripeSDK:                                  <span class="cm"># stands in for the real third-party SDK</span>
+    <span class="kw">def</span> <span class="fn">create_payment_intent</span>(<span class="bi">self</span>, amount, currency, payment_method, confirm):
+        <span class="kw">return</span> {<span class="st">"id"</span>: <span class="st">f"pi_{amount}"</span>, <span class="st">"status"</span>: <span class="st">"succeeded"</span>}
 
-class StripeAdapter:
-    """Translates our PaymentGateway interface into the SDK's shape."""
-    def __init__(self, sdk, currency="eur"):
-        self.sdk, self.currency = sdk, currency
-    def charge(self, cents, token):
-        pi = self.sdk.create_payment_intent(amount=cents, currency=self.currency,
-                                            payment_method=token, confirm=True)
-        if pi["status"] != "succeeded":
-            raise RuntimeError(f"payment failed: {pi['status']}")
-        return pi["id"]
+<span class="kw">class</span> StripeAdapter:
+    <span class="st">"""Translates our PaymentGateway interface into the SDK's shape."""</span>
+    <span class="kw">def</span> <span class="fn">__init__</span>(<span class="bi">self</span>, sdk, currency=<span class="st">"eur"</span>):
+        <span class="bi">self</span>.sdk, <span class="bi">self</span>.currency = sdk, currency
+    <span class="kw">def</span> <span class="fn">charge</span>(<span class="bi">self</span>, cents, token):
+        pi = <span class="bi">self</span>.sdk.<span class="fn">create_payment_intent</span>(amount=cents, currency=<span class="bi">self</span>.currency,
+                                            payment_method=token, confirm=<span class="kw">True</span>)
+        <span class="kw">if</span> pi[<span class="st">"status"</span>] != <span class="st">"succeeded"</span>:
+            <span class="kw">raise</span> <span class="fn">RuntimeError</span>(<span class="st">f"payment failed: {pi['status']}"</span>)
+        <span class="kw">return</span> pi[<span class="st">"id"</span>]
 
-# ---- Decorator: same interface, extra behavior --------------------------
-class PriceService(Protocol):
-    def price(self, sku: str) -&gt; int: ...
+<span class="cm"># ---- Decorator: same interface, extra behavior --------------------------</span>
+<span class="kw">class</span> <span class="fn">PriceService</span>(Protocol):
+    <span class="kw">def</span> <span class="fn">price</span>(<span class="bi">self</span>, sku: <span class="bi">str</span>) -&gt; <span class="bi">int</span>: ...
 
-class DbPriceService:
-    def __init__(self): self.calls = 0
-    def price(self, sku):
-        self.calls += 1; time.sleep(0.01); return {"desk": 19900, "chair": 8900}[sku]
+<span class="kw">class</span> DbPriceService:
+    <span class="kw">def</span> <span class="fn">__init__</span>(<span class="bi">self</span>): <span class="bi">self</span>.calls = <span class="nu">0</span>
+    <span class="kw">def</span> <span class="fn">price</span>(<span class="bi">self</span>, sku):
+        <span class="bi">self</span>.calls += <span class="nu">1</span>; time.<span class="fn">sleep</span>(<span class="nu">0.01</span>); <span class="kw">return</span> {<span class="st">"desk"</span>: <span class="nu">19900</span>, <span class="st">"chair"</span>: <span class="nu">8900</span>}[sku]
 
-class CachingPriceService:
-    def __init__(self, inner: PriceService, ttl=60):
-        self.inner, self.ttl, self.cache = inner, ttl, {}
-    def price(self, sku):
-        hit = self.cache.get(sku)
-        if hit and time.monotonic() - hit[1] &lt; self.ttl:
-            return hit[0]
-        value = self.inner.price(sku)
-        self.cache[sku] = (value, time.monotonic())
-        return value
+<span class="kw">class</span> CachingPriceService:
+    <span class="kw">def</span> <span class="fn">__init__</span>(<span class="bi">self</span>, inner: PriceService, ttl=<span class="nu">60</span>):
+        <span class="bi">self</span>.inner, <span class="bi">self</span>.ttl, <span class="bi">self</span>.cache = inner, ttl, {}
+    <span class="kw">def</span> <span class="fn">price</span>(<span class="bi">self</span>, sku):
+        hit = <span class="bi">self</span>.cache.<span class="fn">get</span>(sku)
+        <span class="kw">if</span> hit <span class="kw">and</span> time.<span class="fn">monotonic</span>() - hit[<span class="nu">1</span>] &lt; <span class="bi">self</span>.ttl:
+            <span class="kw">return</span> hit[<span class="nu">0</span>]
+        value = <span class="bi">self</span>.inner.<span class="fn">price</span>(sku)
+        <span class="bi">self</span>.cache[sku] = (value, time.<span class="fn">monotonic</span>())
+        <span class="kw">return</span> value
 
-class LoggingPriceService:
-    def __init__(self, inner: PriceService): self.inner = inner
-    def price(self, sku):
-        logging.info("price lookup %s", sku)
-        return self.inner.price(sku)
+<span class="kw">class</span> LoggingPriceService:
+    <span class="kw">def</span> <span class="fn">__init__</span>(<span class="bi">self</span>, inner: PriceService): <span class="bi">self</span>.inner = inner
+    <span class="kw">def</span> <span class="fn">price</span>(<span class="bi">self</span>, sku):
+        logging.<span class="fn">info</span>(<span class="st">"price lookup %s"</span>, sku)
+        <span class="kw">return</span> <span class="bi">self</span>.inner.<span class="fn">price</span>(sku)
 
-db = DbPriceService()
-svc = LoggingPriceService(CachingPriceService(db))    # stack in any order
-print(svc.price("desk"), svc.price("desk"), db.calls)  # 19900 19900 1
+db = <span class="fn">DbPriceService</span>()
+svc = <span class="fn">LoggingPriceService</span>(<span class="fn">CachingPriceService</span>(db))    <span class="cm"># stack in any order</span>
+<span class="bi">print</span>(svc.<span class="fn">price</span>(<span class="st">"desk"</span>), svc.<span class="fn">price</span>(<span class="st">"desk"</span>), db.calls)  <span class="cm"># 19900 19900 1</span>
 
-# ---- Function decorator (Python syntax for the same idea) ---------------
-def logged(fn):
-    @functools.wraps(fn)                               # keep name/docstring
-    def wrapper(*a, **kw):
-        logging.info("call %s", fn.__name__)
-        return fn(*a, **kw)
-    return wrapper
+<span class="cm"># ---- Function decorator (Python syntax for the same idea) ---------------</span>
+<span class="kw">def</span> <span class="fn">logged</span>(fn):
+    <span class="bi">@functools.wraps</span>(fn)                               <span class="cm"># keep name/docstring</span>
+    <span class="kw">def</span> <span class="fn">wrapper</span>(*a, **kw):
+        logging.<span class="fn">info</span>(<span class="st">"call %s"</span>, fn.__name__)
+        <span class="kw">return</span> <span class="fn">fn</span>(*a, **kw)
+    <span class="kw">return</span> wrapper
 
-# ---- Composite -----------------------------------------------------------
-class Product:
-    def __init__(self, name, cents): self.name, self.cents = name, cents
-    def price(self): return self.cents
+<span class="cm"># ---- Composite -----------------------------------------------------------</span>
+<span class="kw">class</span> Product:
+    <span class="kw">def</span> <span class="fn">__init__</span>(<span class="bi">self</span>, name, cents): <span class="bi">self</span>.name, <span class="bi">self</span>.cents = name, cents
+    <span class="kw">def</span> <span class="fn">price</span>(<span class="bi">self</span>): <span class="kw">return</span> <span class="bi">self</span>.cents
 
-class Bundle:
-    def __init__(self, name, *items, discount_pct=0):
-        self.name, self.items, self.discount = name, items, discount_pct
-    def price(self):
-        return sum(i.price() for i in self.items) * (100 - self.discount) // 100
+<span class="kw">class</span> Bundle:
+    <span class="kw">def</span> <span class="fn">__init__</span>(<span class="bi">self</span>, name, *items, discount_pct=<span class="nu">0</span>):
+        <span class="bi">self</span>.name, <span class="bi">self</span>.items, <span class="bi">self</span>.discount = name, items, discount_pct
+    <span class="kw">def</span> <span class="fn">price</span>(<span class="bi">self</span>):
+        <span class="kw">return</span> <span class="bi">sum</span>(i.<span class="fn">price</span>() <span class="kw">for</span> i <span class="kw">in</span> <span class="bi">self</span>.items) * (<span class="nu">100</span> - <span class="bi">self</span>.discount) // <span class="nu">100</span>
 
-kit = Bundle("office", Product("desk", 19900), Product("chair", 8900),
-             Bundle("tech", Product("monitor", 14900), Product("keyboard", 4900)),
-             discount_pct=10)
-print(kit.price())                                     # 43740
-print(StripeAdapter(FakeStripeSDK()).charge(500, "tok_visa"))   # pi_500</code></pre>
+kit = <span class="fn">Bundle</span>(<span class="st">"office"</span>, <span class="fn">Product</span>(<span class="st">"desk"</span>, <span class="nu">19900</span>), <span class="fn">Product</span>(<span class="st">"chair"</span>, <span class="nu">8900</span>),
+             <span class="fn">Bundle</span>(<span class="st">"tech"</span>, <span class="fn">Product</span>(<span class="st">"monitor"</span>, <span class="nu">14900</span>), <span class="fn">Product</span>(<span class="st">"keyboard"</span>, <span class="nu">4900</span>)),
+             discount_pct=<span class="nu">10</span>)
+<span class="bi">print</span>(kit.<span class="fn">price</span>())                                     <span class="cm"># 43740</span>
+<span class="bi">print</span>(<span class="fn">StripeAdapter</span>(<span class="fn">FakeStripeSDK</span>()).<span class="fn">charge</span>(<span class="nu">500</span>, <span class="st">"tok_visa"</span>))   <span class="cm"># pi_500</span></code></pre>
 
   <h2>Exercises</h2>
   <ol style="list-style:none;padding-left:0">

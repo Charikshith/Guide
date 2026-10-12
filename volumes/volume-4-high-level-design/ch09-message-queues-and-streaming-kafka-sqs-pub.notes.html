@@ -294,49 +294,49 @@ a{color:var(--ink);text-decoration:underline dotted}
 
   <h2>Example</h2>
   <span class="lang">python</span>
-<pre class="code"><code># Kafka consumer: at-least-once + idempotent processing (confluent-kafka)
-from confluent_kafka import Consumer
-import json
+<pre class="code"><code><span class="cm"># Kafka consumer: at-least-once + idempotent processing (confluent-kafka)</span>
+<span class="kw">from</span> confluent_kafka <span class="kw">import</span> Consumer
+<span class="kw">import</span> json
 
-c = Consumer({
-    "bootstrap.servers": "localhost:9092",
-    "group.id": "billing",
-    "enable.auto.commit": False,                 # commit only after processing
-    "auto.offset.reset": "earliest",
-    "partition.assignment.strategy": "cooperative-sticky",
+c = <span class="fn">Consumer</span>({
+    <span class="st">"bootstrap.servers"</span>: <span class="st">"localhost:9092"</span>,
+    <span class="st">"group.id"</span>: <span class="st">"billing"</span>,
+    <span class="st">"enable.auto.commit"</span>: <span class="kw">False</span>,                 <span class="cm"># commit only after processing</span>
+    <span class="st">"auto.offset.reset"</span>: <span class="st">"earliest"</span>,
+    <span class="st">"partition.assignment.strategy"</span>: <span class="st">"cooperative-sticky"</span>,
 })
-c.subscribe(["orders"])
+c.<span class="fn">subscribe</span>([<span class="st">"orders"</span>])
 
-while True:
-    msg = c.poll(1.0)
-    if msg is None or msg.error():
-        continue
-    event = json.loads(msg.value())
-    with db.transaction():
-        # idempotent: the unique constraint on event_id makes redelivery harmless
-        db.execute("INSERT INTO processed_events (event_id) VALUES (%s) ON CONFLICT DO NOTHING RETURNING 1",
-                   (event["event_id"],))
-        if db.rowcount == 1:
-            charge(event)                        # side effect only on first delivery
-    c.commit(message=msg, asynchronous=False)</code></pre>
+<span class="kw">while</span> <span class="kw">True</span>:
+    msg = c.<span class="fn">poll</span>(<span class="nu">1.0</span>)
+    <span class="kw">if</span> msg <span class="kw">is</span> <span class="kw">None</span> <span class="kw">or</span> msg.<span class="fn">error</span>():
+        <span class="kw">continue</span>
+    event = json.<span class="fn">loads</span>(msg.<span class="fn">value</span>())
+    <span class="kw">with</span> db.<span class="fn">transaction</span>():
+        <span class="cm"># idempotent: the unique constraint on event_id makes redelivery harmless</span>
+        db.<span class="fn">execute</span>(<span class="st">"INSERT INTO processed_events (event_id) VALUES (%s) ON CONFLICT DO NOTHING RETURNING 1"</span>,
+                   (event[<span class="st">"event_id"</span>],))
+        <span class="kw">if</span> db.rowcount == <span class="nu">1</span>:
+            <span class="fn">charge</span>(event)                        <span class="cm"># side effect only on first delivery</span>
+    c.<span class="fn">commit</span>(message=msg, asynchronous=<span class="kw">False</span>)</code></pre>
   <span class="lang">python</span>
-<pre class="code"><code># SQS with a DLQ (boto3)
-import boto3, json
-sqs = boto3.client("sqs")
-dlq_arn = sqs.get_queue_attributes(QueueUrl=DLQ_URL, AttributeNames=["QueueArn"])["Attributes"]["QueueArn"]
-sqs.set_queue_attributes(QueueUrl=JOBS_URL, Attributes={
-    "RedrivePolicy": json.dumps({"deadLetterTargetArn": dlq_arn, "maxReceiveCount": "5"}),
-    "VisibilityTimeout": "60",                   # longer than the worst-case processing time
+<pre class="code"><code><span class="cm"># SQS with a DLQ (boto3)</span>
+<span class="kw">import</span> boto3, json
+sqs = boto3.<span class="fn">client</span>(<span class="st">"sqs"</span>)
+dlq_arn = sqs.<span class="fn">get_queue_attributes</span>(QueueUrl=DLQ_URL, AttributeNames=[<span class="st">"QueueArn"</span>])[<span class="st">"Attributes"</span>][<span class="st">"QueueArn"</span>]
+sqs.<span class="fn">set_queue_attributes</span>(QueueUrl=JOBS_URL, Attributes={
+    <span class="st">"RedrivePolicy"</span>: json.<span class="fn">dumps</span>({<span class="st">"deadLetterTargetArn"</span>: dlq_arn, <span class="st">"maxReceiveCount"</span>: <span class="st">"5"</span>}),
+    <span class="st">"VisibilityTimeout"</span>: <span class="st">"60"</span>,                   <span class="cm"># longer than the worst-case processing time</span>
 })
 
-while True:
-    resp = sqs.receive_message(QueueUrl=JOBS_URL, MaxNumberOfMessages=10, WaitTimeSeconds=20)  # long polling
-    for m in resp.get("Messages", []):
-        handle(json.loads(m["Body"]))            # must be idempotent
-        sqs.delete_message(QueueUrl=JOBS_URL, ReceiptHandle=m["ReceiptHandle"])   # the "ack"</code></pre>
+<span class="kw">while</span> <span class="kw">True</span>:
+    resp = sqs.<span class="fn">receive_message</span>(QueueUrl=JOBS_URL, MaxNumberOfMessages=<span class="nu">10</span>, WaitTimeSeconds=<span class="nu">20</span>)  <span class="cm"># long polling</span>
+    <span class="kw">for</span> m <span class="kw">in</span> resp.<span class="fn">get</span>(<span class="st">"Messages"</span>, []):
+        <span class="fn">handle</span>(json.<span class="fn">loads</span>(m[<span class="st">"Body"</span>]))            <span class="cm"># must be idempotent</span>
+        sqs.<span class="fn">delete_message</span>(QueueUrl=JOBS_URL, ReceiptHandle=m[<span class="st">"ReceiptHandle"</span>])   <span class="cm"># the "ack"</span></code></pre>
   <span class="lang">bash</span>
-<pre class="code"><code>kafka-topics.sh --create --topic orders --partitions 12 --replication-factor 3 --config min.insync.replicas=2
-kafka-consumer-groups.sh --describe --group billing        # lag per partition</code></pre>
+<pre class="code"><code>kafka-topics.sh --create --topic orders --partitions <span class="nu">12</span> --replication-factor <span class="nu">3</span> --config min.insync.replicas=<span class="nu">2</span>
+kafka-consumer-groups.sh --describe --group billing        <span class="cm"># lag per partition</span></code></pre>
 
   <h2>Exercises</h2>
   <ol style="list-style:none;padding-left:0">

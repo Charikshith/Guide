@@ -259,30 +259,30 @@ a{color:var(--ink);text-decoration:underline dotted}
 
   <h2>Example</h2>
   <span class="lang">python</span>
-<pre class="code"><code>from fractions import Fraction
+<pre class="code"><code><span class="kw">from</span> fractions <span class="kw">import</span> Fraction
 
-# Expectation and variance of a fair die
-faces = range(1, 7)
-E = sum(Fraction(x, 6) for x in faces)
-E2 = sum(Fraction(x * x, 6) for x in faces)
-print(E, E2 - E**2)            # 7/2  35/12
+<span class="cm"># Expectation and variance of a fair die</span>
+faces = <span class="bi">range</span>(<span class="nu">1</span>, <span class="nu">7</span>)
+E = <span class="bi">sum</span>(<span class="fn">Fraction</span>(x, <span class="nu">6</span>) <span class="kw">for</span> x <span class="kw">in</span> faces)
+E2 = <span class="bi">sum</span>(<span class="fn">Fraction</span>(x * x, <span class="nu">6</span>) <span class="kw">for</span> x <span class="kw">in</span> faces)
+<span class="bi">print</span>(E, E2 - E**<span class="nu">2</span>)            <span class="cm"># 7/2  35/12</span>
 
-# Bayes: P(disease | positive)
-p_d, sens, fpr = 0.01, 0.99, 0.01
-p_pos = sens * p_d + fpr * (1 - p_d)       # total probability
-print(sens * p_d / p_pos)                  # 0.5</code></pre>
+<span class="cm"># Bayes: P(disease | positive)</span>
+p_d, sens, fpr = <span class="nu">0.01</span>, <span class="nu">0.99</span>, <span class="nu">0.01</span>
+p_pos = sens * p_d + fpr * (<span class="nu">1</span> - p_d)       <span class="cm"># total probability</span>
+<span class="bi">print</span>(sens * p_d / p_pos)                  <span class="cm"># 0.5</span></code></pre>
 
   <h3>Monte Carlo check</h3>
   <span class="lang">python</span>
-<pre class="code"><code>import numpy as np
-rng = np.random.default_rng(0)
+<pre class="code"><code><span class="kw">import</span> numpy <span class="kw">as</span> np
+rng = np.random.<span class="fn">default_rng</span>(<span class="nu">0</span>)
 
-n = 1_000_000
-sick = rng.random(n) &lt; 0.01
-positive = np.where(sick, rng.random(n) &lt; 0.99, rng.random(n) &lt; 0.01)
-print(sick[positive].mean())               # ≈ 0.50
+n = <span class="nu">1_000_000</span>
+sick = rng.<span class="fn">random</span>(n) &lt; <span class="nu">0.01</span>
+positive = np.<span class="fn">where</span>(sick, rng.<span class="fn">random</span>(n) &lt; <span class="nu">0.99</span>, rng.<span class="fn">random</span>(n) &lt; <span class="nu">0.01</span>)
+<span class="bi">print</span>(sick[positive].<span class="fn">mean</span>())               <span class="cm"># ≈ 0.50</span>
 
-print(rng.integers(1, 7, n).mean())        # ≈ 3.5</code></pre>
+<span class="bi">print</span>(rng.<span class="fn">integers</span>(<span class="nu">1</span>, <span class="nu">7</span>, n).<span class="fn">mean</span>())        <span class="cm"># ≈ 3.5</span></code></pre>
 
   <div class="box red"><b>Independence in engineering</b> — if 3 independent replicas each fail with probability 0.01, all three fail with probability <code>0.01³ = 10⁻⁶</code>. If they share a power supply, they are <i>not</i> independent, and that math is wrong.</div>
 

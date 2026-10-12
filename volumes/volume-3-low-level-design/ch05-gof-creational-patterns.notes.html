@@ -326,82 +326,82 @@ a{color:var(--ink);text-decoration:underline dotted}
 
   <h2>Example</h2>
   <span class="lang">python</span>
-<pre class="code"><code>from __future__ import annotations
-import csv, io, json, copy
-from dataclasses import dataclass, field, replace
-from typing import Protocol, Callable
+<pre class="code"><code><span class="kw">from</span> __future__ <span class="kw">import</span> annotations
+<span class="kw">import</span> csv, io, json, copy
+<span class="kw">from</span> dataclasses <span class="kw">import</span> dataclass, field, replace
+<span class="kw">from</span> typing <span class="kw">import</span> Protocol, Callable
 
-# ---- Factory Method as a registry ----
-class Parser(Protocol):
-    def parse(self, data: bytes) -&gt; list[dict]: ...
+<span class="cm"># ---- Factory Method as a registry ----</span>
+<span class="kw">class</span> <span class="fn">Parser</span>(Protocol):
+    <span class="kw">def</span> <span class="fn">parse</span>(<span class="bi">self</span>, data: <span class="bi">bytes</span>) -&gt; <span class="bi">list</span>[<span class="bi">dict</span>]: ...
 
-class CsvParser:
-    def parse(self, data): return list(csv.DictReader(io.StringIO(data.decode())))
+<span class="kw">class</span> CsvParser:
+    <span class="kw">def</span> <span class="fn">parse</span>(<span class="bi">self</span>, data): <span class="kw">return</span> <span class="bi">list</span>(csv.<span class="fn">DictReader</span>(io.<span class="fn">StringIO</span>(data.<span class="fn">decode</span>())))
 
-class JsonParser:
-    def parse(self, data): return json.loads(data)
+<span class="kw">class</span> JsonParser:
+    <span class="kw">def</span> <span class="fn">parse</span>(<span class="bi">self</span>, data): <span class="kw">return</span> json.<span class="fn">loads</span>(data)
 
-PARSERS: dict[str, Callable[[], Parser]] = {"csv": CsvParser, "json": JsonParser}
+PARSERS: <span class="bi">dict</span>[<span class="bi">str</span>, Callable[[], Parser]] = {<span class="st">"csv"</span>: CsvParser, <span class="st">"json"</span>: JsonParser}
 
-def parser_for(fmt: str) -&gt; Parser:
-    try:
-        return PARSERS[fmt]()
-    except KeyError:
-        raise ValueError(f"unsupported format {fmt!r}; expected one of {sorted(PARSERS)}") from None
+<span class="kw">def</span> <span class="fn">parser_for</span>(fmt: <span class="bi">str</span>) -&gt; Parser:
+    <span class="kw">try</span>:
+        <span class="kw">return</span> PARSERS[fmt]()
+    <span class="kw">except</span> <span class="bi">KeyError</span>:
+        <span class="kw">raise</span> <span class="bi">ValueError</span>(<span class="st">f"unsupported format {fmt!r}; expected one of {sorted(PARSERS)}"</span>) <span class="kw">from</span> <span class="kw">None</span>
 
-print(parser_for("csv").parse(b"a,b\n1,2\n"))       # [{'a': '1', 'b': '2'}]
+<span class="bi">print</span>(<span class="fn">parser_for</span>(<span class="st">"csv"</span>).<span class="fn">parse</span>(<span class="st">b"a,b\n1,2\n"</span>))       <span class="cm"># [{'a': '1', 'b': '2'}]</span>
 
-# ---- Builder for an immutable config object with defaults ----
-@dataclass(frozen=True)
-class HttpRequest:
-    method: str
-    url: str
-    headers: tuple[tuple[str, str], ...] = ()
-    timeout: float = 10.0
-    retries: int = 0
+<span class="cm"># ---- Builder for an immutable config object with defaults ----</span>
+<span class="bi">@dataclass</span>(frozen=<span class="kw">True</span>)
+<span class="kw">class</span> HttpRequest:
+    method: <span class="bi">str</span>
+    url: <span class="bi">str</span>
+    headers: <span class="bi">tuple</span>[<span class="bi">tuple</span>[<span class="bi">str</span>, <span class="bi">str</span>], ...] = ()
+    timeout: <span class="bi">float</span> = <span class="nu">10.0</span>
+    retries: <span class="bi">int</span> = <span class="nu">0</span>
 
-class RequestBuilder:
-    def __init__(self, method: str, url: str):
-        self._method, self._url = method.upper(), url
-        self._headers: list[tuple[str, str]] = []
-        self._timeout, self._retries = 10.0, 0
+<span class="kw">class</span> RequestBuilder:
+    <span class="kw">def</span> <span class="fn">__init__</span>(<span class="bi">self</span>, method: <span class="bi">str</span>, url: <span class="bi">str</span>):
+        <span class="bi">self</span>._method, <span class="bi">self</span>._url = method.<span class="fn">upper</span>(), url
+        <span class="bi">self</span>._headers: <span class="bi">list</span>[<span class="bi">tuple</span>[<span class="bi">str</span>, <span class="bi">str</span>]] = []
+        <span class="bi">self</span>._timeout, <span class="bi">self</span>._retries = <span class="nu">10.0</span>, <span class="nu">0</span>
 
-    def header(self, k, v): self._headers.append((k, v)); return self
-    def timeout(self, s): self._timeout = s; return self
-    def retries(self, n): self._retries = n; return self
+    <span class="kw">def</span> <span class="fn">header</span>(<span class="bi">self</span>, k, v): <span class="bi">self</span>._headers.<span class="fn">append</span>((k, v)); <span class="kw">return</span> <span class="bi">self</span>
+    <span class="kw">def</span> <span class="fn">timeout</span>(<span class="bi">self</span>, s): <span class="bi">self</span>._timeout = s; <span class="kw">return</span> <span class="bi">self</span>
+    <span class="kw">def</span> <span class="fn">retries</span>(<span class="bi">self</span>, n): <span class="bi">self</span>._retries = n; <span class="kw">return</span> <span class="bi">self</span>
 
-    def build(self) -&gt; HttpRequest:
-        if not self._url.startswith(("http://", "https://")):
-            raise ValueError("url must be absolute")
-        if self._timeout &lt;= 0 or self._retries &lt; 0:
-            raise ValueError("timeout must be &gt; 0 and retries &gt;= 0")
-        if self._method not in {"GET", "HEAD", "PUT", "DELETE"} and self._retries:
-            raise ValueError("retries only allowed for idempotent methods")   # a cross-field invariant
-        return HttpRequest(self._method, self._url, tuple(self._headers), self._timeout, self._retries)
+    <span class="kw">def</span> <span class="fn">build</span>(<span class="bi">self</span>) -&gt; HttpRequest:
+        <span class="kw">if</span> <span class="kw">not</span> <span class="bi">self</span>._url.<span class="fn">startswith</span>((<span class="st">"http://"</span>, <span class="st">"https://"</span>)):
+            <span class="kw">raise</span> <span class="bi">ValueError</span>(<span class="st">"url must be absolute"</span>)
+        <span class="kw">if</span> <span class="bi">self</span>._timeout &lt;= <span class="nu">0</span> <span class="kw">or</span> <span class="bi">self</span>._retries &lt; <span class="nu">0</span>:
+            <span class="kw">raise</span> <span class="bi">ValueError</span>(<span class="st">"timeout must be &gt; 0 and retries &gt;= 0"</span>)
+        <span class="kw">if</span> <span class="bi">self</span>._method <span class="kw">not</span> <span class="kw">in</span> {<span class="st">"GET"</span>, <span class="st">"HEAD"</span>, <span class="st">"PUT"</span>, <span class="st">"DELETE"</span>} <span class="kw">and</span> <span class="bi">self</span>._retries:
+            <span class="kw">raise</span> <span class="bi">ValueError</span>(<span class="st">"retries only allowed for idempotent methods"</span>)   <span class="cm"># a cross-field invariant</span>
+        <span class="kw">return</span> <span class="fn">HttpRequest</span>(<span class="bi">self</span>._method, <span class="bi">self</span>._url, <span class="bi">tuple</span>(<span class="bi">self</span>._headers), <span class="bi">self</span>._timeout, <span class="bi">self</span>._retries)
 
-req = (RequestBuilder("get", "https://api.example.com/orders")
-       .header("Accept", "application/json").timeout(5).retries(3).build())
-print(req.method, req.timeout, req.retries)           # GET 5 3
+req = (<span class="fn">RequestBuilder</span>(<span class="st">"get"</span>, <span class="st">"https://api.example.com/orders"</span>)
+       .<span class="fn">header</span>(<span class="st">"Accept"</span>, <span class="st">"application/json"</span>).<span class="fn">timeout</span>(<span class="nu">5</span>).<span class="fn">retries</span>(<span class="nu">3</span>).<span class="fn">build</span>())
+<span class="bi">print</span>(req.method, req.timeout, req.retries)           <span class="cm"># GET 5 3</span>
 
-# ---- Prototype ----
-@dataclass(frozen=True)
-class ReportSpec:
-    title: str
-    period: str
-    sections: tuple[str, ...] = ("summary", "revenue", "churn")
+<span class="cm"># ---- Prototype ----</span>
+<span class="bi">@dataclass</span>(frozen=<span class="kw">True</span>)
+<span class="kw">class</span> ReportSpec:
+    title: <span class="bi">str</span>
+    period: <span class="bi">str</span>
+    sections: <span class="bi">tuple</span>[<span class="bi">str</span>, ...] = (<span class="st">"summary"</span>, <span class="st">"revenue"</span>, <span class="st">"churn"</span>)
 
-base = ReportSpec("Quarterly", "Q1")
-q2 = replace(base, period="Q2")                      # copy + change one field
-print(q2)
+base = <span class="fn">ReportSpec</span>(<span class="st">"Quarterly"</span>, <span class="st">"Q1"</span>)
+q2 = <span class="fn">replace</span>(base, period=<span class="st">"Q2"</span>)                      <span class="cm"># copy + change one field</span>
+<span class="bi">print</span>(q2)
 
-# ---- "Singleton" the Pythonic way: one instance, created once, injected ----
-class Metrics:
-    def __init__(self): self.counts = {}
-    def inc(self, k): self.counts[k] = self.counts.get(k, 0) + 1
+<span class="cm"># ---- "Singleton" the Pythonic way: one instance, created once, injected ----</span>
+<span class="kw">class</span> Metrics:
+    <span class="kw">def</span> <span class="fn">__init__</span>(<span class="bi">self</span>): <span class="bi">self</span>.counts = {}
+    <span class="kw">def</span> <span class="fn">inc</span>(<span class="bi">self</span>, k): <span class="bi">self</span>.counts[k] = <span class="bi">self</span>.counts.<span class="fn">get</span>(k, <span class="nu">0</span>) + <span class="nu">1</span>
 
-def main():
-    metrics = Metrics()                              # the single instance lives here
-    run_app(metrics=metrics)                         # passed where needed, fakeable in tests</code></pre>
+<span class="kw">def</span> <span class="fn">main</span>():
+    metrics = <span class="fn">Metrics</span>()                              <span class="cm"># the single instance lives here</span>
+    <span class="fn">run_app</span>(metrics=metrics)                         <span class="cm"># passed where needed, fakeable in tests</span></code></pre>
 
   <h2>Exercises</h2>
   <ol style="list-style:none;padding-left:0">

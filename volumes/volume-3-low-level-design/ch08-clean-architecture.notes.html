@@ -241,88 +241,88 @@ a{color:var(--ink);text-decoration:underline dotted}
 <div class="pagebreak">~ page 3 ~</div>
 <h2>Example</h2>
 <span class="lang">python</span>
-<pre class="code"><code># domain/order.py — pure, no framework imports
-from dataclasses import dataclass, field
+<pre class="code"><code><span class="cm"># domain/order.py — pure, no framework imports</span>
+<span class="kw">from</span> dataclasses <span class="kw">import</span> dataclass, field
 
-@dataclass
-class Order:
-    id: str
-    customer_id: str
-    lines: list[tuple[str, int, int]] = field(default_factory=list)   # (sku, qty, unit_cents)
-    status: str = "new"
+<span class="bi">@dataclass</span>
+<span class="kw">class</span> Order:
+    <span class="bi">id</span>: <span class="bi">str</span>
+    customer_id: <span class="bi">str</span>
+    lines: <span class="bi">list</span>[<span class="bi">tuple</span>[<span class="bi">str</span>, <span class="bi">int</span>, <span class="bi">int</span>]] = <span class="fn">field</span>(default_factory=<span class="bi">list</span>)   <span class="cm"># (sku, qty, unit_cents)</span>
+    status: <span class="bi">str</span> = <span class="st">"new"</span>
 
-    def add_line(self, sku, qty, unit_cents):
-        if qty &lt;= 0: raise ValueError("quantity must be positive")
-        self.lines.append((sku, qty, unit_cents))
+    <span class="kw">def</span> <span class="fn">add_line</span>(<span class="bi">self</span>, sku, qty, unit_cents):
+        <span class="kw">if</span> qty &lt;= <span class="nu">0</span>: <span class="kw">raise</span> <span class="bi">ValueError</span>(<span class="st">"quantity must be positive"</span>)
+        <span class="bi">self</span>.lines.<span class="fn">append</span>((sku, qty, unit_cents))
 
-    @property
-    def total_cents(self): return sum(q * p for _, q, p in self.lines)
+    <span class="bi">@property</span>
+    <span class="kw">def</span> <span class="fn">total_cents</span>(<span class="bi">self</span>): <span class="kw">return</span> <span class="bi">sum</span>(q * p <span class="kw">for</span> _, q, p <span class="kw">in</span> <span class="bi">self</span>.lines)
 
-# application/ports.py — interfaces the use case NEEDS (owned here, implemented outside)
-from typing import Protocol
-class OrderRepository(Protocol):
-    def save(self, order: Order) -&gt; None: ...
-    def get(self, order_id: str) -&gt; Order | None: ...
+<span class="cm"># application/ports.py — interfaces the use case NEEDS (owned here, implemented outside)</span>
+<span class="kw">from</span> typing <span class="kw">import</span> Protocol
+<span class="kw">class</span> <span class="fn">OrderRepository</span>(Protocol):
+    <span class="kw">def</span> <span class="fn">save</span>(<span class="bi">self</span>, order: Order) -&gt; <span class="kw">None</span>: ...
+    <span class="kw">def</span> <span class="fn">get</span>(<span class="bi">self</span>, order_id: <span class="bi">str</span>) -&gt; Order | <span class="kw">None</span>: ...
 
-class IdGenerator(Protocol):
-    def new_id(self) -&gt; str: ...
+<span class="kw">class</span> <span class="fn">IdGenerator</span>(Protocol):
+    <span class="kw">def</span> <span class="fn">new_id</span>(<span class="bi">self</span>) -&gt; <span class="bi">str</span>: ...
 
-# application/place_order.py — one use case
-@dataclass(frozen=True)
-class PlaceOrderInput:
-    customer_id: str
-    lines: list[tuple[str, int, int]]
+<span class="cm"># application/place_order.py — one use case</span>
+<span class="bi">@dataclass</span>(frozen=<span class="kw">True</span>)
+<span class="kw">class</span> PlaceOrderInput:
+    customer_id: <span class="bi">str</span>
+    lines: <span class="bi">list</span>[<span class="bi">tuple</span>[<span class="bi">str</span>, <span class="bi">int</span>, <span class="bi">int</span>]]
 
-@dataclass(frozen=True)
-class PlaceOrderOutput:
-    order_id: str
-    total_cents: int
+<span class="bi">@dataclass</span>(frozen=<span class="kw">True</span>)
+<span class="kw">class</span> PlaceOrderOutput:
+    order_id: <span class="bi">str</span>
+    total_cents: <span class="bi">int</span>
 
-class PlaceOrder:
-    def __init__(self, repo: OrderRepository, ids: IdGenerator):
-        self.repo, self.ids = repo, ids
-    def execute(self, data: PlaceOrderInput) -&gt; PlaceOrderOutput:
-        order = Order(id=self.ids.new_id(), customer_id=data.customer_id)
-        for sku, qty, price in data.lines:
-            order.add_line(sku, qty, price)
-        if order.total_cents == 0:
-            raise ValueError("empty order")
-        self.repo.save(order)
-        return PlaceOrderOutput(order.id, order.total_cents)
+<span class="kw">class</span> PlaceOrder:
+    <span class="kw">def</span> <span class="fn">__init__</span>(<span class="bi">self</span>, repo: OrderRepository, ids: IdGenerator):
+        <span class="bi">self</span>.repo, <span class="bi">self</span>.ids = repo, ids
+    <span class="kw">def</span> <span class="fn">execute</span>(<span class="bi">self</span>, data: PlaceOrderInput) -&gt; PlaceOrderOutput:
+        order = <span class="fn">Order</span>(<span class="bi">id</span>=<span class="bi">self</span>.ids.<span class="fn">new_id</span>(), customer_id=data.customer_id)
+        <span class="kw">for</span> sku, qty, price <span class="kw">in</span> data.lines:
+            order.<span class="fn">add_line</span>(sku, qty, price)
+        <span class="kw">if</span> order.total_cents == <span class="nu">0</span>:
+            <span class="kw">raise</span> <span class="bi">ValueError</span>(<span class="st">"empty order"</span>)
+        <span class="bi">self</span>.repo.<span class="fn">save</span>(order)
+        <span class="kw">return</span> <span class="fn">PlaceOrderOutput</span>(order.<span class="bi">id</span>, order.total_cents)
 
-# adapters/memory.py — a swappable adapter (a SQL one has the same methods)
-class InMemoryOrderRepository:
-    def __init__(self): self.rows = {}
-    def save(self, order): self.rows[order.id] = order
-    def get(self, order_id): return self.rows.get(order_id)
+<span class="cm"># adapters/memory.py — a swappable adapter (a SQL one has the same methods)</span>
+<span class="kw">class</span> InMemoryOrderRepository:
+    <span class="kw">def</span> <span class="fn">__init__</span>(<span class="bi">self</span>): <span class="bi">self</span>.rows = {}
+    <span class="kw">def</span> <span class="fn">save</span>(<span class="bi">self</span>, order): <span class="bi">self</span>.rows[order.<span class="bi">id</span>] = order
+    <span class="kw">def</span> <span class="fn">get</span>(<span class="bi">self</span>, order_id): <span class="kw">return</span> <span class="bi">self</span>.rows.<span class="fn">get</span>(order_id)
 
-class SeqIds:
-    def __init__(self): self.n = 0
-    def new_id(self): self.n += 1; return f"o-{self.n}"
+<span class="kw">class</span> SeqIds:
+    <span class="kw">def</span> <span class="fn">__init__</span>(<span class="bi">self</span>): <span class="bi">self</span>.n = <span class="nu">0</span>
+    <span class="kw">def</span> <span class="fn">new_id</span>(<span class="bi">self</span>): <span class="bi">self</span>.n += <span class="nu">1</span>; <span class="kw">return</span> <span class="st">f"o-{self.n}"</span>
 
-# test: the use case runs with no DB and no web framework
-out = PlaceOrder(InMemoryOrderRepository(), SeqIds()).execute(
-    PlaceOrderInput("c1", [("pen", 2, 150), ("pad", 1, 400)]))
-print(out)                      # PlaceOrderOutput(order_id='o-1', total_cents=700)</code></pre>
+<span class="cm"># test: the use case runs with no DB and no web framework</span>
+out = <span class="fn">PlaceOrder</span>(<span class="fn">InMemoryOrderRepository</span>(), <span class="fn">SeqIds</span>()).<span class="fn">execute</span>(
+    <span class="fn">PlaceOrderInput</span>(<span class="st">"c1"</span>, [(<span class="st">"pen"</span>, <span class="nu">2</span>, <span class="nu">150</span>), (<span class="st">"pad"</span>, <span class="nu">1</span>, <span class="nu">400</span>)]))
+<span class="bi">print</span>(out)                      <span class="cm"># PlaceOrderOutput(order_id='o-1', total_cents=700)</span></code></pre>
 <span class="lang">python</span>
-<pre class="code"><code># adapters/http_api.py — the framework lives at the edge
-from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
+<pre class="code"><code><span class="cm"># adapters/http_api.py — the framework lives at the edge</span>
+<span class="kw">from</span> fastapi <span class="kw">import</span> FastAPI, HTTPException
+<span class="kw">from</span> pydantic <span class="kw">import</span> BaseModel
 
-class OrderIn(BaseModel):
-    customer_id: str
-    lines: list[tuple[str, int, int]]
+<span class="kw">class</span> <span class="fn">OrderIn</span>(BaseModel):
+    customer_id: <span class="bi">str</span>
+    lines: <span class="bi">list</span>[<span class="bi">tuple</span>[<span class="bi">str</span>, <span class="bi">int</span>, <span class="bi">int</span>]]
 
-def make_api(place_order: PlaceOrder) -&gt; FastAPI:
-    api = FastAPI()
-    @api.post("/orders", status_code=201)
-    def create(body: OrderIn):
-        try:
-            out = place_order.execute(PlaceOrderInput(body.customer_id, body.lines))
-        except ValueError as e:
-            raise HTTPException(422, str(e))
-        return {"id": out.order_id, "total_cents": out.total_cents}
-    return api</code></pre>
+<span class="kw">def</span> <span class="fn">make_api</span>(place_order: PlaceOrder) -&gt; FastAPI:
+    api = <span class="fn">FastAPI</span>()
+    <span class="bi">@api.post</span>(<span class="st">"/orders"</span>, status_code=<span class="nu">201</span>)
+    <span class="kw">def</span> <span class="fn">create</span>(body: OrderIn):
+        <span class="kw">try</span>:
+            out = place_order.<span class="fn">execute</span>(<span class="fn">PlaceOrderInput</span>(body.customer_id, body.lines))
+        <span class="kw">except</span> <span class="bi">ValueError</span> <span class="kw">as</span> e:
+            <span class="kw">raise</span> <span class="fn">HTTPException</span>(<span class="nu">422</span>, <span class="bi">str</span>(e))
+        <span class="kw">return</span> {<span class="st">"id"</span>: out.order_id, <span class="st">"total_cents"</span>: out.total_cents}
+    <span class="kw">return</span> api</code></pre>
 <h2>Exercises</h2>
 <ol style="list-style:none;padding-left:0">
   <li>1. Invert a dependency so the domain no longer imports the framework.

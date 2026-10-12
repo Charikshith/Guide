@@ -237,69 +237,69 @@ a{color:var(--ink);text-decoration:underline dotted}
                                                                name → Circle::name]</code></pre>
 <h2>Example</h2>
 <span class="lang">rust</span>
-<pre class="code"><code>use std::fmt::Display;
+<pre class="code"><code><span class="kw">use</span> std::fmt::Display;
 
-fn largest&lt;T: PartialOrd&gt;(xs: &amp;[T]) -&gt; &amp;T {
-    let mut best = &amp;xs[0];
-    for x in xs {
-        if x &gt; best { best = x; }
+<span class="kw">fn</span> largest&lt;T: PartialOrd&gt;(xs: &amp;[T]) -&gt; &amp;T {
+    <span class="kw">let</span> <span class="kw">mut</span> best = &amp;xs[<span class="nu">0</span>];
+    <span class="kw">for</span> x <span class="kw">in</span> xs {
+        <span class="kw">if</span> x &gt; best { best = x; }
     }
     best
 }
 
-trait Shape {
-    fn area(&amp;self) -&gt; f64;
-    fn describe(&amp;self) -&gt; String { format!("shape with area {:.2}", self.area()) } // default method
+<span class="kw">trait</span> Shape {
+    <span class="kw">fn</span> <span class="fn">area</span>(&amp;<span class="kw">self</span>) -&gt; <span class="bi">f64</span>;
+    <span class="kw">fn</span> <span class="fn">describe</span>(&amp;<span class="kw">self</span>) -&gt; <span class="bi">String</span> { <span class="fn">format!</span>(<span class="st">"shape with area {:.2}"</span>, <span class="kw">self</span>.<span class="fn">area</span>()) } <span class="cm">// default method</span>
 }
 
-struct Circle { r: f64 }
-struct Square { side: f64 }
-impl Shape for Circle { fn area(&amp;self) -&gt; f64 { std::f64::consts::PI * self.r * self.r } }
-impl Shape for Square { fn area(&amp;self) -&gt; f64 { self.side * self.side } }
+<span class="kw">struct</span> Circle { r: <span class="bi">f64</span> }
+<span class="kw">struct</span> Square { side: <span class="bi">f64</span> }
+<span class="kw">impl</span> Shape <span class="kw">for</span> Circle { <span class="kw">fn</span> <span class="fn">area</span>(&amp;<span class="kw">self</span>) -&gt; <span class="bi">f64</span> { std::<span class="bi">f64</span>::consts::PI * <span class="kw">self</span>.r * <span class="kw">self</span>.r } }
+<span class="kw">impl</span> Shape <span class="kw">for</span> Square { <span class="kw">fn</span> <span class="fn">area</span>(&amp;<span class="kw">self</span>) -&gt; <span class="bi">f64</span> { <span class="kw">self</span>.side * <span class="kw">self</span>.side } }
 
-fn print_static&lt;T: Shape&gt;(s: &amp;T) { println!("{}", s.describe()); }   // monomorphized
-fn print_dynamic(s: &amp;dyn Shape)   { println!("{}", s.describe()); }   // vtable
+<span class="kw">fn</span> print_static&lt;T: Shape&gt;(s: &amp;T) { <span class="fn">println!</span>(<span class="st">"{}"</span>, s.<span class="fn">describe</span>()); }   <span class="cm">// monomorphized</span>
+<span class="kw">fn</span> <span class="fn">print_dynamic</span>(s: &amp;<span class="kw">dyn</span> Shape)   { <span class="fn">println!</span>(<span class="st">"{}"</span>, s.<span class="fn">describe</span>()); }   <span class="cm">// vtable</span>
 
-fn show_all&lt;T: Display&gt;(xs: &amp;[T]) { for x in xs { print!("{x} "); } }
+<span class="kw">fn</span> show_all&lt;T: Display&gt;(xs: &amp;[T]) { <span class="kw">for</span> x <span class="kw">in</span> xs { <span class="fn">print!</span>(<span class="st">"{x} "</span>); } }
 
-fn main() {
-    println!("{}", largest(&amp;[3, 9, 2]));          // 9
-    println!("{}", largest(&amp;["pear", "apple"]));  // pear
-    let shapes: Vec&lt;Box&lt;dyn Shape&gt;&gt; = vec![Box::new(Circle { r: 1.0 }), Box::new(Square { side: 2.0 })];
-    for s in &amp;shapes { print_dynamic(s.as_ref()); }
-    print_static(&amp;Square { side: 3.0 });
-    show_all(&amp;[1, 2, 3]);
+<span class="kw">fn</span> <span class="fn">main</span>() {
+    <span class="fn">println!</span>(<span class="st">"{}"</span>, <span class="fn">largest</span>(&amp;[<span class="nu">3</span>, <span class="nu">9</span>, <span class="nu">2</span>]));          <span class="cm">// 9</span>
+    <span class="fn">println!</span>(<span class="st">"{}"</span>, <span class="fn">largest</span>(&amp;[<span class="st">"pear"</span>, <span class="st">"apple"</span>]));  <span class="cm">// pear</span>
+    <span class="kw">let</span> shapes: <span class="bi">Vec</span>&lt;<span class="bi">Box</span>&lt;<span class="kw">dyn</span> Shape&gt;&gt; = <span class="fn">vec!</span>[<span class="bi">Box</span>::<span class="fn">new</span>(Circle { r: <span class="nu">1.0</span> }), <span class="bi">Box</span>::<span class="fn">new</span>(Square { side: <span class="nu">2.0</span> })];
+    <span class="kw">for</span> s <span class="kw">in</span> &amp;shapes { <span class="fn">print_dynamic</span>(s.<span class="fn">as_ref</span>()); }
+    <span class="fn">print_static</span>(&amp;Square { side: <span class="nu">3.0</span> });
+    <span class="fn">show_all</span>(&amp;[<span class="nu">1</span>, <span class="nu">2</span>, <span class="nu">3</span>]);
 }</code></pre>
 <span class="lang">python</span>
-<pre class="code"><code>from abc import ABC, abstractmethod
-from typing import Protocol, TypeVar
+<pre class="code"><code><span class="kw">from</span> abc <span class="kw">import</span> ABC, abstractmethod
+<span class="kw">from</span> typing <span class="kw">import</span> Protocol, TypeVar
 
-class Shape(ABC):
-    @abstractmethod
-    def area(self) -&gt; float: ...
-    def describe(self) -&gt; str:                 # shared code
-        return f"{type(self).__name__}: {self.area():.2f}"
+<span class="kw">class</span> <span class="fn">Shape</span>(ABC):
+    <span class="bi">@abstractmethod</span>
+    <span class="kw">def</span> <span class="fn">area</span>(<span class="bi">self</span>) -&gt; <span class="bi">float</span>: ...
+    <span class="kw">def</span> <span class="fn">describe</span>(<span class="bi">self</span>) -&gt; <span class="bi">str</span>:                 <span class="cm"># shared code</span>
+        <span class="kw">return</span> <span class="st">f"{type(self).__name__}: {self.area():.2f}"</span>
 
-class Circle(Shape):
-    def __init__(self, r): self.r = r
-    def area(self): return 3.14159 * self.r ** 2
+<span class="kw">class</span> <span class="fn">Circle</span>(Shape):
+    <span class="kw">def</span> <span class="fn">__init__</span>(<span class="bi">self</span>, r): <span class="bi">self</span>.r = r
+    <span class="kw">def</span> <span class="fn">area</span>(<span class="bi">self</span>): <span class="kw">return</span> <span class="nu">3.14159</span> * <span class="bi">self</span>.r ** <span class="nu">2</span>
 
-class Comparable(Protocol):
-    def __lt__(self, other, /) -&gt; bool: ...
+<span class="kw">class</span> <span class="fn">Comparable</span>(Protocol):
+    <span class="kw">def</span> <span class="fn">__lt__</span>(<span class="bi">self</span>, other, /) -&gt; <span class="bi">bool</span>: ...
 
-T = TypeVar("T", bound=Comparable)
-def smallest(xs: list[T]) -&gt; T:
-    return min(xs)</code></pre>
+T = <span class="fn">TypeVar</span>(<span class="st">"T"</span>, bound=Comparable)
+<span class="kw">def</span> <span class="fn">smallest</span>(xs: <span class="bi">list</span>[T]) -&gt; T:
+    <span class="kw">return</span> <span class="bi">min</span>(xs)</code></pre>
 <div class="pagebreak">~ page 3 ~</div>
 <h2>Exercises</h2>
 <ol style="list-style:none;padding-left:0">
 <li>1. Write a generic <code>sort</code> that works on any <code>Comparable</code>.
 <div class="box"><b>Solution</b>
 <span class="lang">rust</span>
-<pre class="code"><code>fn insertion_sort&lt;T: Ord&gt;(xs: &amp;mut [T]) {
-    for i in 1..xs.len() {
-        let mut j = i;
-        while j &gt; 0 &amp;&amp; xs[j - 1] &gt; xs[j] { xs.swap(j - 1, j); j -= 1; }
+<pre class="code"><code><span class="kw">fn</span> insertion_sort&lt;T: Ord&gt;(xs: &amp;<span class="kw">mut</span> [T]) {
+    <span class="kw">for</span> i <span class="kw">in</span> <span class="nu">1</span>..xs.<span class="fn">len</span>() {
+        <span class="kw">let</span> <span class="kw">mut</span> j = i;
+        <span class="kw">while</span> j &gt; <span class="nu">0</span> &amp;&amp; xs[j - <span class="nu">1</span>] &gt; xs[j] { xs.<span class="fn">swap</span>(j - <span class="nu">1</span>, j); j -= <span class="nu">1</span>; }
     }
 }</code></pre>
 <p>It works for integers, strings, and any struct that derives <code>Ord</code>.</p>

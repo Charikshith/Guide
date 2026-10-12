@@ -262,34 +262,34 @@ a{color:var(--ink);text-decoration:underline dotted}
 
   <h2>Example</h2>
   <span class="lang">python</span>
-<pre class="code"><code># BEFORE
-def calc(d, t):
-    r = 0
-    for i in d:
-        if i["s"] == "paid":
-            if t == 1:
-                r += i["a"] * 0.9
-            else:
-                r += i["a"]
-    return r
+<pre class="code"><code><span class="cm"># BEFORE</span>
+<span class="kw">def</span> <span class="fn">calc</span>(d, t):
+    r = <span class="nu">0</span>
+    <span class="kw">for</span> i <span class="kw">in</span> d:
+        <span class="kw">if</span> i[<span class="st">"s"</span>] == <span class="st">"paid"</span>:
+            <span class="kw">if</span> t == <span class="nu">1</span>:
+                r += i[<span class="st">"a"</span>] * <span class="nu">0.9</span>
+            <span class="kw">else</span>:
+                r += i[<span class="st">"a"</span>]
+    <span class="kw">return</span> r
 
-# AFTER — same behavior, readable
-MEMBER_DISCOUNT = 0.10
+<span class="cm"># AFTER — same behavior, readable</span>
+MEMBER_DISCOUNT = <span class="nu">0.10</span>
 
-def revenue(invoices, is_member: bool) -&gt; float:
-    paid = (inv for inv in invoices if inv["status"] == "paid")
-    return sum(discounted(inv["amount"], is_member) for inv in paid)
+<span class="kw">def</span> <span class="fn">revenue</span>(invoices, is_member: <span class="bi">bool</span>) -&gt; <span class="bi">float</span>:
+    paid = (inv <span class="kw">for</span> inv <span class="kw">in</span> invoices <span class="kw">if</span> inv[<span class="st">"status"</span>] == <span class="st">"paid"</span>)
+    <span class="kw">return</span> <span class="bi">sum</span>(<span class="fn">discounted</span>(inv[<span class="st">"amount"</span>], is_member) <span class="kw">for</span> inv <span class="kw">in</span> paid)
 
-def discounted(amount: float, is_member: bool) -&gt; float:
-    return amount * (1 - MEMBER_DISCOUNT) if is_member else amount</code></pre>
+<span class="kw">def</span> <span class="fn">discounted</span>(amount: <span class="bi">float</span>, is_member: <span class="bi">bool</span>) -&gt; <span class="bi">float</span>:
+    <span class="kw">return</span> amount * (<span class="nu">1</span> - MEMBER_DISCOUNT) <span class="kw">if</span> is_member <span class="kw">else</span> amount</code></pre>
 
   <span class="lang">python</span>
-<pre class="code"><code># Characterization test written BEFORE refactoring — locks in current behavior
-def test_revenue_matches_legacy():
-    data = [{"s": "paid", "a": 100}, {"s": "void", "a": 50}, {"s": "paid", "a": 20}]
-    legacy = calc(data, 1)
-    new = revenue([{"status": x["s"], "amount": x["a"]} for x in data], True)
-    assert new == legacy == 108.0</code></pre>
+<pre class="code"><code><span class="cm"># Characterization test written BEFORE refactoring — locks in current behavior</span>
+<span class="kw">def</span> <span class="fn">test_revenue_matches_legacy</span>():
+    data = [{<span class="st">"s"</span>: <span class="st">"paid"</span>, <span class="st">"a"</span>: <span class="nu">100</span>}, {<span class="st">"s"</span>: <span class="st">"void"</span>, <span class="st">"a"</span>: <span class="nu">50</span>}, {<span class="st">"s"</span>: <span class="st">"paid"</span>, <span class="st">"a"</span>: <span class="nu">20</span>}]
+    legacy = <span class="fn">calc</span>(data, <span class="nu">1</span>)
+    new = <span class="fn">revenue</span>([{<span class="st">"status"</span>: x[<span class="st">"s"</span>], <span class="st">"amount"</span>: x[<span class="st">"a"</span>]} <span class="kw">for</span> x <span class="kw">in</span> data], <span class="kw">True</span>)
+    <span class="kw">assert</span> new == legacy == <span class="nu">108.0</span></code></pre>
 
   <h2>Exercises</h2>
   <ol style="list-style:none;padding-left:0">

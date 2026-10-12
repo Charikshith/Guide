@@ -241,30 +241,30 @@ a{color:var(--ink);text-decoration:underline dotted}
 </figure>
 <h2>Example</h2>
 <span class="lang">python</span>
-<pre class="code"><code>s = "café 😀"
-b = s.encode("utf-8")
-print(len(s), len(b), b)          # 6 10 b'caf\xc3\xa9 \xf0\x9f\x98\x80'
-print(b.decode("latin-1"))        # 'cafÃ© Ã°\x9f\x98\x80' — mojibake
-print(b.decode("utf-8"))          # 'café 😀'
+<pre class="code"><code>s = <span class="st">"café 😀"</span>
+b = s.<span class="fn">encode</span>(<span class="st">"utf-8"</span>)
+<span class="bi">print</span>(<span class="bi">len</span>(s), <span class="bi">len</span>(b), b)          <span class="cm"># 6 10 b'caf\xc3\xa9 \xf0\x9f\x98\x80'</span>
+<span class="bi">print</span>(b.<span class="fn">decode</span>(<span class="st">"latin-1"</span>))        <span class="cm"># 'cafÃ© Ã°\x9f\x98\x80' — mojibake</span>
+<span class="bi">print</span>(b.<span class="fn">decode</span>(<span class="st">"utf-8"</span>))          <span class="cm"># 'café 😀'</span>
 
-import unicodedata
-a, b2 = "é", "é"            # precomposed vs e + combining accent
-print(a == b2)                                                 # False
-print(unicodedata.normalize("NFC", a) == unicodedata.normalize("NFC", b2))  # True
+<span class="kw">import</span> unicodedata
+a, b2 = <span class="st">"é"</span>, <span class="st">"é"</span>            <span class="cm"># precomposed vs e + combining accent</span>
+<span class="bi">print</span>(a == b2)                                                 <span class="cm"># False</span>
+<span class="bi">print</span>(unicodedata.<span class="fn">normalize</span>(<span class="st">"NFC"</span>, a) == unicodedata.<span class="fn">normalize</span>(<span class="st">"NFC"</span>, b2))  <span class="cm"># True</span>
 
-import json, msgpack               # pip install msgpack
-obj = {"id": 300, "name": "Ada", "tags": ["math", "poetry"], "active": True}
-print(len(json.dumps(obj).encode()), len(msgpack.packb(obj)))  # 70 42</code></pre>
+<span class="kw">import</span> json, msgpack               <span class="cm"># pip install msgpack</span>
+obj = {<span class="st">"id"</span>: <span class="nu">300</span>, <span class="st">"name"</span>: <span class="st">"Ada"</span>, <span class="st">"tags"</span>: [<span class="st">"math"</span>, <span class="st">"poetry"</span>], <span class="st">"active"</span>: <span class="kw">True</span>}
+<span class="bi">print</span>(<span class="bi">len</span>(json.<span class="fn">dumps</span>(obj).<span class="fn">encode</span>()), <span class="bi">len</span>(msgpack.<span class="fn">packb</span>(obj)))  <span class="cm"># 70 42</span></code></pre>
 <span class="lang">protobuf</span>
-<pre class="code"><code>// user.proto
-syntax = "proto3";
-message User {
-  int32 id = 1;              // field numbers go on the wire, not names
-  string name = 2;
-  repeated string tags = 3;
-  bool active = 4;
-  // Never reuse a deleted field number; mark it reserved.
-  reserved 5;
+<pre class="code"><code><span class="cm">// user.proto</span>
+<span class="kw">syntax</span> = <span class="st">"proto3"</span>;
+<span class="kw">message</span> User {
+  <span class="bi">int32</span> id = <span class="nu">1</span>;              <span class="cm">// field numbers go on the wire, not names</span>
+  <span class="bi">string</span> name = <span class="nu">2</span>;
+  <span class="kw">repeated</span> <span class="bi">string</span> tags = <span class="nu">3</span>;
+  <span class="bi">bool</span> active = <span class="nu">4</span>;
+  <span class="cm">// Never reuse a deleted field number; mark it reserved.</span>
+  <span class="kw">reserved</span> <span class="nu">5</span>;
 }</code></pre>
 <div class="pagebreak">~ page 3 ~</div>
 <h2>Exercises</h2>

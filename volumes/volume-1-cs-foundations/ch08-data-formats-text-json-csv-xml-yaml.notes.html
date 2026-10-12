@@ -240,19 +240,19 @@ a{color:var(--ink);text-decoration:underline dotted}
      ▲ quoted field containing: a comma, escaped quotes, and a newline</code></pre>
 <h2>Example</h2>
 <span class="lang">python</span>
-<pre class="code"><code>import json, csv, io, tomllib   # tomllib: read-only, Python 3.11+
-import yaml                     # pip install pyyaml
+<pre class="code"><code><span class="kw">import</span> json, csv, io, tomllib   <span class="cm"># tomllib: read-only, Python 3.11+</span>
+<span class="kw">import</span> yaml                     <span class="cm"># pip install pyyaml</span>
 
-record = {"name": "Ada", "born": 1815, "languages": ["English", "French"]}
+record = {<span class="st">"name"</span>: <span class="st">"Ada"</span>, <span class="st">"born"</span>: <span class="nu">1815</span>, <span class="st">"languages"</span>: [<span class="st">"English"</span>, <span class="st">"French"</span>]}
 
-text = json.dumps(record, indent=2)
-assert json.loads(text) == record
+text = json.<span class="fn">dumps</span>(record, indent=<span class="nu">2</span>)
+<span class="kw">assert</span> json.<span class="fn">loads</span>(text) == record
 
-print(yaml.safe_dump(record, sort_keys=False))
-print(yaml.safe_load("country: NO"))          # {'country': False}  ← footgun
-print(yaml.safe_load("country: 'NO'"))        # {'country': 'NO'}   ← quote it
+<span class="bi">print</span>(yaml.<span class="fn">safe_dump</span>(record, sort_keys=<span class="kw">False</span>))
+<span class="bi">print</span>(yaml.<span class="fn">safe_load</span>(<span class="st">"country: NO"</span>))          <span class="cm"># {'country': False}  ← footgun</span>
+<span class="bi">print</span>(yaml.<span class="fn">safe_load</span>(<span class="st">"country: 'NO'"</span>))        <span class="cm"># {'country': 'NO'}   ← quote it</span>
 
-config = tomllib.loads("""
+config = tomllib.<span class="fn">loads</span>(<span class="st">"""
 [server]
 host = "0.0.0.0"
 port = 8080
@@ -260,12 +260,12 @@ port = 8080
 [database]
 url = "postgres://localhost/app"
 pool_size = 10
-""")
-print(config["server"]["port"])               # 8080 (an int, not "8080")
+"""</span>)
+<span class="bi">print</span>(config[<span class="st">"server"</span>][<span class="st">"port"</span>])               <span class="cm"># 8080 (an int, not "8080")</span>
 
-raw = 'id,comment\n1,"She said ""hi"", then left"\n'
-for row in csv.DictReader(io.StringIO(raw)):
-    print(row)                                # {'id': '1', 'comment': 'She said "hi", then left'}</code></pre>
+raw = <span class="st">'id,comment\n1,"She said ""hi"", then left"\n'</span>
+<span class="kw">for</span> row <span class="kw">in</span> csv.<span class="fn">DictReader</span>(io.<span class="fn">StringIO</span>(raw)):
+    <span class="bi">print</span>(row)                                <span class="cm"># {'id': '1', 'comment': 'She said "hi", then left'}</span></code></pre>
 <div class="pagebreak">~ page 3 ~</div>
 <h2>Exercises</h2>
 <ol style="list-style:none;padding-left:0">

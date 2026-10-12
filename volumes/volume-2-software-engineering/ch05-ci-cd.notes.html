@@ -261,56 +261,56 @@ a{color:var(--ink);text-decoration:underline dotted}
   <div class="pagebreak">~ page 3 ~</div>
   <h2>Example</h2>
   <span class="lang">yaml</span>
-  <pre class="code"><code># A pipeline-as-code skeleton (GitHub Actions; the structure is the same in GitLab CI or Buildkite)
-  name: pipeline
-  on: { pull_request: {}, push: { branches: [main] } }
-  permissions: { contents: read }
-  concurrency: { group: "$&#123;&#123; github.ref &#125;&#125;", cancel-in-progress: true }
+  <pre class="code"><code><span class="cm"># A pipeline-as-code skeleton (GitHub Actions; the structure is the same in GitLab CI or Buildkite)</span>
+<span class="bi">  name</span>: pipeline
+<span class="bi">  on</span>: { pull_request: {}, push: { branches: [main] } }
+<span class="bi">  permissions</span>: { contents: read }
+<span class="bi">  concurrency</span>: { group: <span class="st">"${{ github.ref }}"</span>, cancel-in-progress: <span class="kw">true</span> }
   
-  jobs:
-    checks:                       # fast, parallel
-      strategy: { matrix: { task: [lint, typecheck, unit, audit] } }
-      runs-on: ubuntu-latest
-      steps:
-        - uses: actions/checkout@v4
-        - uses: astral-sh/setup-uv@v3
-          with: { enable-cache: true }
-        - run: make $&#123;&#123; matrix.task &#125;&#125;          # the same Makefile targets devs run locally
+<span class="bi">  jobs</span>:
+<span class="bi">    checks</span>:                       <span class="cm"># fast, parallel</span>
+<span class="bi">      strategy</span>: { matrix: { task: [lint, typecheck, unit, audit] } }
+<span class="bi">      runs-on</span>: ubuntu-latest
+<span class="bi">      steps</span>:
+<span class="bi">        - uses</span>: actions/checkout@v4
+<span class="bi">        - uses</span>: astral-sh/setup-uv@v3
+<span class="bi">          with</span>: { enable-cache: <span class="kw">true</span> }
+<span class="bi">        - run</span>: make ${{ matrix.task }}          <span class="cm"># the same Makefile targets devs run locally</span>
   
-    integration:
-      needs: checks
-      runs-on: ubuntu-latest
-      steps:
-        - uses: actions/checkout@v4
-        - run: make integration                 # docker compose up db; pytest -m integration
+<span class="bi">    integration</span>:
+<span class="bi">      needs</span>: checks
+<span class="bi">      runs-on</span>: ubuntu-latest
+<span class="bi">      steps</span>:
+<span class="bi">        - uses</span>: actions/checkout@v4
+<span class="bi">        - run</span>: make integration                 <span class="cm"># docker compose up db; pytest -m integration</span>
   
-    artifact:
-      if: github.ref == 'refs/heads/main'
-      needs: [checks, integration]
-      runs-on: ubuntu-latest
-      permissions: { contents: read, packages: write, id-token: write }
-      steps:
-        - uses: actions/checkout@v4
-        - run: make image IMAGE=ghcr.io/acme/api:$&#123;&#123; github.sha &#125;&#125;   # build + push + sbom + cosign sign
+<span class="bi">    artifact</span>:
+<span class="bi">      if</span>: github.ref == <span class="st">'refs/heads/main'</span>
+<span class="bi">      needs</span>: [checks, integration]
+<span class="bi">      runs-on</span>: ubuntu-latest
+<span class="bi">      permissions</span>: { contents: read, packages: write, id-token: write }
+<span class="bi">      steps</span>:
+<span class="bi">        - uses</span>: actions/checkout@v4
+<span class="bi">        - run</span>: make image IMAGE=ghcr.io/acme/api:${{ github.sha }}   <span class="cm"># build + push + sbom + cosign sign</span>
   
-    staging:
-      needs: artifact
-      environment: staging
-      runs-on: ubuntu-latest
-      steps:
-        - run: make deploy ENV=staging IMAGE=ghcr.io/acme/api:$&#123;&#123; github.sha &#125;&#125; &amp;&amp; make smoke ENV=staging
+<span class="bi">    staging</span>:
+<span class="bi">      needs</span>: artifact
+<span class="bi">      environment</span>: staging
+<span class="bi">      runs-on</span>: ubuntu-latest
+<span class="bi">      steps</span>:
+<span class="bi">        - run</span>: make deploy ENV=staging IMAGE=ghcr.io/acme/api:${{ github.sha }} &amp;&amp; make smoke ENV=staging
   
-    production:
-      needs: staging
-      environment: production       # approval gate + prod-only secrets
-      runs-on: ubuntu-latest
-      steps:
-        - run: make deploy ENV=prod IMAGE=ghcr.io/acme/api:$&#123;&#123; github.sha &#125;&#125; STRATEGY=canary</code></pre>
+<span class="bi">    production</span>:
+<span class="bi">      needs</span>: staging
+<span class="bi">      environment</span>: production       <span class="cm"># approval gate + prod-only secrets</span>
+<span class="bi">      runs-on</span>: ubuntu-latest
+<span class="bi">      steps</span>:
+<span class="bi">        - run</span>: make deploy ENV=prod IMAGE=ghcr.io/acme/api:${{ github.sha }} STRATEGY=canary</code></pre>
   <span class="lang">make</span>
-  <pre class="code"><code># Makefile — one interface for humans and CI
+  <pre class="code"><code><span class="cm"># Makefile — one interface for humans and CI</span>
   lint:        ; uv run ruff check . &amp;&amp; uv run ruff format --check .
   typecheck:   ; uv run mypy src
-  unit:        ; uv run pytest -q -m "not integration and not e2e"
+  unit:        ; uv run pytest -q -m <span class="st">"not integration and not e2e"</span>
   integration: ; docker compose up -d db &amp;&amp; uv run pytest -q -m integration
   audit:       ; uv run pip-audit &amp;&amp; gitleaks detect --no-banner</code></pre>
   <h2>Exercises</h2>

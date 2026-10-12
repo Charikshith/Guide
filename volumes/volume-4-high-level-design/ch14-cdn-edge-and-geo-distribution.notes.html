@@ -252,29 +252,29 @@ a{color:var(--ink);text-decoration:underline dotted}
 <h2>Example</h2>
 <h3>A CDN cache rule and cache-busting headers</h3>
 <span class="lang">nginx</span>
-<pre class="code"><code># Origin (nginx) — send the right headers; the CDN honors them
-location ~* \.(js|css|woff2|png|jpg|svg)$ {
-    # file names contain a content hash, e.g. app.3f9a1c.js
-    add_header Cache-Control "public, max-age=31536000, immutable";
+<pre class="code"><code><span class="cm"># Origin (nginx) — send the right headers; the CDN honors them</span>
+<span class="kw">location</span> ~* \.(js|css|woff2|png|jpg|svg)$ {
+    <span class="cm"># file names contain a content hash, e.g. app.3f9a1c.js</span>
+<span class="kw">    add_header</span> Cache-Control <span class="st">"public, max-age=31536000, immutable"</span>;
 }
-location = /index.html {
-    add_header Cache-Control "public, max-age=0, s-maxage=60, stale-while-revalidate=300";
+<span class="kw">location</span> = /index.html {
+<span class="kw">    add_header</span> Cache-Control <span class="st">"public, max-age=0, s-maxage=60, stale-while-revalidate=300"</span>;
 }
-location /api/ {
-    add_header Cache-Control "private, no-store";            # never cache personalized API responses at the edge
+<span class="kw">location</span> /api/ {
+<span class="kw">    add_header</span> Cache-Control <span class="st">"private, no-store"</span>;            <span class="cm"># never cache personalized API responses at the edge</span>
 }
-location /api/products/ {
-    add_header Cache-Control "public, s-maxage=30, stale-if-error=600";
-    add_header Surrogate-Key "products";                     # purge all products with one tag
+<span class="kw">location</span> /api/products/ {
+<span class="kw">    add_header</span> Cache-Control <span class="st">"public, s-maxage=30, stale-if-error=600"</span>;
+<span class="kw">    add_header</span> Surrogate-Key <span class="st">"products"</span>;                     <span class="cm"># purge all products with one tag</span>
 }</code></pre>
 <span class="lang">js</span>
-<pre class="code"><code>// Edge function (Cloudflare Workers style): normalize the cache key + geo redirect
-export default {
-  async fetch(req) {
-    const url = new URL(req.url);
-    ["utm_source", "utm_medium", "utm_campaign", "fbclid"].forEach(p =&gt; url.searchParams.delete(p));
-    if (url.pathname === "/" &amp;&amp; req.cf?.country === "DE") url.pathname = "/de/";
-    return fetch(new Request(url.toString(), req), { cf: { cacheEverything: true } });
+<pre class="code"><code><span class="cm">// Edge function (Cloudflare Workers style): normalize the cache key + geo redirect</span>
+<span class="kw">export</span> <span class="kw">default</span> {
+  <span class="kw">async</span> <span class="bi">fetch</span>(req) {
+    <span class="kw">const</span> url = <span class="kw">new</span> <span class="fn">URL</span>(req.url);
+    [<span class="st">"utm_source"</span>, <span class="st">"utm_medium"</span>, <span class="st">"utm_campaign"</span>, <span class="st">"fbclid"</span>].<span class="fn">forEach</span>(p =&gt; url.searchParams.<span class="kw">delete</span>(p));
+    <span class="kw">if</span> (url.pathname === <span class="st">"/"</span> &amp;&amp; req.cf?.country === <span class="st">"DE"</span>) url.pathname = <span class="st">"/de/"</span>;
+    <span class="kw">return</span> <span class="bi">fetch</span>(<span class="kw">new</span> <span class="fn">Request</span>(url.<span class="fn">toString</span>(), req), { cf: { cacheEverything: <span class="kw">true</span> } });
   },
 };</code></pre>
 <span class="lang">text</span>

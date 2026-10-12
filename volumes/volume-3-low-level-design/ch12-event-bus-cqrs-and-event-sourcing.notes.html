@@ -277,92 +277,92 @@ a{color:var(--ink);text-decoration:underline dotted}
 <div class="pagebreak">~ page 3 ~</div>
 <h2>Example</h2>
 <span class="lang">python</span>
-<pre class="code"><code>from collections import defaultdict
-from dataclasses import dataclass, field
-from functools import reduce
+<pre class="code"><code><span class="kw">from</span> collections <span class="kw">import</span> defaultdict
+<span class="kw">from</span> dataclasses <span class="kw">import</span> dataclass, field
+<span class="kw">from</span> functools <span class="kw">import</span> reduce
 
-# ---- events ---------------------------------------------------------------------
-@dataclass(frozen=True)
-class CartCreated:  cart_id: str; customer: str
-@dataclass(frozen=True)
-class ItemAdded:    cart_id: str; sku: str; qty: int; price: int
-@dataclass(frozen=True)
-class ItemRemoved:  cart_id: str; sku: str
+<span class="cm"># ---- events ---------------------------------------------------------------------</span>
+<span class="bi">@dataclass</span>(frozen=<span class="kw">True</span>)
+<span class="kw">class</span> CartCreated:  cart_id: <span class="bi">str</span>; customer: <span class="bi">str</span>
+<span class="bi">@dataclass</span>(frozen=<span class="kw">True</span>)
+<span class="kw">class</span> ItemAdded:    cart_id: <span class="bi">str</span>; sku: <span class="bi">str</span>; qty: <span class="bi">int</span>; price: <span class="bi">int</span>
+<span class="bi">@dataclass</span>(frozen=<span class="kw">True</span>)
+<span class="kw">class</span> ItemRemoved:  cart_id: <span class="bi">str</span>; sku: <span class="bi">str</span>
 
-# ---- in-process event bus ----------------------------------------------------------------
-class EventBus:
-    def __init__(self): self._handlers = defaultdict(list)
-    def subscribe(self, event_type, handler): self._handlers[event_type].append(handler)
-    def publish(self, event):
-        for h in self._handlers[type(event)]:
-            h(event)
+<span class="cm"># ---- in-process event bus ----------------------------------------------------------------</span>
+<span class="kw">class</span> EventBus:
+    <span class="kw">def</span> <span class="fn">__init__</span>(<span class="bi">self</span>): <span class="bi">self</span>._handlers = <span class="fn">defaultdict</span>(<span class="bi">list</span>)
+    <span class="kw">def</span> <span class="fn">subscribe</span>(<span class="bi">self</span>, event_type, handler): <span class="bi">self</span>._handlers[event_type].<span class="fn">append</span>(handler)
+    <span class="kw">def</span> <span class="fn">publish</span>(<span class="bi">self</span>, event):
+        <span class="kw">for</span> h <span class="kw">in</span> <span class="bi">self</span>._handlers[<span class="bi">type</span>(event)]:
+            <span class="fn">h</span>(event)
 
-# ---- event store (append-only, per stream) + optimistic concurrency ------------------------
-class ConcurrencyError(Exception): ...
+<span class="cm"># ---- event store (append-only, per stream) + optimistic concurrency ------------------------</span>
+<span class="kw">class</span> <span class="fn">ConcurrencyError</span>(<span class="bi">Exception</span>): ...
 
-class EventStore:
-    def __init__(self, bus): self.streams, self.bus = defaultdict(list), bus
-    def load(self, stream): return list(self.streams[stream])
-    def append(self, stream, events, expected_version):
-        if len(self.streams[stream]) != expected_version:
-            raise ConcurrencyError(f"{stream}: expected v{expected_version}")
-        self.streams[stream].extend(events)
-        for e in events:
-            self.bus.publish(e)                     # after append; in a real system via an outbox
+<span class="kw">class</span> EventStore:
+    <span class="kw">def</span> <span class="fn">__init__</span>(<span class="bi">self</span>, bus): <span class="bi">self</span>.streams, <span class="bi">self</span>.bus = <span class="fn">defaultdict</span>(<span class="bi">list</span>), bus
+    <span class="kw">def</span> <span class="fn">load</span>(<span class="bi">self</span>, stream): <span class="kw">return</span> <span class="bi">list</span>(<span class="bi">self</span>.streams[stream])
+    <span class="kw">def</span> <span class="fn">append</span>(<span class="bi">self</span>, stream, events, expected_version):
+        <span class="kw">if</span> <span class="bi">len</span>(<span class="bi">self</span>.streams[stream]) != expected_version:
+            <span class="kw">raise</span> <span class="fn">ConcurrencyError</span>(<span class="st">f"{stream}: expected v{expected_version}"</span>)
+        <span class="bi">self</span>.streams[stream].<span class="fn">extend</span>(events)
+        <span class="kw">for</span> e <span class="kw">in</span> events:
+            <span class="bi">self</span>.bus.<span class="fn">publish</span>(e)                     <span class="cm"># after append; in a real system via an outbox</span>
 
-# ---- write model: aggregate state = fold(events) ------------------------------------------
-@dataclass
-class Cart:
-    id: str = ""
-    items: dict = field(default_factory=dict)       # sku → (qty, price)
-    version: int = 0
+<span class="cm"># ---- write model: aggregate state = fold(events) ------------------------------------------</span>
+<span class="bi">@dataclass</span>
+<span class="kw">class</span> Cart:
+    <span class="bi">id</span>: <span class="bi">str</span> = <span class="st">""</span>
+    items: <span class="bi">dict</span> = <span class="fn">field</span>(default_factory=<span class="bi">dict</span>)       <span class="cm"># sku → (qty, price)</span>
+    version: <span class="bi">int</span> = <span class="nu">0</span>
 
-def apply(cart: Cart, e) -&gt; Cart:
-    match e:
-        case CartCreated(): cart.id = e.cart_id
-        case ItemAdded():
-            q, _ = cart.items.get(e.sku, (0, e.price))
+<span class="kw">def</span> <span class="fn">apply</span>(cart: Cart, e) -&gt; Cart:
+    <span class="kw">match</span> e:
+        <span class="kw">case</span> <span class="fn">CartCreated</span>(): cart.<span class="bi">id</span> = e.cart_id
+        <span class="kw">case</span> <span class="fn">ItemAdded</span>():
+            q, _ = cart.items.<span class="fn">get</span>(e.sku, (<span class="nu">0</span>, e.price))
             cart.items[e.sku] = (q + e.qty, e.price)
-        case ItemRemoved(): cart.items.pop(e.sku, None)
-    cart.version += 1
-    return cart
+        <span class="kw">case</span> <span class="fn">ItemRemoved</span>(): cart.items.<span class="fn">pop</span>(e.sku, <span class="kw">None</span>)
+    cart.version += <span class="nu">1</span>
+    <span class="kw">return</span> cart
 
-def rehydrate(events): return reduce(apply, events, Cart())
+<span class="kw">def</span> <span class="fn">rehydrate</span>(events): <span class="kw">return</span> <span class="fn">reduce</span>(apply, events, <span class="fn">Cart</span>())
 
-# ---- command handlers (write side) ----------------------------------------------------------
-def add_item(store, cart_id, sku, qty, price):
-    cart = rehydrate(store.load(cart_id))
-    if qty &lt;= 0: raise ValueError("qty must be positive")           # invariant check
-    if sum(q for q, _ in cart.items.values()) + qty &gt; 20: raise ValueError("cart limit is 20 items")
-    store.append(cart_id, [ItemAdded(cart_id, sku, qty, price)], expected_version=cart.version)
+<span class="cm"># ---- command handlers (write side) ----------------------------------------------------------</span>
+<span class="kw">def</span> <span class="fn">add_item</span>(store, cart_id, sku, qty, price):
+    cart = <span class="fn">rehydrate</span>(store.<span class="fn">load</span>(cart_id))
+    <span class="kw">if</span> qty &lt;= <span class="nu">0</span>: <span class="kw">raise</span> <span class="bi">ValueError</span>(<span class="st">"qty must be positive"</span>)           <span class="cm"># invariant check</span>
+    <span class="kw">if</span> <span class="bi">sum</span>(q <span class="kw">for</span> q, _ <span class="kw">in</span> cart.items.<span class="fn">values</span>()) + qty &gt; <span class="nu">20</span>: <span class="kw">raise</span> <span class="bi">ValueError</span>(<span class="st">"cart limit is 20 items"</span>)
+    store.<span class="fn">append</span>(cart_id, [<span class="fn">ItemAdded</span>(cart_id, sku, qty, price)], expected_version=cart.version)
 
-# ---- projection (read side) -------------------------------------------------------------
-cart_view = {}                                        # the read model: ready-to-serve rows
-def project(e):
-    v = cart_view.setdefault(e.cart_id, {"lines": {}, "total": 0})
-    if isinstance(e, ItemAdded):
-        q = v["lines"].get(e.sku, (0, e.price))[0] + e.qty
-        v["lines"][e.sku] = (q, e.price)
-    elif isinstance(e, ItemRemoved):
-        v["lines"].pop(e.sku, None)
-    v["total"] = sum(q * p for q, p in v["lines"].values())
+<span class="cm"># ---- projection (read side) -------------------------------------------------------------</span>
+cart_view = {}                                        <span class="cm"># the read model: ready-to-serve rows</span>
+<span class="kw">def</span> <span class="fn">project</span>(e):
+    v = cart_view.<span class="fn">setdefault</span>(e.cart_id, {<span class="st">"lines"</span>: {}, <span class="st">"total"</span>: <span class="nu">0</span>})
+    <span class="kw">if</span> <span class="bi">isinstance</span>(e, ItemAdded):
+        q = v[<span class="st">"lines"</span>].<span class="fn">get</span>(e.sku, (<span class="nu">0</span>, e.price))[<span class="nu">0</span>] + e.qty
+        v[<span class="st">"lines"</span>][e.sku] = (q, e.price)
+    <span class="kw">elif</span> <span class="bi">isinstance</span>(e, ItemRemoved):
+        v[<span class="st">"lines"</span>].<span class="fn">pop</span>(e.sku, <span class="kw">None</span>)
+    v[<span class="st">"total"</span>] = <span class="bi">sum</span>(q * p <span class="kw">for</span> q, p <span class="kw">in</span> v[<span class="st">"lines"</span>].<span class="fn">values</span>())
 
-bus = EventBus()
-for t in (CartCreated, ItemAdded, ItemRemoved):
-    bus.subscribe(t, project)
-store = EventStore(bus)
+bus = <span class="fn">EventBus</span>()
+<span class="kw">for</span> t <span class="kw">in</span> (CartCreated, ItemAdded, ItemRemoved):
+    bus.<span class="fn">subscribe</span>(t, project)
+store = <span class="fn">EventStore</span>(bus)
 
-store.append("cart-7", [CartCreated("cart-7", "c1")], expected_version=0)
-add_item(store, "cart-7", "pen", 2, 150)
-add_item(store, "cart-7", "pad", 1, 400)
-store.append("cart-7", [ItemRemoved("cart-7", "pen")], expected_version=3)
-print(cart_view["cart-7"])                        # {'lines': {'pad': (1, 400)}, 'total': 400}
+store.<span class="fn">append</span>(<span class="st">"cart-7"</span>, [<span class="fn">CartCreated</span>(<span class="st">"cart-7"</span>, <span class="st">"c1"</span>)], expected_version=<span class="nu">0</span>)
+<span class="fn">add_item</span>(store, <span class="st">"cart-7"</span>, <span class="st">"pen"</span>, <span class="nu">2</span>, <span class="nu">150</span>)
+<span class="fn">add_item</span>(store, <span class="st">"cart-7"</span>, <span class="st">"pad"</span>, <span class="nu">1</span>, <span class="nu">400</span>)
+store.<span class="fn">append</span>(<span class="st">"cart-7"</span>, [<span class="fn">ItemRemoved</span>(<span class="st">"cart-7"</span>, <span class="st">"pen"</span>)], expected_version=<span class="nu">3</span>)
+<span class="bi">print</span>(cart_view[<span class="st">"cart-7"</span>])                        <span class="cm"># {'lines': {'pad': (1, 400)}, 'total': 400}</span>
 
-# Replay: rebuild the read model from scratch
-cart_view.clear()
-for e in store.load("cart-7"):
-    project(e)
-print(cart_view["cart-7"]["total"], rehydrate(store.load("cart-7")).version)   # 400 4</code></pre>
+<span class="cm"># Replay: rebuild the read model from scratch</span>
+cart_view.<span class="fn">clear</span>()
+<span class="kw">for</span> e <span class="kw">in</span> store.<span class="fn">load</span>(<span class="st">"cart-7"</span>):
+    <span class="fn">project</span>(e)
+<span class="bi">print</span>(cart_view[<span class="st">"cart-7"</span>][<span class="st">"total"</span>], <span class="fn">rehydrate</span>(store.<span class="fn">load</span>(<span class="st">"cart-7"</span>)).version)   <span class="cm"># 400 4</span></code></pre>
 <h2>Exercises</h2>
 <ol style="list-style:none;padding-left:0">
   <li>1. Implement an in-process event bus.

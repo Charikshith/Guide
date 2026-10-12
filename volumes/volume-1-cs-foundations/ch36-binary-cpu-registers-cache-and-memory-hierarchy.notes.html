@@ -242,31 +242,31 @@ a{color:var(--ink);text-decoration:underline dotted}
   <div class="pagebreak">~ page 2 ~</div>
   <h2>Example</h2>
   <span class="lang">python</span>
-<pre class="code"><code>print(bin(11), hex(255), int("1011", 2))     # 0b1011 0xff 11
-print((-1).to_bytes(4, "little", signed=True).hex())    # ffffffff
-print((5).to_bytes(2, "big").hex(), (5).to_bytes(2, "little").hex())   # 0005 0500
+<pre class="code"><code><span class="bi">print</span>(<span class="fn">bin</span>(<span class="nu">11</span>), <span class="fn">hex</span>(<span class="nu">255</span>), <span class="bi">int</span>(<span class="st">"1011"</span>, <span class="nu">2</span>))     <span class="cm"># 0b1011 0xff 11</span>
+<span class="bi">print</span>((-<span class="nu">1</span>).<span class="fn">to_bytes</span>(<span class="nu">4</span>, <span class="st">"little"</span>, signed=<span class="kw">True</span>).<span class="fn">hex</span>())    <span class="cm"># ffffffff</span>
+<span class="bi">print</span>((<span class="nu">5</span>).<span class="fn">to_bytes</span>(<span class="nu">2</span>, <span class="st">"big"</span>).<span class="fn">hex</span>(), (<span class="nu">5</span>).<span class="fn">to_bytes</span>(<span class="nu">2</span>, <span class="st">"little"</span>).<span class="fn">hex</span>())   <span class="cm"># 0005 0500</span>
 
-def twos_complement(x, bits=8):
-    return format(x &amp; ((1 &lt;&lt; bits) - 1), f"0{bits}b")
-print(twos_complement(-5), twos_complement(127), twos_complement(-128))
-# 11111011 01111111 10000000
+<span class="kw">def</span> <span class="fn">twos_complement</span>(x, bits=<span class="nu">8</span>):
+    <span class="kw">return</span> <span class="bi">format</span>(x &amp; ((<span class="nu">1</span> &lt;&lt; bits) - <span class="nu">1</span>), <span class="st">f"0{bits}b"</span>)
+<span class="bi">print</span>(<span class="fn">twos_complement</span>(-<span class="nu">5</span>), <span class="fn">twos_complement</span>(<span class="nu">127</span>), <span class="fn">twos_complement</span>(-<span class="nu">128</span>))
+<span class="cm"># 11111011 01111111 10000000</span>
 </code></pre>
   <span class="lang">python</span>
-<pre class="code"><code>import numpy as np, time
-a = np.random.rand(4000, 4000)               # row-major (C order)
+<pre class="code"><code><span class="kw">import</span> numpy <span class="kw">as</span> np, time
+a = np.random.<span class="fn">rand</span>(<span class="nu">4000</span>, <span class="nu">4000</span>)               <span class="cm"># row-major (C order)</span>
 
-t = time.perf_counter(); s = sum(a[i, :].sum() for i in range(4000)); t_rows = time.perf_counter() - t
-t = time.perf_counter(); s = sum(a[:, j].sum() for j in range(4000)); t_cols = time.perf_counter() - t
-print(f"rows {t_rows:.2f}s  cols {t_cols:.2f}s")   # columns are several times slower
+t = time.<span class="fn">perf_counter</span>(); s = <span class="bi">sum</span>(a[i, :].<span class="bi">sum</span>() <span class="kw">for</span> i <span class="kw">in</span> <span class="bi">range</span>(<span class="nu">4000</span>)); t_rows = time.<span class="fn">perf_counter</span>() - t
+t = time.<span class="fn">perf_counter</span>(); s = <span class="bi">sum</span>(a[:, j].<span class="bi">sum</span>() <span class="kw">for</span> j <span class="kw">in</span> <span class="bi">range</span>(<span class="nu">4000</span>)); t_cols = time.<span class="fn">perf_counter</span>() - t
+<span class="bi">print</span>(<span class="st">f"rows {t_rows:.2f}s  cols {t_cols:.2f}s"</span>)   <span class="cm"># columns are several times slower</span>
 </code></pre>
   <span class="lang">c</span>
-<pre class="code"><code>// The same effect in C — identical work, very different speed
-for (int i = 0; i &lt; N; i++)          // fast: walks memory in order
-    for (int j = 0; j &lt; N; j++)
+<pre class="code"><code><span class="cm">// The same effect in C — identical work, very different speed</span>
+<span class="kw">for</span> (<span class="bi">int</span> i = <span class="nu">0</span>; i &lt; N; i++)          <span class="cm">// fast: walks memory in order</span>
+    <span class="kw">for</span> (<span class="bi">int</span> j = <span class="nu">0</span>; j &lt; N; j++)
         sum += m[i][j];
 
-for (int j = 0; j &lt; N; j++)          // slow: strides N*4 bytes per step
-    for (int i = 0; i &lt; N; i++)
+<span class="kw">for</span> (<span class="bi">int</span> j = <span class="nu">0</span>; j &lt; N; j++)          <span class="cm">// slow: strides N*4 bytes per step</span>
+    <span class="kw">for</span> (<span class="bi">int</span> i = <span class="nu">0</span>; i &lt; N; i++)
         sum += m[i][j];
 </code></pre>
   <h2>Exercises</h2>

@@ -281,40 +281,40 @@ a{color:var(--ink);text-decoration:underline dotted}
 
   <h2>Example</h2>
   <span class="lang">sql</span>
-<pre class="code"><code>-- Declarative partitioning in Postgres (one database, many partitions)
-CREATE TABLE events (
-  id          bigint GENERATED ALWAYS AS IDENTITY,
-  user_id     bigint NOT NULL,
-  occurred_at timestamptz NOT NULL,
-  payload     jsonb,
-  PRIMARY KEY (id, occurred_at)
-) PARTITION BY RANGE (occurred_at);
+<pre class="code"><code><span class="cm">-- Declarative partitioning in Postgres (one database, many partitions)</span>
+<span class="kw">CREATE</span> <span class="kw">TABLE</span> events (
+  id          <span class="bi">bigint</span> GENERATED ALWAYS <span class="kw">AS</span> IDENTITY,
+  user_id     <span class="bi">bigint</span> <span class="kw">NOT</span> <span class="kw">NULL</span>,
+  occurred_at timestamptz <span class="kw">NOT</span> <span class="kw">NULL</span>,
+  payload     <span class="bi">jsonb</span>,
+  <span class="kw">PRIMARY</span> <span class="kw">KEY</span> (id, occurred_at)
+) <span class="kw">PARTITION</span> <span class="kw">BY</span> RANGE (occurred_at);
 
-CREATE TABLE events_2024_05 PARTITION OF events FOR VALUES FROM ('2024-05-01') TO ('2024-06-01');
-CREATE TABLE events_2024_06 PARTITION OF events FOR VALUES FROM ('2024-06-01') TO ('2024-07-01');
--- retention: DROP TABLE events_2023_05;   (instant, instead of a huge DELETE)
--- queries with WHERE occurred_at … touch only the relevant partitions (partition pruning)</code></pre>
+<span class="kw">CREATE</span> <span class="kw">TABLE</span> events_2024_05 <span class="kw">PARTITION</span> OF events FOR <span class="kw">VALUES</span> <span class="kw">FROM</span> (<span class="st">'2024-05-01'</span>) TO (<span class="st">'2024-06-01'</span>);
+<span class="kw">CREATE</span> <span class="kw">TABLE</span> events_2024_06 <span class="kw">PARTITION</span> OF events FOR <span class="kw">VALUES</span> <span class="kw">FROM</span> (<span class="st">'2024-06-01'</span>) TO (<span class="st">'2024-07-01'</span>);
+<span class="cm">-- retention: DROP TABLE events_2023_05;   (instant, instead of a huge DELETE)</span>
+<span class="cm">-- queries with WHERE occurred_at … touch only the relevant partitions (partition pruning)</span></code></pre>
   <span class="lang">python</span>
-<pre class="code"><code># Application-level shard routing with a directory of virtual shards
-import hashlib
+<pre class="code"><code><span class="cm"># Application-level shard routing with a directory of virtual shards</span>
+<span class="kw">import</span> hashlib
 
-N_VSHARDS = 1024                                 # fixed; many more than physical shards
-VSHARD_TO_DB = {v: f"db{v % 4}" for v in range(N_VSHARDS)}   # directory: move vshards to rebalance
+N_VSHARDS = <span class="nu">1024</span>                                 <span class="cm"># fixed; many more than physical shards</span>
+VSHARD_TO_DB = {v: <span class="st">f"db{v % 4}"</span> <span class="kw">for</span> v <span class="kw">in</span> <span class="bi">range</span>(N_VSHARDS)}   <span class="cm"># directory: move vshards to rebalance</span>
 
-def vshard(user_id: int) -&gt; int:
-    return int.from_bytes(hashlib.md5(str(user_id).encode()).digest()[:4], "big") % N_VSHARDS
+<span class="kw">def</span> <span class="fn">vshard</span>(user_id: <span class="bi">int</span>) -&gt; <span class="bi">int</span>:
+    <span class="kw">return</span> <span class="bi">int</span>.<span class="fn">from_bytes</span>(hashlib.<span class="fn">md5</span>(<span class="bi">str</span>(user_id).<span class="fn">encode</span>()).<span class="fn">digest</span>()[:<span class="nu">4</span>], <span class="st">"big"</span>) % N_VSHARDS
 
-def db_for(user_id: int) -&gt; str:
-    return VSHARD_TO_DB[vshard(user_id)]
+<span class="kw">def</span> <span class="fn">db_for</span>(user_id: <span class="bi">int</span>) -&gt; <span class="bi">str</span>:
+    <span class="kw">return</span> VSHARD_TO_DB[<span class="fn">vshard</span>(user_id)]
 
-print(db_for(42), db_for(43))
-# Adding db4: move some vshards' data, then update the directory entries — no global rehash.</code></pre>
+<span class="bi">print</span>(<span class="fn">db_for</span>(<span class="nu">42</span>), <span class="fn">db_for</span>(<span class="nu">43</span>))
+<span class="cm"># Adding db4: move some vshards' data, then update the directory entries — no global rehash.</span></code></pre>
   <span class="lang">python</span>
-<pre class="code"><code># Read-your-writes with replicas
-def read_profile(session, user_id):
-    recent_write = session.get("last_write_ts", 0) &gt; time.time() - 2
-    conn = primary if recent_write else replicas.pick()
-    return conn.execute("SELECT * FROM profiles WHERE user_id = %s", (user_id,)).fetchone()</code></pre>
+<pre class="code"><code><span class="cm"># Read-your-writes with replicas</span>
+<span class="kw">def</span> <span class="fn">read_profile</span>(session, user_id):
+    recent_write = session.<span class="fn">get</span>(<span class="st">"last_write_ts"</span>, <span class="nu">0</span>) &gt; time.<span class="fn">time</span>() - <span class="nu">2</span>
+    conn = primary <span class="kw">if</span> recent_write <span class="kw">else</span> replicas.<span class="fn">pick</span>()
+    <span class="kw">return</span> conn.<span class="fn">execute</span>(<span class="st">"SELECT * FROM profiles WHERE user_id = %s"</span>, (user_id,)).<span class="fn">fetchone</span>()</code></pre>
 
   <h2>Exercises</h2>
   <ol style="list-style:none;padding-left:0">

@@ -284,56 +284,56 @@ a{color:var(--ink);text-decoration:underline dotted}
   <div class="pagebreak">~ page 3 ~</div>
   <h2>Example</h2>
   <span class="lang">toml</span>
-  <pre class="code"><code># pyproject.toml — strict core, lenient legacy
-  [tool.mypy]
-  python_version = "3.12"
-  warn_unused_ignores = true
-  warn_redundant_casts = true
+  <pre class="code"><code><span class="cm"># pyproject.toml — strict core, lenient legacy</span>
+<span class="kw">  [tool.mypy]</span>
+<span class="bi">  python_version</span> = <span class="st">"3.12"</span>
+<span class="bi">  warn_unused_ignores</span> = <span class="kw">true</span>
+<span class="bi">  warn_redundant_casts</span> = <span class="kw">true</span>
   
-  [[tool.mypy.overrides]]
-  module = ["acme.domain.*", "acme.api.*"]
-  strict = true
+<span class="kw">  [[tool.mypy.overrides]]</span>
+<span class="bi">  module</span> = [<span class="st">"acme.domain.*"</span>, <span class="st">"acme.api.*"</span>]
+<span class="bi">  strict</span> = <span class="kw">true</span>
   
-  [[tool.mypy.overrides]]
-  module = ["acme.legacy.*"]
-  ignore_errors = true            # temporarily; tracked by the ratchet
+<span class="kw">  [[tool.mypy.overrides]]</span>
+<span class="bi">  module</span> = [<span class="st">"acme.legacy.*"</span>]
+<span class="bi">  ignore_errors</span> = <span class="kw">true</span>            <span class="cm"># temporarily; tracked by the ratchet</span>
   
-  [tool.ruff.lint]
-  select = ["E", "F", "B", "I", "UP", "S", "SIM", "ANN"]
-  [tool.ruff.lint.per-file-ignores]
-  "acme/legacy/**" = ["ANN"]      # don't require annotations in legacy yet
-  "tests/**" = ["S101"]           # allow assert in tests</code></pre>
+<span class="kw">  [tool.ruff.lint]</span>
+<span class="bi">  select</span> = [<span class="st">"E"</span>, <span class="st">"F"</span>, <span class="st">"B"</span>, <span class="st">"I"</span>, <span class="st">"UP"</span>, <span class="st">"S"</span>, <span class="st">"SIM"</span>, <span class="st">"ANN"</span>]
+<span class="kw">  [tool.ruff.lint.per-file-ignores]</span>
+  <span class="st">"acme/legacy/**"</span> = [<span class="st">"ANN"</span>]      <span class="cm"># don't require annotations in legacy yet</span>
+  <span class="st">"tests/**"</span> = [<span class="st">"S101"</span>]           <span class="cm"># allow assert in tests</span></code></pre>
   <span class="lang">bash</span>
-  <pre class="code"><code># Baseline + ratchet for mypy (the same idea works for any linter)
-  mypy src &gt; .mypy-baseline.txt || true                 # record once
-  # CI:
-  mypy src | sort &gt; /tmp/now.txt || true
-  comm -13 &lt;(sort .mypy-baseline.txt) /tmp/now.txt &gt; /tmp/new.txt
-  test ! -s /tmp/new.txt || { echo "New type errors:"; cat /tmp/new.txt; exit 1; }
-  test "$(wc -l &lt; /tmp/now.txt)" -le "$(wc -l &lt; .mypy-baseline.txt)"   # the count may only go down</code></pre>
+  <pre class="code"><code><span class="cm"># Baseline + ratchet for mypy (the same idea works for any linter)</span>
+  mypy src &gt; .mypy-baseline.txt || true                 <span class="cm"># record once</span>
+  <span class="cm"># CI:</span>
+  mypy src | <span class="bi">sort</span> &gt; /tmp/now.txt || true
+  comm -<span class="nu">13</span> &lt;(<span class="bi">sort</span> .mypy-baseline.txt) /tmp/now.txt &gt; /tmp/new.txt
+  test ! -s /tmp/new.txt || { <span class="bi">echo</span> <span class="st">"New type errors:"</span>; <span class="bi">cat</span> /tmp/new.txt; <span class="kw">exit</span> <span class="nu">1</span>; }
+  test <span class="st">"$(wc -l &lt; /tmp/now.txt)"</span> -le <span class="st">"$(wc -l &lt; .mypy-baseline.txt)"</span>   <span class="cm"># the count may only go down</span></code></pre>
   <span class="lang">python</span>
-  <pre class="code"><code># "Parse, don't validate" + contracts
-  from dataclasses import dataclass
-  from typing import NewType
-  import icontract
+  <pre class="code"><code><span class="cm"># "Parse, don't validate" + contracts</span>
+  <span class="kw">from</span> dataclasses <span class="kw">import</span> dataclass
+  <span class="kw">from</span> typing <span class="kw">import</span> NewType
+  <span class="kw">import</span> icontract
   
-  @dataclass(frozen=True)
-  class Money:
-      cents: int
-      currency: str
-      def __post_init__(self):                          # invariant
-          if self.cents &lt; 0: raise ValueError("negative money")
-          if len(self.currency) != 3: raise ValueError("ISO 4217 code expected")
+  <span class="bi">@dataclass</span>(frozen=<span class="kw">True</span>)
+  <span class="kw">class</span> Money:
+      cents: <span class="bi">int</span>
+      currency: <span class="bi">str</span>
+      <span class="kw">def</span> <span class="fn">__post_init__</span>(<span class="bi">self</span>):                          <span class="cm"># invariant</span>
+          <span class="kw">if</span> <span class="bi">self</span>.cents &lt; <span class="nu">0</span>: <span class="kw">raise</span> <span class="bi">ValueError</span>(<span class="st">"negative money"</span>)
+          <span class="kw">if</span> <span class="bi">len</span>(<span class="bi">self</span>.currency) != <span class="nu">3</span>: <span class="kw">raise</span> <span class="bi">ValueError</span>(<span class="st">"ISO 4217 code expected"</span>)
   
-  Percent = NewType("Percent", int)
+  Percent = <span class="fn">NewType</span>(<span class="st">"Percent"</span>, <span class="bi">int</span>)
   
-  @icontract.require(lambda pct: 0 &lt;= pct &lt;= 50, "discount capped at 50%")
-  @icontract.ensure(lambda price, result: result.cents &lt;= price.cents)
-  def discount(price: Money, pct: Percent) -&gt; Money:
-      return Money(price.cents * (100 - pct) // 100, price.currency)</code></pre>
+  <span class="bi">@icontract.require</span>(<span class="kw">lambda</span> pct: <span class="nu">0</span> &lt;= pct &lt;= <span class="nu">50</span>, <span class="st">"discount capped at 50%"</span>)
+  <span class="bi">@icontract.ensure</span>(<span class="kw">lambda</span> price, result: result.cents &lt;= price.cents)
+  <span class="kw">def</span> <span class="fn">discount</span>(price: Money, pct: Percent) -&gt; Money:
+      <span class="kw">return</span> <span class="fn">Money</span>(price.cents * (<span class="nu">100</span> - pct) // <span class="nu">100</span>, price.currency)</code></pre>
   <span class="lang">rust</span>
-  <pre class="code"><code>#![deny(warnings)]                 // every compiler warning fails the build
-  #![deny(clippy::unwrap_used)]      // no unwrap() in production code</code></pre>
+  <pre class="code"><code><span class="bi">#![deny(warnings)]</span>                 <span class="cm">// every compiler warning fails the build</span>
+  <span class="bi">#![deny(clippy::unwrap_used)]</span>      <span class="cm">// no unwrap() in production code</span></code></pre>
   <h2>Exercises</h2>
   <ol style="list-style:none;padding-left:0">
     <li>1. Add a type checker to a legacy module and fix the findings.

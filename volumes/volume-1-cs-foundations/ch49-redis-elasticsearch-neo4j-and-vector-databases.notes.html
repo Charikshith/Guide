@@ -266,49 +266,49 @@ a{color:var(--ink);text-decoration:underline dotted}
   <div class="pagebreak">~ page 3 ~</div>
   <h2>Example</h2>
   <span class="lang">bash</span>
-<pre class="code"><code>redis-cli SET "product:42" '{"name":"Kayak"}' EX 60      # cache with a 60 s TTL
-redis-cli TTL product:42                                 # 60
-redis-cli ZINCRBY leaderboard 10 "ada"
-redis-cli ZRANGE leaderboard 0 9 REV WITHSCORES          # top 10
-redis-cli SET lock:job:7 "worker-3" NX PX 30000          # a simple lease lock</code></pre>
+<pre class="code"><code>redis-cli SET <span class="st">"product:42"</span> <span class="st">'{"name":"Kayak"}'</span> EX <span class="nu">60</span>      <span class="cm"># cache with a 60 s TTL</span>
+redis-cli TTL product:<span class="nu">42</span>                                 <span class="cm"># 60</span>
+redis-cli ZINCRBY leaderboard <span class="nu">10</span> <span class="st">"ada"</span>
+redis-cli ZRANGE leaderboard <span class="nu">0</span> <span class="nu">9</span> REV WITHSCORES          <span class="cm"># top 10</span>
+redis-cli SET lock:job:<span class="nu">7</span> <span class="st">"worker-3"</span> NX PX <span class="nu">30000</span>          <span class="cm"># a simple lease lock</span></code></pre>
   <span class="lang">python</span>
-<pre class="code"><code>import json, redis
-r = redis.Redis()
+<pre class="code"><code><span class="kw">import</span> json, redis
+r = redis.<span class="fn">Redis</span>()
 
-def top_products(category):
-    key = f"top:{category}"
-    if (hit := r.get(key)) is not None:
-        return json.loads(hit)
-    rows = db_expensive_query(category)            # ~800 ms
-    r.set(key, json.dumps(rows), ex=300)           # cache-aside, 5 min TTL
-    return rows</code></pre>
+<span class="kw">def</span> <span class="fn">top_products</span>(category):
+    key = <span class="st">f"top:{category}"</span>
+    <span class="kw">if</span> (hit := r.<span class="fn">get</span>(key)) <span class="kw">is</span> <span class="kw">not</span> <span class="kw">None</span>:
+        <span class="kw">return</span> json.<span class="fn">loads</span>(hit)
+    rows = <span class="fn">db_expensive_query</span>(category)            <span class="cm"># ~800 ms</span>
+    r.<span class="bi">set</span>(key, json.<span class="fn">dumps</span>(rows), ex=<span class="nu">300</span>)           <span class="cm"># cache-aside, 5 min TTL</span>
+    <span class="kw">return</span> rows</code></pre>
   <span class="lang">json</span>
 <pre class="code"><code>POST /products/_search
 {
-  "query": {
-    "bool": {
-      "must":   { "match": { "title": "red shoe" } },
-      "filter": { "range": { "price_cents": { "lte": 10000 } } }
+  <span class="bi">"query"</span>: {
+    <span class="bi">"bool"</span>: {
+      <span class="bi">"must"</span>:   { <span class="bi">"match"</span>: { <span class="bi">"title"</span>: <span class="st">"red shoe"</span> } },
+      <span class="bi">"filter"</span>: { <span class="bi">"range"</span>: { <span class="bi">"price_cents"</span>: { <span class="bi">"lte"</span>: <span class="nu">10000</span> } } }
     }
   },
-  "size": 10
+  <span class="bi">"size"</span>: <span class="nu">10</span>
 }</code></pre>
   <span class="lang">cypher</span>
-<pre class="code"><code>// Friends-of-friends Ada doesn't know yet, ranked by mutual friends
-MATCH (me:Person {name: "Ada"})-[:FRIEND]-&gt;(f)-[:FRIEND]-&gt;(fof)
-WHERE fof &lt;&gt; me AND NOT (me)-[:FRIEND]-&gt;(fof)
-RETURN fof.name, count(f) AS mutual
-ORDER BY mutual DESC LIMIT 10;</code></pre>
+<pre class="code"><code><span class="cm">// Friends-of-friends Ada doesn't know yet, ranked by mutual friends</span>
+<span class="kw">MATCH</span> (me<span class="bi">:Person</span> {name: <span class="st">"Ada"</span>})-[<span class="bi">:FRIEND</span>]-&gt;(f)-[<span class="bi">:FRIEND</span>]-&gt;(fof)
+<span class="kw">WHERE</span> fof &lt;&gt; me <span class="kw">AND</span> <span class="kw">NOT</span> (me)-[<span class="bi">:FRIEND</span>]-&gt;(fof)
+<span class="kw">RETURN</span> fof.name, <span class="fn">count</span>(f) <span class="kw">AS</span> mutual
+<span class="kw">ORDER</span> <span class="kw">BY</span> mutual DESC <span class="kw">LIMIT</span> <span class="nu">10</span>;</code></pre>
   <span class="lang">python</span>
-<pre class="code"><code>from qdrant_client import QdrantClient
-from qdrant_client.models import Distance, VectorParams, PointStruct
+<pre class="code"><code><span class="kw">from</span> qdrant_client <span class="kw">import</span> QdrantClient
+<span class="kw">from</span> qdrant_client.models <span class="kw">import</span> Distance, VectorParams, PointStruct
 
-q = QdrantClient(":memory:")
-q.create_collection("docs", vectors_config=VectorParams(size=4, distance=Distance.COSINE))
-q.upsert("docs", [PointStruct(id=1, vector=[0.9, 0.1, 0.0, 0.2], payload={"t": "canoe"}),
-                  PointStruct(id=2, vector=[0.0, 0.8, 0.6, 0.0], payload={"t": "invoice"})])
-hits = q.query_points("docs", query=[0.85, 0.15, 0.05, 0.1], limit=1).points
-print(hits[0].payload)                         # {'t': 'canoe'}</code></pre>
+q = <span class="fn">QdrantClient</span>(<span class="st">":memory:"</span>)
+q.<span class="fn">create_collection</span>(<span class="st">"docs"</span>, vectors_config=<span class="fn">VectorParams</span>(size=<span class="nu">4</span>, distance=Distance.COSINE))
+q.<span class="fn">upsert</span>(<span class="st">"docs"</span>, [<span class="fn">PointStruct</span>(<span class="bi">id</span>=<span class="nu">1</span>, vector=[<span class="nu">0.9</span>, <span class="nu">0.1</span>, <span class="nu">0.0</span>, <span class="nu">0.2</span>], payload={<span class="st">"t"</span>: <span class="st">"canoe"</span>}),
+                  <span class="fn">PointStruct</span>(<span class="bi">id</span>=<span class="nu">2</span>, vector=[<span class="nu">0.0</span>, <span class="nu">0.8</span>, <span class="nu">0.6</span>, <span class="nu">0.0</span>], payload={<span class="st">"t"</span>: <span class="st">"invoice"</span>})])
+hits = q.<span class="fn">query_points</span>(<span class="st">"docs"</span>, query=[<span class="nu">0.85</span>, <span class="nu">0.15</span>, <span class="nu">0.05</span>, <span class="nu">0.1</span>], limit=<span class="nu">1</span>).points
+<span class="bi">print</span>(hits[<span class="nu">0</span>].payload)                         <span class="cm"># {'t': 'canoe'}</span></code></pre>
   <h2>Exercises</h2>
   <ol style="list-style:none;padding-left:0">
 <li>1. Cache an expensive query in Redis with TTL.

@@ -308,30 +308,30 @@ a{color:var(--ink);text-decoration:underline dotted}
   <div class="pagebreak">~ page 3 ~</div>
   <h2>Example</h2>
   <span class="lang">bash</span>
-  <pre class="code"><code>git switch main &amp;&amp; git pull --ff-only
-  git switch -c feat/coupons
-  git commit -m "feat(checkout): accept percentage coupons
+  <pre class="code"><code><span class="bi">git</span> switch main &amp;&amp; <span class="bi">git</span> pull --ff-only
+  <span class="bi">git</span> switch -c feat/coupons
+  <span class="bi">git</span> commit -m "feat(checkout): accept percentage coupons
   
-  Customers can enter a code at checkout. Discounts are capped at 50%
-  to limit abuse (see ADR 0012).
+  Customers can enter a code at checkout. Discounts are capped at <span class="nu">50</span>%
+  to limit abuse (see ADR <span class="nu">0012</span>).
   
-  Refs: #482"
-  git push -u origin feat/coupons                  # then open a PR
+  Refs: <span class="cm">#482"</span>
+  <span class="bi">git</span> push -u origin feat/coupons                  <span class="cm"># then open a PR</span>
   
-  # Undo a bad commit that is already on main
-  git revert 3f9a2c1                               # creates "Revert 'feat: …'"
-  git push
+  <span class="cm"># Undo a bad commit that is already on main</span>
+  <span class="bi">git</span> revert 3f9a2c1                               <span class="cm"># creates "Revert 'feat: …'"</span>
+  <span class="bi">git</span> push
   
-  # Recover from a bad rebase
-  git reflog
-  # 7d1e0b4 HEAD@{0}: rebase (finish): returning to refs/heads/feat/coupons
-  # 9c2f8aa HEAD@{5}: commit: tests for coupon cap      ← the commit that "disappeared"
-  git branch rescue 9c2f8aa
-  git cherry-pick 9c2f8aa                          # or reset the branch to it
+  <span class="cm"># Recover from a bad rebase</span>
+  <span class="bi">git</span> reflog
+  <span class="cm"># 7d1e0b4 HEAD@{0}: rebase (finish): returning to refs/heads/feat/coupons</span>
+  <span class="cm"># 9c2f8aa HEAD@{5}: commit: tests for coupon cap      ← the commit that "disappeared"</span>
+  <span class="bi">git</span> branch rescue 9c2f8aa
+  <span class="bi">git</span> cherry-pick 9c2f8aa                          <span class="cm"># or reset the branch to it</span>
   
-  # Update your own PR branch after rebasing, safely
-  git fetch origin &amp;&amp; git rebase origin/main
-  git push --force-with-lease</code></pre>
+  <span class="cm"># Update your own PR branch after rebasing, safely</span>
+  <span class="bi">git</span> fetch origin &amp;&amp; <span class="bi">git</span> rebase origin/main
+  <span class="bi">git</span> push --force-with-lease</code></pre>
   <span class="lang">text</span>
   <pre class="code"><code>Branch protection for main (repository settings):
     ✓ Require a pull request before merging (1 approval, dismiss stale approvals)

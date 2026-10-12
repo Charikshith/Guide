@@ -267,50 +267,50 @@ a{color:var(--ink);text-decoration:underline dotted}
   <div class="pagebreak">~ page 3 ~</div>
   <h2>Example</h2>
   <span class="lang">python</span>
-  <pre class="code"><code># Property-based tests with Hypothesis
-  from hypothesis import given, strategies as st
-  from collections import Counter
+  <pre class="code"><code><span class="cm"># Property-based tests with Hypothesis</span>
+  <span class="kw">from</span> hypothesis <span class="kw">import</span> given, strategies <span class="kw">as</span> st
+  <span class="kw">from</span> collections <span class="kw">import</span> Counter
   
-  def my_sort(xs):                       # the function under test
-      return sorted(xs)
+  <span class="kw">def</span> <span class="fn">my_sort</span>(xs):                       <span class="cm"># the function under test</span>
+      <span class="kw">return</span> <span class="bi">sorted</span>(xs)
   
-  @given(st.lists(st.integers()))
-  def test_sort_is_ordered_and_a_permutation(xs):
-      out = my_sort(xs)
-      assert all(a &lt;= b for a, b in zip(out, out[1:]))      # invariant: ordered
-      assert Counter(out) == Counter(xs)                    # invariant: same elements
+  <span class="bi">@given</span>(st.<span class="fn">lists</span>(st.<span class="fn">integers</span>()))
+  <span class="kw">def</span> <span class="fn">test_sort_is_ordered_and_a_permutation</span>(xs):
+      out = <span class="fn">my_sort</span>(xs)
+      <span class="kw">assert</span> <span class="bi">all</span>(a &lt;= b <span class="kw">for</span> a, b <span class="kw">in</span> <span class="bi">zip</span>(out, out[<span class="nu">1</span>:]))      <span class="cm"># invariant: ordered</span>
+      <span class="kw">assert</span> <span class="fn">Counter</span>(out) == <span class="fn">Counter</span>(xs)                    <span class="cm"># invariant: same elements</span>
   
-  @given(st.dictionaries(st.text(), st.integers()))
-  def test_json_round_trip(d):
-      import json
-      assert json.loads(json.dumps(d)) == d                 # round trip
+  <span class="bi">@given</span>(st.<span class="fn">dictionaries</span>(st.<span class="fn">text</span>(), st.<span class="fn">integers</span>()))
+  <span class="kw">def</span> <span class="fn">test_json_round_trip</span>(d):
+      <span class="kw">import</span> json
+      <span class="kw">assert</span> json.<span class="fn">loads</span>(json.<span class="fn">dumps</span>(d)) == d                 <span class="cm"># round trip</span>
   
-  @given(st.text())
-  def test_slugify_is_idempotent(s):
-      assert slugify(slugify(s)) == slugify(s)</code></pre>
+  <span class="bi">@given</span>(st.<span class="fn">text</span>())
+  <span class="kw">def</span> <span class="fn">test_slugify_is_idempotent</span>(s):
+      <span class="kw">assert</span> <span class="fn">slugify</span>(<span class="fn">slugify</span>(s)) == <span class="fn">slugify</span>(s)</code></pre>
   <span class="lang">python</span>
-  <pre class="code"><code># A flaky test and its fix
-  import time
+  <pre class="code"><code><span class="cm"># A flaky test and its fix</span>
+  <span class="kw">import</span> time
   
-  def test_cache_expires_FLAKY():
-      cache.set("k", 1, ttl=1)
-      time.sleep(1)                        # sometimes 0.999 s elapses → still cached → fails
-      assert cache.get("k") is None
+  <span class="kw">def</span> <span class="fn">test_cache_expires_FLAKY</span>():
+      cache.<span class="bi">set</span>(<span class="st">"k"</span>, <span class="nu">1</span>, ttl=<span class="nu">1</span>)
+      time.<span class="fn">sleep</span>(<span class="nu">1</span>)                        <span class="cm"># sometimes 0.999 s elapses → still cached → fails</span>
+      <span class="kw">assert</span> cache.<span class="fn">get</span>(<span class="st">"k"</span>) <span class="kw">is</span> <span class="kw">None</span>
   
-  def test_cache_expires(fake_clock):      # deterministic
-      cache = Cache(clock=fake_clock)
-      cache.set("k", 1, ttl=1)
-      fake_clock.advance(seconds=1.001)
-      assert cache.get("k") is None</code></pre>
+  <span class="kw">def</span> <span class="fn">test_cache_expires</span>(fake_clock):      <span class="cm"># deterministic</span>
+      cache = <span class="fn">Cache</span>(clock=fake_clock)
+      cache.<span class="bi">set</span>(<span class="st">"k"</span>, <span class="nu">1</span>, ttl=<span class="nu">1</span>)
+      fake_clock.<span class="fn">advance</span>(seconds=<span class="nu">1.001</span>)
+      <span class="kw">assert</span> cache.<span class="fn">get</span>(<span class="st">"k"</span>) <span class="kw">is</span> <span class="kw">None</span></code></pre>
   <span class="lang">ini</span>
-  <pre class="code"><code># pytest.ini — markers keep the levels separate
-  [pytest]
-  markers =
+  <pre class="code"><code><span class="cm"># pytest.ini — markers keep the levels separate</span>
+<span class="kw">  [pytest]</span>
+<span class="bi">  markers</span> =
       integration: needs containers
       e2e: full stack, slow
-  addopts = -p randomly --strict-markers
-  # PR:      pytest -m "not e2e"          (unit + integration, &lt; 3 min)
-  # nightly: pytest -m e2e</code></pre>
+<span class="bi">  addopts</span> = -p randomly --strict-markers
+  <span class="cm"># PR:      pytest -m "not e2e"          (unit + integration, &lt; 3 min)</span>
+  <span class="cm"># nightly: pytest -m e2e</span></code></pre>
   <h2>Exercises</h2>
   <ol style="list-style:none;padding-left:0">
     <li>1. Write a property-based test for a sorting invariant.

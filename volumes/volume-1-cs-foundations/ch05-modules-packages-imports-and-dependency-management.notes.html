@@ -252,36 +252,36 @@ a{color:var(--ink);text-decoration:underline dotted}
 <p>Fix it by moving shared code into a third module, importing inside the function that needs it, or depending on an interface instead.</p>
 <h2>Example</h2>
 <span class="lang">python</span>
-<pre class="code"><code>import numpy as np                     # module import with an alias
-from pathlib import Path               # import one name
-from textkit.stats import word_count   # import from your own package
+<pre class="code"><code><span class="kw">import</span> numpy <span class="kw">as</span> np                     <span class="cm"># module import with an alias</span>
+<span class="kw">from</span> pathlib <span class="kw">import</span> Path               <span class="cm"># import one name</span>
+<span class="kw">from</span> textkit.stats <span class="kw">import</span> word_count   <span class="cm"># import from your own package</span>
 
-import sys
-print(sys.path[:3])                    # where Python looks
-print(np.__file__)                     # where it actually found numpy</code></pre>
+<span class="kw">import</span> sys
+<span class="bi">print</span>(sys.path[:<span class="nu">3</span>])                    <span class="cm"># where Python looks</span>
+<span class="bi">print</span>(np.__file__)                     <span class="cm"># where it actually found numpy</span></code></pre>
 <span class="lang">toml</span>
-<pre class="code"><code># pyproject.toml
-[project]
-name = "textkit"
-version = "0.1.0"
-requires-python = "&gt;=3.11"
-dependencies = [
-  "requests~=2.31",      # &gt;=2.31, &lt;3.0
-  "rich&gt;=13,&lt;14",
+<pre class="code"><code><span class="cm"># pyproject.toml</span>
+<span class="kw">[project]</span>
+<span class="bi">name</span> = <span class="st">"textkit"</span>
+<span class="bi">version</span> = <span class="st">"0.1.0"</span>
+<span class="bi">requires-python</span> = <span class="st">"&gt;=3.11"</span>
+<span class="bi">dependencies</span> = [
+  <span class="st">"requests~=2.31"</span>,      <span class="cm"># &gt;=2.31, &lt;3.0</span>
+  <span class="st">"rich&gt;=13,&lt;14"</span>,
 ]
 
-[build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"</code></pre>
+<span class="kw">[build-system]</span>
+<span class="bi">requires</span> = [<span class="st">"hatchling"</span>]
+<span class="bi">build-backend</span> = <span class="st">"hatchling.build"</span></code></pre>
 <span class="lang">bash</span>
-<pre class="code"><code>pip install -e .          # editable install: imports point at your source folder
-uv lock                   # resolve and write uv.lock
-uv sync                   # install exactly what the lockfile says</code></pre>
+<pre class="code"><code><span class="bi">pip</span> install -e .          <span class="cm"># editable install: imports point at your source folder</span>
+uv lock                   <span class="cm"># resolve and write uv.lock</span>
+uv sync                   <span class="cm"># install exactly what the lockfile says</span></code></pre>
 <span class="lang">toml</span>
-<pre class="code"><code># Cargo.toml
-[dependencies]
-serde = { version = "1.0", features = ["derive"] }   # means ^1.0
-tokio = "=1.38.0"                                    # exact pin</code></pre>
+<pre class="code"><code><span class="cm"># Cargo.toml</span>
+<span class="kw">[dependencies]</span>
+<span class="bi">serde</span> = { version = <span class="st">"1.0"</span>, features = [<span class="st">"derive"</span>] }   <span class="cm"># means ^1.0</span>
+<span class="bi">tokio</span> = <span class="st">"=1.38.0"</span>                                    <span class="cm"># exact pin</span></code></pre>
 <div class="pagebreak">~ page 3 ~</div>
 <h2>Exercises</h2>
 <ol style="list-style:none;padding-left:0">

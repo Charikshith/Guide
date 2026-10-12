@@ -236,56 +236,56 @@ a{color:var(--ink);text-decoration:underline dotted}
 <div class="pagebreak">~ page 3 ~</div>
 <h2>Example</h2>
 <span class="lang">sql</span>
-<pre class="code"><code>-- Pool model with Row-Level Security (PostgreSQL)
-CREATE TABLE invoices (
-  tenant_id   text   NOT NULL,
-  id          bigint GENERATED ALWAYS AS IDENTITY,
-  customer    text   NOT NULL,
-  total_cents int    NOT NULL,
-  PRIMARY KEY (tenant_id, id)                       -- the tenant is part of every key
+<pre class="code"><code><span class="cm">-- Pool model with Row-Level Security (PostgreSQL)</span>
+<span class="kw">CREATE</span> <span class="kw">TABLE</span> invoices (
+  tenant_id   <span class="bi">text</span>   <span class="kw">NOT</span> <span class="kw">NULL</span>,
+  id          <span class="bi">bigint</span> GENERATED ALWAYS <span class="kw">AS</span> IDENTITY,
+  customer    <span class="bi">text</span>   <span class="kw">NOT</span> <span class="kw">NULL</span>,
+  total_cents <span class="bi">int</span>    <span class="kw">NOT</span> <span class="kw">NULL</span>,
+  <span class="kw">PRIMARY</span> <span class="kw">KEY</span> (tenant_id, id)                       <span class="cm">-- the tenant is part of every key</span>
 );
-CREATE INDEX ON invoices (tenant_id, customer);
+<span class="kw">CREATE</span> <span class="kw">INDEX</span> <span class="kw">ON</span> invoices (tenant_id, customer);
 
-ALTER TABLE invoices ENABLE ROW LEVEL SECURITY;
-ALTER TABLE invoices FORCE ROW LEVEL SECURITY;      -- applies even to the table owner
-CREATE POLICY tenant_isolation ON invoices
-  USING (tenant_id = current_setting('app.tenant_id'))
-  WITH CHECK (tenant_id = current_setting('app.tenant_id'));
+<span class="kw">ALTER</span> <span class="kw">TABLE</span> invoices ENABLE ROW LEVEL SECURITY;
+<span class="kw">ALTER</span> <span class="kw">TABLE</span> invoices FORCE ROW LEVEL SECURITY;      <span class="cm">-- applies even to the table owner</span>
+<span class="kw">CREATE</span> POLICY tenant_isolation <span class="kw">ON</span> invoices
+  <span class="kw">USING</span> (tenant_id = current_setting(<span class="st">'app.tenant_id'</span>))
+  <span class="kw">WITH</span> <span class="kw">CHECK</span> (tenant_id = current_setting(<span class="st">'app.tenant_id'</span>));
 
--- The app role is NOT a superuser and does NOT have BYPASSRLS
--- Per request / transaction:
-BEGIN;
-SET LOCAL app.tenant_id = 'acme';
-SELECT * FROM invoices;                              -- returns only acme's rows
-INSERT INTO invoices (tenant_id, customer, total_cents) VALUES ('globex', 'x', 1);
--- ERROR: new row violates row-level security policy
-COMMIT;</code></pre>
+<span class="cm">-- The app role is NOT a superuser and does NOT have BYPASSRLS</span>
+<span class="cm">-- Per request / transaction:</span>
+<span class="kw">BEGIN</span>;
+<span class="kw">SET</span> LOCAL app.tenant_id = <span class="st">'acme'</span>;
+<span class="kw">SELECT</span> * <span class="kw">FROM</span> invoices;                              <span class="cm">-- returns only acme's rows</span>
+<span class="kw">INSERT</span> <span class="kw">INTO</span> invoices (tenant_id, customer, total_cents) <span class="kw">VALUES</span> (<span class="st">'globex'</span>, <span class="st">'x'</span>, <span class="nu">1</span>);
+<span class="cm">-- ERROR: new row violates row-level security policy</span>
+<span class="kw">COMMIT</span>;</code></pre>
 <span class="lang">python</span>
-<pre class="code"><code># Tenant context set once per request; every repository call uses it
-import contextvars
-current_tenant = contextvars.ContextVar("tenant")
+<pre class="code"><code><span class="cm"># Tenant context set once per request; every repository call uses it</span>
+<span class="kw">import</span> contextvars
+current_tenant = contextvars.<span class="fn">ContextVar</span>(<span class="st">"tenant"</span>)
 
-@app.middleware("http")
-async def tenant_middleware(request, call_next):
-    claims = verify_jwt(request.headers["authorization"])
-    token = current_tenant.set(claims["tenant_id"])          # from the token, not the URL
-    try:
-        return await call_next(request)
-    finally:
-        current_tenant.reset(token)
+<span class="bi">@app.middleware</span>(<span class="st">"http"</span>)
+<span class="kw">async</span> <span class="kw">def</span> <span class="fn">tenant_middleware</span>(request, call_next):
+    claims = <span class="fn">verify_jwt</span>(request.headers[<span class="st">"authorization"</span>])
+    token = current_tenant.<span class="bi">set</span>(claims[<span class="st">"tenant_id"</span>])          <span class="cm"># from the token, not the URL</span>
+    <span class="kw">try</span>:
+        <span class="kw">return</span> <span class="kw">await</span> <span class="fn">call_next</span>(request)
+    <span class="kw">finally</span>:
+        current_tenant.<span class="fn">reset</span>(token)
 
-def db_session():
-    conn = pool.getconn()
-    conn.execute("SET app.tenant_id = %s", (current_tenant.get(),))   # RLS backstop
-    return conn
+<span class="kw">def</span> <span class="fn">db_session</span>():
+    conn = pool.<span class="fn">getconn</span>()
+    conn.<span class="fn">execute</span>(<span class="st">"SET app.tenant_id = %s"</span>, (current_tenant.<span class="fn">get</span>(),))   <span class="cm"># RLS backstop</span>
+    <span class="kw">return</span> conn
 
-def cache_key(*parts):                                         # tenants never share cache entries
-    return ":".join(["t", current_tenant.get(), *map(str, parts)])</code></pre>
+<span class="kw">def</span> <span class="fn">cache_key</span>(*parts):                                         <span class="cm"># tenants never share cache entries</span>
+    <span class="kw">return</span> <span class="st">":"</span>.<span class="fn">join</span>([<span class="st">"t"</span>, current_tenant.<span class="fn">get</span>(), *<span class="bi">map</span>(<span class="bi">str</span>, parts)])</code></pre>
 <span class="lang">python</span>
-<pre class="code"><code># A cross-tenant test: run it against EVERY endpoint that takes an ID
-def test_no_cross_tenant_reads(client, acme_token, globex_invoice_id):
-    r = client.get(f"/invoices/{globex_invoice_id}", headers={"Authorization": acme_token})
-    assert r.status_code == 404</code></pre>
+<pre class="code"><code><span class="cm"># A cross-tenant test: run it against EVERY endpoint that takes an ID</span>
+<span class="kw">def</span> <span class="fn">test_no_cross_tenant_reads</span>(client, acme_token, globex_invoice_id):
+    r = client.<span class="fn">get</span>(<span class="st">f"/invoices/{globex_invoice_id}"</span>, headers={<span class="st">"Authorization"</span>: acme_token})
+    <span class="kw">assert</span> r.status_code == <span class="nu">404</span></code></pre>
 <h2>Exercises</h2>
 <ol class="num">
 <li><span class="n">1.</span>Implement tenant isolation with RLS.

@@ -288,46 +288,46 @@ a{color:var(--ink);text-decoration:underline dotted}
 <div class="pagebreak">~ page 3 ~</div>
 <h2>Example</h2>
 <span class="lang">bash</span>
-<pre class="code"><code>ps -eo pid,ppid,stat,cmd | head      # STAT: R running, S sleeping, Z zombie, T stopped
-pgrep -f "python app.py"
-kill -TERM "$PID"                    # polite
-kill -KILL "$PID"                    # last resort
-systemctl restart app
-systemctl status app
-journalctl -u app -f --since "10 min ago"</code></pre>
+<pre class="code"><code><span class="bi">ps</span> -eo pid,ppid,stat,cmd | <span class="bi">head</span>      <span class="cm"># STAT: R running, S sleeping, Z zombie, T stopped</span>
+pgrep -f <span class="st">"python app.py"</span>
+<span class="bi">kill</span> -TERM <span class="st">"$PID"</span>                    <span class="cm"># polite</span>
+<span class="bi">kill</span> -KILL <span class="st">"$PID"</span>                    <span class="cm"># last resort</span>
+<span class="bi">systemctl</span> restart app
+<span class="bi">systemctl</span> status app
+<span class="bi">journalctl</span> -u app -f --since <span class="st">"10 min ago"</span></code></pre>
 <span class="lang">bash</span>
-<pre class="code"><code>#!/usr/bin/env bash
-# Trap SIGTERM/SIGINT to clean up
-set -euo pipefail
+<pre class="code"><code><span class="cm">#!/usr/bin/env bash</span>
+<span class="cm"># Trap SIGTERM/SIGINT to clean up</span>
+<span class="kw">set</span> -euo pipefail
 tmp=$(mktemp -d)
-cleanup() { echo "cleaning $tmp"; rm -rf -- "$tmp"; }
-trap cleanup EXIT                    # runs on any exit
-trap 'echo "got SIGTERM"; exit 143' TERM
-echo "working in $tmp (PID $$)"
-sleep 1000 &amp; wait $!                 # wait is interruptible; a foreground sleep would delay the trap</code></pre>
+cleanup() { <span class="bi">echo</span> <span class="st">"cleaning $tmp"</span>; <span class="bi">rm</span> -rf -- <span class="st">"$tmp"</span>; }
+trap cleanup EXIT                    <span class="cm"># runs on any exit</span>
+trap <span class="st">'echo "got SIGTERM"; exit 143'</span> TERM
+<span class="bi">echo</span> <span class="st">"working in $tmp (PID $$)"</span>
+sleep <span class="nu">1000</span> &amp; wait <span class="bi">$!</span>                 <span class="cm"># wait is interruptible; a foreground sleep would delay the trap</span></code></pre>
 <span class="lang">ini</span>
-<pre class="code"><code># /etc/systemd/system/app.service
-[Unit]
-Description=Order API
-After=network-online.target
-Wants=network-online.target
+<pre class="code"><code><span class="cm"># /etc/systemd/system/app.service</span>
+<span class="kw">[Unit]</span>
+<span class="bi">Description</span>=Order API
+<span class="bi">After</span>=network-online.target
+<span class="bi">Wants</span>=network-online.target
 
-[Service]
-User=app
-WorkingDirectory=/opt/app
-ExecStart=/opt/app/.venv/bin/python -m app
-Restart=on-failure
-RestartSec=2
-TimeoutStopSec=30
-Environment=PORT=8080
-EnvironmentFile=-/etc/app/env
+<span class="kw">[Service]</span>
+<span class="bi">User</span>=app
+<span class="bi">WorkingDirectory</span>=/opt/app
+<span class="bi">ExecStart</span>=/opt/app/.venv/bin/python -m app
+<span class="bi">Restart</span>=on-failure
+<span class="bi">RestartSec</span>=<span class="nu">2</span>
+<span class="bi">TimeoutStopSec</span>=<span class="nu">30</span>
+<span class="bi">Environment</span>=PORT=<span class="nu">8080</span>
+<span class="bi">EnvironmentFile</span>=-/etc/app/env
 
-[Install]
-WantedBy=multi-user.target</code></pre>
+<span class="kw">[Install]</span>
+<span class="bi">WantedBy</span>=multi-user.target</code></pre>
 <span class="lang">bash</span>
-<pre class="code"><code>sudo systemctl daemon-reload &amp;&amp; sudo systemctl enable --now app
-ssh -i ~/.ssh/id_ed25519 alice@server 'journalctl -u app -n 50'
-ssh -L 5432:localhost:5432 alice@db-host      # tunnel: local 5432 → the server's 5432</code></pre>
+<pre class="code"><code><span class="bi">sudo</span> <span class="bi">systemctl</span> daemon-reload &amp;&amp; <span class="bi">sudo</span> <span class="bi">systemctl</span> enable --now app
+<span class="bi">ssh</span> -i ~/.<span class="bi">ssh</span>/id_ed25519 alice@server <span class="st">'journalctl -u app -n 50'</span>
+<span class="bi">ssh</span> -L <span class="nu">5432</span>:localhost:<span class="nu">5432</span> alice@db-host      <span class="cm"># tunnel: local 5432 → the server's 5432</span></code></pre>
 <h2>Exercises</h2>
 <ol style="list-style:none;padding-left:0">
 <li><p>1. Trap SIGTERM in a script to clean up gracefully.</p>

@@ -239,51 +239,51 @@ a{color:var(--ink);text-decoration:underline dotted}
   <div class="pagebreak">~ page 2 ~</div>
   <h2>Example</h2>
   <span class="lang">python</span>
-<pre class="code"><code>import threading
+<pre class="code"><code><span class="kw">import</span> threading
 
-class Account:
-    _ids = iter(range(10**9))
-    def __init__(self, balance):
-        self.id = next(Account._ids)
-        self.balance = balance
-        self.lock = threading.Lock()
+<span class="kw">class</span> Account:
+    _ids = <span class="bi">iter</span>(<span class="bi">range</span>(<span class="nu">10</span>**<span class="nu">9</span>))
+    <span class="kw">def</span> <span class="fn">__init__</span>(<span class="bi">self</span>, balance):
+        <span class="bi">self</span>.<span class="bi">id</span> = <span class="bi">next</span>(Account._ids)
+        <span class="bi">self</span>.balance = balance
+        <span class="bi">self</span>.lock = threading.<span class="fn">Lock</span>()
 
-def transfer_deadlocky(src, dst, amt):
-    with src.lock:                         # T1: A→B locks A then B
-        with dst.lock:                     # T2: B→A locks B then A → deadlock risk
+<span class="kw">def</span> <span class="fn">transfer_deadlocky</span>(src, dst, amt):
+    <span class="kw">with</span> src.lock:                         <span class="cm"># T1: A→B locks A then B</span>
+        <span class="kw">with</span> dst.lock:                     <span class="cm"># T2: B→A locks B then A → deadlock risk</span>
             src.balance -= amt; dst.balance += amt
 
-def transfer(src, dst, amt):
-    first, second = sorted((src, dst), key=lambda a: a.id)   # global lock order
-    with first.lock, second.lock:
+<span class="kw">def</span> <span class="fn">transfer</span>(src, dst, amt):
+    first, second = <span class="bi">sorted</span>((src, dst), key=<span class="kw">lambda</span> a: a.<span class="bi">id</span>)   <span class="cm"># global lock order</span>
+    <span class="kw">with</span> first.lock, second.lock:
         src.balance -= amt; dst.balance += amt
 
-a, b = Account(100), Account(100)
-ts = [threading.Thread(target=transfer, args=(a, b, 1)) for _ in range(500)] + \
-     [threading.Thread(target=transfer, args=(b, a, 1)) for _ in range(500)]
-for t in ts: t.start()
-for t in ts: t.join()
-print(a.balance, b.balance)                # 100 100, no deadlock
+a, b = <span class="fn">Account</span>(<span class="nu">100</span>), <span class="fn">Account</span>(<span class="nu">100</span>)
+ts = [threading.<span class="fn">Thread</span>(target=transfer, args=(a, b, <span class="nu">1</span>)) <span class="kw">for</span> _ <span class="kw">in</span> <span class="bi">range</span>(<span class="nu">500</span>)] + \
+     [threading.<span class="fn">Thread</span>(target=transfer, args=(b, a, <span class="nu">1</span>)) <span class="kw">for</span> _ <span class="kw">in</span> <span class="bi">range</span>(<span class="nu">500</span>)]
+<span class="kw">for</span> t <span class="kw">in</span> ts: t.<span class="fn">start</span>()
+<span class="kw">for</span> t <span class="kw">in</span> ts: t.<span class="fn">join</span>()
+<span class="bi">print</span>(a.balance, b.balance)                <span class="cm"># 100 100, no deadlock</span>
 </code></pre>
   <span class="lang">python</span>
-<pre class="code"><code># Producer–consumer with a condition variable
-import collections
-buf, cv, CAP = collections.deque(), threading.Condition(), 5
+<pre class="code"><code><span class="cm"># Producer–consumer with a condition variable</span>
+<span class="kw">import</span> collections
+buf, cv, CAP = collections.<span class="fn">deque</span>(), threading.<span class="fn">Condition</span>(), <span class="nu">5</span>
 
-def produce(x):
-    with cv:
-        cv.wait_for(lambda: len(buf) &lt; CAP)    # releases the lock while waiting
-        buf.append(x); cv.notify_all()
+<span class="kw">def</span> <span class="fn">produce</span>(x):
+    <span class="kw">with</span> cv:
+        cv.<span class="fn">wait_for</span>(<span class="kw">lambda</span>: <span class="bi">len</span>(buf) &lt; CAP)    <span class="cm"># releases the lock while waiting</span>
+        buf.<span class="fn">append</span>(x); cv.<span class="fn">notify_all</span>()
 
-def consume():
-    with cv:
-        cv.wait_for(lambda: buf)               # always wait on a predicate (spurious wakeups)
-        x = buf.popleft(); cv.notify_all()
-        return x
+<span class="kw">def</span> <span class="fn">consume</span>():
+    <span class="kw">with</span> cv:
+        cv.<span class="fn">wait_for</span>(<span class="kw">lambda</span>: buf)               <span class="cm"># always wait on a predicate (spurious wakeups)</span>
+        x = buf.<span class="fn">popleft</span>(); cv.<span class="fn">notify_all</span>()
+        <span class="kw">return</span> x
 
-sem = threading.BoundedSemaphore(3)            # at most 3 threads in a section
-with sem:
-    pass
+sem = threading.<span class="fn">BoundedSemaphore</span>(<span class="nu">3</span>)            <span class="cm"># at most 3 threads in a section</span>
+<span class="kw">with</span> sem:
+    <span class="kw">pass</span>
 </code></pre>
   <h2>Exercises</h2>
   <ol style="list-style:none;padding-left:0">

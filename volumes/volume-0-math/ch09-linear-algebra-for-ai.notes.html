@@ -269,37 +269,37 @@ a{color:var(--ink);text-decoration:underline dotted}
 
   <h2>Example</h2>
   <span class="lang">python</span>
-<pre class="code"><code>import numpy as np
-from numpy.linalg import norm
+<pre class="code"><code><span class="kw">import</span> numpy <span class="kw">as</span> np
+<span class="kw">from</span> numpy.linalg <span class="kw">import</span> norm
 
-a = np.array([1.0, 0.7])      # "dog"
-b = np.array([0.9, 0.8])      # "puppy"
-c = np.array([0.8, -0.9])     # "invoice"
+a = np.<span class="fn">array</span>([<span class="nu">1.0</span>, <span class="nu">0.7</span>])      <span class="cm"># "dog"</span>
+b = np.<span class="fn">array</span>([<span class="nu">0.9</span>, <span class="nu">0.8</span>])      <span class="cm"># "puppy"</span>
+c = np.<span class="fn">array</span>([<span class="nu">0.8</span>, -<span class="nu">0.9</span>])     <span class="cm"># "invoice"</span>
 
-cos = lambda u, v: (u @ v) / (norm(u) * norm(v))
-print(round(cos(a, b), 3), round(cos(a, c), 3))   # 0.993  0.116
+cos = <span class="kw">lambda</span> u, v: (u @ v) / (<span class="fn">norm</span>(u) * <span class="fn">norm</span>(v))
+<span class="bi">print</span>(<span class="bi">round</span>(<span class="fn">cos</span>(a, b), <span class="nu">3</span>), <span class="bi">round</span>(<span class="fn">cos</span>(a, c), <span class="nu">3</span>))   <span class="cm"># 0.993  0.116</span>
 
-# A matrix transforms vectors
-W = np.array([[2, 0], [0, 1]])
-print(W @ np.array([1, 1]))                        # [2 1]
+<span class="cm"># A matrix transforms vectors</span>
+W = np.<span class="fn">array</span>([[<span class="nu">2</span>, <span class="nu">0</span>], [<span class="nu">0</span>, <span class="nu">1</span>]])
+<span class="bi">print</span>(W @ np.<span class="fn">array</span>([<span class="nu">1</span>, <span class="nu">1</span>]))                        <span class="cm"># [2 1]</span>
 
-# Eigenvectors: directions W only stretches
-vals, vecs = np.linalg.eig(W)
-print(vals)                                        # [2. 1.]
+<span class="cm"># Eigenvectors: directions W only stretches</span>
+vals, vecs = np.linalg.<span class="fn">eig</span>(W)
+<span class="bi">print</span>(vals)                                        <span class="cm"># [2. 1.]</span>
 
-# Gradient descent on L = x² + y², gradient = (2x, 2y)
-p, lr = np.array([3.0, 2.0]), 0.2
-for _ in range(20):
-    p -= lr * 2 * p
-print(p.round(5))                                  # ≈ [0. 0.]</code></pre>
+<span class="cm"># Gradient descent on L = x² + y², gradient = (2x, 2y)</span>
+p, lr = np.<span class="fn">array</span>([<span class="nu">3.0</span>, <span class="nu">2.0</span>]), <span class="nu">0.2</span>
+<span class="kw">for</span> _ <span class="kw">in</span> <span class="bi">range</span>(<span class="nu">20</span>):
+    p -= lr * <span class="nu">2</span> * p
+<span class="bi">print</span>(p.<span class="bi">round</span>(<span class="nu">5</span>))                                  <span class="cm"># ≈ [0. 0.]</span></code></pre>
 
   <h3>The same gradient, computed automatically</h3>
   <span class="lang">python</span>
-<pre class="code"><code>import torch
-x = torch.tensor([3.0, 2.0], requires_grad=True)
-loss = (x ** 2).sum()
-loss.backward()
-print(x.grad)                                      # tensor([6., 4.]) = (2x, 2y)</code></pre>
+<pre class="code"><code><span class="kw">import</span> torch
+x = torch.<span class="fn">tensor</span>([<span class="nu">3.0</span>, <span class="nu">2.0</span>], requires_grad=<span class="kw">True</span>)
+loss = (x ** <span class="nu">2</span>).<span class="bi">sum</span>()
+loss.<span class="fn">backward</span>()
+<span class="bi">print</span>(x.grad)                                      <span class="cm"># tensor([6., 4.]) = (2x, 2y)</span></code></pre>
 
   <h2>Exercises</h2>
   <ol style="list-style:none;padding-left:0">

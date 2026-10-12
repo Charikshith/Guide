@@ -252,45 +252,45 @@ a{color:var(--ink);text-decoration:underline dotted}
 <div class="pagebreak">~ page 3 ~</div>
 <h2>Example</h2>
 <span class="lang">python</span>
-<pre class="code"><code>import math
-from decimal import Decimal
-from fractions import Fraction
+<pre class="code"><code><span class="kw">import</span> math
+<span class="kw">from</span> decimal <span class="kw">import</span> Decimal
+<span class="kw">from</span> fractions <span class="kw">import</span> Fraction
 
-print(0.1 + 0.2)                          # 0.30000000000000004
-print(0.1 + 0.2 == 0.3)                   # False
-print(math.isclose(0.1 + 0.2, 0.3))       # True
-t = 0.0
-for _ in range(10):
-    t += 0.1
-print(t, math.fsum([0.1] * 10))           # 0.9999999999999999 1.0
-# (built-in sum() compensates for this since Python 3.12)
-print(Decimal("0.1") + Decimal("0.2"))    # 0.3 — exact decimal
-print(Fraction(1, 10) + Fraction(2, 10))  # 3/10 — exact rational
-print(float("nan") == float("nan"))       # False
+<span class="bi">print</span>(<span class="nu">0.1</span> + <span class="nu">0.2</span>)                          <span class="cm"># 0.30000000000000004</span>
+<span class="bi">print</span>(<span class="nu">0.1</span> + <span class="nu">0.2</span> == <span class="nu">0.3</span>)                   <span class="cm"># False</span>
+<span class="bi">print</span>(math.<span class="fn">isclose</span>(<span class="nu">0.1</span> + <span class="nu">0.2</span>, <span class="nu">0.3</span>))       <span class="cm"># True</span>
+t = <span class="nu">0.0</span>
+<span class="kw">for</span> _ <span class="kw">in</span> <span class="bi">range</span>(<span class="nu">10</span>):
+    t += <span class="nu">0.1</span>
+<span class="bi">print</span>(t, math.<span class="fn">fsum</span>([<span class="nu">0.1</span>] * <span class="nu">10</span>))           <span class="cm"># 0.9999999999999999 1.0</span>
+<span class="cm"># (built-in sum() compensates for this since Python 3.12)</span>
+<span class="bi">print</span>(<span class="fn">Decimal</span>(<span class="st">"0.1"</span>) + <span class="fn">Decimal</span>(<span class="st">"0.2"</span>))    <span class="cm"># 0.3 — exact decimal</span>
+<span class="bi">print</span>(<span class="fn">Fraction</span>(<span class="nu">1</span>, <span class="nu">10</span>) + <span class="fn">Fraction</span>(<span class="nu">2</span>, <span class="nu">10</span>))  <span class="cm"># 3/10 — exact rational</span>
+<span class="bi">print</span>(<span class="bi">float</span>(<span class="st">"nan"</span>) == <span class="bi">float</span>(<span class="st">"nan"</span>))       <span class="cm"># False</span>
 
-import numpy as np
-print(np.array([2**31 - 1], dtype=np.int32) + 1)   # [-2147483648] — silent wrap</code></pre>
+<span class="kw">import</span> numpy <span class="kw">as</span> np
+<span class="bi">print</span>(np.<span class="fn">array</span>([<span class="nu">2</span>**<span class="nu">31</span> - <span class="nu">1</span>], dtype=np.int32) + <span class="nu">1</span>)   <span class="cm"># [-2147483648] — silent wrap</span></code></pre>
 <span class="lang">rust</span>
-<pre class="code"><code>fn main() {
-    let x: i32 = i32::MAX;
-    println!("{:?}", x.checked_add(1));    // None
-    println!("{}", x.wrapping_add(1));     // -2147483648
-    println!("{:?}", x.overflowing_add(1)); // (-2147483648, true)
-    println!("{}", x.saturating_add(1));   // 2147483647
-    // x + 1 panics in a debug build: "attempt to add with overflow"
+<pre class="code"><code><span class="kw">fn</span> <span class="fn">main</span>() {
+    <span class="kw">let</span> x: <span class="bi">i32</span> = <span class="bi">i32</span>::MAX;
+    <span class="fn">println!</span>(<span class="st">"{:?}"</span>, x.<span class="fn">checked_add</span>(<span class="nu">1</span>));    <span class="cm">// None</span>
+    <span class="fn">println!</span>(<span class="st">"{}"</span>, x.<span class="fn">wrapping_add</span>(<span class="nu">1</span>));     <span class="cm">// -2147483648</span>
+    <span class="fn">println!</span>(<span class="st">"{:?}"</span>, x.<span class="fn">overflowing_add</span>(<span class="nu">1</span>)); <span class="cm">// (-2147483648, true)</span>
+    <span class="fn">println!</span>(<span class="st">"{}"</span>, x.<span class="fn">saturating_add</span>(<span class="nu">1</span>));   <span class="cm">// 2147483647</span>
+    <span class="cm">// x + 1 panics in a debug build: "attempt to add with overflow"</span>
 }</code></pre>
 <span class="lang">python</span>
-<pre class="code"><code>from datetime import datetime, timedelta
-from zoneinfo import ZoneInfo
+<pre class="code"><code><span class="kw">from</span> datetime <span class="kw">import</span> datetime, timedelta
+<span class="kw">from</span> zoneinfo <span class="kw">import</span> ZoneInfo
 
-ny = ZoneInfo("America/New_York")
-start = datetime(2024, 3, 9, 12, 0, tzinfo=ny)      # Saturday noon, EST
-end = datetime(2024, 3, 10, 12, 0, tzinfo=ny)       # Sunday noon, EDT
+ny = <span class="fn">ZoneInfo</span>(<span class="st">"America/New_York"</span>)
+start = <span class="fn">datetime</span>(<span class="nu">2024</span>, <span class="nu">3</span>, <span class="nu">9</span>, <span class="nu">12</span>, <span class="nu">0</span>, tzinfo=ny)      <span class="cm"># Saturday noon, EST</span>
+end = <span class="fn">datetime</span>(<span class="nu">2024</span>, <span class="nu">3</span>, <span class="nu">10</span>, <span class="nu">12</span>, <span class="nu">0</span>, tzinfo=ny)       <span class="cm"># Sunday noon, EDT</span>
 
-utc = ZoneInfo("UTC")
-print(end - start)                                  # 1 day, 0:00:00 — WRONG: same tzinfo → wall-clock math
-print(end.astimezone(utc) - start.astimezone(utc))  # 23:00:00 — the real elapsed time
-print(start + timedelta(days=1))                    # 2024-03-10 12:00-04:00 (wall-clock arithmetic)</code></pre>
+utc = <span class="fn">ZoneInfo</span>(<span class="st">"UTC"</span>)
+<span class="bi">print</span>(end - start)                                  <span class="cm"># 1 day, 0:00:00 — WRONG: same tzinfo → wall-clock math</span>
+<span class="bi">print</span>(end.<span class="fn">astimezone</span>(utc) - start.<span class="fn">astimezone</span>(utc))  <span class="cm"># 23:00:00 — the real elapsed time</span>
+<span class="bi">print</span>(start + <span class="fn">timedelta</span>(days=<span class="nu">1</span>))                    <span class="cm"># 2024-03-10 12:00-04:00 (wall-clock arithmetic)</span></code></pre>
 <h2>Exercises</h2>
 <ol style="list-style:none;padding-left:0">
 <li><p>1. Find a floating-point comparison bug and fix it with epsilon.</p>

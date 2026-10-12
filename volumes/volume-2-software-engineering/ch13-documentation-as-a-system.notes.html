@@ -301,27 +301,27 @@ a{color:var(--ink);text-decoration:underline dotted}
 
   <h2>Example</h2>
   <span class="lang">yaml</span>
-<pre class="code"><code># mkdocs.yml — Diátaxis layout + generated reference
-site_name: Acme Orders
-theme: { name: material, features: [navigation.sections, search.suggest] }
-plugins:
+<pre class="code"><code><span class="cm"># mkdocs.yml — Diátaxis layout + generated reference</span>
+<span class="bi">site_name</span>: Acme Orders
+<span class="bi">theme</span>: { name: material, features: [navigation.sections, search.suggest] }
+<span class="bi">plugins</span>:
   - search
-  - mkdocstrings: { handlers: { python: { paths: [src] } } }
-nav:
-  - Tutorials:
+<span class="bi">  - mkdocstrings</span>: { handlers: { python: { paths: [src] } } }
+<span class="bi">nav</span>:
+<span class="bi">  - Tutorials</span>:
       - Your first order: tutorials/first-order.md
-  - How-to:
+<span class="bi">  - How-to</span>:
       - Rotate DB credentials: how-to/rotate-db-credentials.md
       - Replay a projection: how-to/replay-projection.md
-  - Reference:
-      - Python API: reference/api.md        # contains only ":::acme.orders" → generated
-      - HTTP API: reference/openapi.md      # rendered from openapi.json
-      - Configuration: reference/config.md  # generated from the settings schema
-  - Explanation:
-      - Architecture: explanation/architecture.md
+<span class="bi">  - Reference</span>:
+      - Python API: reference/api.md        <span class="cm"># contains only ":::acme.orders" → generated</span>
+      - HTTP API: reference/openapi.md      <span class="cm"># rendered from openapi.json</span>
+<span class="bi">      - Configuration</span>: reference/config.md  <span class="cm"># generated from the settings schema</span>
+<span class="bi">  - Explanation</span>:
+<span class="bi">      - Architecture</span>: explanation/architecture.md
       - Decisions (ADRs): explanation/adr/index.md
-  - Operations:
-      - Runbooks: runbooks/orders.md</code></pre>
+<span class="bi">  - Operations</span>:
+<span class="bi">      - Runbooks</span>: runbooks/orders.md</code></pre>
 
   <span class="lang">markdown</span>
 <pre class="code"><code>&lt;!-- runbooks/orders.md --&gt;
@@ -348,13 +348,13 @@ nav:
 Open an incident doc; link it here under *Past incidents*.</code></pre>
 
   <span class="lang">yaml</span>
-<pre class="code"><code># The alert links to the runbook
-- alert: HighCheckoutErrorRate
-  expr: sum(rate(http_requests_total{route="/checkout",status=~"5.."}[5m])) / sum(rate(http_requests_total{route="/checkout"}[5m])) &gt; 0.02
-  for: 5m
-  labels: { severity: page }
-  annotations:
-    runbook_url: https://docs.acme.dev/runbooks/orders/#highcheckouterrorrate</code></pre>
+<pre class="code"><code><span class="cm"># The alert links to the runbook</span>
+<span class="bi">- alert</span>: HighCheckoutErrorRate
+<span class="bi">  expr</span>: sum(rate(http_requests_total{route=<span class="st">"/checkout"</span>,status=~<span class="st">"5.."</span>}[<span class="nu">5m</span>])) / sum(rate(http_requests_total{route=<span class="st">"/checkout"</span>}[<span class="nu">5m</span>])) &gt; <span class="nu">0.02</span>
+<span class="bi">  for</span>: <span class="nu">5m</span>
+<span class="bi">  labels</span>: { severity: page }
+<span class="bi">  annotations</span>:
+<span class="bi">    runbook_url</span>: https://docs.acme.dev/runbooks/orders/#highcheckouterrorrate</code></pre>
 
   <h2>Exercises</h2>
   <ol style="list-style:none;padding-left:0">

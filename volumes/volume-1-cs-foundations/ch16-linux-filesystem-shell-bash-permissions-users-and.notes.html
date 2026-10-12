@@ -266,29 +266,29 @@ a{color:var(--ink);text-decoration:underline dotted}
 <div class="pagebreak">~ page 3 ~</div>
 <h2>Example</h2>
 <span class="lang">bash</span>
-<pre class="code"><code>chmod 750 script.sh            # rwx for owner, r-x for group, nothing for others
-chmod u+x,g-w file             # symbolic form
-chown alice:devs script.sh     # change owner and group
-ls -l script.sh
-id                             # uid=1000(alice) gid=1000(alice) groups=1000(alice),27(sudo),1001(devs)
-sudo usermod -aG devs bob      # add bob to devs (-a: append, don't replace groups)
-umask                          # 0022 → new files 644, new dirs 755</code></pre>
+<pre class="code"><code><span class="bi">chmod</span> <span class="nu">750</span> script.sh            <span class="cm"># rwx for owner, r-x for group, nothing for others</span>
+<span class="bi">chmod</span> u+x,g-w file             <span class="cm"># symbolic form</span>
+<span class="bi">chown</span> alice:devs script.sh     <span class="cm"># change owner and group</span>
+<span class="bi">ls</span> -l script.sh
+id                             <span class="cm"># uid=1000(alice) gid=1000(alice) groups=1000(alice),27(sudo),1001(devs)</span>
+<span class="bi">sudo</span> usermod -aG devs bob      <span class="cm"># add bob to devs (-a: append, don't replace groups)</span>
+umask                          <span class="cm"># 0022 → new files 644, new dirs 755</span></code></pre>
 <span class="lang">bash</span>
-<pre class="code"><code>#!/usr/bin/env bash
-set -euo pipefail
+<pre class="code"><code><span class="cm">#!/usr/bin/env bash</span>
+<span class="kw">set</span> -euo pipefail
 
-# Count lines in every .txt file (quoted, so spaces in names are safe)
-for f in *.txt; do
-    [[ -e "$f" ]] || continue            # no matches → the glob stays literal; skip it
-    printf '%6d  %s\n' "$(wc -l &lt; "$f")" "$f"
-done
+<span class="cm"># Count lines in every .txt file (quoted, so spaces in names are safe)</span>
+<span class="kw">for</span> f <span class="kw">in</span> *.txt; <span class="kw">do</span>
+    [[ -e <span class="st">"$f"</span> ]] || <span class="kw">continue</span>            <span class="cm"># no matches → the glob stays literal; skip it</span>
+    printf <span class="st">'%6d  %s\n'</span> <span class="st">"$(wc -l &lt; "</span><span class="bi">$f</span><span class="st">")"</span> <span class="st">"$f"</span>
+<span class="kw">done</span>
 
-# Functions, arguments, and exit codes
+<span class="cm"># Functions, arguments, and exit codes</span>
 backup() {
-    local src="$1" dest="$2"
-    cp -a -- "$src" "$dest" || { echo "copy failed: $src" &gt;&amp;2; return 1; }
+    <span class="kw">local</span> src=<span class="st">"$1"</span> dest=<span class="st">"$2"</span>
+    <span class="bi">cp</span> -a -- <span class="st">"$src"</span> <span class="st">"$dest"</span> || { <span class="bi">echo</span> <span class="st">"copy failed: $src"</span> &gt;&amp;<span class="nu">2</span>; <span class="kw">return</span> <span class="nu">1</span>; }
 }
-backup notes.txt /tmp/notes.bak &amp;&amp; echo "ok"</code></pre>
+backup notes.txt /tmp/notes.bak &amp;&amp; <span class="bi">echo</span> <span class="st">"ok"</span></code></pre>
 <h2>Exercises</h2>
 <ol style="list-style:none;padding-left:0">
 <li><p>1. Explain <code>chmod 750</code> in words.</p>
@@ -298,12 +298,12 @@ backup notes.txt /tmp/notes.bak &amp;&amp; echo "ok"</code></pre>
 <li><p>2. Write a Bash script that finds and deletes files older than 30 days.</p>
 <div class="box"><b>Solution</b>
 <span class="lang">bash</span>
-<pre class="code"><code>#!/usr/bin/env bash
-set -euo pipefail
-dir="${1:?usage: $0 DIR}"
-find "$dir" -type f -mtime +30 -print          # dry run first: look before deleting
-read -rp "Delete these? [y/N] " ok
-[[ "$ok" == "y" ]] &amp;&amp; find "$dir" -type f -mtime +30 -delete</code></pre>
+<pre class="code"><code><span class="cm">#!/usr/bin/env bash</span>
+<span class="kw">set</span> -euo pipefail
+dir=<span class="st">"${1:?usage: $0 DIR}"</span>
+<span class="bi">find</span> <span class="st">"$dir"</span> -type f -mtime +<span class="nu">30</span> -print          <span class="cm"># dry run first: look before deleting</span>
+read -rp <span class="st">"Delete these? [y/N] "</span> ok
+[[ <span class="st">"$ok"</span> == <span class="st">"y"</span> ]] &amp;&amp; <span class="bi">find</span> <span class="st">"$dir"</span> -type f -mtime +<span class="nu">30</span> -delete</code></pre>
 <p><code>${1:?…}</code> stops the script if no directory is given, so it never runs <code>find</code> on an empty path.</p>
 </div></li>
 <li><p>3. Why does <code>rm -rf $DIR/</code> with an unset <code>DIR</code> destroy a system, and how does <code>set -u</code> help?</p>

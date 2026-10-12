@@ -286,54 +286,54 @@ a{color:var(--ink);text-decoration:underline dotted}
 
   <h2>Example</h2>
   <span class="lang">python</span>
-<pre class="code"><code>import time
+<pre class="code"><code><span class="kw">import</span> time
 
-class TokenBucket:
-    def __init__(self, rate: float, capacity: int):
-        self.rate, self.capacity = rate, capacity
-        self.tokens, self.last = float(capacity), time.monotonic()
+<span class="kw">class</span> TokenBucket:
+    <span class="kw">def</span> <span class="fn">__init__</span>(<span class="bi">self</span>, rate: <span class="bi">float</span>, capacity: <span class="bi">int</span>):
+        <span class="bi">self</span>.rate, <span class="bi">self</span>.capacity = rate, capacity
+        <span class="bi">self</span>.tokens, <span class="bi">self</span>.last = <span class="bi">float</span>(capacity), time.<span class="fn">monotonic</span>()
 
-    def allow(self, cost: float = 1.0) -&gt; tuple[bool, float]:
-        now = time.monotonic()
-        self.tokens = min(self.capacity, self.tokens + (now - self.last) * self.rate)
-        self.last = now
-        if self.tokens &gt;= cost:
-            self.tokens -= cost
-            return True, 0.0
-        return False, (cost - self.tokens) / self.rate      # seconds until allowed → Retry-After
+    <span class="kw">def</span> <span class="fn">allow</span>(<span class="bi">self</span>, cost: <span class="bi">float</span> = <span class="nu">1.0</span>) -&gt; <span class="bi">tuple</span>[<span class="bi">bool</span>, <span class="bi">float</span>]:
+        now = time.<span class="fn">monotonic</span>()
+        <span class="bi">self</span>.tokens = <span class="bi">min</span>(<span class="bi">self</span>.capacity, <span class="bi">self</span>.tokens + (now - <span class="bi">self</span>.last) * <span class="bi">self</span>.rate)
+        <span class="bi">self</span>.last = now
+        <span class="kw">if</span> <span class="bi">self</span>.tokens &gt;= cost:
+            <span class="bi">self</span>.tokens -= cost
+            <span class="kw">return</span> <span class="kw">True</span>, <span class="nu">0.0</span>
+        <span class="kw">return</span> <span class="kw">False</span>, (cost - <span class="bi">self</span>.tokens) / <span class="bi">self</span>.rate      <span class="cm"># seconds until allowed → Retry-After</span>
 
-b = TokenBucket(rate=1, capacity=5)
-print([b.allow()[0] for _ in range(6)])    # [True, True, True, True, True, False]</code></pre>
+b = <span class="fn">TokenBucket</span>(rate=<span class="nu">1</span>, capacity=<span class="nu">5</span>)
+<span class="bi">print</span>([b.<span class="fn">allow</span>()[<span class="nu">0</span>] <span class="kw">for</span> _ <span class="kw">in</span> <span class="bi">range</span>(<span class="nu">6</span>)])    <span class="cm"># [True, True, True, True, True, False]</span></code></pre>
   <span class="lang">lua</span>
-<pre class="code"><code>-- Redis Lua token bucket: atomic across all gateway nodes
--- KEYS[1] = bucket key, ARGV = rate, capacity, now_ms, cost
-local rate, cap, now, cost = tonumber(ARGV[1]), tonumber(ARGV[2]), tonumber(ARGV[3]), tonumber(ARGV[4])
-local b = redis.call("HMGET", KEYS[1], "tokens", "ts")
-local tokens = tonumber(b[1]) or cap
-local ts = tonumber(b[2]) or now
-tokens = math.min(cap, tokens + (now - ts) / 1000 * rate)
-local allowed = tokens &gt;= cost
-if allowed then tokens = tokens - cost end
-redis.call("HSET", KEYS[1], "tokens", tokens, "ts", now)
-redis.call("PEXPIRE", KEYS[1], math.ceil(cap / rate * 1000))
-return { allowed and 1 or 0, tostring(tokens) }</code></pre>
+<pre class="code"><code><span class="cm">-- Redis Lua token bucket: atomic across all gateway nodes</span>
+<span class="cm">-- KEYS[1] = bucket key, ARGV = rate, capacity, now_ms, cost</span>
+<span class="kw">local</span> rate, cap, now, cost = <span class="fn">tonumber</span>(ARGV[<span class="nu">1</span>]), <span class="fn">tonumber</span>(ARGV[<span class="nu">2</span>]), <span class="fn">tonumber</span>(ARGV[<span class="nu">3</span>]), <span class="fn">tonumber</span>(ARGV[<span class="nu">4</span>])
+<span class="kw">local</span> b = redis.<span class="fn">call</span>(<span class="st">"HMGET"</span>, KEYS[<span class="nu">1</span>], <span class="st">"tokens"</span>, <span class="st">"ts"</span>)
+<span class="kw">local</span> tokens = <span class="fn">tonumber</span>(b[<span class="nu">1</span>]) <span class="kw">or</span> cap
+<span class="kw">local</span> ts = <span class="fn">tonumber</span>(b[<span class="nu">2</span>]) <span class="kw">or</span> now
+tokens = math.<span class="fn">min</span>(cap, tokens + (now - ts) / <span class="nu">1000</span> * rate)
+<span class="kw">local</span> allowed = tokens &gt;= cost
+<span class="kw">if</span> allowed <span class="kw">then</span> tokens = tokens - cost <span class="kw">end</span>
+redis.<span class="fn">call</span>(<span class="st">"HSET"</span>, KEYS[<span class="nu">1</span>], <span class="st">"tokens"</span>, tokens, <span class="st">"ts"</span>, now)
+redis.<span class="fn">call</span>(<span class="st">"PEXPIRE"</span>, KEYS[<span class="nu">1</span>], math.<span class="fn">ceil</span>(cap / rate * <span class="nu">1000</span>))
+<span class="kw">return</span> { allowed <span class="kw">and</span> <span class="nu">1</span> <span class="kw">or</span> <span class="nu">0</span>, <span class="fn">tostring</span>(tokens) }</code></pre>
   <span class="lang">python</span>
-<pre class="code"><code># Simple fixed window with INCR + EXPIRE (good enough for many APIs)
-def allow(r, key, limit=100, window=60):
-    k = f"rl:{key}:{int(time.time() // window)}"
-    n = r.incr(k)
-    if n == 1:
-        r.expire(k, window)
-    return n &lt;= limit</code></pre>
+<pre class="code"><code><span class="cm"># Simple fixed window with INCR + EXPIRE (good enough for many APIs)</span>
+<span class="kw">def</span> <span class="fn">allow</span>(r, key, limit=<span class="nu">100</span>, window=<span class="nu">60</span>):
+    k = <span class="st">f"rl:{key}:{int(time.time() // window)}"</span>
+    n = r.<span class="fn">incr</span>(k)
+    <span class="kw">if</span> n == <span class="nu">1</span>:
+        r.<span class="fn">expire</span>(k, window)
+    <span class="kw">return</span> n &lt;= limit</code></pre>
   <span class="lang">http</span>
-<pre class="code"><code>HTTP/1.1 429 Too Many Requests
-Retry-After: 12
-RateLimit-Limit: 100
-RateLimit-Remaining: 0
-RateLimit-Reset: 12
-Content-Type: application/json
+<pre class="code"><code><span class="bi">HTTP/1.1</span> <span class="nu">429</span> Too Many Requests
+<span class="bi">Retry-After</span>: <span class="nu">12</span>
+<span class="bi">RateLimit-Limit</span>: <span class="nu">100</span>
+<span class="bi">RateLimit-Remaining</span>: <span class="nu">0</span>
+<span class="bi">RateLimit-Reset</span>: <span class="nu">12</span>
+<span class="bi">Content-Type</span>: application/json
 
-{"error": "rate_limited", "message": "100 requests per minute. Retry in 12 s."}</code></pre>
+{<span class="st">"error"</span>: <span class="st">"rate_limited"</span>, <span class="st">"message"</span>: <span class="st">"100 requests per minute. Retry in 12 s."</span>}</code></pre>
 
   <h2>Exercises</h2>
   <ol style="list-style:none;padding-left:0">

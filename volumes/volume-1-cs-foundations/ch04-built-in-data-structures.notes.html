@@ -231,50 +231,50 @@ a{color:var(--ink);text-decoration:underline dotted}
    step 2: place  [X, A, B, C, D]</code></pre>
 <h2>Example</h2>
 <span class="lang">python</span>
-<pre class="code"><code>from collections import deque, defaultdict, Counter
-import heapq
+<pre class="code"><code><span class="kw">from</span> collections <span class="kw">import</span> deque, defaultdict, Counter
+<span class="kw">import</span> heapq
 
-d = {"a": 1}
-d["a"] += 1                                  # hashmap update: O(1)
-d.setdefault("b", 0)
+d = {<span class="st">"a"</span>: <span class="nu">1</span>}
+d[<span class="st">"a"</span>] += <span class="nu">1</span>                                  <span class="cm"># hashmap update: O(1)</span>
+d.<span class="fn">setdefault</span>(<span class="st">"b"</span>, <span class="nu">0</span>)
 
 stack = []
-stack.append(1); stack.append(2)
-print(stack.pop())                           # 2 — LIFO
+stack.<span class="fn">append</span>(<span class="nu">1</span>); stack.<span class="fn">append</span>(<span class="nu">2</span>)
+<span class="bi">print</span>(stack.<span class="fn">pop</span>())                           <span class="cm"># 2 — LIFO</span>
 
-q = deque()
-q.append("job1"); q.append("job2")
-print(q.popleft())                           # job1 — FIFO, O(1)
-# list.pop(0) would also work, but it is O(n)
+q = <span class="fn">deque</span>()
+q.<span class="fn">append</span>(<span class="st">"job1"</span>); q.<span class="fn">append</span>(<span class="st">"job2"</span>)
+<span class="bi">print</span>(q.<span class="fn">popleft</span>())                           <span class="cm"># job1 — FIFO, O(1)</span>
+<span class="cm"># list.pop(0) would also work, but it is O(n)</span>
 
-groups = defaultdict(list)
-for word in ["apple", "avocado", "banana"]:
-    groups[word[0]].append(word)
-print(dict(groups))                          # {'a': ['apple', 'avocado'], 'b': ['banana']}
+groups = <span class="fn">defaultdict</span>(<span class="bi">list</span>)
+<span class="kw">for</span> word <span class="kw">in</span> [<span class="st">"apple"</span>, <span class="st">"avocado"</span>, <span class="st">"banana"</span>]:
+    groups[word[<span class="nu">0</span>]].<span class="fn">append</span>(word)
+<span class="bi">print</span>(<span class="bi">dict</span>(groups))                          <span class="cm"># {'a': ['apple', 'avocado'], 'b': ['banana']}</span>
 
-print(Counter("mississippi").most_common(2)) # [('i', 4), ('s', 4)]
+<span class="bi">print</span>(<span class="fn">Counter</span>(<span class="st">"mississippi"</span>).<span class="fn">most_common</span>(<span class="nu">2</span>)) <span class="cm"># [('i', 4), ('s', 4)]</span>
 
 tasks = []
-heapq.heappush(tasks, (2, "write docs"))
-heapq.heappush(tasks, (1, "fix prod bug"))
-print(heapq.heappop(tasks))                  # (1, 'fix prod bug') — smallest first
+heapq.<span class="fn">heappush</span>(tasks, (<span class="nu">2</span>, <span class="st">"write docs"</span>))
+heapq.<span class="fn">heappush</span>(tasks, (<span class="nu">1</span>, <span class="st">"fix prod bug"</span>))
+<span class="bi">print</span>(heapq.<span class="fn">heappop</span>(tasks))                  <span class="cm"># (1, 'fix prod bug') — smallest first</span>
 
-point = (3, 4)                               # tuple: immutable, hashable
-seen = {point}                               # can be a set member or dict key</code></pre>
+point = (<span class="nu">3</span>, <span class="nu">4</span>)                               <span class="cm"># tuple: immutable, hashable</span>
+seen = {point}                               <span class="cm"># can be a set member or dict key</span></code></pre>
 <div class="pagebreak">~ page 3 ~</div>
 <h2>Exercises</h2>
 <ol style="list-style:none;padding-left:0">
 <li>1. Implement a stack using only a list.
 <div class="box"><b>Solution</b>
 <span class="lang">python</span>
-<pre class="code"><code>class Stack:
-    def __init__(self): self._items = []
-    def push(self, x): self._items.append(x)          # O(1) amortized
-    def pop(self):
-        if not self._items: raise IndexError("pop from empty stack")
-        return self._items.pop()                      # O(1)
-    def peek(self): return self._items[-1]
-    def __len__(self): return len(self._items)</code></pre>
+<pre class="code"><code><span class="kw">class</span> Stack:
+    <span class="kw">def</span> <span class="fn">__init__</span>(<span class="bi">self</span>): <span class="bi">self</span>._items = []
+    <span class="kw">def</span> <span class="fn">push</span>(<span class="bi">self</span>, x): <span class="bi">self</span>._items.<span class="fn">append</span>(x)          <span class="cm"># O(1) amortized</span>
+    <span class="kw">def</span> <span class="fn">pop</span>(<span class="bi">self</span>):
+        <span class="kw">if</span> <span class="kw">not</span> <span class="bi">self</span>._items: <span class="kw">raise</span> <span class="fn">IndexError</span>(<span class="st">"pop from empty stack"</span>)
+        <span class="kw">return</span> <span class="bi">self</span>._items.<span class="fn">pop</span>()                      <span class="cm"># O(1)</span>
+    <span class="kw">def</span> <span class="fn">peek</span>(<span class="bi">self</span>): <span class="kw">return</span> <span class="bi">self</span>._items[-<span class="nu">1</span>]
+    <span class="kw">def</span> <span class="fn">__len__</span>(<span class="bi">self</span>): <span class="kw">return</span> <span class="bi">len</span>(<span class="bi">self</span>._items)</code></pre>
 <p>Push and pop at the <i>end</i> of the list. The front would make them O(n).</p>
 </div></li>
 <li>2. Explain when to use a tuple over a list.

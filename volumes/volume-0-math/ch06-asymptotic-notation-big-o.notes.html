@@ -273,36 +273,36 @@ a{color:var(--ink);text-decoration:underline dotted}
 
   <h2>Example</h2>
   <span class="lang">python</span>
-<pre class="code"><code>def contains(xs, target):          # O(n): one pass, O(1) work each
-    for x in xs:
-        if x == target:
-            return True
-    return False
+<pre class="code"><code><span class="kw">def</span> <span class="fn">contains</span>(xs, target):          <span class="cm"># O(n): one pass, O(1) work each</span>
+    <span class="kw">for</span> x <span class="kw">in</span> xs:
+        <span class="kw">if</span> x == target:
+            <span class="kw">return</span> <span class="kw">True</span>
+    <span class="kw">return</span> <span class="kw">False</span>
 
-def has_duplicate(xs):             # O(n²): every pair
-    for i in range(len(xs)):
-        for j in range(i + 1, len(xs)):
-            if xs[i] == xs[j]:
-                return True
-    return False
+<span class="kw">def</span> <span class="fn">has_duplicate</span>(xs):             <span class="cm"># O(n²): every pair</span>
+    <span class="kw">for</span> i <span class="kw">in</span> <span class="bi">range</span>(<span class="bi">len</span>(xs)):
+        <span class="kw">for</span> j <span class="kw">in</span> <span class="bi">range</span>(i + <span class="nu">1</span>, <span class="bi">len</span>(xs)):
+            <span class="kw">if</span> xs[i] == xs[j]:
+                <span class="kw">return</span> <span class="kw">True</span>
+    <span class="kw">return</span> <span class="kw">False</span>
 
-def has_duplicate_fast(xs):        # O(n) expected: hash set
-    seen = set()
-    for x in xs:
-        if x in seen:
-            return True
-        seen.add(x)
-    return False
+<span class="kw">def</span> <span class="fn">has_duplicate_fast</span>(xs):        <span class="cm"># O(n) expected: hash set</span>
+    seen = <span class="bi">set</span>()
+    <span class="kw">for</span> x <span class="kw">in</span> xs:
+        <span class="kw">if</span> x <span class="kw">in</span> seen:
+            <span class="kw">return</span> <span class="kw">True</span>
+        seen.<span class="fn">add</span>(x)
+    <span class="kw">return</span> <span class="kw">False</span>
 
-def binary_search(xs, target):     # O(log n): halves the range each step
-    lo, hi = 0, len(xs)
-    while lo &lt; hi:
-        mid = (lo + hi) // 2
-        if xs[mid] &lt; target:
-            lo = mid + 1
-        else:
+<span class="kw">def</span> <span class="fn">binary_search</span>(xs, target):     <span class="cm"># O(log n): halves the range each step</span>
+    lo, hi = <span class="nu">0</span>, <span class="bi">len</span>(xs)
+    <span class="kw">while</span> lo &lt; hi:
+        mid = (lo + hi) // <span class="nu">2</span>
+        <span class="kw">if</span> xs[mid] &lt; target:
+            lo = mid + <span class="nu">1</span>
+        <span class="kw">else</span>:
             hi = mid
-    return lo &lt; len(xs) and xs[lo] == target</code></pre>
+    <span class="kw">return</span> lo &lt; <span class="bi">len</span>(xs) <span class="kw">and</span> xs[lo] == target</code></pre>
   <p><b>Counting the nested loop exactly:</b> the inner body runs <code>(n−1) + (n−2) + … + 1 = n(n−1)/2</code> times, which is <code>Θ(n²)</code>.</p>
 
   <h2>Exercises</h2>

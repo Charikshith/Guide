@@ -266,52 +266,52 @@ a{color:var(--ink);text-decoration:underline dotted}
 
   <h2>Example</h2>
   <span class="lang">bash</span>
-<pre class="code"><code># Rust
-cargo new cli &amp;&amp; cd cli
-cargo add serde --features derive      # edits Cargo.toml
-cargo build --release                  # target/release/cli
-cargo tree                             # show the dependency graph
+<pre class="code"><code><span class="cm"># Rust</span>
+cargo new cli &amp;&amp; <span class="bi">cd</span> cli
+cargo add serde --features derive      <span class="cm"># edits Cargo.toml</span>
+cargo build --release                  <span class="cm"># target/release/cli</span>
+cargo tree                             <span class="cm"># show the dependency graph</span>
 
-# Python with uv
-uv init mylib &amp;&amp; cd mylib
-uv add "httpx&gt;=0.27"                   # updates pyproject.toml + uv.lock
-uv pip install -e .                    # editable install
-uv sync --frozen                       # install exactly the lockfile; fail if it's stale
-uv build                               # sdist + wheel in dist/
+<span class="cm"># Python with uv</span>
+uv init mylib &amp;&amp; <span class="bi">cd</span> mylib
+uv add <span class="st">"httpx&gt;=0.27"</span>                   <span class="cm"># updates pyproject.toml + uv.lock</span>
+uv <span class="bi">pip</span> install -e .                    <span class="cm"># editable install</span>
+uv sync --frozen                       <span class="cm"># install exactly the lockfile; fail if it's stale</span>
+uv build                               <span class="cm"># sdist + wheel in dist/</span>
 
-# Node
-npm install                            # resolves; writes package-lock.json
-npm ci                                 # CI: clean install exactly from the lockfile
+<span class="cm"># Node</span>
+<span class="bi">npm</span> install                            <span class="cm"># resolves; writes package-lock.json</span>
+<span class="bi">npm</span> ci                                 <span class="cm"># CI: clean install exactly from the lockfile</span>
 pnpm install --frozen-lockfile</code></pre>
 
   <span class="lang">make</span>
-<pre class="code"><code># Makefile — recipe lines must start with a TAB
-.PHONY: all test lint clean
-all: lint test build
+<pre class="code"><code><span class="cm"># Makefile — recipe lines must start with a TAB</span>
+<span class="fn">.PHONY</span>: all test lint clean
+<span class="fn">all</span>: lint test build
 
-lint:
+<span class="fn">lint</span>:
 	ruff check . &amp;&amp; ruff format --check .
 
-test:
+<span class="fn">test</span>:
 	pytest -q
 
-build: dist/app.whl
-dist/app.whl: $(shell find src -name '*.py') pyproject.toml
-	uv build --wheel -o dist &amp;&amp; touch $@
+<span class="fn">build</span>: dist/app.whl
+<span class="fn">dist/app.whl</span>: <span class="bi">$(shell find src -name '*.py')</span> pyproject.toml
+	uv build --wheel -o dist &amp;&amp; touch <span class="bi">$@</span>
 
-clean:
+<span class="fn">clean</span>:
 	rm -rf dist .pytest_cache</code></pre>
 
   <span class="lang">yaml</span>
-<pre class="code"><code># Taskfile.yml — the same idea, in YAML, cross-platform
-version: "3"
-tasks:
-  test:
-    cmds: [pytest -q]
-  build:
-    sources: ["src/**/*.py", "pyproject.toml"]
-    generates: ["dist/*.whl"]
-    cmds: [uv build --wheel]</code></pre>
+<pre class="code"><code><span class="cm"># Taskfile.yml — the same idea, in YAML, cross-platform</span>
+<span class="bi">version</span>: <span class="st">"3"</span>
+<span class="bi">tasks</span>:
+<span class="bi">  test</span>:
+<span class="bi">    cmds</span>: [pytest -q]
+<span class="bi">  build</span>:
+<span class="bi">    sources</span>: [<span class="st">"src/**/*.py"</span>, <span class="st">"pyproject.toml"</span>]
+<span class="bi">    generates</span>: [<span class="st">"dist/*.whl"</span>]
+<span class="bi">    cmds</span>: [uv build --wheel]</code></pre>
 
   <h2>Exercises</h2>
   <ol style="list-style:none;padding-left:0">

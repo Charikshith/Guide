@@ -254,38 +254,38 @@ a{color:var(--ink);text-decoration:underline dotted}
 <div class="pagebreak">~ page 3 ~</div>
 <h2>Example</h2>
 <span class="lang">bash</span>
-<pre class="code"><code>git switch -c feature/login          # create + switch
-git commit -am "Add login form"
-git log --oneline --graph --all      # read the DAG
+<pre class="code"><code><span class="bi">git</span> switch -c feature/login          <span class="cm"># create + switch</span>
+<span class="bi">git</span> commit -am <span class="st">"Add login form"</span>
+<span class="bi">git</span> log --oneline --graph --all      <span class="cm"># read the DAG</span>
 
-# Update your feature branch with main — two ways
-git fetch origin
-git merge origin/main                # keeps history, adds a merge commit
-# or
-git rebase origin/main               # replays your commits on top of main
+<span class="cm"># Update your feature branch with main — two ways</span>
+<span class="bi">git</span> fetch origin
+<span class="bi">git</span> merge origin/main                <span class="cm"># keeps history, adds a merge commit</span>
+<span class="cm"># or</span>
+<span class="bi">git</span> rebase origin/main               <span class="cm"># replays your commits on top of main</span>
 
-# Resolving a conflict
-git merge origin/main
-# CONFLICT (content): Merge conflict in app.py
-git status                           # shows "both modified: app.py"</code></pre>
+<span class="cm"># Resolving a conflict</span>
+<span class="bi">git</span> merge origin/main
+<span class="cm"># CONFLICT (content): Merge conflict in app.py</span>
+<span class="bi">git</span> status                           <span class="cm"># shows "both modified: app.py"</span></code></pre>
 <pre class="code ascii"><code>&lt;&lt;&lt;&lt;&lt;&lt;&lt; HEAD
 TIMEOUT = 60
 =======
 TIMEOUT = 45
 &gt;&gt;&gt;&gt;&gt;&gt;&gt; origin/main</code></pre>
 <span class="lang">bash</span>
-<pre class="code"><code># edit to the correct final content, delete the markers, then:
-git add app.py
-git commit                           # (during a rebase: git rebase --continue)
-git merge --abort                    # escape hatch: back to before the merge
+<pre class="code"><code><span class="cm"># edit to the correct final content, delete the markers, then:</span>
+<span class="bi">git</span> add app.py
+<span class="bi">git</span> commit                           <span class="cm"># (during a rebase: git rebase --continue)</span>
+<span class="bi">git</span> merge --abort                    <span class="cm"># escape hatch: back to before the merge</span>
 
-# Apply a single commit from another branch
-git cherry-pick abc1234
-git cherry-pick -x abc1234           # -x records "(cherry picked from commit …)"
+<span class="cm"># Apply a single commit from another branch</span>
+<span class="bi">git</span> cherry-pick abc1234
+<span class="bi">git</span> cherry-pick -x abc1234           <span class="cm"># -x records "(cherry picked from commit …)"</span>
 
-# Clean up your own commits before review
-git rebase -i origin/main            # squash / reword / reorder (interactive)
-git push --force-with-lease          # refuses if someone else pushed meanwhile</code></pre>
+<span class="cm"># Clean up your own commits before review</span>
+<span class="bi">git</span> rebase -i origin/main            <span class="cm"># squash / reword / reorder (interactive)</span>
+<span class="bi">git</span> push --force-with-lease          <span class="cm"># refuses if someone else pushed meanwhile</span></code></pre>
 <h2>Exercises</h2>
 <ol style="list-style:none;padding-left:0">
 <li><p>1. Resolve a merge conflict by hand.</p>

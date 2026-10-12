@@ -257,60 +257,60 @@ a{color:var(--ink);text-decoration:underline dotted}
 <div class="pagebreak">~ page 3 ~</div>
 <h2>Example</h2>
 <span class="lang">python</span>
-<pre class="code"><code>from functools import reduce
-from dataclasses import dataclass
+<pre class="code"><code><span class="kw">from</span> functools <span class="kw">import</span> reduce
+<span class="kw">from</span> dataclasses <span class="kw">import</span> dataclass
 
-@dataclass(frozen=True)                     # immutable object
-class Item:
-    name: str
-    price: float
-    in_stock: bool
+<span class="bi">@dataclass</span>(frozen=<span class="kw">True</span>)                     <span class="cm"># immutable object</span>
+<span class="kw">class</span> Item:
+    name: <span class="bi">str</span>
+    price: <span class="bi">float</span>
+    in_stock: <span class="bi">bool</span>
 
-items = [Item("pen", 2.0, True), Item("ink", 9.5, False), Item("pad", 4.0, True)]
+items = [<span class="fn">Item</span>(<span class="st">"pen"</span>, <span class="nu">2.0</span>, <span class="kw">True</span>), <span class="fn">Item</span>(<span class="st">"ink"</span>, <span class="nu">9.5</span>, <span class="kw">False</span>), <span class="fn">Item</span>(<span class="st">"pad"</span>, <span class="nu">4.0</span>, <span class="kw">True</span>)]
 
-# Imperative
-total = 0.0
-for it in items:
-    if it.in_stock:
+<span class="cm"># Imperative</span>
+total = <span class="nu">0.0</span>
+<span class="kw">for</span> it <span class="kw">in</span> items:
+    <span class="kw">if</span> it.in_stock:
         total += it.price
 
-# Functional: map / filter / reduce
-total_fn = reduce(lambda acc, p: acc + p,
-                  map(lambda i: i.price, filter(lambda i: i.in_stock, items)), 0.0)
-assert total == total_fn == 6.0
+<span class="cm"># Functional: map / filter / reduce</span>
+total_fn = <span class="fn">reduce</span>(<span class="kw">lambda</span> acc, p: acc + p,
+                  <span class="bi">map</span>(<span class="kw">lambda</span> i: i.price, <span class="bi">filter</span>(<span class="kw">lambda</span> i: i.in_stock, items)), <span class="nu">0.0</span>)
+<span class="kw">assert</span> total == total_fn == <span class="nu">6.0</span>
 
-# Object-oriented
-class Cart:
-    def __init__(self): self._items = []
-    def add(self, item): self._items.append(item)
-    def total(self): return sum(i.price for i in self._items if i.in_stock)
+<span class="cm"># Object-oriented</span>
+<span class="kw">class</span> Cart:
+    <span class="kw">def</span> <span class="fn">__init__</span>(<span class="bi">self</span>): <span class="bi">self</span>._items = []
+    <span class="kw">def</span> <span class="fn">add</span>(<span class="bi">self</span>, item): <span class="bi">self</span>._items.<span class="fn">append</span>(item)
+    <span class="kw">def</span> <span class="fn">total</span>(<span class="bi">self</span>): <span class="kw">return</span> <span class="bi">sum</span>(i.price <span class="kw">for</span> i <span class="kw">in</span> <span class="bi">self</span>._items <span class="kw">if</span> i.in_stock)
 
-# Event-driven: register callbacks, fire events
+<span class="cm"># Event-driven: register callbacks, fire events</span>
 handlers = {}
-def on(event, fn): handlers.setdefault(event, []).append(fn)
-def emit(event, payload):
-    for fn in handlers.get(event, []): fn(payload)
+<span class="kw">def</span> <span class="fn">on</span>(event, fn): handlers.<span class="fn">setdefault</span>(event, []).<span class="fn">append</span>(fn)
+<span class="kw">def</span> <span class="fn">emit</span>(event, payload):
+    <span class="kw">for</span> fn <span class="kw">in</span> handlers.<span class="fn">get</span>(event, []): <span class="fn">fn</span>(payload)
 
-on("order_placed", lambda o: print("email receipt for", o))
-on("order_placed", lambda o: print("reserve stock for", o))
-emit("order_placed", "order-42")</code></pre>
+<span class="fn">on</span>(<span class="st">"order_placed"</span>, <span class="kw">lambda</span> o: <span class="bi">print</span>(<span class="st">"email receipt for"</span>, o))
+<span class="fn">on</span>(<span class="st">"order_placed"</span>, <span class="kw">lambda</span> o: <span class="bi">print</span>(<span class="st">"reserve stock for"</span>, o))
+<span class="fn">emit</span>(<span class="st">"order_placed"</span>, <span class="st">"order-42"</span>)</code></pre>
 <span class="lang">python</span>
-<pre class="code"><code># Reactive (RxPY): pip install reactivex
-import reactivex as rx
-from reactivex import operators as ops
+<pre class="code"><code><span class="cm"># Reactive (RxPY): pip install reactivex</span>
+<span class="kw">import</span> reactivex <span class="kw">as</span> rx
+<span class="kw">from</span> reactivex <span class="kw">import</span> operators <span class="kw">as</span> ops
 
-rx.from_iterable([1, 2, 3, 4, 5, 6]).pipe(
-    ops.filter(lambda x: x % 2 == 0),
-    ops.map(lambda x: x * 10),
-).subscribe(print)                          # 20 40 60</code></pre>
+rx.<span class="fn">from_iterable</span>([<span class="nu">1</span>, <span class="nu">2</span>, <span class="nu">3</span>, <span class="nu">4</span>, <span class="nu">5</span>, <span class="nu">6</span>]).<span class="fn">pipe</span>(
+    ops.<span class="bi">filter</span>(<span class="kw">lambda</span> x: x % <span class="nu">2</span> == <span class="nu">0</span>),
+    ops.<span class="bi">map</span>(<span class="kw">lambda</span> x: x * <span class="nu">10</span>),
+).<span class="fn">subscribe</span>(<span class="bi">print</span>)                          <span class="cm"># 20 40 60</span></code></pre>
 <h2>Exercises</h2>
 <ol style="list-style:none;padding-left:0">
 <li><p>1. Rewrite an imperative loop as <code>map/filter/reduce</code>.</p>
 <span class="lang">python</span>
 <pre class="code"><code>out = []
-for w in words:
-    if len(w) &gt; 3:
-        out.append(w.upper())</code></pre>
+<span class="kw">for</span> w <span class="kw">in</span> words:
+    <span class="kw">if</span> <span class="bi">len</span>(w) &gt; <span class="nu">3</span>:
+        out.<span class="fn">append</span>(w.<span class="fn">upper</span>())</code></pre>
 <div class="box"><b>Solution</b>
 <p><code>out = list(map(str.upper, filter(lambda w: len(w) &amp;gt; 3, words)))</code>, or more idiomatically <code>[w.upper() for w in words if len(w) &amp;gt; 3]</code>.</p>
 </div></li>

@@ -271,11 +271,11 @@ a{color:var(--ink);text-decoration:underline dotted}
 
   <h2>Example</h2>
   <span class="lang">python</span>
-<pre class="code"><code>def build_report(orders):
-    paid = [o for o in orders if o["status"] == "PAID"]   # bug: the data says "paid"
-    breakpoint()                                          # drops into pdb here
-    total = sum(o["amount"] for o in paid)
-    return total / len(paid)</code></pre>
+<pre class="code"><code><span class="kw">def</span> <span class="fn">build_report</span>(orders):
+    paid = [o <span class="kw">for</span> o <span class="kw">in</span> orders <span class="kw">if</span> o[<span class="st">"status"</span>] == <span class="st">"PAID"</span>]   <span class="cm"># bug: the data says "paid"</span>
+    <span class="fn">breakpoint</span>()                                          <span class="cm"># drops into pdb here</span>
+    total = <span class="bi">sum</span>(o[<span class="st">"amount"</span>] <span class="kw">for</span> o <span class="kw">in</span> paid)
+    <span class="kw">return</span> total / <span class="bi">len</span>(paid)</code></pre>
 
 <pre class="code ascii"><code>(Pdb) p len(orders), len(paid)
 (3, 0)
@@ -283,17 +283,17 @@ a{color:var(--ink);text-decoration:underline dotted}
 {'paid', 'void'}                       ← hypothesis confirmed: a case mismatch</code></pre>
 
   <span class="lang">bash</span>
-<pre class="code"><code># CPU profiling
-python -m cProfile -s cumtime app.py | head -20
-py-spy top --pid 12345                        # live, like `top`, for Python functions
-py-spy record -o profile.svg -- python app.py # flame graph
-# Memory
-python -X tracemalloc=25 app.py
+<pre class="code"><code><span class="cm"># CPU profiling</span>
+<span class="bi">python</span> -m cProfile -s cumtime app.py | <span class="bi">head</span> -<span class="nu">20</span>
+py-spy <span class="bi">top</span> --pid <span class="nu">12345</span>                        <span class="cm"># live, like `top`, for Python functions</span>
+py-spy record -o profile.svg -- <span class="bi">python</span> app.py <span class="cm"># flame graph</span>
+<span class="cm"># Memory</span>
+<span class="bi">python</span> -X tracemalloc=<span class="nu">25</span> app.py
 memray run app.py &amp;&amp; memray flamegraph memray-app.py.*.bin
-# Bisect automatically with a test script (exit 0 = good, 1 = bad)
-git bisect start HEAD v1.0
-git bisect run pytest -q tests/test_report.py
-git bisect reset</code></pre>
+<span class="cm"># Bisect automatically with a test script (exit 0 = good, 1 = bad)</span>
+<span class="bi">git</span> bisect start HEAD v1.<span class="nu">0</span>
+<span class="bi">git</span> bisect run pytest -q tests/test_report.py
+<span class="bi">git</span> bisect reset</code></pre>
 
 <pre class="code ascii"><code>thread 'main' panicked at src/main.rs:14:22:
 index out of bounds: the len is 3 but the index is 3

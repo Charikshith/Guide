@@ -236,24 +236,24 @@ a{color:var(--ink);text-decoration:underline dotted}
   <div class="pagebreak">~ page 2 ~</div>
   <h2>Example</h2>
   <span class="lang">bash</span>
-<pre class="code"><code>dig example.com A +short                 # 93.184.215.14
-dig www.github.com +trace                # walk root → .com → github.com yourself
+<pre class="code"><code>dig example.com A +short                 <span class="cm"># 93.184.215.14</span>
+dig www.github.com +trace                <span class="cm"># walk root → .com → github.com yourself</span>
 dig example.com MX
-ip addr; ip route                        # your addresses; the default gateway
-ss -tn state established                 # live TCP 4-tuples
-curl -v https://example.com 2&gt;&amp;1 | head  # DNS → TCP connect → TLS → HTTP in one view
+ip addr; ip route                        <span class="cm"># your addresses; the default gateway</span>
+ss -tn state established                 <span class="cm"># live TCP 4-tuples</span>
+<span class="bi">curl</span> -v https://example.com <span class="nu">2</span>&gt;&amp;<span class="nu">1</span> | <span class="bi">head</span>  <span class="cm"># DNS → TCP connect → TLS → HTTP in one view</span>
 </code></pre>
   <span class="lang">python</span>
-<pre class="code"><code>import ipaddress
-net = ipaddress.ip_network("192.168.1.0/24")
-print(net.num_addresses, net.network_address, net.broadcast_address)   # 256 192.168.1.0 192.168.1.255
-hosts = list(net.hosts()); print(hosts[0], hosts[-1], len(hosts))      # 192.168.1.1 192.168.1.254 254
-for sub in net.subnets(new_prefix=26):                                  # four /26 subnets
-    print(sub, "hosts:", sub.num_addresses - 2)
-print(ipaddress.ip_address("10.3.4.5").is_private)                      # True
+<pre class="code"><code><span class="kw">import</span> ipaddress
+net = ipaddress.<span class="fn">ip_network</span>(<span class="st">"192.168.1.0/24"</span>)
+<span class="bi">print</span>(net.num_addresses, net.network_address, net.broadcast_address)   <span class="cm"># 256 192.168.1.0 192.168.1.255</span>
+hosts = <span class="bi">list</span>(net.<span class="fn">hosts</span>()); <span class="bi">print</span>(hosts[<span class="nu">0</span>], hosts[-<span class="nu">1</span>], <span class="bi">len</span>(hosts))      <span class="cm"># 192.168.1.1 192.168.1.254 254</span>
+<span class="kw">for</span> sub <span class="kw">in</span> net.<span class="fn">subnets</span>(new_prefix=<span class="nu">26</span>):                                  <span class="cm"># four /26 subnets</span>
+    <span class="bi">print</span>(sub, <span class="st">"hosts:"</span>, sub.num_addresses - <span class="nu">2</span>)
+<span class="bi">print</span>(ipaddress.<span class="fn">ip_address</span>(<span class="st">"10.3.4.5"</span>).is_private)                      <span class="cm"># True</span>
 
-import socket
-print(socket.getaddrinfo("example.com", 443, proto=socket.IPPROTO_TCP)[0][4])
+<span class="kw">import</span> socket
+<span class="bi">print</span>(socket.<span class="fn">getaddrinfo</span>(<span class="st">"example.com"</span>, <span class="nu">443</span>, proto=socket.IPPROTO_TCP)[<span class="nu">0</span>][<span class="nu">4</span>])
 </code></pre>
   <h2>Exercises</h2>
   <ol style="list-style:none;padding-left:0">

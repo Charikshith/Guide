@@ -228,58 +228,58 @@ a{color:var(--ink);text-decoration:underline dotted}
   <div class="pagebreak">~ page 2 ~</div>
   <h2>Example</h2>
   <span class="lang">python</span>
-<pre class="code"><code>from functools import lru_cache
+<pre class="code"><code><span class="kw">from</span> functools <span class="kw">import</span> lru_cache
 
-@lru_cache(maxsize=None)
-def fib(n):
-    return n if n &lt; 2 else fib(n - 1) + fib(n - 2)
+<span class="bi">@lru_cache</span>(maxsize=<span class="kw">None</span>)
+<span class="kw">def</span> <span class="fn">fib</span>(n):
+    <span class="kw">return</span> n <span class="kw">if</span> n &lt; <span class="nu">2</span> <span class="kw">else</span> <span class="fn">fib</span>(n - <span class="nu">1</span>) + <span class="fn">fib</span>(n - <span class="nu">2</span>)
 
-def knapsack_top_down(items, cap):
-    @lru_cache(maxsize=None)
-    def best(i, c):
-        if i == len(items):
-            return 0
+<span class="kw">def</span> <span class="fn">knapsack_top_down</span>(items, cap):
+    <span class="bi">@lru_cache</span>(maxsize=<span class="kw">None</span>)
+    <span class="kw">def</span> <span class="fn">best</span>(i, c):
+        <span class="kw">if</span> i == <span class="bi">len</span>(items):
+            <span class="kw">return</span> <span class="nu">0</span>
         w, v = items[i]
-        skip = best(i + 1, c)
-        take = v + best(i + 1, c - w) if w &lt;= c else 0
-        return max(skip, take)
-    return best(0, cap)
+        skip = <span class="fn">best</span>(i + <span class="nu">1</span>, c)
+        take = v + <span class="fn">best</span>(i + <span class="nu">1</span>, c - w) <span class="kw">if</span> w &lt;= c <span class="kw">else</span> <span class="nu">0</span>
+        <span class="kw">return</span> <span class="bi">max</span>(skip, take)
+    <span class="kw">return</span> <span class="fn">best</span>(<span class="nu">0</span>, cap)
 
-def knapsack_bottom_up(items, cap):
-    dp = [0] * (cap + 1)                 # one row is enough
-    for w, v in items:
-        for c in range(cap, w - 1, -1):  # go downward so each item is used at most once
-            dp[c] = max(dp[c], v + dp[c - w])
-    return dp[cap]
+<span class="kw">def</span> <span class="fn">knapsack_bottom_up</span>(items, cap):
+    dp = [<span class="nu">0</span>] * (cap + <span class="nu">1</span>)                 <span class="cm"># one row is enough</span>
+    <span class="kw">for</span> w, v <span class="kw">in</span> items:
+        <span class="kw">for</span> c <span class="kw">in</span> <span class="bi">range</span>(cap, w - <span class="nu">1</span>, -<span class="nu">1</span>):  <span class="cm"># go downward so each item is used at most once</span>
+            dp[c] = <span class="bi">max</span>(dp[c], v + dp[c - w])
+    <span class="kw">return</span> dp[cap]
 
-items = [(1, 1), (3, 4), (4, 5), (5, 7)]
-print(knapsack_top_down(items, 7), knapsack_bottom_up(items, 7))   # 9 9
+items = [(<span class="nu">1</span>, <span class="nu">1</span>), (<span class="nu">3</span>, <span class="nu">4</span>), (<span class="nu">4</span>, <span class="nu">5</span>), (<span class="nu">5</span>, <span class="nu">7</span>)]
+<span class="bi">print</span>(<span class="fn">knapsack_top_down</span>(items, <span class="nu">7</span>), <span class="fn">knapsack_bottom_up</span>(items, <span class="nu">7</span>))   <span class="cm"># 9 9</span>
 
-def max_sum_window(xs, k):               # fixed-size sliding window
-    s = best = sum(xs[:k])
-    for i in range(k, len(xs)):
-        s += xs[i] - xs[i - k]           # add the entering element, drop the leaving one
-        best = max(best, s)
-    return best
+<span class="kw">def</span> <span class="fn">max_sum_window</span>(xs, k):               <span class="cm"># fixed-size sliding window</span>
+    s = best = <span class="bi">sum</span>(xs[:k])
+    <span class="kw">for</span> i <span class="kw">in</span> <span class="bi">range</span>(k, <span class="bi">len</span>(xs)):
+        s += xs[i] - xs[i - k]           <span class="cm"># add the entering element, drop the leaving one</span>
+        best = <span class="bi">max</span>(best, s)
+    <span class="kw">return</span> best
 
-def longest_unique(s):                   # variable-size window
-    last, left, best = {}, 0, 0
-    for right, ch in enumerate(s):
-        if ch in last and last[ch] &gt;= left:
-            left = last[ch] + 1          # shrink past the previous copy
+<span class="kw">def</span> <span class="fn">longest_unique</span>(s):                   <span class="cm"># variable-size window</span>
+    last, left, best = {}, <span class="nu">0</span>, <span class="nu">0</span>
+    <span class="kw">for</span> right, ch <span class="kw">in</span> <span class="bi">enumerate</span>(s):
+        <span class="kw">if</span> ch <span class="kw">in</span> last <span class="kw">and</span> last[ch] &gt;= left:
+            left = last[ch] + <span class="nu">1</span>          <span class="cm"># shrink past the previous copy</span>
         last[ch] = right
-        best = max(best, right - left + 1)
-    return best
+        best = <span class="bi">max</span>(best, right - left + <span class="nu">1</span>)
+    <span class="kw">return</span> best
 
-def coin_change(coins, amount):          # min coins; DP because greedy can fail
-    INF = float("inf")
-    dp = [0] + [INF] * amount
-    for a in range(1, amount + 1):
-        dp[a] = min((dp[a - c] + 1 for c in coins if c &lt;= a), default=INF)
-    return dp[amount] if dp[amount] != INF else -1
+<span class="kw">def</span> <span class="fn">coin_change</span>(coins, amount):          <span class="cm"># min coins; DP because greedy can fail</span>
+    INF = <span class="bi">float</span>(<span class="st">"inf"</span>)
+    dp = [<span class="nu">0</span>] + [INF] * amount
+    <span class="kw">for</span> a <span class="kw">in</span> <span class="bi">range</span>(<span class="nu">1</span>, amount + <span class="nu">1</span>):
+        dp[a] = <span class="bi">min</span>((dp[a - c] + <span class="nu">1</span> <span class="kw">for</span> c <span class="kw">in</span> coins <span class="kw">if</span> c &lt;= a), default=INF)
+    <span class="kw">return</span> dp[amount] <span class="kw">if</span> dp[amount] != INF <span class="kw">else</span> -<span class="nu">1</span>
 
-print(max_sum_window([2, 1, 5, 1, 3, 2], 3), longest_unique("abcabcbb"), coin_change([1, 3, 4], 6))
-# 9 3 2
+<span class="bi">print</span>(<span class="fn">max_sum_window</span>([<span class="nu">2</span>, <span class="nu">1</span>, <span class="nu">5</span>, <span class="nu">1</span>, <span class="nu">3</span>, <span class="nu">2</span>], <span class="nu">3</span>), <span class="fn">longest_unique</span>(<span class="st">"abcabcbb"</span>), <span class="fn">coin_change</span>([<span class="nu">1</span>, <span class="nu">3</span>, <span class="nu">4</span>], <span class="nu">6</span>))
+<span class="cm"># 9 3 2</span>
 </code></pre>
   <h2>Exercises</h2>
   <ol style="list-style:none;padding-left:0">

@@ -271,100 +271,100 @@ a{color:var(--ink);text-decoration:underline dotted}
 
   <h2>Example</h2>
   <span class="lang">python</span>
-<pre class="code"><code>from dataclasses import dataclass
-from datetime import datetime, timezone
+<pre class="code"><code><span class="kw">from</span> dataclasses <span class="kw">import</span> dataclass
+<span class="kw">from</span> datetime <span class="kw">import</span> datetime, timezone
 
-@dataclass(frozen=True)
-class Money:
-    cents: int
-    currency: str = "EUR"
-    def __post_init__(self):
-        if len(self.currency) != 3:
-            raise ValueError("currency must be an ISO 4217 code")
-    def __add__(self, other: "Money") -&gt; "Money":
-        self._same(other); return Money(self.cents + other.cents, self.currency)
-    def __sub__(self, other: "Money") -&gt; "Money":
-        self._same(other); return Money(self.cents - other.cents, self.currency)
-    def _same(self, other):
-        if other.currency != self.currency:
-            raise ValueError("currency mismatch")
+<span class="bi">@dataclass</span>(frozen=<span class="kw">True</span>)
+<span class="kw">class</span> Money:
+    cents: <span class="bi">int</span>
+    currency: <span class="bi">str</span> = <span class="st">"EUR"</span>
+    <span class="kw">def</span> <span class="fn">__post_init__</span>(<span class="bi">self</span>):
+        <span class="kw">if</span> <span class="bi">len</span>(<span class="bi">self</span>.currency) != <span class="nu">3</span>:
+            <span class="kw">raise</span> <span class="bi">ValueError</span>(<span class="st">"currency must be an ISO 4217 code"</span>)
+    <span class="kw">def</span> <span class="fn">__add__</span>(<span class="bi">self</span>, other: <span class="st">"Money"</span>) -&gt; <span class="st">"Money"</span>:
+        <span class="bi">self</span>.<span class="fn">_same</span>(other); <span class="kw">return</span> <span class="fn">Money</span>(<span class="bi">self</span>.cents + other.cents, <span class="bi">self</span>.currency)
+    <span class="kw">def</span> <span class="fn">__sub__</span>(<span class="bi">self</span>, other: <span class="st">"Money"</span>) -&gt; <span class="st">"Money"</span>:
+        <span class="bi">self</span>.<span class="fn">_same</span>(other); <span class="kw">return</span> <span class="fn">Money</span>(<span class="bi">self</span>.cents - other.cents, <span class="bi">self</span>.currency)
+    <span class="kw">def</span> <span class="fn">_same</span>(<span class="bi">self</span>, other):
+        <span class="kw">if</span> other.currency != <span class="bi">self</span>.currency:
+            <span class="kw">raise</span> <span class="bi">ValueError</span>(<span class="st">"currency mismatch"</span>)
 
-@dataclass(frozen=True)
-class Transaction:
-    kind: str
+<span class="bi">@dataclass</span>(frozen=<span class="kw">True</span>)
+<span class="kw">class</span> Transaction:
+    kind: <span class="bi">str</span>
     amount: Money
     at: datetime
 
-class InsufficientFunds(Exception): ...
+<span class="kw">class</span> <span class="fn">InsufficientFunds</span>(<span class="bi">Exception</span>): ...
 
-class BankAccount:
-    """Invariant: balance &gt;= 0, and balance == sum of the history."""
-    def __init__(self, account_id: str, currency: str = "EUR"):
-        self._id = account_id
-        self._balance = Money(0, currency)
-        self._history: list[Transaction] = []
+<span class="kw">class</span> BankAccount:
+    <span class="st">"""Invariant: balance &gt;= 0, and balance == sum of the history."""</span>
+    <span class="kw">def</span> <span class="fn">__init__</span>(<span class="bi">self</span>, account_id: <span class="bi">str</span>, currency: <span class="bi">str</span> = <span class="st">"EUR"</span>):
+        <span class="bi">self</span>._id = account_id
+        <span class="bi">self</span>._balance = <span class="fn">Money</span>(<span class="nu">0</span>, currency)
+        <span class="bi">self</span>._history: <span class="bi">list</span>[Transaction] = []
 
-    @property
-    def balance(self) -&gt; Money:
-        return self._balance                       # read-only; there is no setter
+    <span class="bi">@property</span>
+    <span class="kw">def</span> <span class="fn">balance</span>(<span class="bi">self</span>) -&gt; Money:
+        <span class="kw">return</span> <span class="bi">self</span>._balance                       <span class="cm"># read-only; there is no setter</span>
 
-    @property
-    def history(self) -&gt; tuple[Transaction, ...]:
-        return tuple(self._history)                # a copy: callers can't mutate our list
+    <span class="bi">@property</span>
+    <span class="kw">def</span> <span class="fn">history</span>(<span class="bi">self</span>) -&gt; <span class="bi">tuple</span>[Transaction, ...]:
+        <span class="kw">return</span> <span class="bi">tuple</span>(<span class="bi">self</span>._history)                <span class="cm"># a copy: callers can't mutate our list</span>
 
-    def deposit(self, amount: Money) -&gt; None:
-        if amount.cents &lt;= 0:
-            raise ValueError("deposit must be positive")
-        self._apply("deposit", amount, self._balance + amount)
+    <span class="kw">def</span> <span class="fn">deposit</span>(<span class="bi">self</span>, amount: Money) -&gt; <span class="kw">None</span>:
+        <span class="kw">if</span> amount.cents &lt;= <span class="nu">0</span>:
+            <span class="kw">raise</span> <span class="bi">ValueError</span>(<span class="st">"deposit must be positive"</span>)
+        <span class="bi">self</span>.<span class="fn">_apply</span>(<span class="st">"deposit"</span>, amount, <span class="bi">self</span>._balance + amount)
 
-    def withdraw(self, amount: Money) -&gt; None:
-        if amount.cents &lt;= 0:
-            raise ValueError("withdrawal must be positive")
-        if amount.cents &gt; self._balance.cents:
-            raise InsufficientFunds(f"balance {self._balance.cents}, requested {amount.cents}")
-        self._apply("withdraw", amount, self._balance - amount)
+    <span class="kw">def</span> <span class="fn">withdraw</span>(<span class="bi">self</span>, amount: Money) -&gt; <span class="kw">None</span>:
+        <span class="kw">if</span> amount.cents &lt;= <span class="nu">0</span>:
+            <span class="kw">raise</span> <span class="bi">ValueError</span>(<span class="st">"withdrawal must be positive"</span>)
+        <span class="kw">if</span> amount.cents &gt; <span class="bi">self</span>._balance.cents:
+            <span class="kw">raise</span> <span class="fn">InsufficientFunds</span>(<span class="st">f"balance {self._balance.cents}, requested {amount.cents}"</span>)
+        <span class="bi">self</span>.<span class="fn">_apply</span>(<span class="st">"withdraw"</span>, amount, <span class="bi">self</span>._balance - amount)
 
-    def _apply(self, kind, amount, new_balance):
-        self._history.append(Transaction(kind, amount, datetime.now(timezone.utc)))
-        self._balance = new_balance
+    <span class="kw">def</span> <span class="fn">_apply</span>(<span class="bi">self</span>, kind, amount, new_balance):
+        <span class="bi">self</span>._history.<span class="fn">append</span>(<span class="fn">Transaction</span>(kind, amount, datetime.<span class="fn">now</span>(timezone.utc)))
+        <span class="bi">self</span>._balance = new_balance
 
-acct = BankAccount("acc-1")
-acct.deposit(Money(1000))
-acct.withdraw(Money(300))
-print(acct.balance)                                # Money(cents=700, currency='EUR')
-try:
-    acct.withdraw(Money(5000))
-except InsufficientFunds as e:
-    print("refused:", e)</code></pre>
+acct = <span class="fn">BankAccount</span>(<span class="st">"acc-1"</span>)
+acct.<span class="fn">deposit</span>(<span class="fn">Money</span>(<span class="nu">1000</span>))
+acct.<span class="fn">withdraw</span>(<span class="fn">Money</span>(<span class="nu">300</span>))
+<span class="bi">print</span>(acct.balance)                                <span class="cm"># Money(cents=700, currency='EUR')</span>
+<span class="kw">try</span>:
+    acct.<span class="fn">withdraw</span>(<span class="fn">Money</span>(<span class="nu">5000</span>))
+<span class="kw">except</span> InsufficientFunds <span class="kw">as</span> e:
+    <span class="bi">print</span>(<span class="st">"refused:"</span>, e)</code></pre>
 
   <span class="lang">python</span>
-<pre class="code"><code># Polymorphism through a shared interface — callers never check types
-from typing import Protocol
+<pre class="code"><code><span class="cm"># Polymorphism through a shared interface — callers never check types</span>
+<span class="kw">from</span> typing <span class="kw">import</span> Protocol
 
-class FeePolicy(Protocol):
-    def fee(self, amount: Money) -&gt; Money: ...
+<span class="kw">class</span> <span class="fn">FeePolicy</span>(Protocol):
+    <span class="kw">def</span> <span class="fn">fee</span>(<span class="bi">self</span>, amount: Money) -&gt; Money: ...
 
-class FlatFee:
-    def fee(self, amount): return Money(50, amount.currency)
+<span class="kw">class</span> FlatFee:
+    <span class="kw">def</span> <span class="fn">fee</span>(<span class="bi">self</span>, amount): <span class="kw">return</span> <span class="fn">Money</span>(<span class="nu">50</span>, amount.currency)
 
-class PercentFee:
-    def __init__(self, pct): self.pct = pct
-    def fee(self, amount): return Money(amount.cents * self.pct // 100, amount.currency)
+<span class="kw">class</span> PercentFee:
+    <span class="kw">def</span> <span class="fn">__init__</span>(<span class="bi">self</span>, pct): <span class="bi">self</span>.pct = pct
+    <span class="kw">def</span> <span class="fn">fee</span>(<span class="bi">self</span>, amount): <span class="kw">return</span> <span class="fn">Money</span>(amount.cents * <span class="bi">self</span>.pct // <span class="nu">100</span>, amount.currency)
 
-class Transfer:                                    # composition: HAS a fee policy
-    def __init__(self, policy: FeePolicy): self.policy = policy
-    def total(self, amount): return amount + self.policy.fee(amount)
+<span class="kw">class</span> Transfer:                                    <span class="cm"># composition: HAS a fee policy</span>
+    <span class="kw">def</span> <span class="fn">__init__</span>(<span class="bi">self</span>, policy: FeePolicy): <span class="bi">self</span>.policy = policy
+    <span class="kw">def</span> <span class="fn">total</span>(<span class="bi">self</span>, amount): <span class="kw">return</span> amount + <span class="bi">self</span>.policy.<span class="fn">fee</span>(amount)
 
-print(Transfer(FlatFee()).total(Money(1000)).cents, Transfer(PercentFee(2)).total(Money(1000)).cents)  # 1050 1020</code></pre>
+<span class="bi">print</span>(<span class="fn">Transfer</span>(<span class="fn">FlatFee</span>()).<span class="fn">total</span>(<span class="fn">Money</span>(<span class="nu">1000</span>)).cents, <span class="fn">Transfer</span>(<span class="fn">PercentFee</span>(<span class="nu">2</span>)).<span class="fn">total</span>(<span class="fn">Money</span>(<span class="nu">1000</span>)).cents)  <span class="cm"># 1050 1020</span></code></pre>
 
   <h2>Exercises</h2>
   <ol style="list-style:none;padding-left:0">
     <li>1. Refactor inheritance to composition.
       <span class="lang">python</span>
-<pre class="code"><code>class Logger: ...
-class FileLogger(Logger): ...
-class TimestampedFileLogger(FileLogger): ...
-class TimestampedJsonFileLogger(TimestampedFileLogger): ...</code></pre>
+<pre class="code"><code><span class="kw">class</span> Logger: ...
+<span class="kw">class</span> <span class="fn">FileLogger</span>(Logger): ...
+<span class="kw">class</span> <span class="fn">TimestampedFileLogger</span>(FileLogger): ...
+<span class="kw">class</span> <span class="fn">TimestampedJsonFileLogger</span>(TimestampedFileLogger): ...</code></pre>
       <div class="box"><b>Solution</b> Split the independent concerns into parts: a <i>sink</i> (<code>FileSink</code>, <code>StdoutSink</code>), a <i>formatter</i> (<code>TextFormatter</code>, <code>JsonFormatter</code>), and <i>enrichers</i> (<code>Timestamp()</code>). Then <code>Logger(sink=FileSink("app.log"), formatter=JsonFormatter(), enrichers=[Timestamp()])</code>. Any combination is possible without new classes, and each part is testable alone.</div></li>
     <li>2. Design a class where no invalid state is representable.
       <div class="box"><b>Solution</b> A <code>DateRange</code>: frozen, validated in <code>__post_init__</code> (<code>start &lt;= end</code>, both timezone-aware), with methods that return <i>new</i> ranges (<code>extend(days)</code>) and re-validate. Or an order lifecycle modeled as separate types — <code>DraftOrder</code> (editable, may be empty) → <code>submit()</code> → <code>SubmittedOrder</code> (non-empty, immutable items, has <code>submitted_at</code>) — so "a submitted order without items" can't exist.</div></li>

@@ -235,36 +235,36 @@ a{color:var(--ink);text-decoration:underline dotted}
 <div class="pagebreak">~ page 3 ~</div>
 <h2>Example</h2>
 <span class="lang">bash</span>
-<pre class="code"><code># Count HTTP statuses in JSON logs (one object per line)
-jq -r '.status' logs.json | sort | uniq -c | sort -rn
+<pre class="code"><code><span class="cm"># Count HTTP statuses in JSON logs (one object per line)</span>
+jq -r <span class="st">'.status'</span> logs.json | <span class="bi">sort</span> | <span class="bi">uniq</span> -c | <span class="bi">sort</span> -rn
 
-# Find TODOs in Python files (safe with spaces in names)
-find . -name '*.py' -print0 | xargs -0 grep -n TODO
+<span class="cm"># Find TODOs in Python files (safe with spaces in names)</span>
+<span class="bi">find</span> . -name <span class="st">'*.py'</span> -print0 | <span class="bi">xargs</span> -<span class="nu">0</span> <span class="bi">grep</span> -n TODO
 
-# Sum the 3rd column of a CSV, skipping the header
-awk -F, 'NR &gt; 1 { total += $3 } END { printf "%.2f\n", total }' sales.csv
+<span class="cm"># Sum the 3rd column of a CSV, skipping the header</span>
+<span class="bi">awk</span> -F, <span class="st">'NR &gt; 1 { total += $3 } END { printf "%.2f\n", total }'</span> sales.csv
 
-# In-place replace across files (GNU sed; on macOS use sed -i '')
-grep -rl 'old_name' src/ | xargs sed -i 's/old_name/new_name/g'
+<span class="cm"># In-place replace across files (GNU sed; on macOS use sed -i '')</span>
+<span class="bi">grep</span> -rl <span class="st">'old_name'</span> src/ | <span class="bi">xargs</span> <span class="bi">sed</span> -i <span class="st">'s/old_name/new_name/g'</span>
 
-# The 10 largest files under a directory
-find /var -type f -printf '%s %p\n' 2&gt;/dev/null | sort -rn | head -10
-du -ah /var 2&gt;/dev/null | sort -rh | head -10           # alternative, human-readable
+<span class="cm"># The 10 largest files under a directory</span>
+<span class="bi">find</span> /var -type f -printf <span class="st">'%s %p\n'</span> <span class="nu">2</span>&gt;/dev/null | <span class="bi">sort</span> -rn | <span class="bi">head</span> -<span class="nu">10</span>
+du -ah /var <span class="nu">2</span>&gt;/dev/null | <span class="bi">sort</span> -rh | <span class="bi">head</span> -<span class="nu">10</span>           <span class="cm"># alternative, human-readable</span>
 
-# HTTP: status code and timing only
-curl -sS -o /dev/null -w '%{http_code} %{time_total}s\n' https://example.com
+<span class="cm"># HTTP: status code and timing only</span>
+<span class="bi">curl</span> -sS -o /dev/null -w <span class="st">'%{http_code} %{time_total}s\n'</span> https://example.com
 
-# POST JSON and pick a field
-curl -sS -X POST https://httpbin.org/post -H 'Content-Type: application/json' \
-     -d '{"name":"ada"}' | jq -r '.json.name'
+<span class="cm"># POST JSON and pick a field</span>
+<span class="bi">curl</span> -sS -X POST https://httpbin.org/post -H <span class="st">'Content-Type: application/json'</span> \
+     -d <span class="st">'{"name":"ada"}'</span> | jq -r <span class="st">'.json.name'</span>
 
-# jq: filter and reshape
-jq '[.[] | select(.age &gt;= 18) | {name, email}]' users.json
+<span class="cm"># jq: filter and reshape</span>
+jq <span class="st">'[.[] | select(.age &gt;= 18) | {name, email}]'</span> users.json
 
-# Parallel: compress logs with 8 workers
-find logs -name '*.log' -print0 | xargs -0 -n1 -P8 gzip
+<span class="cm"># Parallel: compress logs with 8 workers</span>
+<span class="bi">find</span> logs -name <span class="st">'*.log'</span> -print0 | <span class="bi">xargs</span> -<span class="nu">0</span> -n1 -P8 gzip
 
-# Sync a folder to a server (dry run first!)
+<span class="cm"># Sync a folder to a server (dry run first!)</span>
 rsync -avzn --delete ./site/ web:/var/www/site/</code></pre>
 <h2>Exercises</h2>
 <ol style="list-style:none;padding-left:0">

@@ -271,81 +271,81 @@ a{color:var(--ink);text-decoration:underline dotted}
 
   <h2>Example</h2>
   <span class="lang">yaml</span>
-<pre class="code"><code># .github/workflows/ci-cd.yml
-name: ci-cd
-on:
-  push: { branches: [main] }
-  pull_request:
+<pre class="code"><code><span class="cm"># .github/workflows/ci-cd.yml</span>
+<span class="bi">name</span>: ci-cd
+<span class="bi">on</span>:
+<span class="bi">  push</span>: { branches: [main] }
+<span class="bi">  pull_request</span>:
 
-permissions:
-  contents: read
+<span class="bi">permissions</span>:
+<span class="bi">  contents</span>: read
 
-concurrency:
-  group: $&#123;&#123; github.workflow }}-$&#123;&#123; github.ref }}
-  cancel-in-progress: true
+<span class="bi">concurrency</span>:
+<span class="bi">  group</span>: ${{ github.workflow }}-${{ github.ref }}
+<span class="bi">  cancel-in-progress</span>: <span class="kw">true</span>
 
-jobs:
-  lint:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v3
-        with: { enable-cache: true }
-      - run: uv sync --frozen
-      - run: uv run ruff check . &amp;&amp; uv run ruff format --check . &amp;&amp; uv run mypy src
+<span class="bi">jobs</span>:
+<span class="bi">  lint</span>:
+<span class="bi">    runs-on</span>: ubuntu-latest
+<span class="bi">    steps</span>:
+<span class="bi">      - uses</span>: actions/checkout@v4
+<span class="bi">      - uses</span>: astral-sh/setup-uv@v3
+<span class="bi">        with</span>: { enable-cache: <span class="kw">true</span> }
+<span class="bi">      - run</span>: uv sync --frozen
+<span class="bi">      - run</span>: uv run ruff check . &amp;&amp; uv run ruff format --check . &amp;&amp; uv run mypy src
 
-  test:
-    runs-on: ubuntu-latest
-    strategy:
-      matrix: { python: ["3.11", "3.12"] }
-    services:
-      postgres:
-        image: postgres:16
-        env: { POSTGRES_PASSWORD: test }
-        ports: ["5432:5432"]
-        options: --health-cmd pg_isready --health-interval 5s --health-retries 10
-    steps:
-      - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v3
-        with: { enable-cache: true, python-version: "$&#123;&#123; matrix.python }}" }
-      - run: uv sync --frozen
-      - run: uv run pytest -q --cov=src
-        env: { DATABASE_URL: "postgresql://postgres:test@localhost:5432/postgres" }
+<span class="bi">  test</span>:
+<span class="bi">    runs-on</span>: ubuntu-latest
+<span class="bi">    strategy</span>:
+<span class="bi">      matrix</span>: { python: [<span class="st">"3.11"</span>, <span class="st">"3.12"</span>] }
+<span class="bi">    services</span>:
+<span class="bi">      postgres</span>:
+<span class="bi">        image</span>: postgres:<span class="nu">16</span>
+<span class="bi">        env</span>: { POSTGRES_PASSWORD: test }
+<span class="bi">        ports</span>: [<span class="st">"5432:5432"</span>]
+<span class="bi">        options</span>: --health-cmd pg_isready --health-interval <span class="nu">5s</span> --health-retries <span class="nu">10</span>
+<span class="bi">    steps</span>:
+<span class="bi">      - uses</span>: actions/checkout@v4
+<span class="bi">      - uses</span>: astral-sh/setup-uv@v3
+<span class="bi">        with</span>: { enable-cache: <span class="kw">true</span>, python-version: <span class="st">"${{ matrix.python }}"</span> }
+<span class="bi">      - run</span>: uv sync --frozen
+<span class="bi">      - run</span>: uv run pytest -q --cov=src
+<span class="bi">        env</span>: { DATABASE_URL: <span class="st">"postgresql://postgres:test@localhost:5432/postgres"</span> }
 
-  build:
-    needs: [lint, test]
-    if: github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
-    permissions: { contents: read, packages: write }
-    outputs: { image: "$&#123;&#123; steps.meta.outputs.image }}" }
-    steps:
-      - uses: actions/checkout@v4
-      - uses: docker/login-action@v3
-        with: { registry: ghcr.io, username: "$&#123;&#123; github.actor }}", password: "$&#123;&#123; secrets.GITHUB_TOKEN }}" }
-      - uses: docker/setup-buildx-action@v3
-      - uses: docker/build-push-action@v6
-        with:
-          push: true
-          tags: ghcr.io/$&#123;&#123; github.repository }}:$&#123;&#123; github.sha }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-      - id: meta
-        run: echo "image=ghcr.io/$&#123;&#123; github.repository }}:$&#123;&#123; github.sha }}" &gt;&gt; "$GITHUB_OUTPUT"
+<span class="bi">  build</span>:
+<span class="bi">    needs</span>: [lint, test]
+<span class="bi">    if</span>: github.ref == <span class="st">'refs/heads/main'</span>
+<span class="bi">    runs-on</span>: ubuntu-latest
+<span class="bi">    permissions</span>: { contents: read, packages: write }
+<span class="bi">    outputs</span>: { image: <span class="st">"${{ steps.meta.outputs.image }}"</span> }
+<span class="bi">    steps</span>:
+<span class="bi">      - uses</span>: actions/checkout@v4
+<span class="bi">      - uses</span>: docker/login-action@v3
+<span class="bi">        with</span>: { registry: ghcr.io, username: <span class="st">"${{ github.actor }}"</span>, password: <span class="st">"${{ secrets.GITHUB_TOKEN }}"</span> }
+<span class="bi">      - uses</span>: docker/setup-buildx-action@v3
+<span class="bi">      - uses</span>: docker/build-push-action@v6
+<span class="bi">        with</span>:
+<span class="bi">          push</span>: <span class="kw">true</span>
+<span class="bi">          tags</span>: ghcr.io/${{ github.repository }}:${{ github.sha }}
+<span class="bi">          cache-from</span>: type=gha
+<span class="bi">          cache-to</span>: type=gha,mode=max
+<span class="bi">      - id</span>: meta
+<span class="bi">        run</span>: echo <span class="st">"image=ghcr.io/${{ github.repository }}:${{ github.sha }}"</span> &gt;&gt; <span class="st">"$GITHUB_OUTPUT"</span>
 
-  deploy-staging:
-    needs: build
-    runs-on: ubuntu-latest
-    environment: staging
-    steps:
-      - run: ./scripts/deploy.sh staging "$&#123;&#123; needs.build.outputs.image }}"
+<span class="bi">  deploy-staging</span>:
+<span class="bi">    needs</span>: build
+<span class="bi">    runs-on</span>: ubuntu-latest
+<span class="bi">    environment</span>: staging
+<span class="bi">    steps</span>:
+<span class="bi">      - run</span>: ./scripts/deploy.sh staging <span class="st">"${{ needs.build.outputs.image }}"</span>
 
-  deploy-prod:
-    needs: [build, deploy-staging]
-    runs-on: ubuntu-latest
-    environment: production          # protection rule: required reviewers → manual gate
-    permissions: { id-token: write, contents: read }   # OIDC to the cloud, no stored keys
-    steps:
-      - run: ./scripts/deploy.sh production "$&#123;&#123; needs.build.outputs.image }}"</code></pre>
+<span class="bi">  deploy-prod</span>:
+<span class="bi">    needs</span>: [build, deploy-staging]
+<span class="bi">    runs-on</span>: ubuntu-latest
+<span class="bi">    environment</span>: production          <span class="cm"># protection rule: required reviewers → manual gate</span>
+<span class="bi">    permissions</span>: { id-token: write, contents: read }   <span class="cm"># OIDC to the cloud, no stored keys</span>
+<span class="bi">    steps</span>:
+<span class="bi">      - run</span>: ./scripts/deploy.sh production <span class="st">"${{ needs.build.outputs.image }}"</span></code></pre>
 
   <h2>Exercises</h2>
   <ol style="list-style:none;padding-left:0">

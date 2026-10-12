@@ -237,19 +237,19 @@ a{color:var(--ink);text-decoration:underline dotted}
  cost ≈ 8 × 0.34 × 0.6 × 730 + (avg 2 extra) × 0.34 × 730 ≈ $1,191 + $496 ≈ $1,690/mo
  saving ≈ 77% — verified with a load test at 1.5× peak: p99 unchanged, 0 errors</code></pre>
 <span class="lang">python</span>
-<pre class="code"><code># Unit economics model for a design review
-def monthly_infra(customers, req_per_customer=30_000, cost_per_m_req=6.0,
-                  gb_per_customer=2.0, cost_per_gb=0.023, fixed=4_000):
+<pre class="code"><code><span class="cm"># Unit economics model for a design review</span>
+<span class="kw">def</span> <span class="fn">monthly_infra</span>(customers, req_per_customer=<span class="nu">30_000</span>, cost_per_m_req=<span class="nu">6.0</span>,
+                  gb_per_customer=<span class="nu">2.0</span>, cost_per_gb=<span class="nu">0.023</span>, fixed=<span class="nu">4_000</span>):
     requests = customers * req_per_customer
-    return fixed + requests / 1e6 * cost_per_m_req + customers * gb_per_customer * cost_per_gb
+    <span class="kw">return</span> fixed + requests / <span class="nu">1e6</span> * cost_per_m_req + customers * gb_per_customer * cost_per_gb
 
-for c in (1_000, 10_000, 100_000):
-    total = monthly_infra(c)
-    print(f"{c:&gt;7,} customers  ${total:&gt;9,.0f}/mo  ${total / c:6.2f} per customer")
-#   1,000 customers  $    4,226/mo  $  4.23 per customer
-#  10,000 customers  $    6,260/mo  $  0.63 per customer
-# 100,000 customers  $   26,600/mo  $  0.27 per customer
-# with a $10/month price: infra is 42% of revenue at 1k customers, 2.7% at 100k</code></pre>
+<span class="kw">for</span> c <span class="kw">in</span> (<span class="nu">1_000</span>, <span class="nu">10_000</span>, <span class="nu">100_000</span>):
+    total = <span class="fn">monthly_infra</span>(c)
+    <span class="bi">print</span>(<span class="st">f"{c:&gt;7,} customers  ${total:&gt;9,.0f}/mo  ${total / c:6.2f} per customer"</span>)
+<span class="cm">#   1,000 customers  $    4,226/mo  $  4.23 per customer</span>
+<span class="cm">#  10,000 customers  $    6,260/mo  $  0.63 per customer</span>
+<span class="cm"># 100,000 customers  $   26,600/mo  $  0.27 per customer</span>
+<span class="cm"># with a $10/month price: infra is 42% of revenue at 1k customers, 2.7% at 100k</span></code></pre>
 <h2>Exercises</h2>
 <ol class="num">
 <li><span class="n">1.</span>Find and fix the top cost driver in a sample bill.

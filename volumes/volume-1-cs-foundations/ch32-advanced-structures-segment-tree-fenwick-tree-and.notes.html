@@ -230,64 +230,64 @@ a{color:var(--ink);text-decoration:underline dotted}
   <div class="pagebreak">~ page 2 ~</div>
   <h2>Example</h2>
   <span class="lang">python</span>
-<pre class="code"><code>class Fenwick:
-    """1-indexed binary indexed tree for prefix sums."""
-    def __init__(self, n):
-        self.n, self.t = n, [0] * (n + 1)
+<pre class="code"><code><span class="kw">class</span> Fenwick:
+    <span class="st">"""1-indexed binary indexed tree for prefix sums."""</span>
+    <span class="kw">def</span> <span class="fn">__init__</span>(<span class="bi">self</span>, n):
+        <span class="bi">self</span>.n, <span class="bi">self</span>.t = n, [<span class="nu">0</span>] * (n + <span class="nu">1</span>)
 
-    def add(self, i, delta):            # a[i] += delta, O(log n)
-        while i &lt;= self.n:
-            self.t[i] += delta
-            i += i &amp; -i                 # jump to the next node covering i
+    <span class="kw">def</span> <span class="fn">add</span>(<span class="bi">self</span>, i, delta):            <span class="cm"># a[i] += delta, O(log n)</span>
+        <span class="kw">while</span> i &lt;= <span class="bi">self</span>.n:
+            <span class="bi">self</span>.t[i] += delta
+            i += i &amp; -i                 <span class="cm"># jump to the next node covering i</span>
 
-    def prefix(self, i):                # a[1] + … + a[i], O(log n)
-        s = 0
-        while i &gt; 0:
-            s += self.t[i]
-            i -= i &amp; -i                 # drop the lowest set bit
-        return s
+    <span class="kw">def</span> <span class="fn">prefix</span>(<span class="bi">self</span>, i):                <span class="cm"># a[1] + … + a[i], O(log n)</span>
+        s = <span class="nu">0</span>
+        <span class="kw">while</span> i &gt; <span class="nu">0</span>:
+            s += <span class="bi">self</span>.t[i]
+            i -= i &amp; -i                 <span class="cm"># drop the lowest set bit</span>
+        <span class="kw">return</span> s
 
-    def range_sum(self, l, r):
-        return self.prefix(r) - self.prefix(l - 1)
+    <span class="kw">def</span> <span class="fn">range_sum</span>(<span class="bi">self</span>, l, r):
+        <span class="kw">return</span> <span class="bi">self</span>.<span class="fn">prefix</span>(r) - <span class="bi">self</span>.<span class="fn">prefix</span>(l - <span class="nu">1</span>)
 
-a = [5, 2, 6, 1, 3, 4, 8, 7]
-fw = Fenwick(len(a))
-for i, x in enumerate(a, 1):
-    fw.add(i, x)
-print(fw.range_sum(3, 6))               # 6+1+3+4 = 14
-fw.add(4, 10)                           # a[4] becomes 11
-print(fw.range_sum(3, 6))               # 24
+a = [<span class="nu">5</span>, <span class="nu">2</span>, <span class="nu">6</span>, <span class="nu">1</span>, <span class="nu">3</span>, <span class="nu">4</span>, <span class="nu">8</span>, <span class="nu">7</span>]
+fw = <span class="fn">Fenwick</span>(<span class="bi">len</span>(a))
+<span class="kw">for</span> i, x <span class="kw">in</span> <span class="bi">enumerate</span>(a, <span class="nu">1</span>):
+    fw.<span class="fn">add</span>(i, x)
+<span class="bi">print</span>(fw.<span class="fn">range_sum</span>(<span class="nu">3</span>, <span class="nu">6</span>))               <span class="cm"># 6+1+3+4 = 14</span>
+fw.<span class="fn">add</span>(<span class="nu">4</span>, <span class="nu">10</span>)                           <span class="cm"># a[4] becomes 11</span>
+<span class="bi">print</span>(fw.<span class="fn">range_sum</span>(<span class="nu">3</span>, <span class="nu">6</span>))               <span class="cm"># 24</span>
 </code></pre>
   <span class="lang">python</span>
-<pre class="code"><code>class DSU:
-    def __init__(self, n):
-        self.parent = list(range(n))
-        self.size = [1] * n
+<pre class="code"><code><span class="kw">class</span> DSU:
+    <span class="kw">def</span> <span class="fn">__init__</span>(<span class="bi">self</span>, n):
+        <span class="bi">self</span>.parent = <span class="bi">list</span>(<span class="bi">range</span>(n))
+        <span class="bi">self</span>.size = [<span class="nu">1</span>] * n
 
-    def find(self, x):
+    <span class="kw">def</span> <span class="fn">find</span>(<span class="bi">self</span>, x):
         root = x
-        while self.parent[root] != root:
-            root = self.parent[root]
-        while self.parent[x] != root:           # path compression
-            self.parent[x], x = root, self.parent[x]
-        return root
+        <span class="kw">while</span> <span class="bi">self</span>.parent[root] != root:
+            root = <span class="bi">self</span>.parent[root]
+        <span class="kw">while</span> <span class="bi">self</span>.parent[x] != root:           <span class="cm"># path compression</span>
+            <span class="bi">self</span>.parent[x], x = root, <span class="bi">self</span>.parent[x]
+        <span class="kw">return</span> root
 
-    def union(self, a, b):
-        ra, rb = self.find(a), self.find(b)
-        if ra == rb:
-            return False                         # already connected → a cycle if a–b is an edge
-        if self.size[ra] &lt; self.size[rb]:
+    <span class="kw">def</span> <span class="fn">union</span>(<span class="bi">self</span>, a, b):
+        ra, rb = <span class="bi">self</span>.<span class="fn">find</span>(a), <span class="bi">self</span>.<span class="fn">find</span>(b)
+        <span class="kw">if</span> ra == rb:
+            <span class="kw">return</span> <span class="kw">False</span>                         <span class="cm"># already connected → a cycle if a–b is an edge</span>
+        <span class="kw">if</span> <span class="bi">self</span>.size[ra] &lt; <span class="bi">self</span>.size[rb]:
             ra, rb = rb, ra
-        self.parent[rb] = ra                     # union by size
-        self.size[ra] += self.size[rb]
-        return True
+        <span class="bi">self</span>.parent[rb] = ra                     <span class="cm"># union by size</span>
+        <span class="bi">self</span>.size[ra] += <span class="bi">self</span>.size[rb]
+        <span class="kw">return</span> <span class="kw">True</span>
 
-edges = [(0, 1), (1, 2), (3, 4), (2, 0)]
-d = DSU(5)
-for u, v in edges:
-    if not d.union(u, v):
-        print("cycle via", (u, v))              # cycle via (2, 0)
-print(len({d.find(i) for i in range(5)}))       # 2 components
+edges = [(<span class="nu">0</span>, <span class="nu">1</span>), (<span class="nu">1</span>, <span class="nu">2</span>), (<span class="nu">3</span>, <span class="nu">4</span>), (<span class="nu">2</span>, <span class="nu">0</span>)]
+d = <span class="fn">DSU</span>(<span class="nu">5</span>)
+<span class="kw">for</span> u, v <span class="kw">in</span> edges:
+    <span class="kw">if</span> <span class="kw">not</span> d.<span class="fn">union</span>(u, v):
+        <span class="bi">print</span>(<span class="st">"cycle via"</span>, (u, v))              <span class="cm"># cycle via (2, 0)</span>
+<span class="bi">print</span>(<span class="bi">len</span>({d.<span class="fn">find</span>(i) <span class="kw">for</span> i <span class="kw">in</span> <span class="bi">range</span>(<span class="nu">5</span>)}))       <span class="cm"># 2 components</span>
 </code></pre>
   <h2>Exercises</h2>
   <ol style="list-style:none;padding-left:0">

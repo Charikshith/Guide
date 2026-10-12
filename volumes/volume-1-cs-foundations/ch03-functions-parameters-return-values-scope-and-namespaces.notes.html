@@ -238,67 +238,67 @@ a{color:var(--ink);text-decoration:underline dotted}
  make_counter's frame is gone, but `count` lives on in the cell.</code></pre>
 <h2>Example</h2>
 <span class="lang">python</span>
-<pre class="code"><code>def add(a, b):
-    return a + b
+<pre class="code"><code><span class="kw">def</span> <span class="fn">add</span>(a, b):
+    <span class="kw">return</span> a + b
 
-def divmod_(a, b):
-    return a // b, a % b          # multiple return values = a tuple
+<span class="kw">def</span> <span class="fn">divmod_</span>(a, b):
+    <span class="kw">return</span> a // b, a % b          <span class="cm"># multiple return values = a tuple</span>
 
-q, r = divmod_(17, 5)             # 3, 2
+q, r = <span class="fn">divmod_</span>(<span class="nu">17</span>, <span class="nu">5</span>)             <span class="cm"># 3, 2</span>
 
-# Pass by object reference
-def mutate(xs):
-    xs.append(99)                 # changes the caller's list
+<span class="cm"># Pass by object reference</span>
+<span class="kw">def</span> <span class="fn">mutate</span>(xs):
+    xs.<span class="fn">append</span>(<span class="nu">99</span>)                 <span class="cm"># changes the caller's list</span>
 
-def rebind(xs):
-    xs = [0]                      # only changes the local name
+<span class="kw">def</span> <span class="fn">rebind</span>(xs):
+    xs = [<span class="nu">0</span>]                      <span class="cm"># only changes the local name</span>
 
-data = [1]
-mutate(data); rebind(data)
-print(data)                       # [1, 99]
+data = [<span class="nu">1</span>]
+<span class="fn">mutate</span>(data); <span class="fn">rebind</span>(data)
+<span class="bi">print</span>(data)                       <span class="cm"># [1, 99]</span>
 
-# A closure capturing a counter
-def make_counter():
-    count = 0
-    def increment():
-        nonlocal count            # write to the enclosing variable
-        count += 1
-        return count
-    return increment
+<span class="cm"># A closure capturing a counter</span>
+<span class="kw">def</span> <span class="fn">make_counter</span>():
+    count = <span class="nu">0</span>
+    <span class="kw">def</span> <span class="fn">increment</span>():
+        <span class="kw">nonlocal</span> count            <span class="cm"># write to the enclosing variable</span>
+        count += <span class="nu">1</span>
+        <span class="kw">return</span> count
+    <span class="kw">return</span> increment
 
-c = make_counter()
-print(c(), c(), c())              # 1 2 3
+c = <span class="fn">make_counter</span>()
+<span class="bi">print</span>(<span class="fn">c</span>(), <span class="fn">c</span>(), <span class="fn">c</span>())              <span class="cm"># 1 2 3</span>
 
-# Trap: mutable default arguments are created ONCE
-def bad(x, acc=[]):
-    acc.append(x); return acc
-print(bad(1), bad(2))             # [1, 2] [1, 2] — shared list!
+<span class="cm"># Trap: mutable default arguments are created ONCE</span>
+<span class="kw">def</span> <span class="fn">bad</span>(x, acc=[]):
+    acc.<span class="fn">append</span>(x); <span class="kw">return</span> acc
+<span class="bi">print</span>(<span class="fn">bad</span>(<span class="nu">1</span>), <span class="fn">bad</span>(<span class="nu">2</span>))             <span class="cm"># [1, 2] [1, 2] — shared list!</span>
 
-def good(x, acc=None):
-    acc = [] if acc is None else acc
-    acc.append(x); return acc</code></pre>
+<span class="kw">def</span> <span class="fn">good</span>(x, acc=<span class="kw">None</span>):
+    acc = [] <span class="kw">if</span> acc <span class="kw">is</span> <span class="kw">None</span> <span class="kw">else</span> acc
+    acc.<span class="fn">append</span>(x); <span class="kw">return</span> acc</code></pre>
 <div class="pagebreak">~ page 3 ~</div>
 <h2>Exercises</h2>
 <ol style="list-style:none;padding-left:0">
 <li>1. Predict the output of a function with shadowed vs captured variables.
 <span class="lang">python</span>
-<pre class="code"><code>x = "global"
-def outer():
-    x = "enclosing"
-    def inner():
-        return x
-    x = "changed"
-    return inner
-print(outer()())</code></pre>
+<pre class="code"><code>x = <span class="st">"global"</span>
+<span class="kw">def</span> <span class="fn">outer</span>():
+    x = <span class="st">"enclosing"</span>
+    <span class="kw">def</span> <span class="fn">inner</span>():
+        <span class="kw">return</span> x
+    x = <span class="st">"changed"</span>
+    <span class="kw">return</span> inner
+<span class="bi">print</span>(<span class="fn">outer</span>()())</code></pre>
 <div class="box"><b>Solution</b> <code>changed</code>. The closure captures the <i>variable</i>, not its value at definition time, so it sees the last assignment before <code>inner()</code> runs.</div></li>
 <li>2. Write a function that returns another function.
 <div class="box"><b>Solution</b>
 <span class="lang">python</span>
-<pre class="code"><code>def multiplier(n):
-    return lambda x: x * n
+<pre class="code"><code><span class="kw">def</span> <span class="fn">multiplier</span>(n):
+    <span class="kw">return</span> <span class="kw">lambda</span> x: x * n
 
-double = multiplier(2)
-print(double(21))   # 42</code></pre>
+double = <span class="fn">multiplier</span>(<span class="nu">2</span>)
+<span class="bi">print</span>(<span class="fn">double</span>(<span class="nu">21</span>))   <span class="cm"># 42</span></code></pre>
 </div></li>
 <li>3. What does this print, and why? <code>fs = [lambda: i for i in range(3)]; print([f() for f in fs])</code>
 <div class="box"><b>Solution</b> <code>[2, 2, 2]</code>. All three lambdas share the same <code>i</code>, which ends at 2. Fix it by binding at definition: <code>lambda i=i: i</code>.</div></li>

@@ -274,46 +274,46 @@ a{color:var(--ink);text-decoration:underline dotted}
 
   <h2>Example</h2>
   <span class="lang">python</span>
-<pre class="code"><code>import random
+<pre class="code"><code><span class="kw">import</span> random
 
-class Replica:
-    def __init__(self, name): self.name, self.data, self.up = name, {}, True
-    def write(self, k, v, ver):
-        if not self.up: raise ConnectionError(self.name)
-        if ver &gt; self.data.get(k, (None, -1))[1]:
-            self.data[k] = (v, ver)
-    def read(self, k):
-        if not self.up: raise ConnectionError(self.name)
-        return self.data.get(k, (None, -1))
+<span class="kw">class</span> Replica:
+    <span class="kw">def</span> <span class="fn">__init__</span>(<span class="bi">self</span>, name): <span class="bi">self</span>.name, <span class="bi">self</span>.data, <span class="bi">self</span>.up = name, {}, <span class="kw">True</span>
+    <span class="kw">def</span> <span class="fn">write</span>(<span class="bi">self</span>, k, v, ver):
+        <span class="kw">if</span> <span class="kw">not</span> <span class="bi">self</span>.up: <span class="kw">raise</span> <span class="fn">ConnectionError</span>(<span class="bi">self</span>.name)
+        <span class="kw">if</span> ver &gt; <span class="bi">self</span>.data.<span class="fn">get</span>(k, (<span class="kw">None</span>, -<span class="nu">1</span>))[<span class="nu">1</span>]:
+            <span class="bi">self</span>.data[k] = (v, ver)
+    <span class="kw">def</span> <span class="fn">read</span>(<span class="bi">self</span>, k):
+        <span class="kw">if</span> <span class="kw">not</span> <span class="bi">self</span>.up: <span class="kw">raise</span> <span class="fn">ConnectionError</span>(<span class="bi">self</span>.name)
+        <span class="kw">return</span> <span class="bi">self</span>.data.<span class="fn">get</span>(k, (<span class="kw">None</span>, -<span class="nu">1</span>))
 
-class QuorumKV:
-    def __init__(self, n=3, w=2, r=2):
-        assert r + w &gt; n, "R + W must exceed N for read-your-latest-write"
-        self.reps, self.w, self.r, self.ver = [Replica(f"r{i}") for i in range(n)], w, r, 0
+<span class="kw">class</span> QuorumKV:
+    <span class="kw">def</span> <span class="fn">__init__</span>(<span class="bi">self</span>, n=<span class="nu">3</span>, w=<span class="nu">2</span>, r=<span class="nu">2</span>):
+        <span class="kw">assert</span> r + w &gt; n, <span class="st">"R + W must exceed N for read-your-latest-write"</span>
+        <span class="bi">self</span>.reps, <span class="bi">self</span>.w, <span class="bi">self</span>.r, <span class="bi">self</span>.ver = [<span class="fn">Replica</span>(<span class="st">f"r{i}"</span>) <span class="kw">for</span> i <span class="kw">in</span> <span class="bi">range</span>(n)], w, r, <span class="nu">0</span>
 
-    def put(self, k, v):
-        self.ver += 1
-        acks = 0
-        for rep in self.reps:
-            try: rep.write(k, v, self.ver); acks += 1
-            except ConnectionError: pass
-        if acks &lt; self.w: raise RuntimeError(f"only {acks} acks, need {self.w}")
+    <span class="kw">def</span> <span class="fn">put</span>(<span class="bi">self</span>, k, v):
+        <span class="bi">self</span>.ver += <span class="nu">1</span>
+        acks = <span class="nu">0</span>
+        <span class="kw">for</span> rep <span class="kw">in</span> <span class="bi">self</span>.reps:
+            <span class="kw">try</span>: rep.<span class="fn">write</span>(k, v, <span class="bi">self</span>.ver); acks += <span class="nu">1</span>
+            <span class="kw">except</span> ConnectionError: <span class="kw">pass</span>
+        <span class="kw">if</span> acks &lt; <span class="bi">self</span>.w: <span class="kw">raise</span> <span class="fn">RuntimeError</span>(<span class="st">f"only {acks} acks, need {self.w}"</span>)
 
-    def get(self, k):
+    <span class="kw">def</span> <span class="fn">get</span>(<span class="bi">self</span>, k):
         answers = []
-        for rep in random.sample(self.reps, len(self.reps)):
-            try: answers.append(rep.read(k))
-            except ConnectionError: continue
-            if len(answers) == self.r: break
-        if len(answers) &lt; self.r: raise RuntimeError("no read quorum")
-        return max(answers, key=lambda a: a[1])[0]      # newest version wins
+        <span class="kw">for</span> rep <span class="kw">in</span> random.<span class="fn">sample</span>(<span class="bi">self</span>.reps, <span class="bi">len</span>(<span class="bi">self</span>.reps)):
+            <span class="kw">try</span>: answers.<span class="fn">append</span>(rep.<span class="fn">read</span>(k))
+            <span class="kw">except</span> ConnectionError: <span class="kw">continue</span>
+            <span class="kw">if</span> <span class="bi">len</span>(answers) == <span class="bi">self</span>.r: <span class="kw">break</span>
+        <span class="kw">if</span> <span class="bi">len</span>(answers) &lt; <span class="bi">self</span>.r: <span class="kw">raise</span> <span class="fn">RuntimeError</span>(<span class="st">"no read quorum"</span>)
+        <span class="kw">return</span> <span class="bi">max</span>(answers, key=<span class="kw">lambda</span> a: a[<span class="nu">1</span>])[<span class="nu">0</span>]      <span class="cm"># newest version wins</span>
 
-kv = QuorumKV()
-kv.put("x", 1)
-kv.reps[2].up = False
-kv.put("x", 5)                        # succeeds with 2 of 3
-kv.reps[2].up, kv.reps[0].up = True, False
-print(kv.get("x"))                    # 5 — the overlap guarantees it</code></pre>
+kv = <span class="fn">QuorumKV</span>()
+kv.<span class="fn">put</span>(<span class="st">"x"</span>, <span class="nu">1</span>)
+kv.reps[<span class="nu">2</span>].up = <span class="kw">False</span>
+kv.<span class="fn">put</span>(<span class="st">"x"</span>, <span class="nu">5</span>)                        <span class="cm"># succeeds with 2 of 3</span>
+kv.reps[<span class="nu">2</span>].up, kv.reps[<span class="nu">0</span>].up = <span class="kw">True</span>, <span class="kw">False</span>
+<span class="bi">print</span>(kv.<span class="fn">get</span>(<span class="st">"x"</span>))                    <span class="cm"># 5 — the overlap guarantees it</span></code></pre>
 
   <h2>Exercises</h2>
   <ol style="list-style:none;padding-left:0">

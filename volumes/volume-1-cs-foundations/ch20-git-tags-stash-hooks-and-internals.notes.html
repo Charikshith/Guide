@@ -282,44 +282,44 @@ a{color:var(--ink);text-decoration:underline dotted}
 <div class="pagebreak">~ page 3 ~</div>
 <h2>Example</h2>
 <span class="lang">bash</span>
-<pre class="code"><code>echo "hello" | git hash-object --stdin          # ce013625030ba8dba906f756967f9e9ca394464a
-git cat-file -t HEAD                            # commit
-git cat-file -p HEAD                            # tree …, parent …, author …, message
-git cat-file -p 'HEAD^{tree}'                   # 100644 blob 5d2a…  README.md
-                                                # 040000 tree 8c77…  src
-git rev-parse HEAD
-cat .git/HEAD                                   # ref: refs/heads/main
+<pre class="code"><code><span class="bi">echo</span> <span class="st">"hello"</span> | <span class="bi">git</span> hash-object --stdin          <span class="cm"># ce013625030ba8dba906f756967f9e9ca394464a</span>
+<span class="bi">git</span> <span class="bi">cat</span>-file -t HEAD                            <span class="cm"># commit</span>
+<span class="bi">git</span> <span class="bi">cat</span>-file -p HEAD                            <span class="cm"># tree …, parent …, author …, message</span>
+<span class="bi">git</span> <span class="bi">cat</span>-file -p <span class="st">'HEAD^{tree}'</span>                   <span class="cm"># 100644 blob 5d2a…  README.md</span>
+                                                <span class="cm"># 040000 tree 8c77…  src</span>
+<span class="bi">git</span> rev-parse HEAD
+<span class="bi">cat</span> .<span class="bi">git</span>/HEAD                                   <span class="cm"># ref: refs/heads/main</span>
 
-git tag -a v1.0.0 -m "First stable release"     # annotated
-git push origin v1.0.0
-git describe --tags                             # v1.0.0-3-g7a1c2e4 (3 commits after the tag)
+<span class="bi">git</span> tag -a v1.<span class="nu">0</span>.<span class="nu">0</span> -m <span class="st">"First stable release"</span>     <span class="cm"># annotated</span>
+<span class="bi">git</span> push origin v1.<span class="nu">0</span>.<span class="nu">0</span>
+<span class="bi">git</span> describe --tags                             <span class="cm"># v1.0.0-3-g7a1c2e4 (3 commits after the tag)</span>
 
-git stash push -m "wip: half-done refactor"
-git stash list                                  # stash@{0}: On main: wip: half-done refactor
-git stash pop</code></pre>
+<span class="bi">git</span> stash push -m <span class="st">"wip: half-done refactor"</span>
+<span class="bi">git</span> stash list                                  <span class="cm"># stash@{0}: On main: wip: half-done refactor</span>
+<span class="bi">git</span> stash pop</code></pre>
 <span class="lang">bash</span>
-<pre class="code"><code>#!/usr/bin/env bash
-# .git/hooks/pre-commit — block whitespace errors and debug prints (chmod +x it)
-set -euo pipefail
-if ! git diff --cached --check; then
-    echo "✗ whitespace errors (see above)"; exit 1
-fi
-if git diff --cached -U0 -- '*.py' | grep -E '^\+.*\bbreakpoint\(\)'; then
-    echo "✗ remove breakpoint() before committing"; exit 1
-fi</code></pre>
+<pre class="code"><code><span class="cm">#!/usr/bin/env bash</span>
+<span class="cm"># .git/hooks/pre-commit — block whitespace errors and debug prints (chmod +x it)</span>
+<span class="kw">set</span> -euo pipefail
+<span class="kw">if</span> ! <span class="bi">git</span> diff --cached --check; <span class="kw">then</span>
+    <span class="bi">echo</span> <span class="st">"✗ whitespace errors (see above)"</span>; <span class="kw">exit</span> <span class="nu">1</span>
+<span class="kw">fi</span>
+<span class="kw">if</span> <span class="bi">git</span> diff --cached -U0 -- <span class="st">'*.py'</span> | <span class="bi">grep</span> -E <span class="st">'^\+.*\bbreakpoint\(\)'</span>; <span class="kw">then</span>
+    <span class="bi">echo</span> <span class="st">"✗ remove breakpoint() before committing"</span>; <span class="kw">exit</span> <span class="nu">1</span>
+<span class="kw">fi</span></code></pre>
 <span class="lang">yaml</span>
-<pre class="code"><code># .pre-commit-config.yaml — versioned, shared hooks
-repos:
-  - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.6.9
-    hooks:
-      - id: ruff
-      - id: ruff-format
-  - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.6.0
-    hooks:
-      - id: trailing-whitespace
-      - id: detect-private-key</code></pre>
+<pre class="code"><code><span class="cm"># .pre-commit-config.yaml — versioned, shared hooks</span>
+<span class="bi">repos</span>:
+<span class="bi">  - repo</span>: https://github.com/astral-sh/ruff-pre-commit
+<span class="bi">    rev</span>: v0.<span class="nu">6.9</span>
+<span class="bi">    hooks</span>:
+<span class="bi">      - id</span>: ruff
+<span class="bi">      - id</span>: ruff-format
+<span class="bi">  - repo</span>: https://github.com/pre-commit/pre-commit-hooks
+<span class="bi">    rev</span>: v4.<span class="nu">6.0</span>
+<span class="bi">    hooks</span>:
+<span class="bi">      - id</span>: trailing-whitespace
+<span class="bi">      - id</span>: detect-private-key</code></pre>
 <h2>Exercises</h2>
 <ol style="list-style:none;padding-left:0">
 <li><p>1. Inspect a commit object with <code>git cat-file</code>.</p>

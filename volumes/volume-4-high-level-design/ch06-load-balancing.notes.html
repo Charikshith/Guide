@@ -288,42 +288,42 @@ a{color:var(--ink);text-decoration:underline dotted}
 
   <h2>Example</h2>
   <span class="lang">python</span>
-<pre class="code"><code>import bisect, hashlib
-from collections import Counter
+<pre class="code"><code><span class="kw">import</span> bisect, hashlib
+<span class="kw">from</span> collections <span class="kw">import</span> Counter
 
-def h(s):
-    return int.from_bytes(hashlib.sha1(s.encode()).digest()[:8], "big")
+<span class="kw">def</span> <span class="fn">h</span>(s):
+    <span class="kw">return</span> <span class="bi">int</span>.<span class="fn">from_bytes</span>(hashlib.<span class="fn">sha1</span>(s.<span class="fn">encode</span>()).<span class="fn">digest</span>()[:<span class="nu">8</span>], <span class="st">"big"</span>)
 
-class Ring:
-    def __init__(self, nodes, vnodes=160):
-        self.vnodes = vnodes
-        self.points = sorted((h(f"{n}#{i}"), n) for n in nodes for i in range(vnodes))
-    def add(self, node):
-        self.points = sorted(self.points + [(h(f"{node}#{i}"), node) for i in range(self.vnodes)])
-    def remove(self, node):                        # health check failed
-        self.points = [p for p in self.points if p[1] != node]
-    def pick(self, key):
-        i = bisect.bisect(self.points, (h(key),)) % len(self.points)
-        return self.points[i][1]
+<span class="kw">class</span> Ring:
+    <span class="kw">def</span> <span class="fn">__init__</span>(<span class="bi">self</span>, nodes, vnodes=<span class="nu">160</span>):
+        <span class="bi">self</span>.vnodes = vnodes
+        <span class="bi">self</span>.points = <span class="bi">sorted</span>((<span class="fn">h</span>(<span class="st">f"{n}#{i}"</span>), n) <span class="kw">for</span> n <span class="kw">in</span> nodes <span class="kw">for</span> i <span class="kw">in</span> <span class="bi">range</span>(vnodes))
+    <span class="kw">def</span> <span class="fn">add</span>(<span class="bi">self</span>, node):
+        <span class="bi">self</span>.points = <span class="bi">sorted</span>(<span class="bi">self</span>.points + [(<span class="fn">h</span>(<span class="st">f"{node}#{i}"</span>), node) <span class="kw">for</span> i <span class="kw">in</span> <span class="bi">range</span>(<span class="bi">self</span>.vnodes)])
+    <span class="kw">def</span> <span class="fn">remove</span>(<span class="bi">self</span>, node):                        <span class="cm"># health check failed</span>
+        <span class="bi">self</span>.points = [p <span class="kw">for</span> p <span class="kw">in</span> <span class="bi">self</span>.points <span class="kw">if</span> p[<span class="nu">1</span>] != node]
+    <span class="kw">def</span> <span class="fn">pick</span>(<span class="bi">self</span>, key):
+        i = bisect.<span class="fn">bisect</span>(<span class="bi">self</span>.points, (<span class="fn">h</span>(key),)) % <span class="bi">len</span>(<span class="bi">self</span>.points)
+        <span class="kw">return</span> <span class="bi">self</span>.points[i][<span class="nu">1</span>]
 
-keys = [f"user:{i}" for i in range(20_000)]
-ring = Ring(["b1", "b2", "b3"])
-before = {k: ring.pick(k) for k in keys}
-print(Counter(before.values()))                    # roughly even
-ring.add("b4")
-moved = sum(before[k] != ring.pick(k) for k in keys) / len(keys)
-print(f"ring: {moved:.0%} moved")                  # ≈ 25% (28% in one run: vnodes aren't perfectly even)
+keys = [<span class="st">f"user:{i}"</span> <span class="kw">for</span> i <span class="kw">in</span> <span class="bi">range</span>(<span class="nu">20_000</span>)]
+ring = <span class="fn">Ring</span>([<span class="st">"b1"</span>, <span class="st">"b2"</span>, <span class="st">"b3"</span>])
+before = {k: ring.<span class="fn">pick</span>(k) <span class="kw">for</span> k <span class="kw">in</span> keys}
+<span class="bi">print</span>(<span class="fn">Counter</span>(before.<span class="fn">values</span>()))                    <span class="cm"># roughly even</span>
+ring.<span class="fn">add</span>(<span class="st">"b4"</span>)
+moved = <span class="bi">sum</span>(before[k] != ring.<span class="fn">pick</span>(k) <span class="kw">for</span> k <span class="kw">in</span> keys) / <span class="bi">len</span>(keys)
+<span class="bi">print</span>(<span class="st">f"ring: {moved:.0%} moved"</span>)                  <span class="cm"># ≈ 25% (28% in one run: vnodes aren't perfectly even)</span>
 
-mod_before = {k: h(k) % 3 for k in keys}
-mod_moved = sum(mod_before[k] != h(k) % 4 for k in keys) / len(keys)
-print(f"mod N: {mod_moved:.0%} moved")             # ≈ 75%</code></pre>
+mod_before = {k: <span class="fn">h</span>(k) % <span class="nu">3</span> <span class="kw">for</span> k <span class="kw">in</span> keys}
+mod_moved = <span class="bi">sum</span>(mod_before[k] != <span class="fn">h</span>(k) % <span class="nu">4</span> <span class="kw">for</span> k <span class="kw">in</span> keys) / <span class="bi">len</span>(keys)
+<span class="bi">print</span>(<span class="st">f"mod N: {mod_moved:.0%} moved"</span>)             <span class="cm"># ≈ 75%</span></code></pre>
   <span class="lang">python</span>
-<pre class="code"><code># Least connections
-class LeastConn:
-    def __init__(self, backends): self.active = {b: 0 for b in backends}
-    def acquire(self):
-        b = min(self.active, key=self.active.get); self.active[b] += 1; return b
-    def release(self, b): self.active[b] -= 1</code></pre>
+<pre class="code"><code><span class="cm"># Least connections</span>
+<span class="kw">class</span> LeastConn:
+    <span class="kw">def</span> <span class="fn">__init__</span>(<span class="bi">self</span>, backends): <span class="bi">self</span>.active = {b: <span class="nu">0</span> <span class="kw">for</span> b <span class="kw">in</span> backends}
+    <span class="kw">def</span> <span class="fn">acquire</span>(<span class="bi">self</span>):
+        b = <span class="bi">min</span>(<span class="bi">self</span>.active, key=<span class="bi">self</span>.active.get); <span class="bi">self</span>.active[b] += <span class="nu">1</span>; <span class="kw">return</span> b
+    <span class="kw">def</span> <span class="fn">release</span>(<span class="bi">self</span>, b): <span class="bi">self</span>.active[b] -= <span class="nu">1</span></code></pre>
 
   <h2>Exercises</h2>
   <ol style="list-style:none;padding-left:0">

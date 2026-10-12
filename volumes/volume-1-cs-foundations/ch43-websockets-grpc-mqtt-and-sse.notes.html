@@ -270,50 +270,50 @@ a{color:var(--ink);text-decoration:underline dotted}
   <div class="pagebreak">~ page 3 ~</div>
   <h2>Example</h2>
   <span class="lang">python</span>
-<pre class="code"><code># SSE with FastAPI — also how LLM APIs stream tokens
-import asyncio, json
-from fastapi import FastAPI
-from fastapi.responses import StreamingResponse
+<pre class="code"><code><span class="cm"># SSE with FastAPI — also how LLM APIs stream tokens</span>
+<span class="kw">import</span> asyncio, json
+<span class="kw">from</span> fastapi <span class="kw">import</span> FastAPI
+<span class="kw">from</span> fastapi.responses <span class="kw">import</span> StreamingResponse
 
-app = FastAPI()
+app = <span class="fn">FastAPI</span>()
 
-@app.get("/events")
-async def events():
-    async def gen():
-        for i in range(5):
-            yield f"id: {i}\nevent: tick\ndata: {json.dumps({'n': i})}\n\n"   # blank line ends an event
-            await asyncio.sleep(1)
-    return StreamingResponse(gen(), media_type="text/event-stream")</code></pre>
+<span class="bi">@app.get</span>(<span class="st">"/events"</span>)
+<span class="kw">async</span> <span class="kw">def</span> <span class="fn">events</span>():
+    <span class="kw">async</span> <span class="kw">def</span> <span class="fn">gen</span>():
+        <span class="kw">for</span> i <span class="kw">in</span> <span class="bi">range</span>(<span class="nu">5</span>):
+            <span class="kw">yield</span> <span class="st">f"id: {i}\nevent: tick\ndata: {json.dumps({'n': i})}\n\n"</span>   <span class="cm"># blank line ends an event</span>
+            <span class="kw">await</span> asyncio.<span class="fn">sleep</span>(<span class="nu">1</span>)
+    <span class="kw">return</span> <span class="fn">StreamingResponse</span>(<span class="fn">gen</span>(), media_type=<span class="st">"text/event-stream"</span>)</code></pre>
   <span class="lang">js</span>
-<pre class="code"><code>const es = new EventSource("/events");                       // reconnects automatically
-es.addEventListener("tick", e =&gt; console.log(JSON.parse(e.data)));
+<pre class="code"><code><span class="kw">const</span> es = <span class="kw">new</span> <span class="fn">EventSource</span>(<span class="st">"/events"</span>);                       <span class="cm">// reconnects automatically</span>
+es.<span class="fn">addEventListener</span>(<span class="st">"tick"</span>, e =&gt; <span class="bi">console</span>.<span class="fn">log</span>(<span class="bi">JSON</span>.<span class="fn">parse</span>(e.data)));
 
-const ws = new WebSocket("wss://example.com/chat");
-ws.onopen = () =&gt; ws.send("hello");
-ws.onmessage = e =&gt; console.log("got", e.data);</code></pre>
+<span class="kw">const</span> ws = <span class="kw">new</span> <span class="fn">WebSocket</span>(<span class="st">"wss://example.com/chat"</span>);
+ws.onopen = () =&gt; ws.<span class="fn">send</span>(<span class="st">"hello"</span>);
+ws.onmessage = e =&gt; <span class="bi">console</span>.<span class="fn">log</span>(<span class="st">"got"</span>, e.data);</code></pre>
   <span class="lang">python</span>
-<pre class="code"><code># WebSocket echo server (pip install websockets)
-import asyncio, websockets
-async def echo(ws):
-    async for msg in ws:
-        await ws.send(f"echo: {msg}")
-async def main():
-    async with websockets.serve(echo, "0.0.0.0", 8765):
-        await asyncio.Future()
-asyncio.run(main())</code></pre>
+<pre class="code"><code><span class="cm"># WebSocket echo server (pip install websockets)</span>
+<span class="kw">import</span> asyncio, websockets
+<span class="kw">async</span> <span class="kw">def</span> <span class="fn">echo</span>(ws):
+    <span class="kw">async</span> <span class="kw">for</span> msg <span class="kw">in</span> ws:
+        <span class="kw">await</span> ws.<span class="fn">send</span>(<span class="st">f"echo: {msg}"</span>)
+<span class="kw">async</span> <span class="kw">def</span> <span class="fn">main</span>():
+    <span class="kw">async</span> <span class="kw">with</span> websockets.<span class="fn">serve</span>(echo, <span class="st">"0.0.0.0"</span>, <span class="nu">8765</span>):
+        <span class="kw">await</span> asyncio.<span class="fn">Future</span>()
+asyncio.<span class="fn">run</span>(<span class="fn">main</span>())</code></pre>
   <span class="lang">protobuf</span>
-<pre class="code"><code>syntax = "proto3";
-service Chat {
-  rpc Send (Message) returns (Ack);                          // unary
-  rpc Subscribe (Room) returns (stream Message);             // server streaming
-  rpc Converse (stream Message) returns (stream Message);    // bidirectional
+<pre class="code"><code><span class="kw">syntax</span> = <span class="st">"proto3"</span>;
+<span class="kw">service</span> Chat {
+  <span class="kw">rpc</span> Send (Message) <span class="kw">returns</span> (Ack);                          <span class="cm">// unary</span>
+  <span class="kw">rpc</span> Subscribe (Room) <span class="kw">returns</span> (<span class="kw">stream</span> Message);             <span class="cm">// server streaming</span>
+  <span class="kw">rpc</span> Converse (<span class="kw">stream</span> Message) <span class="kw">returns</span> (<span class="kw">stream</span> Message);    <span class="cm">// bidirectional</span>
 }
-message Room    { string id = 1; }
-message Message { string room = 1; string user = 2; string text = 3; int64 ts = 4; }
-message Ack     { bool ok = 1; }</code></pre>
+<span class="kw">message</span> Room    { <span class="bi">string</span> id = <span class="nu">1</span>; }
+<span class="kw">message</span> Message { <span class="bi">string</span> room = <span class="nu">1</span>; <span class="bi">string</span> user = <span class="nu">2</span>; <span class="bi">string</span> text = <span class="nu">3</span>; <span class="bi">int64</span> ts = <span class="nu">4</span>; }
+<span class="kw">message</span> Ack     { <span class="bi">bool</span> ok = <span class="nu">1</span>; }</code></pre>
   <span class="lang">bash</span>
-<pre class="code"><code>mosquitto_sub -h localhost -t 'home/+/temp' -q 1 &amp;
-mosquitto_pub -h localhost -t home/kitchen/temp -m 21.5 -q 1 -r   # -r: retained</code></pre>
+<pre class="code"><code>mosquitto_sub -h localhost -t <span class="st">'home/+/temp'</span> -q <span class="nu">1</span> &amp;
+mosquitto_pub -h localhost -t home/kitchen/temp -m <span class="nu">21</span>.<span class="nu">5</span> -q <span class="nu">1</span> -r   <span class="cm"># -r: retained</span></code></pre>
   <h2>Exercises</h2>
   <ol style="list-style:none;padding-left:0">
 <li>1. Implement a WebSocket chat server.

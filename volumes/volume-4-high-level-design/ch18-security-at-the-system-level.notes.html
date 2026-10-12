@@ -239,62 +239,62 @@ a{color:var(--ink);text-decoration:underline dotted}
 <h2>Example</h2>
 <span class="lang">json</span>
 <pre class="code"><code>{
-  "Version": "2012-10-17",
-  "Statement": [
+  <span class="bi">"Version"</span>: <span class="st">"2012-10-17"</span>,
+  <span class="bi">"Statement"</span>: [
     {
-      "Sid": "ReadOwnReports",
-      "Effect": "Allow",
-      "Action": ["s3:GetObject"],
-      "Resource": "arn:aws:s3:::acme-reports/tenant-*/reports/*"
+      <span class="bi">"Sid"</span>: <span class="st">"ReadOwnReports"</span>,
+      <span class="bi">"Effect"</span>: <span class="st">"Allow"</span>,
+      <span class="bi">"Action"</span>: [<span class="st">"s3:GetObject"</span>],
+      <span class="bi">"Resource"</span>: <span class="st">"arn:aws:s3:::acme-reports/tenant-*/reports/*"</span>
     },
     {
-      "Sid": "DecryptWithReportsKeyOnly",
-      "Effect": "Allow",
-      "Action": ["kms:Decrypt"],
-      "Resource": "arn:aws:kms:eu-west-1:111122223333:key/5f1e…",
-      "Condition": { "StringEquals": { "kms:ViaService": "s3.eu-west-1.amazonaws.com" } }
+      <span class="bi">"Sid"</span>: <span class="st">"DecryptWithReportsKeyOnly"</span>,
+      <span class="bi">"Effect"</span>: <span class="st">"Allow"</span>,
+      <span class="bi">"Action"</span>: [<span class="st">"kms:Decrypt"</span>],
+      <span class="bi">"Resource"</span>: <span class="st">"arn:aws:kms:eu-west-1:111122223333:key/5f1e…"</span>,
+      <span class="bi">"Condition"</span>: { <span class="bi">"StringEquals"</span>: { <span class="bi">"kms:ViaService"</span>: <span class="st">"s3.eu-west-1.amazonaws.com"</span> } }
     }
   ]
 }</code></pre>
 <span class="lang">yaml</span>
-<pre class="code"><code># Istio: require mTLS everywhere, and allow only orders → payments
-apiVersion: security.istio.io/v1beta1
-kind: PeerAuthentication
-metadata: { name: default, namespace: prod }
-spec: { mtls: { mode: STRICT } }
+<pre class="code"><code><span class="cm"># Istio: require mTLS everywhere, and allow only orders → payments</span>
+<span class="bi">apiVersion</span>: security.istio.io/v1beta1
+<span class="bi">kind</span>: PeerAuthentication
+<span class="bi">metadata</span>: { name: default, namespace: prod }
+<span class="bi">spec</span>: { mtls: { mode: STRICT } }
 ---
-apiVersion: security.istio.io/v1beta1
-kind: AuthorizationPolicy
-metadata: { name: payments-allow-orders, namespace: prod }
-spec:
-  selector: { matchLabels: { app: payments } }
-  action: ALLOW
-  rules:
-    - from: [{ source: { principals: ["cluster.local/ns/prod/sa/orders"] } }]
-      to:   [{ operation: { methods: ["POST"], paths: ["/charge"] } }]</code></pre>
+<span class="bi">apiVersion</span>: security.istio.io/v1beta1
+<span class="bi">kind</span>: AuthorizationPolicy
+<span class="bi">metadata</span>: { name: payments-allow-orders, namespace: prod }
+<span class="bi">spec</span>:
+<span class="bi">  selector</span>: { matchLabels: { app: payments } }
+<span class="bi">  action</span>: ALLOW
+<span class="bi">  rules</span>:
+<span class="bi">    - from</span>: [{ source: { principals: [<span class="st">"cluster.local/ns/prod/sa/orders"</span>] } }]
+<span class="bi">      to</span>:   [{ operation: { methods: [<span class="st">"POST"</span>], paths: [<span class="st">"/charge"</span>] } }]</code></pre>
 <span class="lang">bash</span>
-<pre class="code"><code># Vault: dynamic, short-lived database credentials
+<pre class="code"><code><span class="cm"># Vault: dynamic, short-lived database credentials</span>
 vault write database/roles/payments-app \
     db_name=payments \
-    creation_statements="CREATE ROLE \"{&#123;name}}\" LOGIN PASSWORD '{&#123;password}}' VALID UNTIL '{&#123;expiration}}'; \
-                         GRANT SELECT, INSERT ON ledger TO \"{&#123;name}}\";" \
+    creation_statements="CREATE ROLE \"{{name}}\" LOGIN PASSWORD <span class="st">'{{password}}'</span> VALID UNTIL <span class="st">'{{expiration}}'</span>; \
+                         GRANT SELECT, INSERT ON ledger TO \<span class="st">"{{name}}\";"</span> \
     default_ttl=1h max_ttl=4h
-vault read database/creds/payments-app      # username v-payments-8f3k…, a password, lease 1h</code></pre>
+vault read database/creds/payments-app      <span class="cm"># username v-payments-8f3k…, a password, lease 1h</span></code></pre>
 <span class="lang">python</span>
-<pre class="code"><code># Envelope encryption with AWS KMS
-import boto3, os
-from cryptography.hazmat.primitives.ciphers.aead import AESGCM
-kms = boto3.client("kms")
+<pre class="code"><code><span class="cm"># Envelope encryption with AWS KMS</span>
+<span class="kw">import</span> boto3, os
+<span class="kw">from</span> cryptography.hazmat.primitives.ciphers.aead <span class="kw">import</span> AESGCM
+kms = boto3.<span class="fn">client</span>(<span class="st">"kms"</span>)
 
-def encrypt(plaintext: bytes, key_id: str) -&gt; dict:
-    dk = kms.generate_data_key(KeyId=key_id, KeySpec="AES_256")
-    nonce = os.urandom(12)
-    ct = AESGCM(dk["Plaintext"]).encrypt(nonce, plaintext, None)
-    return {"edk": dk["CiphertextBlob"], "nonce": nonce, "ct": ct}    # the plaintext key is discarded
+<span class="kw">def</span> <span class="fn">encrypt</span>(plaintext: <span class="bi">bytes</span>, key_id: <span class="bi">str</span>) -&gt; <span class="bi">dict</span>:
+    dk = kms.<span class="fn">generate_data_key</span>(KeyId=key_id, KeySpec=<span class="st">"AES_256"</span>)
+    nonce = os.<span class="fn">urandom</span>(<span class="nu">12</span>)
+    ct = <span class="fn">AESGCM</span>(dk[<span class="st">"Plaintext"</span>]).<span class="fn">encrypt</span>(nonce, plaintext, <span class="kw">None</span>)
+    <span class="kw">return</span> {<span class="st">"edk"</span>: dk[<span class="st">"CiphertextBlob"</span>], <span class="st">"nonce"</span>: nonce, <span class="st">"ct"</span>: ct}    <span class="cm"># the plaintext key is discarded</span>
 
-def decrypt(blob: dict) -&gt; bytes:
-    key = kms.decrypt(CiphertextBlob=blob["edk"])["Plaintext"]        # IAM-checked, logged
-    return AESGCM(key).decrypt(blob["nonce"], blob["ct"], None)</code></pre>
+<span class="kw">def</span> <span class="fn">decrypt</span>(blob: <span class="bi">dict</span>) -&gt; <span class="bi">bytes</span>:
+    key = kms.<span class="fn">decrypt</span>(CiphertextBlob=blob[<span class="st">"edk"</span>])[<span class="st">"Plaintext"</span>]        <span class="cm"># IAM-checked, logged</span>
+    <span class="kw">return</span> <span class="fn">AESGCM</span>(key).<span class="fn">decrypt</span>(blob[<span class="st">"nonce"</span>], blob[<span class="st">"ct"</span>], <span class="kw">None</span>)</code></pre>
 <h2>Exercises</h2>
 <ol class="num">
 <li><span class="n">1.</span>Design least-privilege IAM for a service.

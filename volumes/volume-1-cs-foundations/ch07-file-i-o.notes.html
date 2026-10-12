@@ -251,40 +251,40 @@ a{color:var(--ink);text-decoration:underline dotted}
                 (never a half-written file)</code></pre>
 <h2>Example</h2>
 <span class="lang">python</span>
-<pre class="code"><code>from pathlib import Path
-import os, tempfile, hashlib
+<pre class="code"><code><span class="kw">from</span> pathlib <span class="kw">import</span> Path
+<span class="kw">import</span> os, tempfile, hashlib
 
-# Context manager: closed even if an exception is raised
-with open("f.txt", "w", encoding="utf-8") as f:
-    f.write("line 1\nline 2\n")
+<span class="cm"># Context manager: closed even if an exception is raised</span>
+<span class="kw">with</span> <span class="bi">open</span>(<span class="st">"f.txt"</span>, <span class="st">"w"</span>, encoding=<span class="st">"utf-8"</span>) <span class="kw">as</span> f:
+    f.<span class="fn">write</span>(<span class="st">"line 1\nline 2\n"</span>)
 
-with open("f.txt", encoding="utf-8") as f:
-    for line in f:                          # streams one line at a time
-        print(line.rstrip())
+<span class="kw">with</span> <span class="bi">open</span>(<span class="st">"f.txt"</span>, encoding=<span class="st">"utf-8"</span>) <span class="kw">as</span> f:
+    <span class="kw">for</span> line <span class="kw">in</span> f:                          <span class="cm"># streams one line at a time</span>
+        <span class="bi">print</span>(line.<span class="fn">rstrip</span>())
 
-# Binary: hash a huge file in 1 MB chunks (constant memory)
-def sha256_of(path, chunk=1 &lt;&lt; 20):
-    h = hashlib.sha256()
-    with open(path, "rb") as f:
-        while block := f.read(chunk):
-            h.update(block)
-    return h.hexdigest()
+<span class="cm"># Binary: hash a huge file in 1 MB chunks (constant memory)</span>
+<span class="kw">def</span> <span class="fn">sha256_of</span>(path, chunk=<span class="nu">1</span> &lt;&lt; <span class="nu">20</span>):
+    h = hashlib.<span class="fn">sha256</span>()
+    <span class="kw">with</span> <span class="bi">open</span>(path, <span class="st">"rb"</span>) <span class="kw">as</span> f:
+        <span class="kw">while</span> block := f.<span class="fn">read</span>(chunk):
+            h.<span class="fn">update</span>(block)
+    <span class="kw">return</span> h.<span class="fn">hexdigest</span>()
 
-# Atomic write
-def write_atomic(path, data: str):
-    path = Path(path)
-    fd, tmp = tempfile.mkstemp(dir=path.parent, prefix=path.name + ".")
-    try:
-        with os.fdopen(fd, "w", encoding="utf-8") as f:
-            f.write(data)
-            f.flush()
-            os.fsync(f.fileno())
-        os.replace(tmp, path)               # atomic on the same filesystem
-    except BaseException:
-        os.unlink(tmp)
-        raise
+<span class="cm"># Atomic write</span>
+<span class="kw">def</span> <span class="fn">write_atomic</span>(path, data: <span class="bi">str</span>):
+    path = <span class="fn">Path</span>(path)
+    fd, tmp = tempfile.<span class="fn">mkstemp</span>(dir=path.parent, prefix=path.name + <span class="st">"."</span>)
+    <span class="kw">try</span>:
+        <span class="kw">with</span> os.<span class="fn">fdopen</span>(fd, <span class="st">"w"</span>, encoding=<span class="st">"utf-8"</span>) <span class="kw">as</span> f:
+            f.<span class="fn">write</span>(data)
+            f.<span class="fn">flush</span>()
+            os.<span class="fn">fsync</span>(f.<span class="fn">fileno</span>())
+        os.<span class="fn">replace</span>(tmp, path)               <span class="cm"># atomic on the same filesystem</span>
+    <span class="kw">except</span> BaseException:
+        os.<span class="fn">unlink</span>(tmp)
+        <span class="kw">raise</span>
 
-write_atomic("config.json", '{"port": 8080}')</code></pre>
+<span class="fn">write_atomic</span>(<span class="st">"config.json"</span>, <span class="st">'{"port": 8080}'</span>)</code></pre>
 <div class="pagebreak">~ page 3 ~</div>
 <h2>Exercises</h2>
 <ol style="list-style:none;padding-left:0">

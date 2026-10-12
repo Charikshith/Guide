@@ -260,52 +260,52 @@ a{color:var(--ink);text-decoration:underline dotted}
 </figure>
 <h2>Example</h2>
 <span class="lang">python</span>
-<pre class="code"><code>class ConfigError(Exception):
-    """A config problem the user can fix."""
-    def __init__(self, path, line, message):
-        super().__init__(f"{path}:{line}: {message}")
-        self.path, self.line = path, line
+<pre class="code"><code><span class="kw">class</span> <span class="fn">ConfigError</span>(<span class="bi">Exception</span>):
+    <span class="st">"""A config problem the user can fix."""</span>
+    <span class="kw">def</span> <span class="fn">__init__</span>(<span class="bi">self</span>, path, line, message):
+        <span class="bi">super</span>().<span class="fn">__init__</span>(<span class="st">f"{path}:{line}: {message}"</span>)
+        <span class="bi">self</span>.path, <span class="bi">self</span>.line = path, line
 
-def load_port(path):
-    try:
-        f = open(path, encoding="utf-8")
-    except FileNotFoundError as e:
-        raise ConfigError(path, 0, "file not found") from e    # keep the cause
-    else:
-        with f:
-            for n, line in enumerate(f, 1):
-                if line.startswith("port="):
-                    value = line.split("=", 1)[1].strip()
-                    try:
-                        return int(value)
-                    except ValueError:
-                        raise ConfigError(path, n, f"port must be a number, got {value!r}") from None
-        raise ConfigError(path, 0, "missing 'port='")
-    finally:
-        print("load_port finished")                              # runs on every path</code></pre>
+<span class="kw">def</span> <span class="fn">load_port</span>(path):
+    <span class="kw">try</span>:
+        f = <span class="bi">open</span>(path, encoding=<span class="st">"utf-8"</span>)
+    <span class="kw">except</span> FileNotFoundError <span class="kw">as</span> e:
+        <span class="kw">raise</span> <span class="fn">ConfigError</span>(path, <span class="nu">0</span>, <span class="st">"file not found"</span>) <span class="kw">from</span> e    <span class="cm"># keep the cause</span>
+    <span class="kw">else</span>:
+        <span class="kw">with</span> f:
+            <span class="kw">for</span> n, line <span class="kw">in</span> <span class="bi">enumerate</span>(f, <span class="nu">1</span>):
+                <span class="kw">if</span> line.<span class="fn">startswith</span>(<span class="st">"port="</span>):
+                    value = line.<span class="fn">split</span>(<span class="st">"="</span>, <span class="nu">1</span>)[<span class="nu">1</span>].<span class="fn">strip</span>()
+                    <span class="kw">try</span>:
+                        <span class="kw">return</span> <span class="bi">int</span>(value)
+                    <span class="kw">except</span> <span class="bi">ValueError</span>:
+                        <span class="kw">raise</span> <span class="fn">ConfigError</span>(path, n, <span class="st">f"port must be a number, got {value!r}"</span>) <span class="kw">from</span> <span class="kw">None</span>
+        <span class="kw">raise</span> <span class="fn">ConfigError</span>(path, <span class="nu">0</span>, <span class="st">"missing 'port='"</span>)
+    <span class="kw">finally</span>:
+        <span class="bi">print</span>(<span class="st">"load_port finished"</span>)                              <span class="cm"># runs on every path</span></code></pre>
 <span class="lang">rust</span>
-<pre class="code"><code>use std::{fs, num::ParseIntError};
+<pre class="code"><code><span class="kw">use</span> std::{fs, num::ParseIntError};
 
-#[derive(Debug)]
-enum ConfigError {
-    Io(std::io::Error),
-    BadPort { line: usize, source: ParseIntError },
+<span class="bi">#[derive(Debug)]</span>
+<span class="kw">enum</span> ConfigError {
+    <span class="fn">Io</span>(std::io::Error),
+    BadPort { line: <span class="bi">usize</span>, source: ParseIntError },
     Missing,
 }
 
-impl From&lt;std::io::Error&gt; for ConfigError {
-    fn from(e: std::io::Error) -&gt; Self { ConfigError::Io(e) }
+<span class="kw">impl</span> From&lt;std::io::Error&gt; <span class="kw">for</span> ConfigError {
+    <span class="kw">fn</span> <span class="fn">from</span>(e: std::io::Error) -&gt; <span class="kw">Self</span> { ConfigError::<span class="fn">Io</span>(e) }
 }
 
-fn load_port(path: &amp;str) -&gt; Result&lt;u16, ConfigError&gt; {
-    let text = fs::read_to_string(path)?;               // io::Error → ConfigError via From
-    for (i, line) in text.lines().enumerate() {
-        if let Some(v) = line.strip_prefix("port=") {
-            return v.trim().parse::&lt;u16&gt;()
-                .map_err(|e| ConfigError::BadPort { line: i + 1, source: e });
+<span class="kw">fn</span> <span class="fn">load_port</span>(path: &amp;<span class="bi">str</span>) -&gt; <span class="bi">Result</span>&lt;<span class="bi">u16</span>, ConfigError&gt; {
+    <span class="kw">let</span> text = fs::<span class="fn">read_to_string</span>(path)?;               <span class="cm">// io::Error → ConfigError via From</span>
+    <span class="kw">for</span> (i, line) <span class="kw">in</span> text.<span class="fn">lines</span>().<span class="fn">enumerate</span>() {
+        <span class="kw">if</span> <span class="kw">let</span> <span class="bi">Some</span>(v) = line.<span class="fn">strip_prefix</span>(<span class="st">"port="</span>) {
+            <span class="kw">return</span> v.<span class="fn">trim</span>().parse::&lt;<span class="bi">u16</span>&gt;()
+                .<span class="fn">map_err</span>(|e| ConfigError::BadPort { line: i + <span class="nu">1</span>, source: e });
         }
     }
-    Err(ConfigError::Missing)
+    <span class="bi">Err</span>(ConfigError::Missing)
 }</code></pre>
 <p><code>Option&lt;T&gt;</code> is the same idea for "might be absent": <code>Some(value)</code> or <code>None</code>, instead of a null that crashes later.</p>
 <div class="pagebreak">~ page 3 ~</div>
@@ -314,11 +314,11 @@ fn load_port(path: &amp;str) -&gt; Result&lt;u16, ConfigError&gt; {
 <li>1. Write a parser that returns <code>Result</code> instead of panicking.
 <div class="box"><b>Solution</b>
 <span class="lang">rust</span>
-<pre class="code"><code>fn parse_pair(s: &amp;str) -&gt; Result&lt;(i32, i32), String&gt; {
-    let (a, b) = s.split_once(',').ok_or(format!("expected 'a,b', got {s:?}"))?;
-    let a = a.trim().parse().map_err(|e| format!("bad left value: {e}"))?;
-    let b = b.trim().parse().map_err(|e| format!("bad right value: {e}"))?;
-    Ok((a, b))
+<pre class="code"><code><span class="kw">fn</span> <span class="fn">parse_pair</span>(s: &amp;<span class="bi">str</span>) -&gt; <span class="bi">Result</span>&lt;(<span class="bi">i32</span>, <span class="bi">i32</span>), <span class="bi">String</span>&gt; {
+    <span class="kw">let</span> (a, b) = s.<span class="fn">split_once</span>(<span class="st">','</span>).<span class="fn">ok_or</span>(<span class="fn">format!</span>(<span class="st">"expected 'a,b', got {s:?}"</span>))?;
+    <span class="kw">let</span> a = a.<span class="fn">trim</span>().<span class="fn">parse</span>().<span class="fn">map_err</span>(|e| <span class="fn">format!</span>(<span class="st">"bad left value: {e}"</span>))?;
+    <span class="kw">let</span> b = b.<span class="fn">trim</span>().<span class="fn">parse</span>().<span class="fn">map_err</span>(|e| <span class="fn">format!</span>(<span class="st">"bad right value: {e}"</span>))?;
+    <span class="bi">Ok</span>((a, b))
 }</code></pre>
 <p>No <code>unwrap()</code>: every failure becomes an <code>Err</code> with a message.</p>
 </div></li>
@@ -326,11 +326,11 @@ fn load_port(path: &amp;str) -&gt; Result&lt;u16, ConfigError&gt; {
 <div class="box"><b>Solution</b> See <code>ConfigError</code> above: subclass <code>Exception</code>, store structured fields (path, line), build a readable message, and chain the original with <code>raise … from e</code>.</div></li>
 <li>3. What is wrong with this code?
 <span class="lang">python</span>
-<pre class="code"><code>try:
-    user = get_user(uid)
-    send_email(user)
-except Exception:
-    pass</code></pre>
+<pre class="code"><code><span class="kw">try</span>:
+    user = <span class="fn">get_user</span>(uid)
+    <span class="fn">send_email</span>(user)
+<span class="kw">except</span> <span class="bi">Exception</span>:
+    <span class="kw">pass</span></code></pre>
 <div class="box"><b>Solution</b> It hides every failure, including bugs like <code>NameError</code>. A try block that is too wide also makes it unclear which call failed. Catch specific exceptions around the one call that can fail, and log or re-raise the rest.</div></li>
 </ol>
 <h2>Mini project</h2>

@@ -289,74 +289,74 @@ a{color:var(--ink);text-decoration:underline dotted}
 
   <h2>Example</h2>
   <span class="lang">hcl</span>
-<pre class="code"><code># modules/web_service/main.tf
-variable "name"          { type = string }
-variable "subnet_id"     { type = string }
-variable "vpc_id"        { type = string }
-variable "instance_type" {
+<pre class="code"><code><span class="cm"># modules/web_service/main.tf</span>
+<span class="kw">variable</span> <span class="st">"name"</span>          { type = string }
+<span class="kw">variable</span> <span class="st">"subnet_id"</span>     { type = string }
+<span class="kw">variable</span> <span class="st">"vpc_id"</span>        { type = string }
+<span class="kw">variable</span> <span class="st">"instance_type"</span> {
   type    = string
-  default = "t3.small"
+  default = <span class="st">"t3.small"</span>
 }
 
-data "aws_ami" "ubuntu" {
-  most_recent = true
-  owners      = ["099720109477"]                       # Canonical
+<span class="kw">data</span> <span class="st">"aws_ami"</span> <span class="st">"ubuntu"</span> {
+  most_recent = <span class="kw">true</span>
+  owners      = [<span class="st">"099720109477"</span>]                       <span class="cm"># Canonical</span>
   filter {
-    name   = "name"
-    values = ["ubuntu/images/hvm-ssd-gp3/ubuntu-noble-24.04-amd64-server-*"]
+    name   = <span class="st">"name"</span>
+    values = [<span class="st">"ubuntu/images/hvm-ssd-gp3/ubuntu-noble-24.04-amd64-server-*"</span>]
   }
 }
 
-resource "aws_security_group" "web" {
-  name   = "${var.name}-web"
+<span class="kw">resource</span> <span class="st">"aws_security_group"</span> <span class="st">"web"</span> {
+  name   = <span class="st">"${var.name}-web"</span>
   vpc_id = var.vpc_id
   ingress {
-    from_port   = 443
-    to_port     = 443
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
+    from_port   = <span class="nu">443</span>
+    to_port     = <span class="nu">443</span>
+    protocol    = <span class="st">"tcp"</span>
+    cidr_blocks = [<span class="st">"0.0.0.0/0"</span>]
   }
   egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
+    from_port   = <span class="nu">0</span>
+    to_port     = <span class="nu">0</span>
+    protocol    = <span class="st">"-1"</span>
+    cidr_blocks = [<span class="st">"0.0.0.0/0"</span>]
   }
 }
 
-resource "aws_instance" "web" {
-  ami                    = data.aws_ami.ubuntu.id
+<span class="kw">resource</span> <span class="st">"aws_instance"</span> <span class="st">"web"</span> {
+  ami                    = <span class="kw">data</span>.aws_ami.ubuntu.id
   instance_type          = var.instance_type
   subnet_id              = var.subnet_id
   vpc_security_group_ids = [aws_security_group.web.id]
-  tags                   = { Name = var.name, ManagedBy = "terraform" }
+  tags                   = { Name = var.name, ManagedBy = <span class="st">"terraform"</span> }
 }
 
-output "public_ip" { value = aws_instance.web.public_ip }</code></pre>
+<span class="kw">output</span> <span class="st">"public_ip"</span> { value = aws_instance.web.public_ip }</code></pre>
 
   <span class="lang">hcl</span>
-<pre class="code"><code># envs/prod/backend.tf — remote, locked, encrypted state
-terraform {
-  required_version = "&gt;= 1.6"
-  backend "s3" {
-    bucket         = "acme-tfstate"
-    key            = "prod/web.tfstate"
-    region         = "eu-west-1"
-    dynamodb_table = "tf-locks"      # newer versions can use use_lockfile = true instead
-    encrypt        = true
+<pre class="code"><code><span class="cm"># envs/prod/backend.tf — remote, locked, encrypted state</span>
+<span class="kw">terraform</span> {
+  required_version = <span class="st">"&gt;= 1.6"</span>
+  backend <span class="st">"s3"</span> {
+    bucket         = <span class="st">"acme-tfstate"</span>
+    key            = <span class="st">"prod/web.tfstate"</span>
+    region         = <span class="st">"eu-west-1"</span>
+    dynamodb_table = <span class="st">"tf-locks"</span>      <span class="cm"># newer versions can use use_lockfile = true instead</span>
+    encrypt        = <span class="kw">true</span>
   }
   required_providers {
-    aws = { source = "hashicorp/aws", version = "~&gt; 5.0" }
+    aws = { source = <span class="st">"hashicorp/aws"</span>, version = <span class="st">"~&gt; 5.0"</span> }
   }
 }</code></pre>
 
   <span class="lang">bash</span>
-<pre class="code"><code>terraform init
-terraform fmt -check &amp;&amp; terraform validate
-terraform plan -out=tfplan
-terraform apply tfplan
-terraform plan -detailed-exitcode        # 0 = no changes, 1 = error, 2 = drift / changes
-terraform state list</code></pre>
+<pre class="code"><code><span class="bi">terraform</span> init
+<span class="bi">terraform</span> fmt -check &amp;&amp; <span class="bi">terraform</span> validate
+<span class="bi">terraform</span> plan -out=tfplan
+<span class="bi">terraform</span> apply tfplan
+<span class="bi">terraform</span> plan -detailed-exitcode        <span class="cm"># 0 = no changes, 1 = error, 2 = drift / changes</span>
+<span class="bi">terraform</span> state list</code></pre>
 
   <h2>Exercises</h2>
   <ol style="list-style:none;padding-left:0">

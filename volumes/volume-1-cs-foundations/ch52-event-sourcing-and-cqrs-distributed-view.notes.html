@@ -316,54 +316,54 @@ a{color:var(--ink);text-decoration:underline dotted}
 
   <h2>Example</h2>
   <span class="lang">python</span>
-<pre class="code"><code>from dataclasses import dataclass, field
+<pre class="code"><code><span class="kw">from</span> dataclasses <span class="kw">import</span> dataclass, field
 
-# Events: immutable, past tense, versioned
-@dataclass(frozen=True)
-class Event:
-    stream: str
-    seq: int
-    type: str
-    data: dict
-    version: int = 1
+<span class="cm"># Events: immutable, past tense, versioned</span>
+<span class="bi">@dataclass</span>(frozen=<span class="kw">True</span>)
+<span class="kw">class</span> Event:
+    stream: <span class="bi">str</span>
+    seq: <span class="bi">int</span>
+    <span class="bi">type</span>: <span class="bi">str</span>
+    data: <span class="bi">dict</span>
+    version: <span class="bi">int</span> = <span class="nu">1</span>
 
-def apply(state: dict, e: Event) -&gt; dict:
-    match e.type:
-        case "OrderPlaced":
-            return {"status": "placed", "total": e.data["total"], "customer": e.data["customer"]}
-        case "ItemRemoved":
-            return {**state, "total": state["total"] - e.data["price"]}
-        case "PaymentCaptured":
-            return {**state, "status": "paid"}
-        case "OrderShipped":
-            return {**state, "status": "shipped"}
-    return state                                       # ignore unknown events (forward compatible)
+<span class="kw">def</span> <span class="fn">apply</span>(state: <span class="bi">dict</span>, e: Event) -&gt; <span class="bi">dict</span>:
+    <span class="kw">match</span> e.<span class="bi">type</span>:
+        <span class="kw">case</span> <span class="st">"OrderPlaced"</span>:
+            <span class="kw">return</span> {<span class="st">"status"</span>: <span class="st">"placed"</span>, <span class="st">"total"</span>: e.data[<span class="st">"total"</span>], <span class="st">"customer"</span>: e.data[<span class="st">"customer"</span>]}
+        <span class="kw">case</span> <span class="st">"ItemRemoved"</span>:
+            <span class="kw">return</span> {**state, <span class="st">"total"</span>: state[<span class="st">"total"</span>] - e.data[<span class="st">"price"</span>]}
+        <span class="kw">case</span> <span class="st">"PaymentCaptured"</span>:
+            <span class="kw">return</span> {**state, <span class="st">"status"</span>: <span class="st">"paid"</span>}
+        <span class="kw">case</span> <span class="st">"OrderShipped"</span>:
+            <span class="kw">return</span> {**state, <span class="st">"status"</span>: <span class="st">"shipped"</span>}
+    <span class="kw">return</span> state                                       <span class="cm"># ignore unknown events (forward compatible)</span>
 
 events = [
-    Event("order-123", 1, "OrderPlaced", {"total": 5000, "customer": "c7"}),
-    Event("order-123", 2, "ItemRemoved", {"price": 1500}),
-    Event("order-123", 3, "PaymentCaptured", {"amount": 3500}),
+    <span class="fn">Event</span>(<span class="st">"order-123"</span>, <span class="nu">1</span>, <span class="st">"OrderPlaced"</span>, {<span class="st">"total"</span>: <span class="nu">5000</span>, <span class="st">"customer"</span>: <span class="st">"c7"</span>}),
+    <span class="fn">Event</span>(<span class="st">"order-123"</span>, <span class="nu">2</span>, <span class="st">"ItemRemoved"</span>, {<span class="st">"price"</span>: <span class="nu">1500</span>}),
+    <span class="fn">Event</span>(<span class="st">"order-123"</span>, <span class="nu">3</span>, <span class="st">"PaymentCaptured"</span>, {<span class="st">"amount"</span>: <span class="nu">3500</span>}),
 ]
 state = {}
-for e in events:
-    state = apply(state, e)
-print(state)       # {'status': 'paid', 'total': 3500, 'customer': 'c7'}</code></pre>
+<span class="kw">for</span> e <span class="kw">in</span> events:
+    state = <span class="fn">apply</span>(state, e)
+<span class="bi">print</span>(state)       <span class="cm"># {'status': 'paid', 'total': 3500, 'customer': 'c7'}</span></code></pre>
 
   <span class="lang">python</span>
-<pre class="code"><code># An idempotent projector: offset and view updated in ONE transaction
-def project(conn, batch, partition):
-    with conn.transaction():
-        last = conn.execute("SELECT last_offset FROM projector_offsets WHERE p = %s FOR UPDATE",
-                            (partition,)).fetchone()[0]
-        for offset, e in batch:
-            if offset &lt;= last:
-                continue                                  # already applied (redelivery)
-            if e.type == "OrderPlaced":
-                conn.execute("INSERT INTO orders_by_customer (customer, order_id, total) "
-                             "VALUES (%s, %s, %s) ON CONFLICT DO NOTHING",
-                             (e.data["customer"], e.stream, e.data["total"]))
+<pre class="code"><code><span class="cm"># An idempotent projector: offset and view updated in ONE transaction</span>
+<span class="kw">def</span> <span class="fn">project</span>(conn, batch, partition):
+    <span class="kw">with</span> conn.<span class="fn">transaction</span>():
+        last = conn.<span class="fn">execute</span>(<span class="st">"SELECT last_offset FROM projector_offsets WHERE p = %s FOR UPDATE"</span>,
+                            (partition,)).<span class="fn">fetchone</span>()[<span class="nu">0</span>]
+        <span class="kw">for</span> offset, e <span class="kw">in</span> batch:
+            <span class="kw">if</span> offset &lt;= last:
+                <span class="kw">continue</span>                                  <span class="cm"># already applied (redelivery)</span>
+            <span class="kw">if</span> e.<span class="bi">type</span> == <span class="st">"OrderPlaced"</span>:
+                conn.<span class="fn">execute</span>(<span class="st">"INSERT INTO orders_by_customer (customer, order_id, total) "</span>
+                             <span class="st">"VALUES (%s, %s, %s) ON CONFLICT DO NOTHING"</span>,
+                             (e.data[<span class="st">"customer"</span>], e.stream, e.data[<span class="st">"total"</span>]))
             last = offset
-        conn.execute("UPDATE projector_offsets SET last_offset = %s WHERE p = %s", (last, partition))</code></pre>
+        conn.<span class="fn">execute</span>(<span class="st">"UPDATE projector_offsets SET last_offset = %s WHERE p = %s"</span>, (last, partition))</code></pre>
 
   <h2>Exercises</h2>
   <ol style="list-style:none;padding-left:0">

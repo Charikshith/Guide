@@ -289,61 +289,61 @@ a{color:var(--ink);text-decoration:underline dotted}
 
   <h2>Example</h2>
   <span class="lang">dockerfile</span>
-<pre class="code"><code># Multi-stage build: small, non-root, cache-friendly
-FROM python:3.12-slim AS build
-WORKDIR /app
-RUN pip install --no-cache-dir uv
-COPY pyproject.toml uv.lock ./
-RUN uv sync --frozen --no-dev --no-install-project
-COPY src/ ./src/
+<pre class="code"><code><span class="cm"># Multi-stage build: small, non-root, cache-friendly</span>
+<span class="kw">FROM</span> python:<span class="nu">3.12</span>-slim <span class="kw">AS</span> build
+<span class="kw">WORKDIR</span> /app
+<span class="kw">RUN</span> pip install --no-cache-dir uv
+<span class="kw">COPY</span> pyproject.toml uv.lock ./
+<span class="kw">RUN</span> uv sync --frozen --no-dev --no-install-project
+<span class="kw">COPY</span> src/ ./src/
 
-FROM python:3.12-slim
-RUN useradd --create-home --uid 10001 app
-WORKDIR /app
-COPY --from=build /app /app
-ENV PATH="/app/.venv/bin:$PATH" PYTHONUNBUFFERED=1
-USER app
-EXPOSE 8080
-CMD ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8080"]</code></pre>
+<span class="kw">FROM</span> python:<span class="nu">3.12</span>-slim
+<span class="kw">RUN</span> useradd --create-home --uid <span class="nu">10001</span> app
+<span class="kw">WORKDIR</span> /app
+<span class="kw">COPY</span> --from=build /app /app
+<span class="kw">ENV</span> PATH=<span class="st">"/app/.venv/bin:$PATH"</span> PYTHONUNBUFFERED=<span class="nu">1</span>
+<span class="kw">USER</span> app
+<span class="kw">EXPOSE</span> <span class="nu">8080</span>
+<span class="kw">CMD</span> [<span class="st">"uvicorn"</span>, <span class="st">"src.main:app"</span>, <span class="st">"--host"</span>, <span class="st">"0.0.0.0"</span>, <span class="st">"--port"</span>, <span class="st">"8080"</span>]</code></pre>
 
   <span class="lang">yaml</span>
-<pre class="code"><code>apiVersion: apps/v1
-kind: Deployment
-metadata: { name: api }
-spec:
-  replicas: 3
-  selector: { matchLabels: { app: api } }
-  strategy: { rollingUpdate: { maxSurge: 1, maxUnavailable: 0 } }
-  template:
-    metadata: { labels: { app: api } }
-    spec:
-      containers:
-        - name: api
-          image: ghcr.io/acme/api@sha256:3f9a…     # pin by digest
-          ports: [{ containerPort: 8080 }]
-          resources:
-            requests: { cpu: 250m, memory: 256Mi }
-            limits:   { memory: 512Mi }
-          readinessProbe: { httpGet: { path: /readyz, port: 8080 }, periodSeconds: 5 }
-          livenessProbe:  { httpGet: { path: /healthz, port: 8080 }, periodSeconds: 10, failureThreshold: 3 }
-          envFrom: [{ configMapRef: { name: api-config } }, { secretRef: { name: api-secrets } }]
+<pre class="code"><code><span class="bi">apiVersion</span>: apps/v1
+<span class="bi">kind</span>: Deployment
+<span class="bi">metadata</span>: { name: api }
+<span class="bi">spec</span>:
+<span class="bi">  replicas</span>: <span class="nu">3</span>
+<span class="bi">  selector</span>: { matchLabels: { app: api } }
+<span class="bi">  strategy</span>: { rollingUpdate: { maxSurge: <span class="nu">1</span>, maxUnavailable: <span class="nu">0</span> } }
+<span class="bi">  template</span>:
+<span class="bi">    metadata</span>: { labels: { app: api } }
+<span class="bi">    spec</span>:
+<span class="bi">      containers</span>:
+<span class="bi">        - name</span>: api
+<span class="bi">          image</span>: ghcr.io/acme/api@sha256:3f9a…     <span class="cm"># pin by digest</span>
+<span class="bi">          ports</span>: [{ containerPort: <span class="nu">8080</span> }]
+<span class="bi">          resources</span>:
+<span class="bi">            requests</span>: { cpu: <span class="nu">250m</span>, memory: <span class="nu">256Mi</span> }
+<span class="bi">            limits</span>:   { memory: <span class="nu">512Mi</span> }
+<span class="bi">          readinessProbe</span>: { httpGet: { path: /readyz, port: <span class="nu">8080</span> }, periodSeconds: <span class="nu">5</span> }
+<span class="bi">          livenessProbe</span>:  { httpGet: { path: /healthz, port: <span class="nu">8080</span> }, periodSeconds: <span class="nu">10</span>, failureThreshold: <span class="nu">3</span> }
+<span class="bi">          envFrom</span>: [{ configMapRef: { name: api-config } }, { secretRef: { name: api-secrets } }]
 ---
-apiVersion: v1
-kind: Service
-metadata: { name: api }
-spec:
-  selector: { app: api }
-  ports: [{ port: 80, targetPort: 8080 }]</code></pre>
+<span class="bi">apiVersion</span>: v1
+<span class="bi">kind</span>: Service
+<span class="bi">metadata</span>: { name: api }
+<span class="bi">spec</span>:
+<span class="bi">  selector</span>: { app: api }
+<span class="bi">  ports</span>: [{ port: <span class="nu">80</span>, targetPort: <span class="nu">8080</span> }]</code></pre>
 
   <span class="lang">bash</span>
-<pre class="code"><code>docker build -t api:dev . &amp;&amp; docker run --rm -p 8080:8080 api:dev
-kubectl apply -f k8s/
-kubectl rollout status deploy/api
-kubectl get pods -l app=api -o wide
-kubectl logs -l app=api -f --max-log-requests 10
-kubectl rollout undo deploy/api
-helm install api ./chart -f values-prod.yaml --set image.tag=1.4.2
-helm upgrade api ./chart -f values-prod.yaml --atomic   # rolls back automatically if it fails</code></pre>
+<pre class="code"><code><span class="bi">docker</span> build -t api:dev . &amp;&amp; <span class="bi">docker</span> run --<span class="bi">rm</span> -p <span class="nu">8080</span>:<span class="nu">8080</span> api:dev
+<span class="bi">kubectl</span> apply -f k8s/
+<span class="bi">kubectl</span> rollout status deploy/api
+<span class="bi">kubectl</span> get pods -l app=api -o wide
+<span class="bi">kubectl</span> logs -l app=api -f --max-log-requests <span class="nu">10</span>
+<span class="bi">kubectl</span> rollout undo deploy/api
+<span class="bi">helm</span> install api ./chart -f values-prod.yaml --<span class="kw">set</span> image.tag=<span class="nu">1</span>.<span class="nu">4</span>.<span class="nu">2</span>
+<span class="bi">helm</span> upgrade api ./chart -f values-prod.yaml --atomic   <span class="cm"># rolls back automatically if it fails</span></code></pre>
 
   <h2>Exercises</h2>
   <ol style="list-style:none;padding-left:0">

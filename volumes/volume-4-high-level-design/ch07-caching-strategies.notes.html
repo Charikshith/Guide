@@ -318,51 +318,51 @@ a{color:var(--ink);text-decoration:underline dotted}
   <h2>Example</h2>
   <p><b>Cache-aside in Python with Redis</b></p>
   <span class="lang">python</span>
-<pre class="code"><code>import json, random
-import redis
+<pre class="code"><code><span class="kw">import</span> json, random
+<span class="kw">import</span> redis
 
-r = redis.Redis()
-BASE_TTL = 300  # seconds
+r = redis.<span class="fn">Redis</span>()
+BASE_TTL = <span class="nu">300</span>  <span class="cm"># seconds</span>
 
-def get_product(product_id: int) -&gt; dict:
-    key = f"product:{product_id}"
+<span class="kw">def</span> <span class="fn">get_product</span>(product_id: <span class="bi">int</span>) -&gt; <span class="bi">dict</span>:
+    key = <span class="st">f"product:{product_id}"</span>
 
-    cached = r.get(key)
-    if cached is not None:                       # 1. hit
-        return json.loads(cached)
+    cached = r.<span class="fn">get</span>(key)
+    <span class="kw">if</span> cached <span class="kw">is</span> <span class="kw">not</span> <span class="kw">None</span>:                       <span class="cm"># 1. hit</span>
+        <span class="kw">return</span> json.<span class="fn">loads</span>(cached)
 
-    row = db.fetch_product(product_id)           # 2. miss → go to DB
-    ttl = BASE_TTL + random.randint(0, 60)       # 3. jitter the TTL
-    r.set(key, json.dumps(row), ex=ttl)          # 4. fill the cache
-    return row
+    row = db.<span class="fn">fetch_product</span>(product_id)           <span class="cm"># 2. miss → go to DB</span>
+    ttl = BASE_TTL + random.<span class="fn">randint</span>(<span class="nu">0</span>, <span class="nu">60</span>)       <span class="cm"># 3. jitter the TTL</span>
+    r.<span class="bi">set</span>(key, json.<span class="fn">dumps</span>(row), ex=ttl)          <span class="cm"># 4. fill the cache</span>
+    <span class="kw">return</span> row
 
-def update_price(product_id: int, price: float) -&gt; None:
-    db.update_price(product_id, price)           # 1. source of truth first
-    r.delete(f"product:{product_id}")            # 2. then invalidate</code></pre>
+<span class="kw">def</span> <span class="fn">update_price</span>(product_id: <span class="bi">int</span>, price: <span class="bi">float</span>) -&gt; <span class="kw">None</span>:
+    db.<span class="fn">update_price</span>(product_id, price)           <span class="cm"># 1. source of truth first</span>
+    r.<span class="fn">delete</span>(<span class="st">f"product:{product_id}"</span>)            <span class="cm"># 2. then invalidate</span></code></pre>
 
   <p><b>Stampede protection with a lock</b></p>
   <span class="lang">python</span>
-<pre class="code"><code>import time
+<pre class="code"><code><span class="kw">import</span> time
 
-def get_product_safe(product_id: int) -&gt; dict:
-    key, lock = f"product:{product_id}", f"lock:product:{product_id}"
+<span class="kw">def</span> <span class="fn">get_product_safe</span>(product_id: <span class="bi">int</span>) -&gt; <span class="bi">dict</span>:
+    key, lock = <span class="st">f"product:{product_id}"</span>, <span class="st">f"lock:product:{product_id}"</span>
 
-    for _ in range(20):                          # ~1 s of retries
-        cached = r.get(key)
-        if cached is not None:
-            return json.loads(cached)
+    <span class="kw">for</span> _ <span class="kw">in</span> <span class="bi">range</span>(<span class="nu">20</span>):                          <span class="cm"># ~1 s of retries</span>
+        cached = r.<span class="fn">get</span>(key)
+        <span class="kw">if</span> cached <span class="kw">is</span> <span class="kw">not</span> <span class="kw">None</span>:
+            <span class="kw">return</span> json.<span class="fn">loads</span>(cached)
 
-        if r.set(lock, "1", nx=True, ex=5):      # only one caller wins
-            try:
-                row = db.fetch_product(product_id)
-                r.set(key, json.dumps(row), ex=BASE_TTL + random.randint(0, 60))
-                return row
-            finally:
-                r.delete(lock)
+        <span class="kw">if</span> r.<span class="bi">set</span>(lock, <span class="st">"1"</span>, nx=<span class="kw">True</span>, ex=<span class="nu">5</span>):      <span class="cm"># only one caller wins</span>
+            <span class="kw">try</span>:
+                row = db.<span class="fn">fetch_product</span>(product_id)
+                r.<span class="bi">set</span>(key, json.<span class="fn">dumps</span>(row), ex=BASE_TTL + random.<span class="fn">randint</span>(<span class="nu">0</span>, <span class="nu">60</span>))
+                <span class="kw">return</span> row
+            <span class="kw">finally</span>:
+                r.<span class="fn">delete</span>(lock)
 
-        time.sleep(0.05)                          # losers wait, then re-check
+        time.<span class="fn">sleep</span>(<span class="nu">0.05</span>)                          <span class="cm"># losers wait, then re-check</span>
 
-    return db.fetch_product(product_id)           # fallback: never fail the read</code></pre>
+    <span class="kw">return</span> db.<span class="fn">fetch_product</span>(product_id)           <span class="cm"># fallback: never fail the read</span></code></pre>
 
   <p><b>Why "delete" beats "update" on write</b> — two writers racing:</p>
 <pre class="code ascii"><code> Writer A: UPDATE db price=10      Writer B: UPDATE db price=12

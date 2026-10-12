@@ -242,39 +242,39 @@ a{color:var(--ink);text-decoration:underline dotted}
 <div class="pagebreak">~ page 3 ~</div>
 <h2>Example</h2>
 <span class="lang">rust</span>
-<pre class="code"><code>fn longest&lt;'a&gt;(x: &amp;'a str, y: &amp;'a str) -&gt; &amp;'a str {   // result lives as long as both inputs
-    if x.len() &gt; y.len() { x } else { y }
+<pre class="code"><code><span class="kw">fn</span> longest&lt;'a&gt;(x: &amp;'a <span class="bi">str</span>, y: &amp;'a <span class="bi">str</span>) -&gt; &amp;'a <span class="bi">str</span> {   <span class="cm">// result lives as long as both inputs</span>
+    <span class="kw">if</span> x.<span class="fn">len</span>() &gt; y.<span class="fn">len</span>() { x } <span class="kw">else</span> { y }
 }
 
-fn main() {
-    let mut v = vec![1, 2, 3];
-    let first = &amp;v[0];            // shared borrow of v
-    // v.push(4);                 // ❌ error[E0502]: cannot borrow `v` as mutable
-    //                            //    because it is also borrowed as immutable
-    println!("{first}");          // last use of `first` — borrow ends here
-    v.push(4);                    // ✅ fine now
+<span class="kw">fn</span> <span class="fn">main</span>() {
+    <span class="kw">let</span> <span class="kw">mut</span> v = <span class="fn">vec!</span>[<span class="nu">1</span>, <span class="nu">2</span>, <span class="nu">3</span>];
+    <span class="kw">let</span> first = &amp;v[<span class="nu">0</span>];            <span class="cm">// shared borrow of v</span>
+    <span class="cm">// v.push(4);                 // ❌ error[E0502]: cannot borrow `v` as mutable</span>
+    <span class="cm">//                            //    because it is also borrowed as immutable</span>
+    <span class="fn">println!</span>(<span class="st">"{first}"</span>);          <span class="cm">// last use of `first` — borrow ends here</span>
+    v.<span class="fn">push</span>(<span class="nu">4</span>);                    <span class="cm">// ✅ fine now</span>
 
-    let s = String::from("hello");
-    let t = s;                    // move
-    // println!("{s}");           // ❌ error[E0382]: borrow of moved value: `s`
-    println!("{}", longest(&amp;t, "hi"));
+    <span class="kw">let</span> s = <span class="bi">String</span>::<span class="fn">from</span>(<span class="st">"hello"</span>);
+    <span class="kw">let</span> t = s;                    <span class="cm">// move</span>
+    <span class="cm">// println!("{s}");           // ❌ error[E0382]: borrow of moved value: `s`</span>
+    <span class="fn">println!</span>(<span class="st">"{}"</span>, <span class="fn">longest</span>(&amp;t, <span class="st">"hi"</span>));
 }</code></pre>
 <p>Why <code>v.push(4)</code> must be rejected: <code>push</code> may reallocate the vector's buffer to a new address, leaving <code>first</code> pointing at freed memory. The borrow checker turns that runtime bug into a compile error.</p>
 <span class="lang">python</span>
-<pre class="code"><code>import sys, gc
+<pre class="code"><code><span class="kw">import</span> sys, gc
 
 x = []
-print(sys.getrefcount(x))        # 2: `x` + the temporary argument
+<span class="bi">print</span>(sys.<span class="fn">getrefcount</span>(x))        <span class="cm"># 2: `x` + the temporary argument</span>
 y = x
-print(sys.getrefcount(x))        # 3
+<span class="bi">print</span>(sys.<span class="fn">getrefcount</span>(x))        <span class="cm"># 3</span>
 
-class Node:
-    def __init__(self): self.other = None
+<span class="kw">class</span> Node:
+    <span class="kw">def</span> <span class="fn">__init__</span>(<span class="bi">self</span>): <span class="bi">self</span>.other = <span class="kw">None</span>
 
-a, b = Node(), Node()
-a.other, b.other = b, a          # a reference cycle
-del a, b                         # refcounts never reach 0...
-print(gc.collect())              # ...the cycle collector finds and frees them (prints &gt; 0)</code></pre>
+a, b = <span class="fn">Node</span>(), <span class="fn">Node</span>()
+a.other, b.other = b, a          <span class="cm"># a reference cycle</span>
+<span class="kw">del</span> a, b                         <span class="cm"># refcounts never reach 0...</span>
+<span class="bi">print</span>(gc.<span class="fn">collect</span>())              <span class="cm"># ...the cycle collector finds and frees them (prints &gt; 0)</span></code></pre>
 <h2>Exercises</h2>
 <ol style="list-style:none;padding-left:0">
 <li><p>1. Explain why a returned reference to a stack local is invalid.</p>

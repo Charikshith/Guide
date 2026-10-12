@@ -226,55 +226,55 @@ a{color:var(--ink);text-decoration:underline dotted}
   <div class="pagebreak">~ page 2 ~</div>
   <h2>Example</h2>
   <span class="lang">python</span>
-<pre class="code"><code>from bisect import bisect_left, bisect_right
-import math
+<pre class="code"><code><span class="kw">from</span> bisect <span class="kw">import</span> bisect_left, bisect_right
+<span class="kw">import</span> math
 
-xs = sorted([5, 1, 4, 1, 3])                   # Timsort → [1, 1, 3, 4, 5]
-print(bisect_left(xs, 1), bisect_right(xs, 1))  # 0 2 — the range of 1s is [0, 2)
+xs = <span class="bi">sorted</span>([<span class="nu">5</span>, <span class="nu">1</span>, <span class="nu">4</span>, <span class="nu">1</span>, <span class="nu">3</span>])                   <span class="cm"># Timsort → [1, 1, 3, 4, 5]</span>
+<span class="bi">print</span>(<span class="fn">bisect_left</span>(xs, <span class="nu">1</span>), <span class="fn">bisect_right</span>(xs, <span class="nu">1</span>))  <span class="cm"># 0 2 — the range of 1s is [0, 2)</span>
 
-people = [("ann", "eng"), ("bob", "ops"), ("cat", "eng"), ("dan", "ops")]
-by_dept = sorted(sorted(people), key=lambda p: p[1])   # stable → names stay sorted per dept
-print(by_dept)   # [('ann','eng'), ('cat','eng'), ('bob','ops'), ('dan','ops')]
+people = [(<span class="st">"ann"</span>, <span class="st">"eng"</span>), (<span class="st">"bob"</span>, <span class="st">"ops"</span>), (<span class="st">"cat"</span>, <span class="st">"eng"</span>), (<span class="st">"dan"</span>, <span class="st">"ops"</span>)]
+by_dept = <span class="bi">sorted</span>(<span class="bi">sorted</span>(people), key=<span class="kw">lambda</span> p: p[<span class="nu">1</span>])   <span class="cm"># stable → names stay sorted per dept</span>
+<span class="bi">print</span>(by_dept)   <span class="cm"># [('ann','eng'), ('cat','eng'), ('bob','ops'), ('dan','ops')]</span>
 
-def merge_sort(a):
-    if len(a) &lt;= 1:
-        return a
-    mid = len(a) // 2
-    left, right = merge_sort(a[:mid]), merge_sort(a[mid:])
-    out, i, j = [], 0, 0
-    while i &lt; len(left) and j &lt; len(right):
-        if left[i] &lt;= right[j]:                 # &lt;= keeps it stable
-            out.append(left[i]); i += 1
-        else:
-            out.append(right[j]); j += 1
-    return out + left[i:] + right[j:]
+<span class="kw">def</span> <span class="fn">merge_sort</span>(a):
+    <span class="kw">if</span> <span class="bi">len</span>(a) &lt;= <span class="nu">1</span>:
+        <span class="kw">return</span> a
+    mid = <span class="bi">len</span>(a) // <span class="nu">2</span>
+    left, right = <span class="fn">merge_sort</span>(a[:mid]), <span class="fn">merge_sort</span>(a[mid:])
+    out, i, j = [], <span class="nu">0</span>, <span class="nu">0</span>
+    <span class="kw">while</span> i &lt; <span class="bi">len</span>(left) <span class="kw">and</span> j &lt; <span class="bi">len</span>(right):
+        <span class="kw">if</span> left[i] &lt;= right[j]:                 <span class="cm"># &lt;= keeps it stable</span>
+            out.<span class="fn">append</span>(left[i]); i += <span class="nu">1</span>
+        <span class="kw">else</span>:
+            out.<span class="fn">append</span>(right[j]); j += <span class="nu">1</span>
+    <span class="kw">return</span> out + left[i:] + right[j:]
 
-import random
-def quicksort(a, lo=0, hi=None):
-    hi = len(a) - 1 if hi is None else hi
-    if lo &gt;= hi:
-        return a
-    p = random.randint(lo, hi)                  # random pivot avoids O(n²) on sorted input
+<span class="kw">import</span> random
+<span class="kw">def</span> <span class="fn">quicksort</span>(a, lo=<span class="nu">0</span>, hi=<span class="kw">None</span>):
+    hi = <span class="bi">len</span>(a) - <span class="nu">1</span> <span class="kw">if</span> hi <span class="kw">is</span> <span class="kw">None</span> <span class="kw">else</span> hi
+    <span class="kw">if</span> lo &gt;= hi:
+        <span class="kw">return</span> a
+    p = random.<span class="fn">randint</span>(lo, hi)                  <span class="cm"># random pivot avoids O(n²) on sorted input</span>
     a[p], a[hi] = a[hi], a[p]
     pivot, i = a[hi], lo
-    for j in range(lo, hi):
-        if a[j] &lt; pivot:
-            a[i], a[j] = a[j], a[i]; i += 1
+    <span class="kw">for</span> j <span class="kw">in</span> <span class="bi">range</span>(lo, hi):
+        <span class="kw">if</span> a[j] &lt; pivot:
+            a[i], a[j] = a[j], a[i]; i += <span class="nu">1</span>
     a[i], a[hi] = a[hi], a[i]
-    quicksort(a, lo, i - 1); quicksort(a, i + 1, hi)
-    return a
+    <span class="fn">quicksort</span>(a, lo, i - <span class="nu">1</span>); <span class="fn">quicksort</span>(a, i + <span class="nu">1</span>, hi)
+    <span class="kw">return</span> a
 
-def first_true(lo, hi, ok):
-    """Smallest v in [lo, hi] with ok(v) True; ok must be monotonic."""
-    while lo &lt; hi:
-        mid = (lo + hi) // 2
-        if ok(mid): hi = mid
-        else: lo = mid + 1
-    return lo
+<span class="kw">def</span> <span class="fn">first_true</span>(lo, hi, ok):
+    <span class="st">"""Smallest v in [lo, hi] with ok(v) True; ok must be monotonic."""</span>
+    <span class="kw">while</span> lo &lt; hi:
+        mid = (lo + hi) // <span class="nu">2</span>
+        <span class="kw">if</span> <span class="fn">ok</span>(mid): hi = mid
+        <span class="kw">else</span>: lo = mid + <span class="nu">1</span>
+    <span class="kw">return</span> lo
 
-piles, hours = [3, 6, 7, 11], 8
-speed = first_true(1, max(piles), lambda k: sum(math.ceil(p / k) for p in piles) &lt;= hours)
-print(speed)                                    # 4 — minimum bananas/hour
+piles, hours = [<span class="nu">3</span>, <span class="nu">6</span>, <span class="nu">7</span>, <span class="nu">11</span>], <span class="nu">8</span>
+speed = <span class="fn">first_true</span>(<span class="nu">1</span>, <span class="bi">max</span>(piles), <span class="kw">lambda</span> k: <span class="bi">sum</span>(math.<span class="fn">ceil</span>(p / k) <span class="kw">for</span> p <span class="kw">in</span> piles) &lt;= hours)
+<span class="bi">print</span>(speed)                                    <span class="cm"># 4 — minimum bananas/hour</span>
 </code></pre>
   <h2>Exercises</h2>
   <ol style="list-style:none;padding-left:0">

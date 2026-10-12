@@ -212,44 +212,44 @@ a{color:var(--ink);text-decoration:underline dotted}
 <div class="pagebreak">~ page 3 ~</div>
 <h2>Example</h2>
 <p>A back-of-envelope estimator and a consistent-hash ring — two small tools used often when reasoning about a design. Run with Python 3.9+.</p>
-<span class="lang">python</span><pre class="code"><code># estimate.py — turn assumptions into numbers. Every input is an ASSUMPTION; change them.
-SECONDS_PER_MONTH = 30 * 24 * 3600
+<span class="lang">python</span><pre class="code"><code><span class="cm"># estimate.py — turn assumptions into numbers. Every input is an ASSUMPTION; change them.</span>
+SECONDS_PER_MONTH = <span class="nu">30</span> * <span class="nu">24</span> * <span class="nu">3600</span>
 
-def estimate(new_per_month, read_write_ratio, bytes_per_record, years, peak_factor=3):
+<span class="kw">def</span> <span class="fn">estimate</span>(new_per_month, read_write_ratio, bytes_per_record, years, peak_factor=<span class="nu">3</span>):
     writes_s = new_per_month / SECONDS_PER_MONTH
     reads_s = writes_s * read_write_ratio
-    storage_tb = new_per_month * 12 * years * bytes_per_record / 1e12
-    return {
-        "writes/s avg": round(writes_s, 1),
-        "reads/s avg": round(reads_s),
-        "reads/s peak": round(reads_s * peak_factor),
-        "storage TB": round(storage_tb, 2),
+    storage_tb = new_per_month * <span class="nu">12</span> * years * bytes_per_record / <span class="nu">1e12</span>
+    <span class="kw">return</span> {
+        <span class="st">"writes/s avg"</span>: <span class="bi">round</span>(writes_s, <span class="nu">1</span>),
+        <span class="st">"reads/s avg"</span>: <span class="bi">round</span>(reads_s),
+        <span class="st">"reads/s peak"</span>: <span class="bi">round</span>(reads_s * peak_factor),
+        <span class="st">"storage TB"</span>: <span class="bi">round</span>(storage_tb, <span class="nu">2</span>),
     }
 
-# URL shortener: 100M new links/month, 100 reads per write, 500 B per record, 5 years
-print(estimate(100_000_000, 100, 500, 5))
-# {'writes/s avg': 38.6, 'reads/s avg': 3858, 'reads/s peak': 11574, 'storage TB': 3.0}</code></pre>
-<span class="lang">python</span><pre class="code"><code># ring.py — consistent hashing with virtual nodes
-import bisect, hashlib
+<span class="cm"># URL shortener: 100M new links/month, 100 reads per write, 500 B per record, 5 years</span>
+<span class="bi">print</span>(<span class="fn">estimate</span>(<span class="nu">100_000_000</span>, <span class="nu">100</span>, <span class="nu">500</span>, <span class="nu">5</span>))
+<span class="cm"># {'writes/s avg': 38.6, 'reads/s avg': 3858, 'reads/s peak': 11574, 'storage TB': 3.0}</span></code></pre>
+<span class="lang">python</span><pre class="code"><code><span class="cm"># ring.py — consistent hashing with virtual nodes</span>
+<span class="kw">import</span> bisect, hashlib
 
-class Ring:
-    def __init__(self, nodes, vnodes=100):
-        self.ring = sorted((self._h(f"{n}#{i}"), n) for n in nodes for i in range(vnodes))
-        self.keys = [h for h, _ in self.ring]
+<span class="kw">class</span> Ring:
+    <span class="kw">def</span> <span class="fn">__init__</span>(<span class="bi">self</span>, nodes, vnodes=<span class="nu">100</span>):
+        <span class="bi">self</span>.ring = <span class="bi">sorted</span>((<span class="bi">self</span>.<span class="fn">_h</span>(<span class="st">f"{n}#{i}"</span>), n) <span class="kw">for</span> n <span class="kw">in</span> nodes <span class="kw">for</span> i <span class="kw">in</span> <span class="bi">range</span>(vnodes))
+        <span class="bi">self</span>.keys = [h <span class="kw">for</span> h, _ <span class="kw">in</span> <span class="bi">self</span>.ring]
 
-    @staticmethod
-    def _h(s):
-        return int(hashlib.md5(s.encode()).hexdigest(), 16)
+    <span class="bi">@staticmethod</span>
+    <span class="kw">def</span> <span class="fn">_h</span>(s):
+        <span class="kw">return</span> <span class="bi">int</span>(hashlib.<span class="fn">md5</span>(s.<span class="fn">encode</span>()).<span class="fn">hexdigest</span>(), <span class="nu">16</span>)
 
-    def node_for(self, key):
-        i = bisect.bisect(self.keys, self._h(key)) % len(self.ring)
-        return self.ring[i][1]
+    <span class="kw">def</span> <span class="fn">node_for</span>(<span class="bi">self</span>, key):
+        i = bisect.<span class="fn">bisect</span>(<span class="bi">self</span>.keys, <span class="bi">self</span>.<span class="fn">_h</span>(key)) % <span class="bi">len</span>(<span class="bi">self</span>.ring)
+        <span class="kw">return</span> <span class="bi">self</span>.ring[i][<span class="nu">1</span>]
 
-keys = [f"user{i}" for i in range(10_000)]
-before = Ring(["a", "b", "c"])
-after = Ring(["a", "b", "c", "d"])
-moved = sum(before.node_for(k) != after.node_for(k) for k in keys)
-print(moved / len(keys))   # about 0.2 (expected ~1/4): only keys that now belong to the new node move; plain hash(key) % N would move ~3/4</code></pre>
+keys = [<span class="st">f"user{i}"</span> <span class="kw">for</span> i <span class="kw">in</span> <span class="bi">range</span>(<span class="nu">10_000</span>)]
+before = <span class="fn">Ring</span>([<span class="st">"a"</span>, <span class="st">"b"</span>, <span class="st">"c"</span>])
+after = <span class="fn">Ring</span>([<span class="st">"a"</span>, <span class="st">"b"</span>, <span class="st">"c"</span>, <span class="st">"d"</span>])
+moved = <span class="bi">sum</span>(before.<span class="fn">node_for</span>(k) != after.<span class="fn">node_for</span>(k) <span class="kw">for</span> k <span class="kw">in</span> keys)
+<span class="bi">print</span>(moved / <span class="bi">len</span>(keys))   <span class="cm"># about 0.2 (expected ~1/4): only keys that now belong to the new node move; plain hash(key) % N would move ~3/4</span></code></pre>
 <div class="pagebreak">~ page 4 ~</div>
 <h2>Exercises</h2>
 <ol style="list-style:none;padding-left:0"><li>1. Rewrite these vague NFRs as measurable SLOs: "the site must be fast", "must not lose orders", "must be highly available".<div><details><summary>Solution</summary>Example: p99 of <code>GET /product</code> under 250 ms measured at the load balancer; every order acknowledged to the user is durable (replicated in at least two zones before the 201 response) with RPO of 0 for orders; 99.95% of requests succeed per calendar month (about 22 min of allowed downtime in a 30-day month). Each states the metric, the threshold, the measurement point and the window. Your exact numbers should come from business input.</details></div></li><li>2. Estimate for a chat app: 10M daily users, 40 messages sent per user per day, 100 B per message, 3× peak. Give writes/s, daily storage, and yearly storage.<div><details><summary>Solution</summary>10M × 40 = 400M messages/day. 400M / 86,400 ≈ 4,630/s average, ≈ 13,900/s at 3× peak. Storage: 400M × 100 B = 40 GB/day, about 14.6 TB/year before replication (×3 if triple replicated ≈ 44 TB) and indexes. State that fan-out to recipients is separate and multiplies delivery work, not stored bytes.</details></div></li><li>3. Your team of 6 is building a new B2B product. Monolith or microservices? Justify, and name when you would revisit.<div><details><summary>Solution</summary>A modular monolith: one deployable, strict module boundaries and interfaces, one database with schemas per module. Six people cannot absorb the operational cost of many services, and early domain boundaries are guesses. Revisit when a module needs independent scaling, teams grow so that deploys collide, or a component needs a different technology or fault isolation. Clean module contracts make the later split cheap.</details></div></li><li>4. Choose a data structure for each: (a) top 10 trending hashtags in the last hour, (b) "has this URL been crawled?" over 10 billion URLs, (c) distributing keys over a changing set of cache nodes, (d) unique visitors per page per day.<div><details><summary>Solution</summary>(a) Count-Min sketch or exact counters plus a min-heap of size 10 over a sliding window. (b) Bloom filter in front of a persistent store — a false positive means an unneeded lookup or a skipped page, never a false "not seen"; accept the rate you size it for. (c) Consistent hashing with virtual nodes. (d) HyperLogLog per page per day — small fixed memory, approximate count (use exact sets only if exactness is required and the volume is small).</details></div></li></ol>

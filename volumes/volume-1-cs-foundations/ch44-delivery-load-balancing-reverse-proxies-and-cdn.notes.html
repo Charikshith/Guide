@@ -288,48 +288,48 @@ a{color:var(--ink);text-decoration:underline dotted}
   <div class="pagebreak">~ page 3 ~</div>
   <h2>Example</h2>
   <span class="lang">nginx</span>
-<pre class="code"><code># /etc/nginx/conf.d/app.conf
-upstream api {
-    least_conn;
-    server 10.0.1.11:8080 max_fails=3 fail_timeout=10s;
-    server 10.0.1.12:8080 max_fails=3 fail_timeout=10s;
-    server 10.0.1.13:8080 weight=2;
-    keepalive 64;                                  # reuse upstream connections
+<pre class="code"><code><span class="cm"># /etc/nginx/conf.d/app.conf</span>
+<span class="kw">upstream</span> api {
+<span class="kw">    least_conn</span>;
+<span class="kw">    server</span> <span class="nu">10.0</span>.<span class="nu">1.11</span>:<span class="nu">8080</span> max_fails=<span class="nu">3</span> fail_timeout=<span class="nu">10s</span>;
+<span class="kw">    server</span> <span class="nu">10.0</span>.<span class="nu">1.12</span>:<span class="nu">8080</span> max_fails=<span class="nu">3</span> fail_timeout=<span class="nu">10s</span>;
+<span class="kw">    server</span> <span class="nu">10.0</span>.<span class="nu">1.13</span>:<span class="nu">8080</span> weight=<span class="nu">2</span>;
+<span class="kw">    keepalive</span> <span class="nu">64</span>;                                  <span class="cm"># reuse upstream connections</span>
 }
 
-server {
-    listen 443 ssl http2;
-    server_name api.example.com;
-    ssl_certificate     /etc/ssl/api.crt;
-    ssl_certificate_key /etc/ssl/api.key;
+<span class="kw">server</span> {
+<span class="kw">    listen</span> <span class="nu">443</span> ssl http2;
+<span class="kw">    server_name</span> api.example.com;
+<span class="kw">    ssl_certificate</span>     /etc/ssl/api.crt;
+<span class="kw">    ssl_certificate_key</span> /etc/ssl/api.key;
 
-    location /static/ {
-        root /srv/app;
-        add_header Cache-Control "public, max-age=31536000, immutable";
+<span class="kw">    location</span> /static/ {
+<span class="kw">        root</span> /srv/app;
+<span class="kw">        add_header</span> Cache-Control <span class="st">"public, max-age=31536000, immutable"</span>;
     }
 
-    location /api/ {
-        proxy_pass http://api;
-        proxy_http_version 1.1;
-        proxy_set_header Connection "";
-        proxy_set_header Host $host;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Request-ID $request_id;
-        proxy_next_upstream error timeout http_502 http_503;   # retry idempotent failures elsewhere
-        proxy_read_timeout 30s;
+<span class="kw">    location</span> /api/ {
+<span class="kw">        proxy_pass</span> http://api;
+<span class="kw">        proxy_http_version</span> <span class="nu">1.1</span>;
+<span class="kw">        proxy_set_header</span> Connection <span class="st">""</span>;
+<span class="kw">        proxy_set_header</span> Host <span class="bi">$host</span>;
+<span class="kw">        proxy_set_header</span> X-Forwarded-For <span class="bi">$proxy_add_x_forwarded_for</span>;
+<span class="kw">        proxy_set_header</span> X-Request-ID <span class="bi">$request_id</span>;
+<span class="kw">        proxy_next_upstream</span> error timeout http_502 http_503;   <span class="cm"># retry idempotent failures elsewhere</span>
+<span class="kw">        proxy_read_timeout</span> <span class="nu">30s</span>;
     }
 }</code></pre>
   <span class="lang">yaml</span>
-<pre class="code"><code># Envoy: active health checking on a cluster (excerpt)
-clusters:
-  - name: api
-    lb_policy: LEAST_REQUEST
-    health_checks:
-      - timeout: 1s
-        interval: 5s
-        unhealthy_threshold: 3
-        healthy_threshold: 2
-        http_health_check: { path: /readyz }</code></pre>
+<pre class="code"><code><span class="cm"># Envoy: active health checking on a cluster (excerpt)</span>
+<span class="bi">clusters</span>:
+<span class="bi">  - name</span>: api
+<span class="bi">    lb_policy</span>: LEAST_REQUEST
+<span class="bi">    health_checks</span>:
+<span class="bi">      - timeout</span>: <span class="nu">1s</span>
+<span class="bi">        interval</span>: <span class="nu">5s</span>
+<span class="bi">        unhealthy_threshold</span>: <span class="nu">3</span>
+<span class="bi">        healthy_threshold</span>: <span class="nu">2</span>
+<span class="bi">        http_health_check</span>: { path: /readyz }</code></pre>
   <span class="lang">text</span>
 <pre class="code"><code>Cloudflare cache rule (conceptual)
   If: hostname eq "static.example.com" and URI path starts with "/assets/"

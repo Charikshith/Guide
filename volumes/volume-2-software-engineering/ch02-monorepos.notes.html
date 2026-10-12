@@ -240,33 +240,33 @@ a{color:var(--ink);text-decoration:underline dotted}
   <div class="pagebreak">~ page 3 ~</div>
   <h2>Example</h2>
   <span class="lang">toml</span>
-  <pre class="code"><code># Cargo.toml at the repo root
-  [workspace]
-  members = ["libs/core", "libs/db", "services/api", "services/worker"]
-  resolver = "2"
+  <pre class="code"><code><span class="cm"># Cargo.toml at the repo root</span>
+<span class="kw">  [workspace]</span>
+<span class="bi">  members</span> = [<span class="st">"libs/core"</span>, <span class="st">"libs/db"</span>, <span class="st">"services/api"</span>, <span class="st">"services/worker"</span>]
+<span class="bi">  resolver</span> = <span class="st">"2"</span>
   
-  [workspace.dependencies]          # one version for everyone
-  serde = { version = "1", features = ["derive"] }
-  tokio = { version = "1", features = ["full"] }
+<span class="kw">  [workspace.dependencies]</span>          <span class="cm"># one version for everyone</span>
+<span class="bi">  serde</span> = { version = <span class="st">"1"</span>, features = [<span class="st">"derive"</span>] }
+<span class="bi">  tokio</span> = { version = <span class="st">"1"</span>, features = [<span class="st">"full"</span>] }
   
-  # services/api/Cargo.toml
-  [dependencies]
-  core  = { path = "../../libs/core" }
-  db    = { path = "../../libs/db" }
-  serde = { workspace = true }</code></pre>
+  <span class="cm"># services/api/Cargo.toml</span>
+<span class="kw">  [dependencies]</span>
+<span class="bi">  core</span>  = { path = <span class="st">"../../libs/core"</span> }
+<span class="bi">  db</span>    = { path = <span class="st">"../../libs/db"</span> }
+<span class="bi">  serde</span> = { workspace = <span class="kw">true</span> }</code></pre>
   <span class="lang">yaml</span>
-  <pre class="code"><code># pnpm-workspace.yaml
-  packages:
-    - "apps/*"
-    - "libs/*"</code></pre>
+  <pre class="code"><code><span class="cm"># pnpm-workspace.yaml</span>
+<span class="bi">  packages</span>:
+    - <span class="st">"apps/*"</span>
+    - <span class="st">"libs/*"</span></code></pre>
   <span class="lang">json</span>
   <pre class="code"><code>// apps/web/package.json
-  { "name": "@acme/web", "dependencies": { "@acme/ui-kit": "workspace:*" } }</code></pre>
+  { <span class="bi">"name"</span>: <span class="st">"@acme/web"</span>, <span class="bi">"dependencies"</span>: { <span class="bi">"@acme/ui-kit"</span>: <span class="st">"workspace:*"</span> } }</code></pre>
   <span class="lang">bash</span>
-  <pre class="code"><code>cargo build -p api                      # build one member + its dependencies
+  <pre class="code"><code>cargo build -p api                      <span class="cm"># build one member + its dependencies</span>
   cargo test --workspace
-  pnpm --filter "...[origin/main]" test   # pnpm: test packages changed since main, and their dependents
-  npx turbo run test --filter="...[origin/main]"</code></pre>
+  pnpm --filter <span class="st">"...[origin/main]"</span> test   <span class="cm"># pnpm: test packages changed since main, and their dependents</span>
+  npx turbo run test --filter=<span class="st">"...[origin/main]"</span></code></pre>
   <span class="lang">text</span>
   <pre class="code"><code># .github/CODEOWNERS
   /libs/core/      @acme/platform

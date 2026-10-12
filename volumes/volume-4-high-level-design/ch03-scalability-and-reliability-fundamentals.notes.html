@@ -270,19 +270,19 @@ a{color:var(--ink);text-decoration:underline dotted}
 
   <h2>Example</h2>
   <span class="lang">python</span>
-<pre class="code"><code>from functools import reduce
+<pre class="code"><code><span class="kw">from</span> functools <span class="kw">import</span> reduce
 
-def series(*parts):   return reduce(lambda a, b: a * b, parts, 1.0)
-def parallel(a, n):   return 1 - (1 - a) ** n
+<span class="kw">def</span> <span class="fn">series</span>(*parts):   <span class="kw">return</span> <span class="fn">reduce</span>(<span class="kw">lambda</span> a, b: a * b, parts, <span class="nu">1.0</span>)
+<span class="kw">def</span> <span class="fn">parallel</span>(a, n):   <span class="kw">return</span> <span class="nu">1</span> - (<span class="nu">1</span> - a) ** n
 
-print(f"{series(0.999, 0.999):.4%}")          # 99.8001%
-print(f"{parallel(0.999, 2):.6%}")            # 99.999900%
-print(f"{series(*[0.999] * 5):.4%}")          # 99.5010% — 5 services in a chain
+<span class="bi">print</span>(<span class="st">f"{series(0.999, 0.999):.4%}"</span>)          <span class="cm"># 99.8001%</span>
+<span class="bi">print</span>(<span class="st">f"{parallel(0.999, 2):.6%}"</span>)            <span class="cm"># 99.999900%</span>
+<span class="bi">print</span>(<span class="st">f"{series(*[0.999] * 5):.4%}"</span>)          <span class="cm"># 99.5010% — 5 services in a chain</span>
 
-def downtime(avail, period_h=24 * 365):
-    return (1 - avail) * period_h * 60        # minutes
-for a in (0.99, 0.999, 0.9999, 0.99999):
-    print(f"{a:.3%}: {downtime(a):8.1f} min/year")</code></pre>
+<span class="kw">def</span> <span class="fn">downtime</span>(avail, period_h=<span class="nu">24</span> * <span class="nu">365</span>):
+    <span class="kw">return</span> (<span class="nu">1</span> - avail) * period_h * <span class="nu">60</span>        <span class="cm"># minutes</span>
+<span class="kw">for</span> a <span class="kw">in</span> (<span class="nu">0.99</span>, <span class="nu">0.999</span>, <span class="nu">0.9999</span>, <span class="nu">0.99999</span>):
+    <span class="bi">print</span>(<span class="st">f"{a:.3%}: {downtime(a):8.1f} min/year"</span>)</code></pre>
 
   <h3>Making a stateful service horizontally scalable</h3>
 <pre class="code ascii"><code> BEFORE: sessions in process memory      AFTER: sessions in Redis

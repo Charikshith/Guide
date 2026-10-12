@@ -271,13 +271,13 @@ a{color:var(--ink);text-decoration:underline dotted}
  redundancy   = + 2 (lose a node during a deploy or failure) ≈ 44 servers
  spread over 3 availability zones             → 15 per zone (45)</code></pre>
   <span class="lang">python</span>
-<pre class="code"><code>def plan(dau, req_per_user, peak=5, qps_per_server=1000, target_util=0.7, spare=2):
-    avg = dau * req_per_user / 86_400
+<pre class="code"><code><span class="kw">def</span> <span class="fn">plan</span>(dau, req_per_user, peak=<span class="nu">5</span>, qps_per_server=<span class="nu">1000</span>, target_util=<span class="nu">0.7</span>, spare=<span class="nu">2</span>):
+    avg = dau * req_per_user / <span class="nu">86_400</span>
     peak_qps = avg * peak
-    servers = -(-peak_qps // (qps_per_server * target_util)) + spare   # ceiling
-    return round(avg), round(peak_qps), int(servers)
+    servers = -(-peak_qps // (qps_per_server * target_util)) + spare   <span class="cm"># ceiling</span>
+    <span class="kw">return</span> <span class="bi">round</span>(avg), <span class="bi">round</span>(peak_qps), <span class="bi">int</span>(servers)
 
-print(plan(10_000_000, 50))        # (5787, 28935, 44)</code></pre>
+<span class="bi">print</span>(<span class="fn">plan</span>(<span class="nu">10_000_000</span>, <span class="nu">50</span>))        <span class="cm"># (5787, 28935, 44)</span></code></pre>
 
   <h2>Exercises</h2>
   <ol style="list-style:none;padding-left:0">

@@ -280,29 +280,29 @@ a{color:var(--ink);text-decoration:underline dotted}
 
   <h2>Example</h2>
   <span class="lang">python</span>
-<pre class="code"><code>print(set("mississippi"))            # {'m', 'i', 's', 'p'} — duplicates vanish
+<pre class="code"><code><span class="bi">print</span>(<span class="bi">set</span>(<span class="st">"mississippi"</span>))            <span class="cm"># {'m', 'i', 's', 'p'} — duplicates vanish</span>
 
-a, b = {1, 2, 3, 4}, {3, 4, 5}
-print(a | b, a &amp; b, a - b, a ^ b)    # {1,2,3,4,5} {3,4} {1,2} {1,2,5}
+a, b = {<span class="nu">1</span>, <span class="nu">2</span>, <span class="nu">3</span>, <span class="nu">4</span>}, {<span class="nu">3</span>, <span class="nu">4</span>, <span class="nu">5</span>}
+<span class="bi">print</span>(a | b, a &amp; b, a - b, a ^ b)    <span class="cm"># {1,2,3,4,5} {3,4} {1,2} {1,2,5}</span>
 
-# Inclusion–exclusion, checked
-assert len(a | b) == len(a) + len(b) - len(a &amp; b)
+<span class="cm"># Inclusion–exclusion, checked</span>
+<span class="kw">assert</span> <span class="bi">len</span>(a | b) == <span class="bi">len</span>(a) + <span class="bi">len</span>(b) - <span class="bi">len</span>(a &amp; b)
 
-# A bijection: each key maps to one value, each value comes from one key
-code = {"red": 1, "green": 2, "blue": 3}
-inverse = {v: k for k, v in code.items()}
-assert len(inverse) == len(code)     # no collisions → injective, so invertible</code></pre>
+<span class="cm"># A bijection: each key maps to one value, each value comes from one key</span>
+code = {<span class="st">"red"</span>: <span class="nu">1</span>, <span class="st">"green"</span>: <span class="nu">2</span>, <span class="st">"blue"</span>: <span class="nu">3</span>}
+inverse = {v: k <span class="kw">for</span> k, v <span class="kw">in</span> code.<span class="fn">items</span>()}
+<span class="kw">assert</span> <span class="bi">len</span>(inverse) == <span class="bi">len</span>(code)     <span class="cm"># no collisions → injective, so invertible</span></code></pre>
 
   <h3>Checking relation properties by brute force</h3>
   <span class="lang">python</span>
-<pre class="code"><code>S = range(1, 7)
-divides = {(x, y) for x in S for y in S if y % x == 0}
+<pre class="code"><code>S = <span class="bi">range</span>(<span class="nu">1</span>, <span class="nu">7</span>)
+divides = {(x, y) <span class="kw">for</span> x <span class="kw">in</span> S <span class="kw">for</span> y <span class="kw">in</span> S <span class="kw">if</span> y % x == <span class="nu">0</span>}
 
-reflexive  = all((x, x) in divides for x in S)
-symmetric  = all((y, x) in divides for (x, y) in divides)
-transitive = all((x, z) in divides
-                 for (x, y) in divides for (y2, z) in divides if y == y2)
-print(reflexive, symmetric, transitive)   # True False True → a partial order</code></pre>
+reflexive  = <span class="bi">all</span>((x, x) <span class="kw">in</span> divides <span class="kw">for</span> x <span class="kw">in</span> S)
+symmetric  = <span class="bi">all</span>((y, x) <span class="kw">in</span> divides <span class="kw">for</span> (x, y) <span class="kw">in</span> divides)
+transitive = <span class="bi">all</span>((x, z) <span class="kw">in</span> divides
+                 <span class="kw">for</span> (x, y) <span class="kw">in</span> divides <span class="kw">for</span> (y2, z) <span class="kw">in</span> divides <span class="kw">if</span> y == y2)
+<span class="bi">print</span>(reflexive, symmetric, transitive)   <span class="cm"># True False True → a partial order</span></code></pre>
 
   <p><b>Why sets give O(1) membership</b> — a <code>set</code> is a hash table. <code>x in s</code> hashes <code>x</code>, jumps to one bucket, and checks only what is there, instead of scanning every element like a <code>list</code> does.</p>
 <pre class="code ascii"><code> x in list:  [7, 3, 9, 1, 4, ...]  → check 1, 2, 3, ... n items    O(n)

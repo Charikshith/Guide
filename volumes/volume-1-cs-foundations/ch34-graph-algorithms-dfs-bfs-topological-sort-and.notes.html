@@ -239,72 +239,72 @@ a{color:var(--ink);text-decoration:underline dotted}
   <div class="pagebreak">~ page 2 ~</div>
   <h2>Example</h2>
   <span class="lang">python</span>
-<pre class="code"><code>from collections import deque
+<pre class="code"><code><span class="kw">from</span> collections <span class="kw">import</span> deque
 
-G = {"A": ["B", "C"], "B": ["D"], "C": ["D", "E"], "D": ["F"], "E": ["F"], "F": []}
+G = {<span class="st">"A"</span>: [<span class="st">"B"</span>, <span class="st">"C"</span>], <span class="st">"B"</span>: [<span class="st">"D"</span>], <span class="st">"C"</span>: [<span class="st">"D"</span>, <span class="st">"E"</span>], <span class="st">"D"</span>: [<span class="st">"F"</span>], <span class="st">"E"</span>: [<span class="st">"F"</span>], <span class="st">"F"</span>: []}
 
-def bfs_shortest_path(g, start, goal):
-    parent = {start: None}
-    q = deque([start])
-    while q:
-        u = q.popleft()
-        if u == goal:
+<span class="kw">def</span> <span class="fn">bfs_shortest_path</span>(g, start, goal):
+    parent = {start: <span class="kw">None</span>}
+    q = <span class="fn">deque</span>([start])
+    <span class="kw">while</span> q:
+        u = q.<span class="fn">popleft</span>()
+        <span class="kw">if</span> u == goal:
             path = []
-            while u is not None:
-                path.append(u); u = parent[u]
-            return path[::-1]
-        for v in g[u]:
-            if v not in parent:           # mark when ENQUEUED, not when popped
+            <span class="kw">while</span> u <span class="kw">is</span> <span class="kw">not</span> <span class="kw">None</span>:
+                path.<span class="fn">append</span>(u); u = parent[u]
+            <span class="kw">return</span> path[::-<span class="nu">1</span>]
+        <span class="kw">for</span> v <span class="kw">in</span> g[u]:
+            <span class="kw">if</span> v <span class="kw">not</span> <span class="kw">in</span> parent:           <span class="cm"># mark when ENQUEUED, not when popped</span>
                 parent[v] = u
-                q.append(v)
-    return None
+                q.<span class="fn">append</span>(v)
+    <span class="kw">return</span> <span class="kw">None</span>
 
-print(bfs_shortest_path(G, "A", "F"))     # ['A', 'B', 'D', 'F']
+<span class="bi">print</span>(<span class="fn">bfs_shortest_path</span>(G, <span class="st">"A"</span>, <span class="st">"F"</span>))     <span class="cm"># ['A', 'B', 'D', 'F']</span>
 
-def has_cycle_directed(g):
-    WHITE, GRAY, BLACK = 0, 1, 2
-    color = {u: WHITE for u in g}
-    def dfs(u):
+<span class="kw">def</span> <span class="fn">has_cycle_directed</span>(g):
+    WHITE, GRAY, BLACK = <span class="nu">0</span>, <span class="nu">1</span>, <span class="nu">2</span>
+    color = {u: WHITE <span class="kw">for</span> u <span class="kw">in</span> g}
+    <span class="kw">def</span> <span class="fn">dfs</span>(u):
         color[u] = GRAY
-        for v in g[u]:
-            if color[v] == GRAY: return True           # back edge
-            if color[v] == WHITE and dfs(v): return True
+        <span class="kw">for</span> v <span class="kw">in</span> g[u]:
+            <span class="kw">if</span> color[v] == GRAY: <span class="kw">return</span> <span class="kw">True</span>           <span class="cm"># back edge</span>
+            <span class="kw">if</span> color[v] == WHITE <span class="kw">and</span> <span class="fn">dfs</span>(v): <span class="kw">return</span> <span class="kw">True</span>
         color[u] = BLACK
-        return False
-    return any(color[u] == WHITE and dfs(u) for u in g)
+        <span class="kw">return</span> <span class="kw">False</span>
+    <span class="kw">return</span> <span class="bi">any</span>(color[u] == WHITE <span class="kw">and</span> <span class="fn">dfs</span>(u) <span class="kw">for</span> u <span class="kw">in</span> g)
 
-def kahn_topo(g):
-    indeg = {u: 0 for u in g}
-    for u in g:
-        for v in g[u]: indeg[v] += 1
-    q = deque(u for u in g if indeg[u] == 0)
+<span class="kw">def</span> <span class="fn">kahn_topo</span>(g):
+    indeg = {u: <span class="nu">0</span> <span class="kw">for</span> u <span class="kw">in</span> g}
+    <span class="kw">for</span> u <span class="kw">in</span> g:
+        <span class="kw">for</span> v <span class="kw">in</span> g[u]: indeg[v] += <span class="nu">1</span>
+    q = <span class="fn">deque</span>(u <span class="kw">for</span> u <span class="kw">in</span> g <span class="kw">if</span> indeg[u] == <span class="nu">0</span>)
     order = []
-    while q:
-        u = q.popleft(); order.append(u)
-        for v in g[u]:
-            indeg[v] -= 1
-            if indeg[v] == 0: q.append(v)
-    if len(order) != len(g):
-        raise ValueError("cycle detected")
-    return order
+    <span class="kw">while</span> q:
+        u = q.<span class="fn">popleft</span>(); order.<span class="fn">append</span>(u)
+        <span class="kw">for</span> v <span class="kw">in</span> g[u]:
+            indeg[v] -= <span class="nu">1</span>
+            <span class="kw">if</span> indeg[v] == <span class="nu">0</span>: q.<span class="fn">append</span>(v)
+    <span class="kw">if</span> <span class="bi">len</span>(order) != <span class="bi">len</span>(g):
+        <span class="kw">raise</span> <span class="bi">ValueError</span>(<span class="st">"cycle detected"</span>)
+    <span class="kw">return</span> order
 
-print(has_cycle_directed(G), kahn_topo(G))   # False ['A', 'B', 'C', 'D', 'E', 'F']
+<span class="bi">print</span>(<span class="fn">has_cycle_directed</span>(G), <span class="fn">kahn_topo</span>(G))   <span class="cm"># False ['A', 'B', 'C', 'D', 'E', 'F']</span>
 
-def n_queens(n):
-    cols, d1, d2, board, out = set(), set(), set(), [], []
-    def place(r):
-        if r == n:
-            out.append(board[:]); return
-        for c in range(n):
-            if c in cols or r - c in d1 or r + c in d2:
-                continue                                 # prune
-            cols.add(c); d1.add(r - c); d2.add(r + c); board.append(c)
-            place(r + 1)
-            cols.remove(c); d1.remove(r - c); d2.remove(r + c); board.pop()   # undo
-    place(0)
-    return out
+<span class="kw">def</span> <span class="fn">n_queens</span>(n):
+    cols, d1, d2, board, out = <span class="bi">set</span>(), <span class="bi">set</span>(), <span class="bi">set</span>(), [], []
+    <span class="kw">def</span> <span class="fn">place</span>(r):
+        <span class="kw">if</span> r == n:
+            out.<span class="fn">append</span>(board[:]); <span class="kw">return</span>
+        <span class="kw">for</span> c <span class="kw">in</span> <span class="bi">range</span>(n):
+            <span class="kw">if</span> c <span class="kw">in</span> cols <span class="kw">or</span> r - c <span class="kw">in</span> d1 <span class="kw">or</span> r + c <span class="kw">in</span> d2:
+                <span class="kw">continue</span>                                 <span class="cm"># prune</span>
+            cols.<span class="fn">add</span>(c); d1.<span class="fn">add</span>(r - c); d2.<span class="fn">add</span>(r + c); board.<span class="fn">append</span>(c)
+            <span class="fn">place</span>(r + <span class="nu">1</span>)
+            cols.<span class="fn">remove</span>(c); d1.<span class="fn">remove</span>(r - c); d2.<span class="fn">remove</span>(r + c); board.<span class="fn">pop</span>()   <span class="cm"># undo</span>
+    <span class="fn">place</span>(<span class="nu">0</span>)
+    <span class="kw">return</span> out
 
-print(len(n_queens(8)))                    # 92
+<span class="bi">print</span>(<span class="bi">len</span>(<span class="fn">n_queens</span>(<span class="nu">8</span>)))                    <span class="cm"># 92</span>
 </code></pre>
   <h2>Exercises</h2>
   <ol style="list-style:none;padding-left:0">

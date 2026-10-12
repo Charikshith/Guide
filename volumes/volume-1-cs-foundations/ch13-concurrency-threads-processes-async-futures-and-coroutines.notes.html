@@ -254,54 +254,54 @@ a{color:var(--ink);text-decoration:underline dotted}
 <div class="pagebreak">~ page 3 ~</div>
 <h2>Example</h2>
 <span class="lang">python</span>
-<pre class="code"><code>import asyncio, time
+<pre class="code"><code><span class="kw">import</span> asyncio, time
 
-async def fetch(i):
-    await asyncio.sleep(1)                 # stands in for a network call
-    return i * 10
+<span class="kw">async</span> <span class="kw">def</span> <span class="fn">fetch</span>(i):
+    <span class="kw">await</span> asyncio.<span class="fn">sleep</span>(<span class="nu">1</span>)                 <span class="cm"># stands in for a network call</span>
+    <span class="kw">return</span> i * <span class="nu">10</span>
 
-async def main():
-    start = time.perf_counter()
-    results = await asyncio.gather(*(fetch(i) for i in range(100)))
-    print(len(results), f"{time.perf_counter() - start:.1f}s")   # 100 1.0s — not 100s
+<span class="kw">async</span> <span class="kw">def</span> <span class="fn">main</span>():
+    start = time.<span class="fn">perf_counter</span>()
+    results = <span class="kw">await</span> asyncio.<span class="fn">gather</span>(*(<span class="fn">fetch</span>(i) <span class="kw">for</span> i <span class="kw">in</span> <span class="bi">range</span>(<span class="nu">100</span>)))
+    <span class="bi">print</span>(<span class="bi">len</span>(results), <span class="st">f"{time.perf_counter() - start:.1f}s"</span>)   <span class="cm"># 100 1.0s — not 100s</span>
 
-asyncio.run(main())
+asyncio.<span class="fn">run</span>(<span class="fn">main</span>())
 
-# Bounding concurrency with a semaphore
-async def bounded(urls, limit=10):
-    sem = asyncio.Semaphore(limit)
-    async def one(u):
-        async with sem:                    # at most `limit` at once
-            return await fetch(u)
-    return await asyncio.gather(*(one(u) for u in urls))</code></pre>
+<span class="cm"># Bounding concurrency with a semaphore</span>
+<span class="kw">async</span> <span class="kw">def</span> <span class="fn">bounded</span>(urls, limit=<span class="nu">10</span>):
+    sem = asyncio.<span class="fn">Semaphore</span>(limit)
+    <span class="kw">async</span> <span class="kw">def</span> <span class="fn">one</span>(u):
+        <span class="kw">async</span> <span class="kw">with</span> sem:                    <span class="cm"># at most `limit` at once</span>
+            <span class="kw">return</span> <span class="kw">await</span> <span class="fn">fetch</span>(u)
+    <span class="kw">return</span> <span class="kw">await</span> asyncio.<span class="fn">gather</span>(*(<span class="fn">one</span>(u) <span class="kw">for</span> u <span class="kw">in</span> urls))</code></pre>
 <span class="lang">python</span>
-<pre class="code"><code>import threading
+<pre class="code"><code><span class="kw">import</span> threading
 
-counter = 0
-lock = threading.Lock()
+counter = <span class="nu">0</span>
+lock = threading.<span class="fn">Lock</span>()
 
-def work():
-    global counter
-    for _ in range(100_000):
-        with lock:                         # remove the lock and the total may come out short
-            counter += 1
+<span class="kw">def</span> <span class="fn">work</span>():
+    <span class="kw">global</span> counter
+    <span class="kw">for</span> _ <span class="kw">in</span> <span class="bi">range</span>(<span class="nu">100_000</span>):
+        <span class="kw">with</span> lock:                         <span class="cm"># remove the lock and the total may come out short</span>
+            counter += <span class="nu">1</span>
 
-threads = [threading.Thread(target=work) for _ in range(8)]
-for t in threads: t.start()
-for t in threads: t.join()
-print(counter)                             # 800000</code></pre>
+threads = [threading.<span class="fn">Thread</span>(target=work) <span class="kw">for</span> _ <span class="kw">in</span> <span class="bi">range</span>(<span class="nu">8</span>)]
+<span class="kw">for</span> t <span class="kw">in</span> threads: t.<span class="fn">start</span>()
+<span class="kw">for</span> t <span class="kw">in</span> threads: t.<span class="fn">join</span>()
+<span class="bi">print</span>(counter)                             <span class="cm"># 800000</span></code></pre>
 <span class="lang">rust</span>
-<pre class="code"><code>#[tokio::main]
-async fn main() {
-    let handles: Vec&lt;_&gt; = (0..100)
-        .map(|i| tokio::spawn(async move {
-            tokio::time::sleep(std::time::Duration::from_secs(1)).await;
-            i * 10
+<pre class="code"><code><span class="bi">#[tokio::main]</span>
+<span class="kw">async</span> <span class="kw">fn</span> <span class="fn">main</span>() {
+    <span class="kw">let</span> handles: <span class="bi">Vec</span>&lt;_&gt; = (<span class="nu">0</span>..<span class="nu">100</span>)
+        .<span class="fn">map</span>(|i| tokio::<span class="fn">spawn</span>(<span class="kw">async</span> <span class="kw">move</span> {
+            tokio::time::<span class="fn">sleep</span>(std::time::Duration::<span class="fn">from_secs</span>(<span class="nu">1</span>)).<span class="kw">await</span>;
+            i * <span class="nu">10</span>
         }))
-        .collect();
-    let mut total = 0;
-    for h in handles { total += h.await.unwrap(); }
-    println!("{total}");                   // after ~1 s
+        .<span class="fn">collect</span>();
+    <span class="kw">let</span> <span class="kw">mut</span> total = <span class="nu">0</span>;
+    <span class="kw">for</span> h <span class="kw">in</span> handles { total += h.<span class="kw">await</span>.<span class="fn">unwrap</span>(); }
+    <span class="fn">println!</span>(<span class="st">"{total}"</span>);                   <span class="cm">// after ~1 s</span>
 }</code></pre>
 <h2>Exercises</h2>
 <ol style="list-style:none;padding-left:0">

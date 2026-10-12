@@ -290,42 +290,42 @@ a{color:var(--ink);text-decoration:underline dotted}
   <div class="pagebreak">~ page 3 ~</div>
   <h2>Example</h2>
   <span class="lang">sql</span>
-<pre class="code"><code>BEGIN;
-UPDATE accounts SET balance = balance - 100 WHERE id = 1 AND balance &gt;= 100;
--- check the row count in the app: 0 rows → insufficient funds → ROLLBACK
-UPDATE accounts SET balance = balance + 100 WHERE id = 2;
-INSERT INTO ledger (from_id, to_id, amount_cents) VALUES (1, 2, 100);
-COMMIT;
+<pre class="code"><code><span class="kw">BEGIN</span>;
+<span class="kw">UPDATE</span> accounts <span class="kw">SET</span> balance = balance - <span class="nu">100</span> <span class="kw">WHERE</span> id = <span class="nu">1</span> <span class="kw">AND</span> balance &gt;= <span class="nu">100</span>;
+<span class="cm">-- check the row count in the app: 0 rows → insufficient funds → ROLLBACK</span>
+<span class="kw">UPDATE</span> accounts <span class="kw">SET</span> balance = balance + <span class="nu">100</span> <span class="kw">WHERE</span> id = <span class="nu">2</span>;
+<span class="kw">INSERT</span> <span class="kw">INTO</span> ledger (from_id, to_id, amount_cents) <span class="kw">VALUES</span> (<span class="nu">1</span>, <span class="nu">2</span>, <span class="nu">100</span>);
+<span class="kw">COMMIT</span>;
 
--- Pessimistic locking: lock rows in a consistent order (avoids deadlocks)
-BEGIN;
-SELECT id, balance FROM accounts WHERE id IN (1, 2) ORDER BY id FOR UPDATE;
--- … compute, then UPDATE both …
-COMMIT;
+<span class="cm">-- Pessimistic locking: lock rows in a consistent order (avoids deadlocks)</span>
+<span class="kw">BEGIN</span>;
+<span class="kw">SELECT</span> id, balance <span class="kw">FROM</span> accounts <span class="kw">WHERE</span> id <span class="kw">IN</span> (<span class="nu">1</span>, <span class="nu">2</span>) <span class="kw">ORDER</span> <span class="kw">BY</span> id FOR <span class="kw">UPDATE</span>;
+<span class="cm">-- … compute, then UPDATE both …</span>
+<span class="kw">COMMIT</span>;
 
--- Serializable with a retry loop in the app
-BEGIN ISOLATION LEVEL SERIALIZABLE;
-SELECT count(*) FROM doctors WHERE on_call AND shift = 'night';   -- 2
-UPDATE doctors SET on_call = false WHERE id = 7;                   -- ok if count &gt; 1
-COMMIT;   -- may fail: ERROR: could not serialize access (SQLSTATE 40001) → retry</code></pre>
+<span class="cm">-- Serializable with a retry loop in the app</span>
+<span class="kw">BEGIN</span> ISOLATION LEVEL SERIALIZABLE;
+<span class="kw">SELECT</span> <span class="bi">count</span>(*) <span class="kw">FROM</span> doctors <span class="kw">WHERE</span> on_call <span class="kw">AND</span> shift = <span class="st">'night'</span>;   <span class="cm">-- 2</span>
+<span class="kw">UPDATE</span> doctors <span class="kw">SET</span> on_call = <span class="kw">false</span> <span class="kw">WHERE</span> id = <span class="nu">7</span>;                   <span class="cm">-- ok if count &gt; 1</span>
+<span class="kw">COMMIT</span>;   <span class="cm">-- may fail: ERROR: could not serialize access (SQLSTATE 40001) → retry</span></code></pre>
   <span class="lang">python</span>
-<pre class="code"><code>import psycopg, time, random
-from psycopg import errors
+<pre class="code"><code><span class="kw">import</span> psycopg, time, random
+<span class="kw">from</span> psycopg <span class="kw">import</span> errors
 
-def transfer(conn, src, dst, cents, attempts=5):
-    for i in range(attempts):
-        try:
-            with conn.transaction():
-                conn.execute("SET TRANSACTION ISOLATION LEVEL SERIALIZABLE")
-                cur = conn.execute("UPDATE accounts SET balance = balance - %s "
-                                   "WHERE id = %s AND balance &gt;= %s", (cents, src, cents))
-                if cur.rowcount == 0:
-                    raise ValueError("insufficient funds")
-                conn.execute("UPDATE accounts SET balance = balance + %s WHERE id = %s", (cents, dst))
-            return
-        except errors.SerializationFailure:
-            time.sleep((2 ** i) * 0.01 * random.random())   # jittered backoff, then retry
-    raise RuntimeError("transfer failed after retries")</code></pre>
+<span class="kw">def</span> <span class="fn">transfer</span>(conn, src, dst, cents, attempts=<span class="nu">5</span>):
+    <span class="kw">for</span> i <span class="kw">in</span> <span class="bi">range</span>(attempts):
+        <span class="kw">try</span>:
+            <span class="kw">with</span> conn.<span class="fn">transaction</span>():
+                conn.<span class="fn">execute</span>(<span class="st">"SET TRANSACTION ISOLATION LEVEL SERIALIZABLE"</span>)
+                cur = conn.<span class="fn">execute</span>(<span class="st">"UPDATE accounts SET balance = balance - %s "</span>
+                                   <span class="st">"WHERE id = %s AND balance &gt;= %s"</span>, (cents, src, cents))
+                <span class="kw">if</span> cur.rowcount == <span class="nu">0</span>:
+                    <span class="kw">raise</span> <span class="bi">ValueError</span>(<span class="st">"insufficient funds"</span>)
+                conn.<span class="fn">execute</span>(<span class="st">"UPDATE accounts SET balance = balance + %s WHERE id = %s"</span>, (cents, dst))
+            <span class="kw">return</span>
+        <span class="kw">except</span> errors.SerializationFailure:
+            time.<span class="fn">sleep</span>((<span class="nu">2</span> ** i) * <span class="nu">0.01</span> * random.<span class="fn">random</span>())   <span class="cm"># jittered backoff, then retry</span>
+    <span class="kw">raise</span> <span class="fn">RuntimeError</span>(<span class="st">"transfer failed after retries"</span>)</code></pre>
   <h2>Exercises</h2>
   <ol style="list-style:none;padding-left:0">
 <li>1. Reproduce a lost update and fix it with a lock.

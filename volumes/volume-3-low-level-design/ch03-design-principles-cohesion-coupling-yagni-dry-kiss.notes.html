@@ -283,59 +283,59 @@ a{color:var(--ink);text-decoration:underline dotted}
 
   <h2>Example</h2>
   <span class="lang">python</span>
-<pre class="code"><code># The "DRY" mistake: one shared helper for two concepts
-def format_name(first, last, *, legal=False, company=None, uppercase=False):
-    if legal and company:                  # invoices need the company's legal name
+<pre class="code"><code><span class="cm"># The "DRY" mistake: one shared helper for two concepts</span>
+<span class="kw">def</span> <span class="fn">format_name</span>(first, last, *, legal=<span class="kw">False</span>, company=<span class="kw">None</span>, uppercase=<span class="kw">False</span>):
+    <span class="kw">if</span> legal <span class="kw">and</span> company:                  <span class="cm"># invoices need the company's legal name</span>
         name = company
-    else:
-        name = f"{first} {last}".strip()   # profiles show a friendly name
-    return name.upper() if uppercase else name
+    <span class="kw">else</span>:
+        name = <span class="st">f"{first} {last}"</span>.<span class="fn">strip</span>()   <span class="cm"># profiles show a friendly name</span>
+    <span class="kw">return</span> name.<span class="fn">upper</span>() <span class="kw">if</span> uppercase <span class="kw">else</span> name
 
-# Callers:
-#   profile:  format_name(u.first, u.last)
-#   invoice:  format_name(c.first, c.last, legal=True, company=c.legal_name, uppercase=True)
-# A new invoice rule ("append the VAT number") now risks the profile page too.
+<span class="cm"># Callers:</span>
+<span class="cm">#   profile:  format_name(u.first, u.last)</span>
+<span class="cm">#   invoice:  format_name(c.first, c.last, legal=True, company=c.legal_name, uppercase=True)</span>
+<span class="cm"># A new invoice rule ("append the VAT number") now risks the profile page too.</span>
 
-# Undo it: duplication of TEXT is fine when the KNOWLEDGE differs
-def display_name(user) -&gt; str:
-    return f"{user.first} {user.last}".strip()
+<span class="cm"># Undo it: duplication of TEXT is fine when the KNOWLEDGE differs</span>
+<span class="kw">def</span> <span class="fn">display_name</span>(user) -&gt; <span class="bi">str</span>:
+    <span class="kw">return</span> <span class="st">f"{user.first} {user.last}"</span>.<span class="fn">strip</span>()
 
-def invoice_party_name(customer) -&gt; str:
-    base = customer.legal_name or f"{customer.first} {customer.last}"
-    return f"{base.upper()} (VAT {customer.vat_id})" if customer.vat_id else base.upper()
+<span class="kw">def</span> <span class="fn">invoice_party_name</span>(customer) -&gt; <span class="bi">str</span>:
+    base = customer.legal_name <span class="kw">or</span> <span class="st">f"{customer.first} {customer.last}"</span>
+    <span class="kw">return</span> <span class="st">f"{base.upper()} (VAT {customer.vat_id})"</span> <span class="kw">if</span> customer.vat_id <span class="kw">else</span> base.<span class="fn">upper</span>()
 
-# Real DRY: one authoritative place for a real rule
-VAT_RATE = {"DE": 0.19, "FR": 0.20, "NL": 0.21}   # used by pricing, invoices, and reports</code></pre>
+<span class="cm"># Real DRY: one authoritative place for a real rule</span>
+VAT_RATE = {<span class="st">"DE"</span>: <span class="nu">0.19</span>, <span class="st">"FR"</span>: <span class="nu">0.20</span>, <span class="st">"NL"</span>: <span class="nu">0.21</span>}   <span class="cm"># used by pricing, invoices, and reports</span></code></pre>
 
   <span class="lang">python</span>
-<pre class="code"><code># Measure coupling: fan-in, fan-out, instability, and cycles from imports
-import ast, pathlib, collections
+<pre class="code"><code><span class="cm"># Measure coupling: fan-in, fan-out, instability, and cycles from imports</span>
+<span class="kw">import</span> ast, pathlib, collections
 
-def import_graph(pkg_dir: str, pkg: str):
-    graph = collections.defaultdict(set)
-    for f in pathlib.Path(pkg_dir).rglob("*.py"):
-        mod = f.relative_to(pkg_dir).with_suffix("").parts[0]
-        for node in ast.walk(ast.parse(f.read_text(encoding="utf-8"))):
+<span class="kw">def</span> <span class="fn">import_graph</span>(pkg_dir: <span class="bi">str</span>, pkg: <span class="bi">str</span>):
+    graph = collections.<span class="fn">defaultdict</span>(<span class="bi">set</span>)
+    <span class="kw">for</span> f <span class="kw">in</span> pathlib.<span class="fn">Path</span>(pkg_dir).<span class="fn">rglob</span>(<span class="st">"*.py"</span>):
+        mod = f.<span class="fn">relative_to</span>(pkg_dir).<span class="fn">with_suffix</span>(<span class="st">""</span>).parts[<span class="nu">0</span>]
+        <span class="kw">for</span> node <span class="kw">in</span> ast.<span class="fn">walk</span>(ast.<span class="fn">parse</span>(f.<span class="fn">read_text</span>(encoding=<span class="st">"utf-8"</span>))):
             names = []
-            if isinstance(node, ast.ImportFrom) and node.module:
+            <span class="kw">if</span> <span class="bi">isinstance</span>(node, ast.ImportFrom) <span class="kw">and</span> node.module:
                 names = [node.module]
-            elif isinstance(node, ast.Import):
-                names = [a.name for a in node.names]
-            for n in names:
-                parts = n.split(".")
-                if parts[0] == pkg and len(parts) &gt; 1 and parts[1] != mod:
-                    graph[mod].add(parts[1])
-    return graph
+            <span class="kw">elif</span> <span class="bi">isinstance</span>(node, ast.Import):
+                names = [a.name <span class="kw">for</span> a <span class="kw">in</span> node.names]
+            <span class="kw">for</span> n <span class="kw">in</span> names:
+                parts = n.<span class="fn">split</span>(<span class="st">"."</span>)
+                <span class="kw">if</span> parts[<span class="nu">0</span>] == pkg <span class="kw">and</span> <span class="bi">len</span>(parts) &gt; <span class="nu">1</span> <span class="kw">and</span> parts[<span class="nu">1</span>] != mod:
+                    graph[mod].<span class="fn">add</span>(parts[<span class="nu">1</span>])
+    <span class="kw">return</span> graph
 
-def report(graph):
-    mods = set(graph) | {d for ds in graph.values() for d in ds}
-    fan_in = {m: sum(m in ds for ds in graph.values()) for m in mods}
-    for m in sorted(mods):
-        out = len(graph.get(m, ()))
-        inst = out / (out + fan_in[m]) if out + fan_in[m] else 0
-        print(f"{m:12s} fan-in {fan_in[m]}  fan-out {out}  instability {inst:.2f}")
-    cycles = [(a, b) for a in graph for b in graph[a] if a in graph.get(b, ())]
-    print("cycles:", sorted({tuple(sorted(c)) for c in cycles}))</code></pre>
+<span class="kw">def</span> <span class="fn">report</span>(graph):
+    mods = <span class="bi">set</span>(graph) | {d <span class="kw">for</span> ds <span class="kw">in</span> graph.<span class="fn">values</span>() <span class="kw">for</span> d <span class="kw">in</span> ds}
+    fan_in = {m: <span class="bi">sum</span>(m <span class="kw">in</span> ds <span class="kw">for</span> ds <span class="kw">in</span> graph.<span class="fn">values</span>()) <span class="kw">for</span> m <span class="kw">in</span> mods}
+    <span class="kw">for</span> m <span class="kw">in</span> <span class="bi">sorted</span>(mods):
+        out = <span class="bi">len</span>(graph.<span class="fn">get</span>(m, ()))
+        inst = out / (out + fan_in[m]) <span class="kw">if</span> out + fan_in[m] <span class="kw">else</span> <span class="nu">0</span>
+        <span class="bi">print</span>(<span class="st">f"{m:12s} fan-in {fan_in[m]}  fan-out {out}  instability {inst:.2f}"</span>)
+    cycles = [(a, b) <span class="kw">for</span> a <span class="kw">in</span> graph <span class="kw">for</span> b <span class="kw">in</span> graph[a] <span class="kw">if</span> a <span class="kw">in</span> graph.<span class="fn">get</span>(b, ())]
+    <span class="bi">print</span>(<span class="st">"cycles:"</span>, <span class="bi">sorted</span>({<span class="bi">tuple</span>(<span class="bi">sorted</span>(c)) <span class="kw">for</span> c <span class="kw">in</span> cycles}))</code></pre>
 
   <h2>Exercises</h2>
   <ol style="list-style:none;padding-left:0">

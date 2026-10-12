@@ -366,47 +366,47 @@ a{color:var(--ink);text-decoration:underline dotted}
 
   <h2>Example</h2>
   <span class="lang">python</span>
-<pre class="code"><code># QLoRA fine-tuning with Hugging Face PEFT + TRL
-import torch
-from datasets import load_dataset
-from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
-from peft import LoraConfig
-from trl import SFTConfig, SFTTrainer
+<pre class="code"><code><span class="cm"># QLoRA fine-tuning with Hugging Face PEFT + TRL</span>
+<span class="kw">import</span> torch
+<span class="kw">from</span> datasets <span class="kw">import</span> load_dataset
+<span class="kw">from</span> transformers <span class="kw">import</span> AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
+<span class="kw">from</span> peft <span class="kw">import</span> LoraConfig
+<span class="kw">from</span> trl <span class="kw">import</span> SFTConfig, SFTTrainer
 
-base = "Qwen/Qwen2.5-1.5B-Instruct"
-tok = AutoTokenizer.from_pretrained(base)
-model = AutoModelForCausalLM.from_pretrained(
-    base, device_map="auto",
-    quantization_config=BitsAndBytesConfig(load_in_4bit=True, bnb_4bit_quant_type="nf4",
+base = <span class="st">"Qwen/Qwen2.5-1.5B-Instruct"</span>
+tok = AutoTokenizer.<span class="fn">from_pretrained</span>(base)
+model = AutoModelForCausalLM.<span class="fn">from_pretrained</span>(
+    base, device_map=<span class="st">"auto"</span>,
+    quantization_config=<span class="fn">BitsAndBytesConfig</span>(load_in_4bit=<span class="kw">True</span>, bnb_4bit_quant_type=<span class="st">"nf4"</span>,
                                            bnb_4bit_compute_dtype=torch.bfloat16))
 
-lora = LoraConfig(
-    r=16, lora_alpha=32, lora_dropout=0.05,
-    target_modules=["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"],
-    task_type="CAUSAL_LM",
+lora = <span class="fn">LoraConfig</span>(
+    r=<span class="nu">16</span>, lora_alpha=<span class="nu">32</span>, lora_dropout=<span class="nu">0.05</span>,
+    target_modules=[<span class="st">"q_proj"</span>, <span class="st">"k_proj"</span>, <span class="st">"v_proj"</span>, <span class="st">"o_proj"</span>, <span class="st">"gate_proj"</span>, <span class="st">"up_proj"</span>, <span class="st">"down_proj"</span>],
+    task_type=<span class="st">"CAUSAL_LM"</span>,
 )
 
-# data.jsonl lines: {"messages": [{"role": "system", ...}, {"role": "user", ...}, {"role": "assistant", ...}]}
-ds = load_dataset("json", data_files={"train": "train.jsonl", "validation": "val.jsonl"})
+<span class="cm"># data.jsonl lines: {"messages": [{"role": "system", ...}, {"role": "user", ...}, {"role": "assistant", ...}]}</span>
+ds = <span class="fn">load_dataset</span>(<span class="st">"json"</span>, data_files={<span class="st">"train"</span>: <span class="st">"train.jsonl"</span>, <span class="st">"validation"</span>: <span class="st">"val.jsonl"</span>})
 
-trainer = SFTTrainer(
+trainer = <span class="fn">SFTTrainer</span>(
     model=model, processing_class=tok, peft_config=lora,
-    train_dataset=ds["train"], eval_dataset=ds["validation"],
-    args=SFTConfig(output_dir="out", num_train_epochs=2, learning_rate=2e-4,
-                   per_device_train_batch_size=4, gradient_accumulation_steps=4,
-                   eval_strategy="steps", eval_steps=50, logging_steps=10,
-                   assistant_only_loss=True, bf16=True),   # loss on assistant tokens only
+    train_dataset=ds[<span class="st">"train"</span>], eval_dataset=ds[<span class="st">"validation"</span>],
+    args=<span class="fn">SFTConfig</span>(output_dir=<span class="st">"out"</span>, num_train_epochs=<span class="nu">2</span>, learning_rate=<span class="nu">2e-4</span>,
+                   per_device_train_batch_size=<span class="nu">4</span>, gradient_accumulation_steps=<span class="nu">4</span>,
+                   eval_strategy=<span class="st">"steps"</span>, eval_steps=<span class="nu">50</span>, logging_steps=<span class="nu">10</span>,
+                   assistant_only_loss=<span class="kw">True</span>, bf16=<span class="kw">True</span>),   <span class="cm"># loss on assistant tokens only</span>
 )
-trainer.train()
-trainer.model.print_trainable_parameters()   # e.g. trainable params: 18M || all params: 1.5B || 1.2%
-trainer.save_model("out/adapter")            # tens of MB</code></pre>
+trainer.<span class="fn">train</span>()
+trainer.model.<span class="fn">print_trainable_parameters</span>()   <span class="cm"># e.g. trainable params: 18M || all params: 1.5B || 1.2%</span>
+trainer.<span class="fn">save_model</span>(<span class="st">"out/adapter"</span>)            <span class="cm"># tens of MB</span></code></pre>
 
   <span class="lang">python</span>
-<pre class="code"><code># LoRA parameter math
-d = k = 4096
-for r in (8, 16, 64):
-    print(r, r * (d + k), f"{r * (d + k) / (d * k):.2%}")
-# 8 65536 0.39%   16 131072 0.78%   64 524288 3.12%</code></pre>
+<pre class="code"><code><span class="cm"># LoRA parameter math</span>
+d = k = <span class="nu">4096</span>
+<span class="kw">for</span> r <span class="kw">in</span> (<span class="nu">8</span>, <span class="nu">16</span>, <span class="nu">64</span>):
+    <span class="bi">print</span>(r, r * (d + k), <span class="st">f"{r * (d + k) / (d * k):.2%}"</span>)
+<span class="cm"># 8 65536 0.39%   16 131072 0.78%   64 524288 3.12%</span></code></pre>
 
   <h2>Exercises</h2>
   <ol style="list-style:none;padding-left:0">

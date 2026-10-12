@@ -230,43 +230,43 @@ a{color:var(--ink);text-decoration:underline dotted}
 <div class="pagebreak">~ page 3 ~</div>
 <h2>Example</h2>
 <span class="lang">bash</span>
-<pre class="code"><code># PostgreSQL with pgBackRest: full + WAL archiving to S3, then PITR
-pgbackrest --stanza=main --type=full backup            # nightly (cron / systemd timer)
-# postgresql.conf: archive_mode = on
-#                  archive_command = 'pgbackrest --stanza=main archive-push %p'
+<pre class="code"><code><span class="cm"># PostgreSQL with pgBackRest: full + WAL archiving to S3, then PITR</span>
+pgbackrest --stanza=main --type=full backup            <span class="cm"># nightly (cron / systemd timer)</span>
+<span class="cm"># postgresql.conf: archive_mode = on</span>
+<span class="cm">#                  archive_command = 'pgbackrest --stanza=main archive-push %p'</span>
 
-# Disaster: someone ran DELETE FROM orders at 14:32:05
+<span class="cm"># Disaster: someone ran DELETE FROM orders at 14:32:05</span>
 pgbackrest --stanza=main --delta \
-  --type=time --target="2024-05-01 14:32:00+00" --target-action=promote restore
-# start Postgres → it replays WAL up to 14:32:00 → orders are back
+  --type=time --target=<span class="st">"2024-05-01 14:32:00+00"</span> --target-action=promote restore
+<span class="cm"># start Postgres → it replays WAL up to 14:32:00 → orders are back</span>
 
-# Verify every restore automatically
-psql -c "SELECT count(*), max(created_at) FROM orders"   # compare to expectations</code></pre>
+<span class="cm"># Verify every restore automatically</span>
+<span class="bi">psql</span> -c <span class="st">"SELECT count(*), max(created_at) FROM orders"</span>   <span class="cm"># compare to expectations</span></code></pre>
 <span class="lang">python</span>
-<pre class="code"><code># A scheduled restore test that measures the real RTO and RPO
-import time, subprocess, datetime as dt
+<pre class="code"><code><span class="cm"># A scheduled restore test that measures the real RTO and RPO</span>
+<span class="kw">import</span> time, subprocess, datetime <span class="kw">as</span> dt
 
-def restore_drill():
-    t0 = time.monotonic()
-    subprocess.run(["./restore_latest.sh", "--target", "drill-db"], check=True)      # to a scratch instance
-    rto_minutes = (time.monotonic() - t0) / 60
-    newest = query("drill-db", "SELECT max(created_at) FROM orders")               # newest recovered row
-    rpo_seconds = (dt.datetime.now(dt.timezone.utc) - newest).total_seconds()
-    rows_ok = query("drill-db", "SELECT count(*) FROM orders") &gt; 0
-    report(rto_minutes=rto_minutes, rpo_seconds=rpo_seconds, ok=rows_ok)
-    assert rto_minutes &lt;= 60 and rpo_seconds &lt;= 300, "DR objectives missed — page the owner"</code></pre>
+<span class="kw">def</span> <span class="fn">restore_drill</span>():
+    t0 = time.<span class="fn">monotonic</span>()
+    subprocess.<span class="fn">run</span>([<span class="st">"./restore_latest.sh"</span>, <span class="st">"--target"</span>, <span class="st">"drill-db"</span>], check=<span class="kw">True</span>)      <span class="cm"># to a scratch instance</span>
+    rto_minutes = (time.<span class="fn">monotonic</span>() - t0) / <span class="nu">60</span>
+    newest = <span class="fn">query</span>(<span class="st">"drill-db"</span>, <span class="st">"SELECT max(created_at) FROM orders"</span>)               <span class="cm"># newest recovered row</span>
+    rpo_seconds = (dt.datetime.<span class="fn">now</span>(dt.timezone.utc) - newest).<span class="fn">total_seconds</span>()
+    rows_ok = <span class="fn">query</span>(<span class="st">"drill-db"</span>, <span class="st">"SELECT count(*) FROM orders"</span>) &gt; <span class="nu">0</span>
+    <span class="fn">report</span>(rto_minutes=rto_minutes, rpo_seconds=rpo_seconds, ok=rows_ok)
+    <span class="kw">assert</span> rto_minutes &lt;= <span class="nu">60</span> <span class="kw">and</span> rpo_seconds &lt;= <span class="nu">300</span>, <span class="st">"DR objectives missed — page the owner"</span></code></pre>
 <span class="lang">hcl</span>
-<pre class="code"><code># Immutable backups: S3 Object Lock in a separate backup account
-resource "aws_s3_bucket" "backups" {
-  bucket              = "acme-db-backups-dr"
-  object_lock_enabled = true
+<pre class="code"><code><span class="cm"># Immutable backups: S3 Object Lock in a separate backup account</span>
+<span class="kw">resource</span> <span class="st">"aws_s3_bucket"</span> <span class="st">"backups"</span> {
+  bucket              = <span class="st">"acme-db-backups-dr"</span>
+  object_lock_enabled = <span class="kw">true</span>
 }
-resource "aws_s3_bucket_object_lock_configuration" "backups" {
+<span class="kw">resource</span> <span class="st">"aws_s3_bucket_object_lock_configuration"</span> <span class="st">"backups"</span> {
   bucket = aws_s3_bucket.backups.id
   rule {
     default_retention {
-      mode = "COMPLIANCE"     # cannot be deleted by anyone, including root, until retention ends
-      days = 35
+      mode = <span class="st">"COMPLIANCE"</span>     <span class="cm"># cannot be deleted by anyone, including root, until retention ends</span>
+      days = <span class="nu">35</span>
     }
   }
 }</code></pre>

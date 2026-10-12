@@ -184,14 +184,14 @@ a{color:var(--ink);text-decoration:underline dotted}
   <li><b>Fix:</b> batch, join or use <code>IN (...)</code>, paginate, offer coarser endpoints, prefetch or cache.</li>
 </ul>
 <span class="lang">python</span>
-<pre class="code"><code># BAD: 1 + N queries
-orders = db.query("SELECT * FROM orders WHERE user_id = %s", uid)
-for o in orders:
-    o.items = db.query("SELECT * FROM items WHERE order_id = %s", o.id)
+<pre class="code"><code><span class="cm"># BAD: 1 + N queries</span>
+orders = db.<span class="fn">query</span>(<span class="st">"SELECT * FROM orders WHERE user_id = %s"</span>, uid)
+<span class="kw">for</span> o <span class="kw">in</span> orders:
+    o.items = db.<span class="fn">query</span>(<span class="st">"SELECT * FROM items WHERE order_id = %s"</span>, o.<span class="bi">id</span>)
 
-# GOOD: 2 queries total
-orders = db.query("SELECT * FROM orders WHERE user_id = %s", uid)
-items = db.query("SELECT * FROM items WHERE order_id = ANY(%s)", [o.id for o in orders])</code></pre>
+<span class="cm"># GOOD: 2 queries total</span>
+orders = db.<span class="fn">query</span>(<span class="st">"SELECT * FROM orders WHERE user_id = %s"</span>, uid)
+items = db.<span class="fn">query</span>(<span class="st">"SELECT * FROM items WHERE order_id = ANY(%s)"</span>, [o.<span class="bi">id</span> <span class="kw">for</span> o <span class="kw">in</span> orders])</code></pre>
 <h3>4. Extraneous Fetching</h3>
 <ul>
   <li><b>Symptom and cause:</b> high bandwidth, memory and DB I/O for little output, because of <code>SELECT *</code>, filtering a whole table in the app, or no pagination.</li>
@@ -199,10 +199,10 @@ items = db.query("SELECT * FROM items WHERE order_id = ANY(%s)", [o.id for o in 
   <li><b>Fix:</b> select only needed columns, filter and aggregate in the query, paginate, use covering indexes.</li>
 </ul>
 <span class="lang">python</span>
-<pre class="code"><code># BAD: pull everything, filter in memory
-recent = [r for r in db.query("SELECT * FROM events") if r.ts &gt; cutoff][:50]
-# GOOD: let the database do it
-recent = db.query("SELECT id, ts, kind FROM events WHERE ts &gt; %s ORDER BY ts DESC LIMIT 50", cutoff)</code></pre>
+<pre class="code"><code><span class="cm"># BAD: pull everything, filter in memory</span>
+recent = [r <span class="kw">for</span> r <span class="kw">in</span> db.<span class="fn">query</span>(<span class="st">"SELECT * FROM events"</span>) <span class="kw">if</span> r.ts &gt; cutoff][:<span class="nu">50</span>]
+<span class="cm"># GOOD: let the database do it</span>
+recent = db.<span class="fn">query</span>(<span class="st">"SELECT id, ts, kind FROM events WHERE ts &gt; %s ORDER BY ts DESC LIMIT 50"</span>, cutoff)</code></pre>
 <h3>5. Improper Instantiation</h3>
 <ul>
   <li><b>Symptom and cause:</b> socket exhaustion, a TLS handshake on every call, memory churn, because shareable objects (HTTP clients, DB connections, compiled regexes) are created per request.</li>
@@ -210,11 +210,11 @@ recent = db.query("SELECT id, ts, kind FROM events WHERE ts &gt; %s ORDER BY ts 
   <li><b>Fix:</b> create once and reuse (singletons, dependency injection, pools, keep-alive).</li>
 </ul>
 <span class="lang">python</span>
-<pre class="code"><code># BAD: a new client (new TCP + TLS handshake) per call
-def get_price(sku): return requests.get(f"https://prices.internal/{sku}").json()
-# GOOD: one pooled session per process
-session = requests.Session()
-def get_price(sku): return session.get(f"https://prices.internal/{sku}", timeout=2).json()</code></pre>
+<pre class="code"><code><span class="cm"># BAD: a new client (new TCP + TLS handshake) per call</span>
+<span class="kw">def</span> <span class="fn">get_price</span>(sku): <span class="kw">return</span> requests.<span class="fn">get</span>(<span class="st">f"https://prices.internal/{sku}"</span>).<span class="fn">json</span>()
+<span class="cm"># GOOD: one pooled session per process</span>
+session = requests.<span class="fn">Session</span>()
+<span class="kw">def</span> <span class="fn">get_price</span>(sku): <span class="kw">return</span> session.<span class="fn">get</span>(<span class="st">f"https://prices.internal/{sku}"</span>, timeout=<span class="nu">2</span>).<span class="fn">json</span>()</code></pre>
 <h3>6. Monolithic Persistence</h3>
 <ul>
   <li><b>Symptom and cause:</b> one database is too slow for search, too costly for blobs and too contended for sessions, because every kind of data lives in one store.</li>
@@ -270,10 +270,10 @@ def get_price(sku): return session.get(f"https://prices.internal/{sku}", timeout
   <li><b>Fix:</b> async/non-blocking I/O, a sized pool for blocking calls, and run independent calls concurrently.</li>
 </ul>
 <span class="lang">python</span>
-<pre class="code"><code># BAD: sequential (latency = a + b + c)
-user = fetch_user(uid); orders = fetch_orders(uid); recs = fetch_recs(uid)
-# GOOD: concurrent (latency ≈ max(a, b, c))
-user, orders, recs = await asyncio.gather(fetch_user(uid), fetch_orders(uid), fetch_recs(uid))</code></pre>
+<pre class="code"><code><span class="cm"># BAD: sequential (latency = a + b + c)</span>
+user = <span class="fn">fetch_user</span>(uid); orders = <span class="fn">fetch_orders</span>(uid); recs = <span class="fn">fetch_recs</span>(uid)
+<span class="cm"># GOOD: concurrent (latency ≈ max(a, b, c))</span>
+user, orders, recs = <span class="kw">await</span> asyncio.<span class="fn">gather</span>(<span class="fn">fetch_user</span>(uid), <span class="fn">fetch_orders</span>(uid), <span class="fn">fetch_recs</span>(uid))</code></pre>
 <h3>Summary</h3>
 <div class="wrap"><table>
 <tr><th>Antipattern</th><th>Typical symptom</th><th>Usual cause</th><th>Main fix</th></tr>
@@ -339,13 +339,13 @@ user, orders, recs = await asyncio.gather(fetch_user(uid), fetch_orders(uid), fe
 <p><b>Alert fatigue</b> — too many low-value alerts train people to ignore pages, so a real one is missed. Delete or demote alerts nobody acts on, group and deduplicate (Alertmanager), add <code>for:</code> durations, and review pages in every post-incident review.</p>
 <p><b>Burn rate</b> = error rate ÷ (1 − SLO); 1 uses the error budget exactly over the SLO window. For a 30-day window the Google SRE Workbook suggests paging at 14.4× over 1 hour (2% of budget) and 6× over 6 hours (5%), and a ticket at 1× over 3 days (10%), each paired with a window about 1/12 as long so the alert clears quickly.</p>
 <span class="lang">yaml</span>
-<pre class="code"><code># 99.9% SLO: page on fast burn (14.4 x budget) over 1h AND 5m
-- alert: HighErrorBudgetBurn
-  expr: |
-    ( sum(rate(http_requests_total{code=~"5.."}[1h])) / sum(rate(http_requests_total[1h])) ) &gt; (14.4 * 0.001)
+<pre class="code"><code><span class="cm"># 99.9% SLO: page on fast burn (14.4 x budget) over 1h AND 5m</span>
+<span class="bi">- alert</span>: HighErrorBudgetBurn
+<span class="bi">  expr</span>: |
+    ( sum(rate(http_requests_total{code=~<span class="st">"5.."</span>}[<span class="nu">1h</span>])) / sum(rate(http_requests_total[<span class="nu">1h</span>])) ) &gt; (<span class="nu">14.4</span> * <span class="nu">0.001</span>)
     and
-    ( sum(rate(http_requests_total{code=~"5.."}[5m])) / sum(rate(http_requests_total[5m])) ) &gt; (14.4 * 0.001)
-  labels: { severity: page }</code></pre>
+    ( sum(rate(http_requests_total{code=~<span class="st">"5.."</span>}[<span class="nu">5m</span>])) / sum(rate(http_requests_total[<span class="nu">5m</span>])) ) &gt; (<span class="nu">14.4</span> * <span class="nu">0.001</span>)
+<span class="bi">  labels</span>: { severity: page }</code></pre>
 <div class="pagebreak">~ page 2 ~</div>
 <h2>Prereqs</h2>
 <ul>
@@ -436,111 +436,111 @@ user, orders, recs = await asyncio.gather(fetch_user(uid), fetch_orders(uid), fe
 <h2>Example</h2>
 <p>A dependency-free Python service with <code>/healthz</code> (liveness), <code>/readyz</code> (readiness) and <code>/metrics</code> in the Prometheus text format, with a counter and a histogram.</p>
 <span class="lang">python</span>
-<pre class="code"><code># app.py  --  python app.py   (stdlib only, Python 3.9+)
-import random, threading, time
-from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+<pre class="code"><code><span class="cm"># app.py  --  python app.py   (stdlib only, Python 3.9+)</span>
+<span class="kw">import</span> random, threading, time
+<span class="kw">from</span> http.server <span class="kw">import</span> BaseHTTPRequestHandler, ThreadingHTTPServer
 
-LOCK = threading.Lock()
-BUCKETS = [0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1.0, 2.5]
-REQS = {}        # (route, code) -&gt; count                      (counter)
-HIST = {}        # route -&gt; [bucket counts..., +Inf, sum]      (histogram)
-STATE = {"started": time.time(), "db_up": True}
+LOCK = threading.<span class="fn">Lock</span>()
+BUCKETS = [<span class="nu">0.005</span>, <span class="nu">0.01</span>, <span class="nu">0.025</span>, <span class="nu">0.05</span>, <span class="nu">0.1</span>, <span class="nu">0.25</span>, <span class="nu">0.5</span>, <span class="nu">1.0</span>, <span class="nu">2.5</span>]
+REQS = {}        <span class="cm"># (route, code) -&gt; count                      (counter)</span>
+HIST = {}        <span class="cm"># route -&gt; [bucket counts..., +Inf, sum]      (histogram)</span>
+STATE = {<span class="st">"started"</span>: time.<span class="fn">time</span>(), <span class="st">"db_up"</span>: <span class="kw">True</span>}
 
-def observe(route, code, secs):
-    with LOCK:
-        REQS[(route, code)] = REQS.get((route, code), 0) + 1
-        h = HIST.setdefault(route, [0] * (len(BUCKETS) + 1) + [0.0])
-        for i, b in enumerate(BUCKETS):
-            if secs &lt;= b:
-                h[i] += 1
-                break
-        else:
-            h[len(BUCKETS)] += 1            # +Inf bucket
-        h[-1] += secs
+<span class="kw">def</span> <span class="fn">observe</span>(route, code, secs):
+    <span class="kw">with</span> LOCK:
+        REQS[(route, code)] = REQS.<span class="fn">get</span>((route, code), <span class="nu">0</span>) + <span class="nu">1</span>
+        h = HIST.<span class="fn">setdefault</span>(route, [<span class="nu">0</span>] * (<span class="bi">len</span>(BUCKETS) + <span class="nu">1</span>) + [<span class="nu">0.0</span>])
+        <span class="kw">for</span> i, b <span class="kw">in</span> <span class="bi">enumerate</span>(BUCKETS):
+            <span class="kw">if</span> secs &lt;= b:
+                h[i] += <span class="nu">1</span>
+                <span class="kw">break</span>
+        <span class="kw">else</span>:
+            h[<span class="bi">len</span>(BUCKETS)] += <span class="nu">1</span>            <span class="cm"># +Inf bucket</span>
+        h[-<span class="nu">1</span>] += secs
 
-def render_metrics():
-    out = ["# TYPE http_requests_total counter"]
-    with LOCK:
-        for (route, code), n in sorted(REQS.items()):
-            out.append(f'http_requests_total{{route="{route}",code="{code}"}} {n}')
-        out.append("# TYPE http_request_duration_seconds histogram")
-        for route, h in sorted(HIST.items()):
-            cum = 0
-            for i, b in enumerate(BUCKETS):
+<span class="kw">def</span> <span class="fn">render_metrics</span>():
+    out = [<span class="st">"# TYPE http_requests_total counter"</span>]
+    <span class="kw">with</span> LOCK:
+        <span class="kw">for</span> (route, code), n <span class="kw">in</span> <span class="bi">sorted</span>(REQS.<span class="fn">items</span>()):
+            out.<span class="fn">append</span>(<span class="st">f'http_requests_total{{route="{route}",code="{code}"}} {n}'</span>)
+        out.<span class="fn">append</span>(<span class="st">"# TYPE http_request_duration_seconds histogram"</span>)
+        <span class="kw">for</span> route, h <span class="kw">in</span> <span class="bi">sorted</span>(HIST.<span class="fn">items</span>()):
+            cum = <span class="nu">0</span>
+            <span class="kw">for</span> i, b <span class="kw">in</span> <span class="bi">enumerate</span>(BUCKETS):
                 cum += h[i]
-                out.append(f'http_request_duration_seconds_bucket{{route="{route}",le="{b}"}} {cum}')
-            cum += h[len(BUCKETS)]
-            out.append(f'http_request_duration_seconds_bucket{{route="{route}",le="+Inf"}} {cum}')
-            out.append(f'http_request_duration_seconds_sum{{route="{route}"}} {h[-1]:.6f}')
-            out.append(f'http_request_duration_seconds_count{{route="{route}"}} {cum}')
-    return "\n".join(out) + "\n"
+                out.<span class="fn">append</span>(<span class="st">f'http_request_duration_seconds_bucket{{route="{route}",le="{b}"}} {cum}'</span>)
+            cum += h[<span class="bi">len</span>(BUCKETS)]
+            out.<span class="fn">append</span>(<span class="st">f'http_request_duration_seconds_bucket{{route="{route}",le="+Inf"}} {cum}'</span>)
+            out.<span class="fn">append</span>(<span class="st">f'http_request_duration_seconds_sum{{route="{route}"}} {h[-1]:.6f}'</span>)
+            out.<span class="fn">append</span>(<span class="st">f'http_request_duration_seconds_count{{route="{route}"}} {cum}'</span>)
+    <span class="kw">return</span> <span class="st">"\n"</span>.<span class="fn">join</span>(out) + <span class="st">"\n"</span>
 
-class Handler(BaseHTTPRequestHandler):
-    def do_GET(self):
-        t0, route = time.perf_counter(), self.path.split("?")[0]
-        if route == "/healthz":                      # liveness: process only, no dependencies
-            code, body = 200, "ok\n"
-        elif route == "/readyz":                     # readiness: warm-up done and DB reachable
-            warm = time.time() - STATE["started"] &gt; 2
-            code = 200 if warm and STATE["db_up"] else 503
-            body = f"warm={warm} db={STATE['db_up']}\n"
-        elif route == "/metrics":
-            code, body = 200, render_metrics()
-        elif route == "/_toggle_db":                 # demo only: simulate a dependency outage
-            STATE["db_up"] = not STATE["db_up"]
-            code, body = 200, f"db_up={STATE['db_up']}\n"
-        elif route == "/work":
-            time.sleep(random.expovariate(1 / 0.05))            # ~50 ms mean latency
-            code, body = (500, "boom\n") if random.random() &lt; 0.05 else (200, "done\n")
-        else:
-            route, code, body = "other", 404, "not found\n"     # fixed label: no cardinality blow-up
-        data = body.encode()
-        self.send_response(code)
-        self.send_header("Content-Length", str(len(data)))
-        self.end_headers()
-        self.wfile.write(data)
-        if route != "/metrics":
-            observe(route, code, time.perf_counter() - t0)
+<span class="kw">class</span> <span class="fn">Handler</span>(BaseHTTPRequestHandler):
+    <span class="kw">def</span> <span class="fn">do_GET</span>(<span class="bi">self</span>):
+        t0, route = time.<span class="fn">perf_counter</span>(), <span class="bi">self</span>.path.<span class="fn">split</span>(<span class="st">"?"</span>)[<span class="nu">0</span>]
+        <span class="kw">if</span> route == <span class="st">"/healthz"</span>:                      <span class="cm"># liveness: process only, no dependencies</span>
+            code, body = <span class="nu">200</span>, <span class="st">"ok\n"</span>
+        <span class="kw">elif</span> route == <span class="st">"/readyz"</span>:                     <span class="cm"># readiness: warm-up done and DB reachable</span>
+            warm = time.<span class="fn">time</span>() - STATE[<span class="st">"started"</span>] &gt; <span class="nu">2</span>
+            code = <span class="nu">200</span> <span class="kw">if</span> warm <span class="kw">and</span> STATE[<span class="st">"db_up"</span>] <span class="kw">else</span> <span class="nu">503</span>
+            body = <span class="st">f"warm={warm} db={STATE['db_up']}\n"</span>
+        <span class="kw">elif</span> route == <span class="st">"/metrics"</span>:
+            code, body = <span class="nu">200</span>, <span class="fn">render_metrics</span>()
+        <span class="kw">elif</span> route == <span class="st">"/_toggle_db"</span>:                 <span class="cm"># demo only: simulate a dependency outage</span>
+            STATE[<span class="st">"db_up"</span>] = <span class="kw">not</span> STATE[<span class="st">"db_up"</span>]
+            code, body = <span class="nu">200</span>, <span class="st">f"db_up={STATE['db_up']}\n"</span>
+        <span class="kw">elif</span> route == <span class="st">"/work"</span>:
+            time.<span class="fn">sleep</span>(random.<span class="fn">expovariate</span>(<span class="nu">1</span> / <span class="nu">0.05</span>))            <span class="cm"># ~50 ms mean latency</span>
+            code, body = (<span class="nu">500</span>, <span class="st">"boom\n"</span>) <span class="kw">if</span> random.<span class="fn">random</span>() &lt; <span class="nu">0.05</span> <span class="kw">else</span> (<span class="nu">200</span>, <span class="st">"done\n"</span>)
+        <span class="kw">else</span>:
+            route, code, body = <span class="st">"other"</span>, <span class="nu">404</span>, <span class="st">"not found\n"</span>     <span class="cm"># fixed label: no cardinality blow-up</span>
+        data = body.<span class="fn">encode</span>()
+        <span class="bi">self</span>.<span class="fn">send_response</span>(code)
+        <span class="bi">self</span>.<span class="fn">send_header</span>(<span class="st">"Content-Length"</span>, <span class="bi">str</span>(<span class="bi">len</span>(data)))
+        <span class="bi">self</span>.<span class="fn">end_headers</span>()
+        <span class="bi">self</span>.wfile.<span class="fn">write</span>(data)
+        <span class="kw">if</span> route != <span class="st">"/metrics"</span>:
+            <span class="fn">observe</span>(route, code, time.<span class="fn">perf_counter</span>() - t0)
 
-    def log_message(self, *args):                    # keep the console quiet
-        pass
+    <span class="kw">def</span> <span class="fn">log_message</span>(<span class="bi">self</span>, *args):                    <span class="cm"># keep the console quiet</span>
+        <span class="kw">pass</span>
 
-if __name__ == "__main__":
-    ThreadingHTTPServer(("0.0.0.0", 8000), Handler).serve_forever()</code></pre>
+<span class="kw">if</span> __name__ == <span class="st">"__main__"</span>:
+    <span class="fn">ThreadingHTTPServer</span>((<span class="st">"0.0.0.0"</span>, <span class="nu">8000</span>), Handler).<span class="fn">serve_forever</span>()</code></pre>
 <span class="lang">bash</span>
-<pre class="code"><code>python app.py &amp;
-curl -i localhost:8000/healthz            # 200 ok
-curl -i localhost:8000/readyz             # 503 for the first 2 s, then 200
-for i in $(seq 1 50); do curl -s localhost:8000/work &gt; /dev/null; done
-curl -s localhost:8000/metrics | head -20
-curl localhost:8000/_toggle_db; curl -i localhost:8000/readyz   # 503: pulled from rotation, not restarted</code></pre>
+<pre class="code"><code><span class="bi">python</span> app.py &amp;
+<span class="bi">curl</span> -i localhost:<span class="nu">8000</span>/healthz            <span class="cm"># 200 ok</span>
+<span class="bi">curl</span> -i localhost:<span class="nu">8000</span>/readyz             <span class="cm"># 503 for the first 2 s, then 200</span>
+<span class="kw">for</span> i <span class="kw">in</span> $(seq <span class="nu">1</span> <span class="nu">50</span>); <span class="kw">do</span> <span class="bi">curl</span> -s localhost:<span class="nu">8000</span>/work &gt; /dev/null; <span class="kw">done</span>
+<span class="bi">curl</span> -s localhost:<span class="nu">8000</span>/metrics | <span class="bi">head</span> -<span class="nu">20</span>
+<span class="bi">curl</span> localhost:<span class="nu">8000</span>/_toggle_db; <span class="bi">curl</span> -i localhost:<span class="nu">8000</span>/readyz   <span class="cm"># 503: pulled from rotation, not restarted</span></code></pre>
 <span class="lang">promql</span>
-<pre class="code"><code># p99 latency per route, aggregated across instances
-histogram_quantile(0.99, sum by (route, le) (rate(http_request_duration_seconds_bucket[5m])))
-# error ratio (the SLI)
-sum(rate(http_requests_total{code=~"5.."}[5m])) / sum(rate(http_requests_total[5m]))</code></pre>
+<pre class="code"><code><span class="cm"># p99 latency per route, aggregated across instances</span>
+<span class="fn">histogram_quantile</span>(<span class="nu">0.99</span>, sum <span class="kw">by</span> (route, le) (<span class="fn">rate</span>(http_request_duration_seconds_bucket[<span class="nu">5m</span>])))
+<span class="cm"># error ratio (the SLI)</span>
+<span class="fn">sum</span>(<span class="fn">rate</span>(http_requests_total{code=~<span class="st">"5.."</span>}[<span class="nu">5m</span>])) / <span class="fn">sum</span>(<span class="fn">rate</span>(http_requests_total[<span class="nu">5m</span>]))</code></pre>
 <span class="lang">python</span>
-<pre class="code"><code># Bulkhead: cap concurrent calls per dependency; reject fast instead of queueing forever
-import threading
+<pre class="code"><code><span class="cm"># Bulkhead: cap concurrent calls per dependency; reject fast instead of queueing forever</span>
+<span class="kw">import</span> threading
 
-class BulkheadFull(Exception): pass
+<span class="kw">class</span> <span class="fn">BulkheadFull</span>(<span class="bi">Exception</span>): <span class="kw">pass</span>
 
-class Bulkhead:
-    def __init__(self, name: str, max_concurrent: int, wait: float = 0.05):
-        self.name, self.wait = name, wait
-        self.sem = threading.BoundedSemaphore(max_concurrent)
+<span class="kw">class</span> Bulkhead:
+    <span class="kw">def</span> <span class="fn">__init__</span>(<span class="bi">self</span>, name: <span class="bi">str</span>, max_concurrent: <span class="bi">int</span>, wait: <span class="bi">float</span> = <span class="nu">0.05</span>):
+        <span class="bi">self</span>.name, <span class="bi">self</span>.wait = name, wait
+        <span class="bi">self</span>.sem = threading.<span class="fn">BoundedSemaphore</span>(max_concurrent)
 
-    def call(self, fn, *args, **kwargs):
-        if not self.sem.acquire(timeout=self.wait):
-            raise BulkheadFull(self.name)          # caller falls back or returns 503
-        try:
-            return fn(*args, **kwargs)
-        finally:
-            self.sem.release()
+    <span class="kw">def</span> <span class="fn">call</span>(<span class="bi">self</span>, fn, *args, **kwargs):
+        <span class="kw">if</span> <span class="kw">not</span> <span class="bi">self</span>.sem.<span class="fn">acquire</span>(timeout=<span class="bi">self</span>.wait):
+            <span class="kw">raise</span> <span class="fn">BulkheadFull</span>(<span class="bi">self</span>.name)          <span class="cm"># caller falls back or returns 503</span>
+        <span class="kw">try</span>:
+            <span class="kw">return</span> <span class="fn">fn</span>(*args, **kwargs)
+        <span class="kw">finally</span>:
+            <span class="bi">self</span>.sem.<span class="fn">release</span>()
 
-reports = Bulkhead("reports-db", max_concurrent=5)
-checkout = Bulkhead("orders-db", max_concurrent=30)
-# A flood of slow report queries fills only the 5 report permits; checkout keeps its 30.</code></pre>
+reports = <span class="fn">Bulkhead</span>(<span class="st">"reports-db"</span>, max_concurrent=<span class="nu">5</span>)
+checkout = <span class="fn">Bulkhead</span>(<span class="st">"orders-db"</span>, max_concurrent=<span class="nu">30</span>)
+<span class="cm"># A flood of slow report queries fills only the 5 report permits; checkout keeps its 30.</span></code></pre>
 <div class="pagebreak">~ page 4 ~</div>
 <h2>Exercises</h2>
 <ol style="list-style:none;padding-left:0">
