@@ -2,7 +2,7 @@
 
 > Goal: Design systems that scale and stay reliable. Requires Volume 1 (Parts 7–9) and Volume 3.
 >
-> **Chapters 1–23.** Each chapter ends by designing one or more real-world systems; by the end you will have designed **30+ systems**.
+> **Chapters 1–24.** Each chapter ends by designing one or more real-world systems; by the end you will have designed **30+ systems**.
 
 # Contents
 
@@ -42,6 +42,7 @@
 21. [Cost & Capacity Economics](ch21-cost-and-capacity-economics.md)
 22. [The 30-System Design Portfolio](ch22-the-30-system-design-portfolio.md)
 23. [Design a Collaborative Document Editor (Google Docs)](ch23-design-a-collaborative-document-editor-google-docs.md)
+24. [Design an Auction Platform (eBay)](ch24-design-an-auction-platform-ebay.md)
 
 ---
 
@@ -544,6 +545,30 @@
 **Interview:** "How do two people edit the same document at once?" / "OT versus CRDT?" / "What is a tombstone?"
 
 **Checklist:** ☐ apply edits locally first ☐ choose OT, CRDT, or property-level LWW on purpose ☐ one owner per document orders operations ☐ log before acknowledging ☐ test convergence with randomized edits
+
+---
+
+### Chapter 24 — Design an Auction Platform (eBay)
+
+**Concept:** A timed auction with proxy (maximum) bidding: bid increments and the visible price, soft close against sniping, why simultaneous bids need one serialization point per auction (conditional update, atomic script, single writer), server-clock fairness, closing exactly once, fan-out to watchers, abuse.
+
+**Prereqs:** Ch 7, Ch 8, Ch 9, Ch 12, Ch 19, Vol 1 Ch 47.
+
+**Diagram:** The architecture; two bids at the same moment and a conditional update; closing with a soft-close extension.
+
+**Example:** A working auction engine (proxy bidding, soft close, duplicate protection, optimistic concurrency, closing scheduler) with tests, including a deliberately broken blind-write version that loses a bid.
+
+**Exercises:** (1) The $12 versus $15 example. (2) Two simultaneous bids and conditional updates. (3) Retried bids. (4) A hot auction with retry storms. (5) Whose clock decides. (6) Closing after a soft-close extension.
+
+**Mini project:** A bid owner with a scheduler, a coalesced price feed, an outbox, and chaos tests.
+
+**Design:** Design an auction platform for 10 million live auctions: API, data model, estimates, and the decisions to justify.
+
+**Open source:** [`redis/redis`](https://github.com/redis/redis); [`apache/kafka`](https://github.com/apache/kafka); [`temporalio/temporal`](https://github.com/temporalio/temporal).
+
+**Interview:** "Two people bid at the same time; how does the highest win?" / "What is proxy bidding?" / "How do you stop sniping?"
+
+**Checklist:** ☐ one serialization point per auction ☐ the maximum bid is secret ☐ unique bid IDs ☐ server clock decides ☐ close exactly once ☐ test duplicates, races, extensions, crashes
 
 ---
 

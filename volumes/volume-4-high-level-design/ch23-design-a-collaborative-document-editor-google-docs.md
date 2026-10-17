@@ -1,6 +1,6 @@
 # Chapter 23 — Design a Collaborative Document Editor (Google Docs)
 
-> **Volume 4 — High-Level Design** · [Contents](index.md) · ← [Chapter 22 — The 30-System Design Portfolio](ch22-the-30-system-design-portfolio.md)
+> **Volume 4 — High-Level Design** · [Contents](index.md) · ← [Chapter 22 — The 30-System Design Portfolio](ch22-the-30-system-design-portfolio.md) · Next → [Chapter 24 — Design an Auction Platform (eBay)](ch24-design-an-auction-platform-ebay.md)
 
 ---
 
@@ -608,4 +608,4 @@ How this chapter was checked, and what was not:
 
 ---
 
-> [Contents](index.md) · ← [Chapter 22 — The 30-System Design Portfolio](ch22-the-30-system-design-portfolio.md)
+> [Contents](index.md) · ← [Chapter 22 — The 30-System Design Portfolio](ch22-the-30-system-design-portfolio.md) · Next → [Chapter 24 — Design an Auction Platform (eBay)](ch24-design-an-auction-platform-ebay.md)

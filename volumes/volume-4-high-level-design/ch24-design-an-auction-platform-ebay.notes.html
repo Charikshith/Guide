@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ch 24 — Design an Auction Platform (eBay) — Notes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;700&family=Kalam:wght@400;700&family=Patrick+Hand&display=swap" rel="stylesheet">
+<style>
+/* ===== Page tokens ===== */
+:root{
+  --line:32px;                 /* ruled-line spacing; every vertical size is a multiple */
+  --paper:#fdfbf4; --rule:#c9dcef; --margin:#e8a0a0;
+  --ink:#1f3a93;               /* blue pen (body) */
+  --ink2:#222;                 /* black pen (headings) */
+  --red:#c0392b; --green:#1e8449;
+  --hl-yellow:rgba(255,235,59,.55); --hl-pink:rgba(255,128,171,.45);
+  --hl-green:rgba(118,255,3,.35); --hl-blue:rgba(64,196,255,.35);
+  --sticky:#fff59d; --desk:#e9e4d8;
+  --hand:'Kalam','Patrick Hand','Comic Sans MS','Segoe Print','Bradley Hand',cursive;
+  --title:'Caveat','Kalam','Segoe Print','Bradley Hand',cursive;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){ --desk:#2b2b2b; }
+}
+:root[data-theme="dark"]{ --desk:#2b2b2b; }
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--desk);font-family:var(--hand);color:var(--ink);}
+
+/* ===== Notebook sheet ===== */
+.page{
+  position:relative; max-width:860px; margin:24px auto; padding:var(--line) 28px calc(var(--line)*2) 84px;
+  background:
+    linear-gradient(90deg,transparent 64px,var(--margin) 64px,var(--margin) 66px,transparent 66px),
+    repeating-linear-gradient(var(--paper) 0,var(--paper) calc(var(--line) - 1px),var(--rule) calc(var(--line) - 1px),var(--rule) var(--line));
+  background-color:var(--paper);
+  box-shadow:0 2px 6px rgba(0,0,0,.15),0 12px 28px rgba(0,0,0,.12);
+  font-size:20px; line-height:var(--line);
+}
+.page::before{ /* punched holes */
+  content:""; position:absolute; left:22px; top:0; bottom:0; width:18px;
+  background:radial-gradient(circle,var(--desk) 7px,transparent 8px) 0 40px/18px 220px repeat-y;
+}
+@media (max-width:600px){
+  .page{margin:0;padding-left:52px;padding-right:16px;font-size:18px;
+    background:
+      linear-gradient(90deg,transparent 40px,var(--margin) 40px,var(--margin) 42px,transparent 42px),
+      repeating-linear-gradient(var(--paper) 0,var(--paper) calc(var(--line) - 1px),var(--rule) calc(var(--line) - 1px),var(--rule) var(--line));
+    background-color:var(--paper);}
+  .page::before{left:10px;width:16px}
+}
+
+/* ===== Text (all margins are multiples of --line so text sits on the rules) ===== */
+.date{position:absolute;top:0;right:24px;font-family:var(--title);font-size:22px;color:var(--ink2);line-height:var(--line)}
+h1{font-family:var(--title);font-weight:700;color:var(--ink2);font-size:46px;line-height:calc(var(--line)*2);margin:0;transform:rotate(-1deg)}
+h1 .u{background:linear-gradient(transparent 62%,var(--hl-yellow) 62%,var(--hl-yellow) 92%,transparent 92%)}
+h2{font-family:var(--title);font-weight:700;color:var(--red);font-size:32px;line-height:calc(var(--line)*1.5);margin:calc(var(--line)*.5) 0 0}
+h2::before{content:"➤ ";font-size:22px}
+p,li{margin:0}
+ul,ol{margin:0;padding-left:28px}
+ul{list-style:none}
+ul>li::before{content:"–";position:absolute;margin-left:-20px}
+ul>li.star::before{content:"★";color:var(--red)}
+ul>li.arrow::before{content:"→"}
+ul>li.check::before{content:"✓";color:var(--green)}
+.gap{height:var(--line)}
+
+/* ===== Pen effects ===== */
+.hl{background:var(--hl-yellow);padding:0 3px;border-radius:3px 6px 4px 7px}
+.hl.pink{background:var(--hl-pink)} .hl.green{background:var(--hl-green)} .hl.blue{background:var(--hl-blue)}
+.red{color:var(--red)} .green{color:var(--green)} .black{color:var(--ink2)}
+.ul{text-decoration:underline wavy var(--red);text-underline-offset:5px}
+.circ{border:2px solid var(--red);border-radius:50% 45% 55% 48%;padding:0 6px}
+.strike{text-decoration:line-through 2px var(--red)}
+.term{font-weight:700;color:var(--ink2)}
+.box{display:flow-root;border:2.5px solid var(--ink2);border-radius:4px 10px 6px 12px;padding:calc(var(--line)*.5 - 2.5px) 14px;margin:calc(var(--line)*.5) 0;transform:rotate(-.4deg);background:rgba(255,255,255,.35)}
+.box.red{border-color:var(--red)}
+.formula{font-family:var(--title);font-size:28px;text-align:center;color:var(--ink2)}
+
+/* sticky note */
+.sticky{float:right;width:min(250px,42%);margin:0 0 var(--line) 20px;padding:var(--line) 16px;background:var(--sticky);
+  color:#333;transform:rotate(2.2deg);box-shadow:2px 4px 8px rgba(0,0,0,.18);font-size:18px}
+.sticky b{font-family:var(--title);font-size:24px;color:var(--red)}
+@media (max-width:600px){.sticky{float:none;width:auto;margin:var(--line) 0}}
+
+/* margin annotation (lives in the red margin) */
+.side{position:absolute;left:4px;width:58px;text-align:center;font-family:var(--title);font-size:17px;line-height:18px;color:var(--red);transform:rotate(-8deg)}
+@media (max-width:600px){.side{display:none}}
+
+/* two-column notes */
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:0 28px}
+.cols>*{min-width:0}
+@media (max-width:600px){.cols{grid-template-columns:1fr}}
+
+/* diagrams */
+figure{margin:var(--line) 0;text-align:center}
+figure svg{width:100%;max-width:640px;height:auto;overflow:visible}
+figcaption{font-family:var(--title);font-size:20px;color:var(--ink2)}
+/* phones: keep labels readable — diagram scrolls inside its own box instead of shrinking */
+@media (max-width:600px){figure{overflow-x:auto}figure svg{min-width:520px}}
+.sk{fill:none;stroke:var(--ink2);stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round}   /* wobble comes from the sketch script below */
+.sk.blue{stroke:var(--ink)} .sk.red{stroke:var(--red)} .sk.green{stroke:var(--green)}
+.lbl{font-family:var(--hand);font-size:17px;fill:var(--ink)}
+.lbl.b{font-weight:700;fill:var(--ink2)} .lbl.r{fill:var(--red)} .lbl.g{fill:var(--green)}
+
+/* table */
+.wrap{overflow-x:auto}
+table{border-collapse:collapse;margin:calc(var(--line)*.5) 0;min-width:100%}
+th,td{border:2px solid var(--ink2);padding:0 10px;text-align:left;vertical-align:top}
+th{font-family:var(--title);font-size:24px;color:var(--ink2)}
+
+/* code block: syntax-coloured pen colours, still on the ruled-line grid */
+pre.code{font-family:Consolas,'Cascadia Mono','SFMono-Regular',Menlo,monospace;font-size:16px;line-height:var(--line);
+  margin:calc(var(--line)*.5) 0;padding:calc(var(--line)*.5 - 2px) 14px;border:2px solid var(--ink2);border-radius:4px 10px 6px 12px;
+  background:rgba(255,255,255,.55);color:var(--ink2);white-space:pre;overflow-x:auto;tab-size:4}
+pre.code .kw{color:#8e24aa;font-weight:700} pre.code .st{color:var(--green)} pre.code .nu{color:#d35400}
+pre.code .cm{color:#7f8c8d;font-style:italic} pre.code .fn{color:var(--ink)} pre.code .bi{color:#00838f}
+
+@media print{body{background:#fff}.page{box-shadow:none;margin:0}.page::before{display:none}}
+/* ===== Extras for long chapter notes */
+pre.code.ascii{border-color:var(--green)}
+code{font-family:Consolas,'Courier New',monospace;font-size:.82em;background:rgba(0,0,0,.06);padding:0 3px;border-radius:3px}
+pre.code code{background:none;padding:0;font-size:inherit}
+.lang{font-family:var(--title);font-size:18px;color:var(--red)}
+h3{font-family:var(--title);font-weight:700;color:var(--ink2);font-size:26px;line-height:var(--line);margin:calc(var(--line)*.5) 0 0}
+h3::before{content:"✎ ";font-size:18px;color:var(--red)}
+.nav{display:flex;justify-content:space-between;gap:12px;font-family:var(--title);font-size:22px;line-height:var(--line)}
+.nav a{color:var(--red);text-decoration:none}
+.nav a:hover{text-decoration:underline wavy}
+.pagebreak{border-top:3px dashed var(--margin);margin:var(--line) 0;text-align:center;font-family:var(--title);color:var(--red);line-height:var(--line)}
+li.todo::before{content:"☐";color:var(--ink2)}
+a{color:var(--ink);text-decoration:underline dotted}
+</style>
+</head>
+<body>
+<!-- Give every diagram stroke class="sk": the sketch script at the bottom redraws it as a smooth hand-drawn line. -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <!-- Fallback wobble filter (only used if something references url(#rough)). One smooth noise octave + sRGB +
+       a light final blur: Chrome's displacement samples nearest-neighbour, so a raw filter leaves stair-step breaks. -->
+  <filter id="rough" filterUnits="userSpaceOnUse" x="-500" y="-500" width="3000" height="3000" color-interpolation-filters="sRGB">
+    <feTurbulence type="fractalNoise" baseFrequency="0.02" numOctaves="1" seed="3" result="t"/>
+    <feGaussianBlur in="t" stdDeviation="2" result="n"/>
+    <feDisplacementMap in="SourceGraphic" in2="n" scale="5" xChannelSelector="R" yChannelSelector="G" result="d"/>
+    <feGaussianBlur in="d" stdDeviation="0.45"/>
+  </filter>
+  <marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+    <path d="M1 1 L9 5 L1 9" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+  </marker>
+</defs></svg>
+
+<main class="page">
+  <nav class="nav"><a href="ch23-design-a-collaborative-document-editor-google-docs.notes.html">← Ch 23 — Design a Collaborative Document Editor (Google Docs)</a><a href="index.notes.html">☰ Contents</a><span></span></nav>
+  <div class="date">2026-10-17</div>
+  <h1><span class="u">Ch 24 — Design an Auction Platform (eBay)</span></h1>
+  <p class="black">Volume 4 — High-Level Design · <a href="index.md">Contents</a> · ← <a href="ch23-design-a-collaborative-document-editor-google-docs.notes.html">Chapter 23 — Design a Collaborative Document Editor (Google Docs)</a></p>
+
+  <h2>Concept</h2>
+  <p>Not listing, not search. The hard parts: <span class="hl">simultaneous bids</span>, the <b>last-seconds rush</b>, fairness about time, telling watchers.</p>
+  <div class="box"><b>In one sentence:</b> send each bid through <b>one place that orders bids per auction</b>, apply simple deterministic rules (minimum increment, proxy maximum, tie-break, optional soft close), store every decision, close the auction <b>exactly once</b>.</div>
+  <h3>Mental model — a clerk at the auction door</h3>
+  <p>Everyone shouts at once; <b>one clerk</b> writes bids in the book, one at a time. The clerk's order is the order that counts. We build that clerk: correct, fast on a busy item, and safe if it faints.</p>
+  <p><b>Scope:</b> timed, ascending auction with proxy bidding. Not: live floor, sealed-bid, Dutch, search, shipping, payment-provider details.</p>
+
+  <h2>1 · Requirements</h2>
+  <div class="wrap"><table>
+    <tr><th>Functional</th><th>Non-functional</th></tr>
+    <tr><td>list item: start price + end time</td><td>no lost or double-counted bids</td></tr>
+    <tr><td>buyers bid; highest leads</td><td>visible price + winner always consistent</td></tr>
+    <tr><td>watchers see price + time left</td><td>last seconds don't melt the system</td></tr>
+    <tr><td>outbid / ending soon / won alerts</td><td>server's clock decides</td></tr>
+    <tr><td>winner decided once, then pays</td><td>closes <b>exactly once</b></td></tr>
+    <tr><td>seller + buyer history</td><td>resists shills, bots, retraction games</td></tr>
+  </table></div>
+
+  <h2>2 · Proxy bidding rules</h2>
+  <p>Bidder gives their <span class="term">maximum</span>. System bids in small steps, only as high as needed to stay in front (eBay help: bids in increments on your behalf, only up to your limit).</p>
+  <div class="wrap"><table>
+    <tr><th>Current price</th><th>Increment</th></tr>
+    <tr><td>$0.01 – $0.99</td><td>$0.05</td></tr>
+    <tr><td>$1.00 – $4.99</td><td>$0.25</td></tr>
+    <tr><td>$5.00 – $24.99</td><td>$0.50</td></tr>
+    <tr><td>$25.00 – $99.99</td><td>$1.00</td></tr>
+    <tr><td>$100.00 – $249.99</td><td>$2.50</td></tr>
+    <tr><td>$250.00 – $499.99</td><td>$5.00</td></tr>
+    <tr><td>$500.00 – $999.99</td><td>$10.00</td></tr>
+    <tr><td>$1,000.00 – $2,499.99</td><td>$25.00</td></tr>
+    <tr><td>$2,500.00 – $4,999.99</td><td>$50.00</td></tr>
+    <tr><td>$5,000.00 and up</td><td>$100.00</td></tr>
+  </table></div>
+  <p class="arrow"><b>Visible price</b> = one increment above the <b>second-highest</b> maximum, capped at the leader's maximum. Example: $12.00 max outbid by $15.00 max → price <span class="hl green">$12.50</span>; the $15.00 stays secret.</p>
+  <p><b>Rules our engine uses:</b></p>
+  <ol>
+    <li>New bid ≥ visible price + one increment (first bid ≥ start price).</li>
+    <li>Bid above leader's max → new leader at (old max + increment), capped at new max.</li>
+    <li>Bid <b>equal</b> to leader's max → <b>earlier bid wins</b>.</li>
+    <li>Bid below leader's max → leader stays; price = challenger's max + increment (never above leader's max).</li>
+    <li>Leader raises own max → price unchanged, <b>closing time unchanged</b>.</li>
+    <li><span class="red">Leader's maximum is a secret</span> — never sent to clients.</li>
+    <li>Same bidder + same <code>bidId</code> again → <code>duplicate</code>, not applied twice.</li>
+  </ol>
+  <p class="arrow">Rules 3, 5 and the extension rules are <b>design choices</b>, not claims about any site's exact behaviour.</p>
+
+  <h2>3 · Soft close vs sniping</h2>
+  <ul>
+    <li><b>Sniper:</b> bids in the last seconds so nobody can react.</li>
+    <li><b>Soft close:</b> a bid inside the <b>trigger window</b> pushes the end out by an <b>extension</b>, up to a <b>max number</b> of extensions.</li>
+    <li><b>Reset mode (ours):</b> new end = bid time + extension, only if later. (Other products <i>add</i> to the current end.)</li>
+    <li>Count an extension <b>only if it moves the end</b> (found by review: an early bid used up the allowance for nothing).</li>
+    <li>A leader who only raises their max does <b>not</b> extend — else they could hold the auction open for free.</li>
+    <li class="star">Cost: end times become unpredictable → payment, packing must wait until extensions stop.</li>
+  </ul>
+  <aside class="sticky"><b>Remember!</b><br>Server clock decides.<br>Never trust the phone's clock.</aside>
+
+  <h2>4 · The core problem: two bids at once</h2>
+  <p>Ann bids 50, Bob bids 90; both read "leader Cat". Each computes and <b>blindly writes</b> → last writer wins, even Ann's lower bid. Bob's bid is <span class="red">silently lost</span> (lost update). Need <span class="term">one serialization point per auction</span>.</p>
+  <div class="wrap"><table>
+    <tr><th>Option</th><th>How</th><th>Watch for</th></tr>
+    <tr><td><b>Conditional update</b></td><td>read row + version → compute → <code>UPDATE … WHERE version = old</code> → retry</td><td>retry storms on a hot auction</td></tr>
+    <tr><td><b>Redis Lua script</b></td><td>whole read-compute-write is one atomic script (server blocked while it runs)</td><td>keep scripts short; pass every key as an argument; script cache is volatile (reload); durability = Redis persistence + replication</td></tr>
+    <tr><td><b>Single writer / auction</b></td><td>partition by auction ID, one consumer applies in order</td><td>hot-partition limits; exactly one writer on failover</td></tr>
+    <tr><td>Distributed lock</td><td>lock, read, write, release</td><td>timeouts + clocks recreate the double-writer bug</td></tr>
+  </table></div>
+  <p class="arrow"><b>Practical:</b> route all bids for an auction to <b>one owner</b>; apply with a pure function; write state + bid record in one transaction; publish. Conditional update for quiet auctions, single-writer queue for hot ones.</p>
+
+  <h2>5 · Time, order, fairness</h2>
+  <ul>
+    <li><b>Server's clock decides.</b> Stamp on arrival; compare with end time on the same clock.</li>
+    <li><b>Read the clock again on every retry</b> — a bid that loses a race and retries after the end must be refused.</li>
+    <li>Arrival order = the owner's queue order, not client data.</li>
+    <li>Owner <b>rejects bids after the end</b>; the close job may run late, harmlessly.</li>
+    <li>Latency is unfair by nature — say so; show a <i>server-time</i> countdown.</li>
+  </ul>
+
+  <h2>6 · Closing exactly once</h2>
+  <ul>
+    <li><b>Scheduler</b> holds (end time, auction ID): sorted set / delayed queue / timer wheel / durable timers.</li>
+    <li>When due: read state. If an extension moved the end → <b>put back</b> with the new end. Don't close.</li>
+    <li>Close = <b>idempotent conditional update</b>: <code>SET closed = true WHERE closed = false AND end_at &lt;= now</code>.</li>
+    <li><b>Closing storms</b> (top of the hour): spread over partitions/workers; one durable event per closed auction.</li>
+    <li>After close: <b>outbox</b> → <code>won</code> event → payment saga. Winner doesn't pay → next bidder or relist.</li>
+  </ul>
+
+  <h2>7 · Watchers, fan-out, last minute</h2>
+  <ul>
+    <li>100,000 watchers: don't send every bid. <b>Coalesce</b> to 1–2 updates/s/auction, latest only.</li>
+    <li>WebSocket / SSE fed by a pub/sub channel per auction; non-bidders can poll a cached price.</li>
+    <li>Static data (title, photos, price) from CDN / cache. Only the bid endpoint touches the owner.</li>
+    <li>Alerts (outbid, ending soon, won) via a queue — slow email can't slow bidding.</li>
+    <li>Rate-limit bids per user and per auction (bots, loops).</li>
+  </ul>
+
+  <h2>8 · Data model</h2>
+  <ul>
+    <li><b>auctions:</b> id, seller, title, start_price, end_at, state, <b>version</b>, leader_id, <span class="red">top_max (secret)</span>, price, ext_used, soft-close settings.</li>
+    <li><b>bids</b> (append-only): auction_id, seq, <b>bid_id (unique)</b>, bidder_id, max_amount, outcome, received_at. Keep rejected ones — evidence in disputes. (Demo keeps only their IDs.)</li>
+    <li>watchers, notifications, later orders + payments.</li>
+    <li><b>Money = integers (cents).</b> <span class="red">Never return top_max</span> from any API: return price, bid count, "you lead?".</li>
+  </ul>
+
+  <h2>9 · Abuse + trust</h2>
+  <ul>
+    <li><b>Shill bidding:</b> account linking, device/payment signals, bid patterns; sellers can't bid on own items.</li>
+    <li><b>Bots / snipers:</b> rate limits, bot detection, soft close; decide on third-party snipers.</li>
+    <li><b>Retractions / non-payers:</b> retract rules, buyer history, verified payment for high value.</li>
+    <li>AuthN/Z from Ch 19; separate seller and buyer tools.</li>
+  </ul>
+
+  <h2>10 · Estimates (assumptions!)</h2>
+  <ul>
+    <li>10M live auctions; 2M bids/hour → <b>~550 bids/s</b>. Peak 20× → <b>~11,000/s</b>.</li>
+    <li>Hottest auction: <b>500 bids/s</b> in its last 10 s → a single-key problem → one owner; CAS retries pile up.</li>
+    <li>Auction state ~1 KB × 10M ≈ <b>10 GB</b> (fits in memory on a few owners).</li>
+    <li>Bids: 200 B × 48M/day ≈ <b>10 GB/day</b> (before indexes, replicas).</li>
+    <li>100k watchers × 1 update/s = <b>100k msgs/s</b> on one auction → fan-out tier, not the owner.</li>
+  </ul>
+
+  <div class="pagebreak">~ page 2 ~</div>
+
+  <h2>Prereqs</h2>
+  <ul>
+    <li><a href="ch07-caching-strategies.notes.html">Ch 7 — Caching Strategies</a></li>
+    <li><a href="ch08-rate-limiting-throttling-and-backpressure.notes.html">Ch 8 — Rate Limiting, Throttling &amp; Backpressure</a></li>
+    <li><a href="ch09-message-queues-and-streaming-kafka-sqs-pub.notes.html">Ch 9 — Message Queues &amp; Streaming</a></li>
+    <li><a href="ch12-event-driven-systems.notes.html">Ch 12 — Event-Driven Systems</a></li>
+    <li><a href="ch19-authentication-and-authorization-in-system-design.notes.html">Ch 19 — Authentication &amp; Authorization in System Design</a></li>
+    <li><a href="../volume-1-cs-foundations/ch47-acid-transactions-and-isolation.notes.html">Vol 1 Ch 47 — ACID, Transactions &amp; Isolation</a></li>
+  </ul>
+
+  <h2>Diagram</h2>
+  <figure>
+    <svg viewBox="0 0 660 285" role="img" aria-label="Architecture: bidder to gateway to router to the auction owner; the owner writes the database and publishes to pub/sub, which feeds a fan-out tier and watchers; a scheduler also talks to the owner.">
+      <rect class="sk" x="10" y="100" width="95" height="56" rx="12"/>
+      <text class="lbl b" x="57" y="134" text-anchor="middle">bidder</text>
+      <rect class="sk" x="130" y="100" width="105" height="56" rx="12"/>
+      <text class="lbl b" x="182" y="125" text-anchor="middle">gateway</text>
+      <text class="lbl" x="182" y="145" text-anchor="middle" style="font-size:13px">auth + limits</text>
+      <rect class="sk" x="262" y="100" width="100" height="56" rx="12"/>
+      <text class="lbl b" x="312" y="125" text-anchor="middle">router</text>
+      <text class="lbl" x="312" y="145" text-anchor="middle" style="font-size:13px">by auction ID</text>
+      <rect class="sk" x="390" y="100" width="105" height="56" rx="12"/>
+      <text class="lbl b" x="442" y="125" text-anchor="middle">owner</text>
+      <text class="lbl" x="442" y="145" text-anchor="middle" style="font-size:13px">orders bids</text>
+      <rect class="sk" x="530" y="10" width="120" height="46" rx="12"/>
+      <text class="lbl b" x="590" y="39" text-anchor="middle">auctions+bids</text>
+      <rect class="sk" x="530" y="80" width="120" height="46" rx="12"/>
+      <text class="lbl b" x="590" y="109" text-anchor="middle">pub/sub</text>
+      <rect class="sk" x="530" y="150" width="120" height="46" rx="12"/>
+      <text class="lbl b" x="590" y="179" text-anchor="middle">fan-out</text>
+      <rect class="sk" x="530" y="220" width="120" height="46" rx="12"/>
+      <text class="lbl b" x="590" y="249" text-anchor="middle">watchers</text>
+      <rect class="sk" x="390" y="215" width="105" height="46" rx="12"/>
+      <text class="lbl b" x="442" y="244" text-anchor="middle">scheduler</text>
+      <path class="sk blue" d="M105 128 L 128 128" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M235 128 L 260 128" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M362 128 L 388 128" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk green" d="M495 112 C 510 90, 515 60, 528 40" style="color:var(--green)" marker-end="url(#arr)"/>
+      <path class="sk green" d="M495 124 C 508 118, 515 110, 528 106" style="color:var(--green)" marker-end="url(#arr)"/>
+      <path class="sk green" d="M590 126 L 590 148" style="color:var(--green)" marker-end="url(#arr)"/>
+      <path class="sk green" d="M590 196 L 590 218" style="color:var(--green)" marker-end="url(#arr)"/>
+      <path class="sk red" d="M442 215 L 442 158" style="color:var(--red)" marker-end="url(#arr)"/>
+      <text class="lbl r" x="458" y="195" style="font-size:13px">close</text>
+    </svg>
+    <figcaption>Fig 1: one owner per auction orders bids; watchers are served by a separate fan-out tier.</figcaption>
+  </figure>
+
+  <figure>
+    <svg viewBox="0 0 660 320" role="img" aria-label="Two bids at once: Ann and Bob both read version 1; Bob writes if version is 1 and succeeds making version 2; Ann's write if version 1 is refused; Ann re-reads version 2, recomputes and writes if version is 2, making version 3.">
+      <rect class="sk" x="15" y="10" width="130" height="40" rx="10"/>
+      <text class="lbl b" x="80" y="36" text-anchor="middle">Ann (max 50)</text>
+      <rect class="sk" x="265" y="10" width="130" height="40" rx="10"/>
+      <text class="lbl b" x="330" y="36" text-anchor="middle">State</text>
+      <rect class="sk" x="515" y="10" width="130" height="40" rx="10"/>
+      <text class="lbl b" x="580" y="36" text-anchor="middle">Bob (max 90)</text>
+      <path class="sk" d="M80 52 L 80 315" style="color:var(--ink);stroke-dasharray:5 6"/>
+      <path class="sk" d="M330 52 L 330 315" style="color:var(--ink);stroke-dasharray:5 6"/>
+      <path class="sk" d="M580 52 L 580 315" style="color:var(--ink);stroke-dasharray:5 6"/>
+      <path class="sk blue" d="M84 88 L 326 88" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <text class="lbl" x="205" y="80" text-anchor="middle" style="font-size:14px">read (v1)</text>
+      <path class="sk blue" d="M576 116 L 334 116" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <text class="lbl" x="455" y="108" text-anchor="middle" style="font-size:14px">read (v1)</text>
+      <path class="sk blue" d="M576 146 L 334 146" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <text class="lbl r" x="455" y="138" text-anchor="middle" style="font-size:14px">write if v = 1</text>
+      <path class="sk green" d="M334 174 L 576 174" style="color:var(--green)" marker-end="url(#arr)"/>
+      <text class="lbl g" x="455" y="166" text-anchor="middle" style="font-size:14px">ok → v2 (Bob leads)</text>
+      <path class="sk blue" d="M84 206 L 326 206" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <text class="lbl r" x="205" y="198" text-anchor="middle" style="font-size:14px">write if v = 1</text>
+      <path class="sk red" d="M326 234 L 84 234" style="color:var(--red)" marker-end="url(#arr)"/>
+      <text class="lbl r" x="205" y="226" text-anchor="middle" style="font-size:14px">refused (v is 2)</text>
+      <path class="sk blue" d="M84 266 L 326 266" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <text class="lbl" x="205" y="258" text-anchor="middle" style="font-size:13px">re-read, write if v = 2</text>
+      <path class="sk green" d="M326 294 L 84 294" style="color:var(--green)" marker-end="url(#arr)"/>
+      <text class="lbl g" x="205" y="286" text-anchor="middle" style="font-size:14px">ok → v3</text>
+    </svg>
+    <figcaption>Fig 2: the conditional update refuses the stale write; Ann retries on fresh state. Bob's higher bid survives.</figcaption>
+  </figure>
+
+  <h2>Example</h2>
+  <span class="lang">python</span>
+<pre class="code"><code><span class="st">"""Timed auction with proxy ("maximum") bidding, optional soft close, duplicate-safe bids,
+optimistic concurrency, and a closing scheduler. Money is integer cents; time is seconds."""</span>
+<span class="kw">import</span> heapq
+<span class="kw">import</span> threading
+<span class="kw">from</span> dataclasses <span class="kw">import</span> dataclass, replace
+
+<span class="cm"># eBay's published increment table: from this price (cents) up, the increment (cents) is ...</span>
+INCREMENTS = [(<span class="nu">0</span>, <span class="nu">5</span>), (<span class="nu">100</span>, <span class="nu">25</span>), (<span class="nu">500</span>, <span class="nu">50</span>), (<span class="nu">2500</span>, <span class="nu">100</span>), (<span class="nu">10000</span>, <span class="nu">250</span>), (<span class="nu">25000</span>, <span class="nu">500</span>),
+              (<span class="nu">50000</span>, <span class="nu">1000</span>), (<span class="nu">100000</span>, <span class="nu">2500</span>), (<span class="nu">250000</span>, <span class="nu">5000</span>), (<span class="nu">500000</span>, <span class="nu">10000</span>)]
+
+
+<span class="kw">def</span> <span class="fn">increment</span>(price):
+    step = INCREMENTS[<span class="nu">0</span>][<span class="nu">1</span>]
+    <span class="kw">for</span> floor, s <span class="kw">in</span> INCREMENTS:
+        <span class="kw">if</span> price &gt;= floor:
+            step = s
+    <span class="kw">return</span> step
+
+
+<span class="bi">@dataclass</span>(frozen=<span class="kw">True</span>)
+<span class="kw">class</span> Auction:
+    start: <span class="bi">int</span>                      <span class="cm"># starting price</span>
+    end: <span class="bi">int</span>                        <span class="cm"># closing time</span>
+    window: <span class="bi">int</span> = <span class="nu">0</span>                 <span class="cm"># soft close: a bid this close to the end ...</span>
+    extend: <span class="bi">int</span> = <span class="nu">0</span>                 <span class="cm"># ... moves the end to (bid time + extend), if that is later ...</span>
+    max_ext: <span class="bi">int</span> = <span class="nu">0</span>                <span class="cm"># ... at most this many times</span>
+    ext_used: <span class="bi">int</span> = <span class="nu">0</span>
+    leader: <span class="bi">str</span> = <span class="kw">None</span>
+    top: <span class="bi">int</span> = <span class="nu">0</span>                    <span class="cm"># the leader's secret maximum</span>
+    price: <span class="bi">int</span> = <span class="nu">0</span>                  <span class="cm"># the price everyone sees</span>
+    bids: <span class="bi">tuple</span> = ()                <span class="cm"># accepted bids: (bid_id, bidder, max, time)</span>
+    seen: <span class="bi">frozenset</span> = <span class="bi">frozenset</span>()   <span class="cm"># every (bidder, bid_id) already handled (accepted or rejected)</span>
+    closed: <span class="bi">bool</span> = <span class="kw">False</span>
+    version: <span class="bi">int</span> = <span class="nu">0</span>                <span class="cm"># bumped on every change; used for compare-and-set</span>
+
+
+<span class="kw">def</span> <span class="fn">place_bid</span>(a, bidder, mx, now, bid_id):
+    <span class="st">"""Pure function: (auction, bid) -&gt; (new auction, status). `now` must come from the server's clock."""</span>
+    key = (bidder, bid_id)
+    <span class="kw">if</span> key <span class="kw">in</span> a.seen:
+        <span class="kw">return</span> a, <span class="st">"duplicate"</span>                              <span class="cm"># a retry of a request already handled</span>
+    <span class="kw">if</span> a.closed <span class="kw">or</span> now &gt;= a.end:
+        <span class="kw">return</span> a, <span class="st">"closed"</span>
+    seen = a.seen | {key}
+    <span class="kw">if</span> a.leader <span class="kw">is</span> <span class="kw">None</span>:
+        <span class="kw">if</span> mx &lt; a.start:
+            <span class="kw">return</span> <span class="fn">replace</span>(a, seen=seen, version=a.version + <span class="nu">1</span>), <span class="st">"too_low"</span>
+        leader, top, price = bidder, mx, a.start
+    <span class="kw">elif</span> bidder == a.leader:                               <span class="cm"># the leader raises their own maximum</span>
+        <span class="kw">if</span> mx &lt;= a.top:
+            <span class="kw">return</span> <span class="fn">replace</span>(a, seen=seen, version=a.version + <span class="nu">1</span>), <span class="st">"too_low"</span>
+        leader, top, price = bidder, mx, a.price
+    <span class="kw">elif</span> mx &lt; a.price + <span class="fn">increment</span>(a.price):                <span class="cm"># must beat the visible price by one increment</span>
+        <span class="kw">return</span> <span class="fn">replace</span>(a, seen=seen, version=a.version + <span class="nu">1</span>), <span class="st">"too_low"</span>
+    <span class="kw">elif</span> mx &gt; a.top:                                       <span class="cm"># new leader pays one increment over the old maximum</span>
+        leader, top, price = bidder, mx, <span class="bi">max</span>(a.price, <span class="bi">min</span>(mx, a.top + <span class="fn">increment</span>(a.top)))
+    <span class="kw">elif</span> mx == a.top:                                      <span class="cm"># tie: the earlier bid keeps the lead</span>
+        leader, top, price = a.leader, a.top, a.top
+    <span class="kw">else</span>:                                                  <span class="cm"># leader stays; price rises toward the challenger's maximum</span>
+        leader, top, price = a.leader, a.top, <span class="bi">max</span>(a.price, <span class="bi">min</span>(a.top, mx + <span class="fn">increment</span>(mx)))
+    end, used = a.end, a.ext_used
+    <span class="kw">if</span> (a.extend <span class="kw">and</span> bidder != a.leader                   <span class="cm"># a leader raising their own maximum never extends</span>
+            <span class="kw">and</span> now &gt;= a.end - a.window <span class="kw">and</span> used &lt; a.max_ext
+            <span class="kw">and</span> now + a.extend &gt; a.end):                   <span class="cm"># only count an extension that really moves the end</span>
+        end, used = now + a.extend, used + <span class="nu">1</span>               <span class="cm"># soft close ("reset" mode: end = bid time + extend)</span>
+    <span class="kw">return</span> <span class="fn">replace</span>(a, leader=leader, top=top, price=price, end=end, ext_used=used,
+                   bids=a.bids + ((bid_id, bidder, mx, now),), seen=seen, version=a.version + <span class="nu">1</span>), <span class="st">"ok"</span>
+
+
+<span class="kw">class</span> Store:
+    <span class="st">"""Stands in for a database row with a conditional update (compare-and-set on version)."""</span>
+    <span class="kw">def</span> <span class="fn">__init__</span>(<span class="bi">self</span>, auction):
+        <span class="bi">self</span>._a, <span class="bi">self</span>._lock = auction, threading.<span class="fn">Lock</span>()
+
+    <span class="kw">def</span> <span class="fn">get</span>(<span class="bi">self</span>):
+        <span class="kw">return</span> <span class="bi">self</span>._a
+
+    <span class="kw">def</span> <span class="fn">cas</span>(<span class="bi">self</span>, expected_version, new):
+        <span class="kw">with</span> <span class="bi">self</span>._lock:
+            <span class="kw">if</span> <span class="bi">self</span>._a.version != expected_version:
+                <span class="kw">return</span> <span class="kw">False</span>
+            <span class="bi">self</span>._a = new
+            <span class="kw">return</span> <span class="kw">True</span>
+
+
+<span class="kw">def</span> <span class="fn">bid</span>(store, bidder, mx, now, bid_id, hook=<span class="kw">None</span>):
+    <span class="st">"""`now` is a number (tests) or a function returning the server's clock (production): it is read again
+    on every retry, so a bid that loses a race and retries after the end time is correctly refused."""</span>
+    <span class="kw">while</span> <span class="kw">True</span>:                                            <span class="cm"># optimistic concurrency: retry on conflict</span>
+        a = store.<span class="fn">get</span>()
+        new, status = <span class="fn">place_bid</span>(a, bidder, mx, <span class="fn">now</span>() <span class="kw">if</span> <span class="bi">callable</span>(now) <span class="kw">else</span> now, bid_id)
+        <span class="kw">if</span> hook:
+            <span class="fn">hook</span>()                                         <span class="cm"># tests use this to force an interleaving</span>
+        <span class="kw">if</span> new <span class="kw">is</span> a <span class="kw">or</span> store.<span class="fn">cas</span>(a.version, new):
+            <span class="kw">return</span> status
+
+
+<span class="kw">class</span> Scheduler:
+    <span class="st">"""Closes auctions when due. Extended auctions are re-queued; closing is idempotent."""</span>
+    <span class="kw">def</span> <span class="fn">__init__</span>(<span class="bi">self</span>):
+        <span class="bi">self</span>.heap = []
+
+    <span class="kw">def</span> <span class="fn">schedule</span>(<span class="bi">self</span>, end, auction_id):
+        heapq.<span class="fn">heappush</span>(<span class="bi">self</span>.heap, (end, auction_id))
+
+    <span class="kw">def</span> <span class="fn">due</span>(<span class="bi">self</span>, now, stores):
+        closed = []
+        <span class="kw">while</span> <span class="bi">self</span>.heap <span class="kw">and</span> <span class="bi">self</span>.heap[<span class="nu">0</span>][<span class="nu">0</span>] &lt;= now:
+            _, aid = heapq.<span class="fn">heappop</span>(<span class="bi">self</span>.heap)
+            <span class="kw">while</span> <span class="kw">True</span>:
+                a = stores[aid].<span class="fn">get</span>()
+                <span class="kw">if</span> a.closed:
+                    <span class="kw">break</span>
+                <span class="kw">if</span> a.end &gt; now:                            <span class="cm"># a late bid pushed the end out: look again later</span>
+                    heapq.<span class="fn">heappush</span>(<span class="bi">self</span>.heap, (a.end, aid))
+                    <span class="kw">break</span>
+                <span class="kw">if</span> stores[aid].<span class="fn">cas</span>(a.version, <span class="fn">replace</span>(a, closed=<span class="kw">True</span>, version=a.version + <span class="nu">1</span>)):
+                    closed.<span class="fn">append</span>(aid)
+                    <span class="kw">break</span>
+        <span class="kw">return</span> closed</code></pre>
+  <span class="lang">text</span>
+<pre class="code"><code>Test results (Python 3):
+  increment table = eBay's tiers at every boundary: pass
+  $12 max vs $15 max -> $12.50: pass
+  3,000 random bid sequences vs a separately written closed-form check (leader, price, end, extensions): pass
+  duplicates ignored (per bidder); soft close extends and stops at the cap: pass
+  extension counted only when the end moves; a leader's own raise doesn't extend: pass
+  retry after a lost race re-reads the clock: pass
+  blind-write version loses the higher bid (the bug is real): pass
+  compare-and-set keeps the higher bid, price 51.00: pass
+  5 threaded stress runs (8 threads x 150 bids): pass
+  scheduler closes once, re-queues an extended auction, ignores a stale entry: pass
+  11 deliberate engine bugs: each one makes the tests fail (caught)
+  Limits: not a proof for production (no database, network failures, real clocks)</code></pre>
+  <span class="lang">text</span>
+<pre class="code ascii"><code>POST /auctions/8841/bids      {"bidId": "9d3f-...-c1", "maxAmount": 1500}
+200 {"status": "ok", "youLead": true, "price": 1250, "endsAt": "2026-10-20T18:05:00Z"}
+200 {"status": "too_low", "minimumBid": 1300}
+409 {"status": "closed"}</code></pre>
+
+  <h2>Exercises</h2>
+  <ol style="list-style:none;padding-left:0">
+    <li>1. Max $12.00, then max $15.00: what does everyone see; what's secret?
+      <div class="box"><b>Solution</b> The $15.00 bidder leads; visible price $12.50 (loser's max + one $0.50 step). The $15.00 max is stored server-side only. The loser just sees they were outbid.</div></li>
+    <li>2. Two bidders read at once and both write back. Why wrong; how do conditional updates fix it?
+      <div class="box"><b>Solution</b> Both computed from the same old state; the last writer overwrites, so a higher bid can vanish. With <code>WHERE version = old</code> the second writer is refused, re-reads, recomputes, writes again — both bids applied in some order; the higher survives.</div></li>
+    <li>3. A phone retries the same bid 3 times. Avoid counting it 3 times?
+      <div class="box"><b>Solution</b> Client makes one unique <code>bidId</code> and reuses it. Owner records (bidder, bidId) (unique constraint) and doesn't apply a repeat: demo answers <code>duplicate</code>, client reads the auction; production can store and return the original outcome.</div></li>
+    <li>4. One auction gets 500 bids/s and CAS retries pile up. Change?
+      <div class="box"><b>Solution</b> Stop racing on the row. Send all bids for it to one owner (partition + single consumer, or a short atomic script) that applies them in order. Keep optimistic updates for quiet auctions.</div></li>
+    <li>5. Phone shows 17:59:58 at tap; server receives at 18:00:00.1; end is 18:00:00. Accepted?
+      <div class="box"><b>Solution</b> No. Server's clock decides. Show a server-time countdown and tell users network delay counts against them.</div></li>
+    <li>6. 60 s soft close (reset mode); a challenger bids at 17:59:55 on an 18:00 auction → ends 18:00:55. What does the closer do at 18:00?
+      <div class="box"><b>Solution</b> Read state, see the end moved, put the auction back for 18:00:55 — don't close. Closing is a conditional update that checks the end time, so a closer racing a late bid can't close it.</div></li>
+  </ol>
+
+  <h2>Mini project</h2>
+  <p><b>Bid owner + scheduler + live price feed.</b></p>
+  <ol>
+    <li>Engine above; store auction + bid in a DB in <b>one transaction</b>.</li>
+    <li>HTTP API with auth (bid only as yourself); no response ever contains the leader's max.</li>
+    <li>One worker per auction (queue per ID) vs the conditional-update version — load test both.</li>
+    <li>Scheduler as a separate process on a durable table/queue; restart mid-run: each auction still closes exactly once.</li>
+    <li>SSE price feed, coalesced to 1/s/auction; measure fan-out with 10,000 simulated watchers.</li>
+    <li><code>won</code> event via an outbox + a consumer that creates an order once, even if delivered twice.</li>
+    <li>Chaos: duplicates, a crash between write and publish, a closer racing a late bid. Re-check: leader holds highest max, price matches rules, no double counting, each auction closed once.</li>
+  </ol>
+  <div class="box"><b class="green">Done when</b> 1,000 bidders → no lost/double bids; the hottest auction has no retry storm; a scheduler restart doesn't double-close or skip; no API exposes a max bid.</div>
+
+  <h2>Design</h2>
+  <p><b>Auction platform, 10M live auctions.</b> Timed ascending, proxy bidding, optional soft close, watchers + alerts, reliable close + payment handoff, abuse protection.</p>
+  <div class="wrap"><table>
+    <tr><th>API</th><th>Purpose</th></tr>
+    <tr><td><code>POST /auctions</code></td><td>seller creates</td></tr>
+    <tr><td><code>GET /auctions/{id}</code></td><td>price, time left, bid count, do you lead?</td></tr>
+    <tr><td><code>POST /auctions/{id}/bids</code></td><td>bid (bidId, maxAmount)</td></tr>
+    <tr><td><code>GET /auctions/{id}/live</code> (SSE) / WebSocket</td><td>coalesced live updates</td></tr>
+    <tr><td><code>GET /users/me/bids</code></td><td>my bids + status</td></tr>
+    <tr><td><code>POST /auctions/{id}/watch</code></td><td>watchlist + alerts</td></tr>
+  </table></div>
+  <p><b>Justify:</b></p>
+  <ul>
+    <li>Owner design: conditional update vs atomic script vs partitioned log; how it changes for hot auctions.</li>
+    <li>Hard vs soft close, and the effect on payment + fulfilment.</li>
+    <li>Server-clock rule; keeping the user's countdown honest.</li>
+    <li>Scheduler: restarts, extensions, closing storms.</li>
+    <li>Watcher coalescing; slow clients.</li>
+    <li>Promise when the owner fails mid-bid (nothing acked is lost; retry is safe).</li>
+    <li>Anti-fraud (shills, bots, verification for high value). Non-paying winner.</li>
+  </ul>
+
+  <h2>Open source</h2>
+  <ul>
+    <li><b>redis/redis</b> — atomic Lua scripts, sorted sets for end-time schedules.</li>
+    <li><b>apache/kafka</b> — partition by auction ID: single-writer ordering + replayable bid log.</li>
+    <li><b>temporalio/temporal</b> — durable timers + workflows for closing and the payment saga.</li>
+  </ul>
+
+  <h2>How this was checked</h2>
+  <ul>
+    <li class="check">Increment table: read from eBay's automatic-bidding help page (a reviewer's fetch hit a bot check; secondary sources gave the same tiers). Tests check every boundary.</li>
+    <li class="check">eBay wording "bids in increments on your behalf, only up to your limit": read. "$12 vs $15 → $12.50": <b>reported, not read directly</b>. Visible-price rule and tie-break are <b>design choices</b>.</li>
+    <li class="check">Redis atomic scripts, key arguments, volatile script cache: read from redis.io. Soft-close settings: vendor docs (secondary).</li>
+    <li class="check">Code was run; 11 deliberate bugs each caught. A reviewer found a <b>real bug</b> (extension counted without moving the end), a clock read once across retries, a wrong API example. All fixed + tested.</li>
+    <li class="check">Not a proof for production.</li>
+  </ul>
+
+  <h2>Interview</h2>
+  <ol style="list-style:none;padding-left:0">
+    <li>1. Two people bid at once; how does the highest win?
+      <div class="box"><b>Answer</b> Serialize per auction: conditional update with a version (retry), an atomic script, or a single writer. The bid logic is deterministic so applying bids one at a time in arrival order is consistent. Never blind read-modify-write.</div></li>
+    <li>2. What is proxy bidding; what does the visible price mean?
+      <div class="box"><b>Answer</b> Bidder enters a secret maximum; the system bids in increments only as high as needed. Visible price = one increment above the second-highest maximum, capped at the leader's max. The max is never revealed.</div></li>
+    <li>3. Stop last-second sniping?
+      <div class="box"><b>Answer</b> Soft close: a bid inside a trigger window extends the deadline, up to a cap. Less useful sniping, but unpredictable end times — payment and fulfilment wait until it truly closes.</div></li>
+    <li>4. Close exactly once?
+      <div class="box"><b>Answer</b> Scheduler triggers; close is an idempotent conditional update (closed only if not closed and end time passed). If an extension moved the end, put it back. Won event via an outbox.</div></li>
+    <li>5. 100,000 watchers: live prices?
+      <div class="box"><b>Answer</b> Pub/sub per auction → separate WebSocket/SSE fan-out, coalesced to 1–2 updates/s. Static data from caches/CDN. The owner never talks to watchers.</div></li>
+    <li>6. Whose clock decides?
+      <div class="box"><b>Answer</b> The server's. Stamp on arrival, compare with the end time, re-read the clock on retries, show a server-time countdown.</div></li>
+    <li>7. A retry after a timeout — what prevents a double bid?
+      <div class="box"><b>Answer</b> A client-generated unique bid ID reused on retries, with a unique constraint/seen-set (per bidder). A repeat isn't applied again; answer duplicate or return the stored outcome.</div></li>
+    <li>8. What can go wrong after it ends?
+      <div class="box"><b>Answer</b> Winner doesn't pay, payment fails, events delivered twice. Use an outbox for won, a saga for payment with compensation, idempotent consumers, and a fallback: next bidder or relist.</div></li>
+  </ol>
+
+  <h2>Checklist</h2>
+  <ul>
+    <li class="todo">one serialization point per auction; no blind read-modify-write</li>
+    <li class="todo">leader's maximum is secret, never leaves the server</li>
+    <li class="todo">unique bid ID per bid, so retries are harmless</li>
+    <li class="todo">server clock decides; owner rejects bids after the end</li>
+    <li class="todo">closing idempotent, re-checks extensions, publishes via outbox</li>
+    <li class="todo">watcher updates coalesced; bids rate-limited</li>
+    <li class="todo">money stored as integers</li>
+    <li class="todo">test duplicates, races, extensions, crashes</li>
+  </ul>
+  <div class="gap"></div>
+  <nav class="nav"><a href="ch23-design-a-collaborative-document-editor-google-docs.notes.html">← Ch 23 — Design a Collaborative Document Editor (Google Docs)</a><a href="index.notes.html">☰ Contents</a><span></span></nav>
+
+</main>
+<script>
+/* Sketch: redraw every .sk shape as a smooth hand-drawn line. The outline is resampled, each point is pushed
+   along the normal by a gentle wobble (two low-frequency sines; on closed shapes the wobble loops exactly once so
+   start and end meet), and a smooth Catmull-Rom curve is rebuilt. Pure geometry, so the line stays crisp. */
+(() => {
+  const NS = 'http://www.w3.org/2000/svg', TAU = Math.PI * 2;
+  const KEEP_OUT = /^(cx|cy|rx|ry|r|x|y|width|height|x1|y1|x2|y2|points|d)$/;
+  const sketch = (el, i) => {
+    if (!el.getTotalLength) return;
+    const dAttr = el.getAttribute('d') || '';
+    if ((dAttr.match(/[Mm]/g) || []).length > 1) return;            // several sub-paths: leave as drawn
+    const L = el.getTotalLength(); if (!(L > 4)) return;
+    const closed = /^(ellipse|circle|rect|polygon)$/.test(el.tagName) || /[Zz]\s*$/.test(dAttr);
+    const n = Math.max(8, Math.round(L / 7)), amp = Math.min(1.1, 0.45 + L / 900);
+    const k1 = closed ? Math.max(2, Math.round(L / 180)) : 0, k2 = closed ? Math.max(3, Math.round(L / 95)) : 0;
+    const f1 = closed ? TAU * k1 / L : TAU / Math.max(160, L / 2.5), f2 = closed ? TAU * k2 / L : TAU / 95;
+    const p1 = (i * 2.399) % TAU, p2 = (i * 4.17) % TAU, pts = [];
+    for (let k = 0; k < (closed ? n : n + 1); k++) {
+      const s = L * k / n, a = el.getPointAtLength(Math.max(0, s - 0.5)), b = el.getPointAtLength(Math.min(L, s + 0.5)), c = el.getPointAtLength(s);
+      let nx = -(b.y - a.y), ny = b.x - a.x; const m = Math.hypot(nx, ny) || 1;
+      const w = (closed ? amp : amp * Math.min(1, s / 12, (L - s) / 12)) * (0.8 * Math.sin(s * f1 + p1) + 0.25 * Math.sin(s * f2 + p2));
+      pts.push([c.x + nx / m * w, c.y + ny / m * w]);                // open lines: ends stay exactly in place
+    }
+    const P = k => closed ? pts[(k + pts.length) % pts.length] : pts[Math.max(0, Math.min(pts.length - 1, k))];
+    let d = `M${pts[0][0].toFixed(2)} ${pts[0][1].toFixed(2)}`;
+    for (let k = 0, last = closed ? pts.length : pts.length - 1; k < last; k++) {
+      const [x0, y0] = P(k - 1), [x1, y1] = P(k), [x2, y2] = P(k + 1), [x3, y3] = P(k + 2);
+      d += ` C${(x1 + (x2 - x0) / 6).toFixed(2)} ${(y1 + (y2 - y0) / 6).toFixed(2)} ${(x2 - (x3 - x1) / 6).toFixed(2)} ${(y2 - (y3 - y1) / 6).toFixed(2)} ${x2.toFixed(2)} ${y2.toFixed(2)}`;
+    }
+    const path = document.createElementNS(NS, 'path');
+    for (const at of el.attributes) if (!KEEP_OUT.test(at.name)) path.setAttribute(at.name, at.value);
+    path.setAttribute('d', d + (closed ? ' Z' : ''));
+    el.replaceWith(path);
+  };
+  document.querySelectorAll('svg .sk').forEach(sketch);
+})();
+</script>
+</body>
+</html>

@@ -1,6 +1,6 @@
 # Mastery Roadmap
 
-> Structure: six **volumes**, each complete enough that finishing it means you genuinely master the area. Delivered as **143 chapters**, one concept each, with prerequisites, diagrams, examples, exercises, a mini project, real open-source references, interview questions, and a checklist.
+> Structure: six **volumes**, each complete enough that finishing it means you genuinely master the area. Delivered as **144 chapters**, one concept each, with prerequisites, diagrams, examples, exercises, a mini project, real open-source references, interview questions, and a checklist.
 
 ## Volumes
 
@@ -10,10 +10,10 @@
 | 1 | Computer Science Foundations | [volumes/volume-1-cs-foundations/index.md](volumes/volume-1-cs-foundations/index.md) | 1–59 (59) |
 | 2 | Software Engineering | [volumes/volume-2-software-engineering/index.md](volumes/volume-2-software-engineering/index.md) | 1–18 (18) |
 | 3 | Low-Level Design | [volumes/volume-3-low-level-design/index.md](volumes/volume-3-low-level-design/index.md) | 1–14 (14) |
-| 4 | High-Level Design | [volumes/volume-4-high-level-design/index.md](volumes/volume-4-high-level-design/index.md) | 1–23 (23) |
+| 4 | High-Level Design | [volumes/volume-4-high-level-design/index.md](volumes/volume-4-high-level-design/index.md) | 1–24 (24) |
 | 5 | AI Systems Engineering | [volumes/volume-5-ai-systems/index.md](volumes/volume-5-ai-systems/index.md) | 1–20 (20) |
 
-**Total: 143 chapters** across the six volumes.
+**Total: 144 chapters** across the six volumes.
 
 ---
 
@@ -49,12 +49,12 @@ The volumes teach in learning order, so system design topics sit in several volu
 | 8 | Performance | [V4 Ch16 Antipatterns & monitoring](volumes/volume-4-high-level-design/ch16-performance-antipatterns-and-monitoring.md) · [V2 Ch10 Performance engineering](volumes/volume-2-software-engineering/ch10-performance-engineering.md) · [V1 Ch58 Observability](volumes/volume-1-cs-foundations/ch58-observability-logs-metrics-traces-and-opentelemetry.md) · [V2 Ch16 Observability](volumes/volume-2-software-engineering/ch16-observability-logs-metrics-and-traces.md) | soak / spike / stress test types |
 | 9 | Reliability, availability & DR | [V4 Ch17 Disaster recovery](volumes/volume-4-high-level-design/ch17-disaster-recovery-backups-rto-rpo.md) · [V3 Ch14 Resilience patterns](volumes/volume-3-low-level-design/ch14-resilience-patterns-idempotency-retries-backoff-circuit-breakers.md) · [V2 Ch17 Incidents](volumes/volume-2-software-engineering/ch17-incident-response-and-postmortems.md) · [V2 Ch18 Production debugging](volumes/volume-2-software-engineering/ch18-production-debugging.md) | MTBF / MTTR |
 | 10 | Security | [V2 Ch11 Threat modeling](volumes/volume-2-software-engineering/ch11-security-and-threat-modeling.md) · [V2 Ch12 AuthN & AuthZ](volumes/volume-2-software-engineering/ch12-authentication-and-authorization.md) · [V4 Ch18 Security at system level](volumes/volume-4-high-level-design/ch18-security-at-the-system-level.md) · [V4 Ch19 AuthN & AuthZ in design](volumes/volume-4-high-level-design/ch19-authentication-and-authorization-in-system-design.md) | CIA triad; shared responsibility model; container & serverless security |
-| 11 | The blueprint (method & interviews) | [V4 Ch1 Approach](volumes/volume-4-high-level-design/ch01-approaching-a-system-design-problem.md) · [V4 Ch22 Portfolio](volumes/volume-4-high-level-design/ch22-the-30-system-design-portfolio.md) · [V4 Ch23 Collaborative editor](volumes/volume-4-high-level-design/ch23-design-a-collaborative-document-editor-google-docs.md) | interviewer soft skills; "when you get stuck" script |
+| 11 | The blueprint (method & interviews) | [V4 Ch1 Approach](volumes/volume-4-high-level-design/ch01-approaching-a-system-design-problem.md) · [V4 Ch22 Portfolio](volumes/volume-4-high-level-design/ch22-the-30-system-design-portfolio.md) · [V4 Ch23 Collaborative editor](volumes/volume-4-high-level-design/ch23-design-a-collaborative-document-editor-google-docs.md) · [V4 Ch24 Auction platform](volumes/volume-4-high-level-design/ch24-design-an-auction-platform-ebay.md) | interviewer soft skills; "when you get stuck" script |
 | – | Cloud & cost (extra) | [V4 Ch20 Cloud architecture](volumes/volume-4-high-level-design/ch20-cloud-architecture.md) · [V4 Ch21 Cost economics](volumes/volume-4-high-level-design/ch21-cost-and-capacity-economics.md) · [V1 Ch59 Cloud cost](volumes/volume-1-cs-foundations/ch59-cost-awareness-in-the-cloud.md) | – |
 
 ### Case studies
 
-All designs live in [V4 Ch22 — The 30-System Design Portfolio](volumes/volume-4-high-level-design/ch22-the-30-system-design-portfolio.md).
+All designs live in [V4 Ch22 — The 30-System Design Portfolio](volumes/volume-4-high-level-design/ch22-the-30-system-design-portfolio.md), with full deep dives in Ch23 and Ch24.
 
 | Typical case study | In our portfolio? | Note |
 |--------------------|-------------------|------|
@@ -65,7 +65,7 @@ All designs live in [V4 Ch22 — The 30-System Design Portfolio](volumes/volume-
 | Taxi hailing | yes (#21) | thin: surge pricing |
 | Search engine | partial (#10 autocomplete, #11 crawler) | **not written yet:** inverted index and ranking |
 | Collaborative editor | yes ([V4 Ch23](volumes/volume-4-high-level-design/ch23-design-a-collaborative-document-editor-google-docs.md)) | full design: OT, CRDT, Figma-style LWW, tested code |
-| Auction platform | no | **not written yet:** bid concurrency, closing timers |
+| Auction platform | yes ([V4 Ch24](volumes/volume-4-high-level-design/ch24-design-an-auction-platform-ebay.md)) | full design: proxy bidding, bid concurrency, soft close, closing; tested code |
 
 ---
 
