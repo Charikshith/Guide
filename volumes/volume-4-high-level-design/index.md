@@ -2,35 +2,51 @@
 
 > Goal: Design systems that scale and stay reliable. Requires Volume 1 (Parts 7–9) and Volume 3.
 >
-> **Chapters 1–21.** Each chapter ends by designing one or more real-world systems; by the end you will have designed **30+ systems**.
+> **Chapters 1–22.** Each chapter ends by designing one or more real-world systems; by the end you will have designed **30+ systems**.
 
 # Contents
 
+**Part 1 — Approach & Estimation**
 1. [Approaching a System Design Problem](ch01-approaching-a-system-design-problem.md)
 2. [Capacity Planning](ch02-capacity-planning.md)
+
+**Part 2 — Scalability & Distributed Foundations**
 3. [Scalability & Reliability Fundamentals](ch03-scalability-and-reliability-fundamentals.md)
 4. [Distributed Systems Patterns](ch04-distributed-systems-patterns.md)
+
+**Part 3 — The Traffic Layer**
 5. [Proxies, Gateways, Web Servers & Storage Types](ch05-proxies-gateways-web-servers-and-storage-types.md)
 6. [Load Balancing](ch06-load-balancing.md)
 7. [Caching Strategies](ch07-caching-strategies.md)
 8. [Rate Limiting, Throttling & Backpressure](ch08-rate-limiting-throttling-and-backpressure.md)
+
+**Part 4 — Messaging, Data & Events**
 9. [Message Queues & Streaming (Kafka, SQS, Pub/Sub)](ch09-message-queues-and-streaming-kafka-sqs-pub.md)
 10. [Service Mesh & Service Discovery](ch10-service-mesh-and-service-discovery.md)
 11. [Database Scaling](ch11-database-scaling.md)
 12. [Event-Driven Systems](ch12-event-driven-systems.md)
+
+**Part 5 — Cloud Patterns, Edge & Tenancy**
 13. [Cloud Design Patterns](ch13-cloud-design-patterns.md)
 14. [CDN, Edge & Geo-Distribution](ch14-cdn-edge-and-geo-distribution.md)
 15. [Multi-Tenancy](ch15-multi-tenancy.md)
+
+**Part 6 — Operating & Protecting Systems**
 16. [Performance Antipatterns & Monitoring](ch16-performance-antipatterns-and-monitoring.md)
 17. [Disaster Recovery (Backups, RTO/RPO)](ch17-disaster-recovery-backups-rto-rpo.md)
 18. [Security at the System Level](ch18-security-at-the-system-level.md)
-19. [Cloud Architecture](ch19-cloud-architecture.md)
-20. [Cost & Capacity Economics](ch20-cost-and-capacity-economics.md)
-21. [The 30-System Design Portfolio](ch21-the-30-system-design-portfolio.md)
+19. [Authentication & Authorization in System Design](ch19-authentication-and-authorization-in-system-design.md)
+
+**Part 7 — Cloud, Cost & Case Studies**
+20. [Cloud Architecture](ch20-cloud-architecture.md)
+21. [Cost & Capacity Economics](ch21-cost-and-capacity-economics.md)
+22. [The 30-System Design Portfolio](ch22-the-30-system-design-portfolio.md)
 
 ---
 
-## Chapter 1 — Approaching a System Design Problem
+## Part 1 — Approach & Estimation
+
+### Chapter 1 — Approaching a System Design Problem
 
 **Concept:** What system design is, how HLD differs from LLD, and a repeatable method — requirements, estimates, API, data, architecture, deep dive, trade-offs — for starting any design problem.
 
@@ -38,11 +54,11 @@
 
 ---
 
-## Chapter 2 — Capacity Planning
+### Chapter 2 — Capacity Planning
 
 **Concept:** QPS, latency percentiles (p50/p99), throughput, storage sizing, and translating requirements into hardware/tier estimates.
 
-**Prereqs:** Vol 1 Ch 44, Vol 2 Ch 9.
+**Prereqs:** Vol 1 Ch 44, Vol 2 Ch 10.
 
 **Diagram:** A capacity worksheet: QPS → servers → storage → cost.
 
@@ -62,7 +78,9 @@
 
 ---
 
-## Chapter 3 — Scalability & Reliability Fundamentals
+## Part 2 — Scalability & Distributed Foundations
+
+### Chapter 3 — Scalability & Reliability Fundamentals
 
 **Concept:** Vertical vs horizontal scaling, statelessness, redundancy, failure domains, availability math (N nines).
 
@@ -86,7 +104,7 @@
 
 ---
 
-## Chapter 4 — Distributed Systems Patterns
+### Chapter 4 — Distributed Systems Patterns
 
 **Concept:** Replication, partitioning, leader/follower, quorums, idempotency, and the failure modes that shape every design.
 
@@ -110,7 +128,9 @@
 
 ---
 
-## Chapter 5 — Proxies, Gateways, Web Servers & Storage Types
+## Part 3 — The Traffic Layer
+
+### Chapter 5 — Proxies, Gateways, Web Servers & Storage Types
 
 **Concept:** Forward vs reverse proxy, API gateway patterns, web vs app servers, CDN push vs pull, block/object/file storage, federation, graph databases.
 
@@ -118,7 +138,7 @@
 
 ---
 
-## Chapter 6 — Load Balancing
+### Chapter 6 — Load Balancing
 
 **Concept:** L4 vs L7, algorithms (round-robin, least-conn, consistent hashing), health checks, and sticky sessions.
 
@@ -142,7 +162,7 @@
 
 ---
 
-## Chapter 7 — Caching Strategies
+### Chapter 7 — Caching Strategies
 
 **Concept:** Cache-aside, write-through/write-around/write-back, invalidation, TTLs, stampedes, and cache coherence.
 
@@ -166,7 +186,7 @@
 
 ---
 
-## Chapter 8 — Rate Limiting, Throttling & Backpressure
+### Chapter 8 — Rate Limiting, Throttling & Backpressure
 
 **Concept:** Token bucket, leaky bucket, sliding window; distributed limits; backpressure upstream.
 
@@ -190,7 +210,9 @@
 
 ---
 
-## Chapter 9 — Message Queues & Streaming (Kafka, SQS, Pub/Sub)
+## Part 4 — Messaging, Data & Events
+
+### Chapter 9 — Message Queues & Streaming (Kafka, SQS, Pub/Sub)
 
 **Concept:** Queues vs logs, at-least/at-most/exactly-once, ordering, DLQs, and stream processing.
 
@@ -214,7 +236,7 @@
 
 ---
 
-## Chapter 10 — Service Mesh & Service Discovery
+### Chapter 10 — Service Mesh & Service Discovery
 
 **Concept:** Sidecars, discovery, mTLS, retries/timeouts/circuit breaking at the mesh layer; when a mesh earns its cost.
 
@@ -238,7 +260,7 @@
 
 ---
 
-## Chapter 11 — Database Scaling
+### Chapter 11 — Database Scaling
 
 **Concept:** Read replicas, caching, sharding (key selection), partitioning, and the read/write split.
 
@@ -262,7 +284,7 @@
 
 ---
 
-## Chapter 12 — Event-Driven Systems
+### Chapter 12 — Event-Driven Systems
 
 **Concept:** Event producers/consumers, event schemas, ordering, idempotency, and eventual consistency.
 
@@ -286,7 +308,9 @@
 
 ---
 
-## Chapter 13 — Cloud Design Patterns
+## Part 5 — Cloud Patterns, Edge & Tenancy
+
+### Chapter 13 — Cloud Design Patterns
 
 **Concept:** A catalog of the named patterns for building reliable, scalable distributed applications in the cloud: messaging, data management, design and implementation, reliability, and security.
 
@@ -294,7 +318,7 @@
 
 ---
 
-## Chapter 14 — CDN, Edge & Geo-Distribution
+### Chapter 14 — CDN, Edge & Geo-Distribution
 
 **Concept:** Caching at the edge, geo-routing, data residency, and multi-region consistency.
 
@@ -318,11 +342,11 @@
 
 ---
 
-## Chapter 15 — Multi-Tenancy
+### Chapter 15 — Multi-Tenancy
 
 **Concept:** Tenant isolation models (pool, bridge, silo), data isolation, and tenant-aware routing/security.
 
-**Prereqs:** Vol 1 Ch 45, Vol 2 Ch 10.
+**Prereqs:** Vol 1 Ch 45, Vol 2 Ch 11.
 
 **Diagram:** Shared-table vs schema-per-tenant vs DB-per-tenant.
 
@@ -342,7 +366,9 @@
 
 ---
 
-## Chapter 16 — Performance Antipatterns & Monitoring
+## Part 6 — Operating & Protecting Systems
+
+### Chapter 16 — Performance Antipatterns & Monitoring
 
 **Concept:** The ten classic performance antipatterns, the bulkhead fix, and the five kinds of monitoring: health, availability, performance, security, usage.
 
@@ -350,7 +376,7 @@
 
 ---
 
-## Chapter 17 — Disaster Recovery (Backups, RTO/RPO)
+### Chapter 17 — Disaster Recovery (Backups, RTO/RPO)
 
 **Concept:** Backup strategies, restore testing, RTO/RPO, and multi-region failover.
 
@@ -374,11 +400,11 @@
 
 ---
 
-## Chapter 18 — Security at the System Level
+### Chapter 18 — Security at the System Level
 
 **Concept:** Zero-trust, IAM, secrets, encryption in transit/at rest, and blast-radius reduction.
 
-**Prereqs:** Vol 2 Ch 10.
+**Prereqs:** Vol 2 Ch 11.
 
 **Diagram:** A zero-trust architecture with identity-aware access and mTLS.
 
@@ -398,7 +424,33 @@
 
 ---
 
-## Chapter 19 — Cloud Architecture
+### Chapter 19 — Authentication & Authorization in System Design
+
+**Concept:** Where identity is checked in a large system, how it travels between services, how tokens are issued, verified, rotated, and revoked at scale, how services trust each other, how permissions are decided, and how it all survives failure.
+
+**Prereqs:** Vol 2 Ch 12, Ch 5, Ch 10, Ch 15, Ch 18.
+
+**Diagram:** Edge authentication with token exchange and service-to-service trust; the login and token lifecycle with revocation.
+
+**Example:** An Envoy `jwt_authn` filter, an Istio `AuthorizationPolicy`, an OPA policy, and a Redis revocation check.
+
+**Exercises:** (1) Why do inner services verify identity again? (2) Fix a service that trusts an `X-User-Id` header. (3) Choose a revocation design for a 10-second target.
+
+**Mini project:** A gateway, an auth service, and two services with token exchange, mTLS allow rules, and key rotation.
+
+**Design:** Design authentication for a multi-tenant B2B SaaS with enterprise SSO; for a public API platform; for a 100M-user consumer login.
+
+**Open source:** [`keycloak/keycloak`](https://github.com/keycloak/keycloak); [`spiffe/spire`](https://github.com/spiffe/spire); [`open-policy-agent/opa`](https://github.com/open-policy-agent/opa); [`authzed/spicedb`](https://github.com/authzed/spicedb).
+
+**Interview:** "Where would you authenticate in microservices?" / "How do you revoke a JWT at scale?"
+
+**Checklist:** ☐ authenticate at the edge and verify again inside ☐ default-deny service-to-service calls ☐ rotate keys with overlap ☐ keep the identity service off the per-request path
+
+---
+
+## Part 7 — Cloud, Cost & Case Studies
+
+### Chapter 20 — Cloud Architecture
 
 **Concept:** Cloud building blocks (compute, storage, networking, managed services), serverless vs containers, and cost-aware design.
 
@@ -422,11 +474,11 @@
 
 ---
 
-## Chapter 20 — Cost & Capacity Economics
+### Chapter 21 — Cost & Capacity Economics
 
 **Concept:** Unit economics, cloud cost drivers, right-sizing, and cost as a design constraint.
 
-**Prereqs:** Ch 19.
+**Prereqs:** Ch 20.
 
 **Diagram:** A cost breakdown by service with the top spenders highlighted.
 
@@ -446,7 +498,7 @@
 
 ---
 
-## Chapter 21 — The 30-System Design Portfolio
+### Chapter 22 — The 30-System Design Portfolio
 
 **Concept:** Applying every prior chapter to a portfolio of canonical designs; pattern recognition across systems.
 

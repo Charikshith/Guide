@@ -319,7 +319,7 @@ user, orders, recs = <span class="kw">await</span> asyncio.<span class="fn">gath
 <p>Gotcha: if liveness checks the database, a database outage restarts every pod at once and turns a partial failure into a total one. Keep health checks cheap and fast, and separate from deep dependency checks.</p>
 <aside class="sticky"><b>Mnemonic!</b><br>RED for services: Rate, Errors, Duration. USE for resources: Utilization, Saturation, Errors.</aside>
 <h3>Part 3 — Instrumentation, visualization and alerting</h3>
-<p><b>Instrumentation</b> means emitting metrics, logs and traces (<a href="../volume-1-cs-foundations/ch58-observability-logs-metrics-traces-and-opentelemetry.notes.html">Vol 1 Ch 58</a>, <a href="../volume-2-software-engineering/ch14-observability-logs-metrics-and-traces.notes.html">Vol 2 Ch 14</a>; using them in an incident: <a href="../volume-2-software-engineering/ch16-production-debugging.notes.html">Vol 2 Ch 16</a>) — not repeated here.</p>
+<p><b>Instrumentation</b> means emitting metrics, logs and traces (<a href="../volume-1-cs-foundations/ch58-observability-logs-metrics-traces-and-opentelemetry.notes.html">Vol 1 Ch 58</a>, <a href="../volume-2-software-engineering/ch16-observability-logs-metrics-and-traces.notes.html">Vol 2 Ch 16</a>; using them in an incident: <a href="../volume-2-software-engineering/ch18-production-debugging.notes.html">Vol 2 Ch 18</a>) — not repeated here.</p>
 <div class="wrap"><table>
 <tr><th>Method</th><th>For</th><th>Signals</th></tr>
 <tr><td>RED</td><td>request-driven services</td><td><b>R</b>ate, <b>E</b>rrors, <b>D</b>uration</td></tr>
@@ -350,8 +350,8 @@ user, orders, recs = <span class="kw">await</span> asyncio.<span class="fn">gath
 <h2>Prereqs</h2>
 <ul>
   <li><a href="../volume-1-cs-foundations/ch58-observability-logs-metrics-traces-and-opentelemetry.notes.html">Vol 1 Ch 58 — Observability: Logs, Metrics, Traces &amp; OpenTelemetry</a></li>
-  <li><a href="../volume-2-software-engineering/ch14-observability-logs-metrics-and-traces.notes.html">Vol 2 Ch 14 — Observability: Logs, Metrics &amp; Traces</a></li>
-  <li><a href="../volume-2-software-engineering/ch16-production-debugging.notes.html">Vol 2 Ch 16 — Production Debugging</a></li>
+  <li><a href="../volume-2-software-engineering/ch16-observability-logs-metrics-and-traces.notes.html">Vol 2 Ch 16 — Observability: Logs, Metrics &amp; Traces</a></li>
+  <li><a href="../volume-2-software-engineering/ch18-production-debugging.notes.html">Vol 2 Ch 18 — Production Debugging</a></li>
   <li><a href="../volume-3-low-level-design/ch14-resilience-patterns-idempotency-retries-backoff-circuit-breakers.notes.html">Vol 3 Ch 14 — Resilience Patterns: Idempotency, Retries, Backoff &amp; Circuit Breakers</a></li>
   <li><a href="ch08-rate-limiting-throttling-and-backpressure.notes.html">Ch 8 — Rate Limiting, Throttling &amp; Backpressure</a></li>
   <li><a href="ch15-multi-tenancy.notes.html">Ch 15 — Multi-Tenancy</a></li>

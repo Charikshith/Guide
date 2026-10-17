@@ -2,34 +2,58 @@
 
 > Goal: Everything beyond writing code that ships and survives production.
 >
-> **Chapters 1–16.**
+> **Chapters 1–18.**
 
 # Contents
 
-1. [Professional Git Workflow](ch01-professional-git-workflow.md)
-2. [Monorepos](ch02-monorepos.md)
-3. [Dependency Injection & Inversion of Control](ch03-dependency-injection-and-inversion-of-control.md)
-4. [The Testing Pyramid & Test Strategy](ch04-the-testing-pyramid-and-test-strategy.md)
-5. [CI/CD](ch05-ci-cd.md)
-6. [Packaging & Release Engineering](ch06-packaging-and-release-engineering.md)
-7. [Code Reviews](ch07-code-reviews.md)
-8. [Static Analysis & Type Safety at Scale](ch08-static-analysis-and-type-safety-at-scale.md)
-9. [Performance Engineering](ch09-performance-engineering.md)
-10. [Security & Threat Modeling](ch10-security-and-threat-modeling.md)
-11. [Licensing & OSS Compliance](ch11-licensing-and-oss-compliance.md)
-12. [API Design & Versioning](ch12-api-design-and-versioning.md)
-13. [Documentation as a System](ch13-documentation-as-a-system.md)
-14. [Observability: Logs, Metrics & Traces](ch14-observability-logs-metrics-and-traces.md)
-15. [Incident Response & Postmortems](ch15-incident-response-and-postmortems.md)
-16. [Production Debugging](ch16-production-debugging.md)
+1. [Version Control & Git Fundamentals](ch01-version-control-and-git-fundamentals.md)
+2. [Professional Git Workflow](ch02-professional-git-workflow.md)
+3. [Monorepos](ch03-monorepos.md)
+4. [Dependency Injection & Inversion of Control](ch04-dependency-injection-and-inversion-of-control.md)
+5. [The Testing Pyramid & Test Strategy](ch05-the-testing-pyramid-and-test-strategy.md)
+6. [CI/CD](ch06-ci-cd.md)
+7. [Packaging & Release Engineering](ch07-packaging-and-release-engineering.md)
+8. [Code Reviews](ch08-code-reviews.md)
+9. [Static Analysis & Type Safety at Scale](ch09-static-analysis-and-type-safety-at-scale.md)
+10. [Performance Engineering](ch10-performance-engineering.md)
+11. [Security & Threat Modeling](ch11-security-and-threat-modeling.md)
+12. [Authentication & Authorization](ch12-authentication-and-authorization.md)
+13. [Licensing & OSS Compliance](ch13-licensing-and-oss-compliance.md)
+14. [API Design & Versioning](ch14-api-design-and-versioning.md)
+15. [Documentation as a System](ch15-documentation-as-a-system.md)
+16. [Observability: Logs, Metrics & Traces](ch16-observability-logs-metrics-and-traces.md)
+17. [Incident Response & Postmortems](ch17-incident-response-and-postmortems.md)
+18. [Production Debugging](ch18-production-debugging.md)
 
 ---
 
-## Chapter 1 — Professional Git Workflow
+## Chapter 1 — Version Control & Git Fundamentals
+
+**Concept:** What version control is and why teams need it, why Git won, and how Git works inside: snapshots, objects, the three areas, branches as pointers, and remotes.
+
+**Prereqs:** Vol 1 Ch 16.
+
+**Diagram:** The three areas (working directory, staging, repository) and the commit → tree → blob objects behind a commit.
+
+**Example:** `git init`, `git hash-object`, `git add`, `git commit`, `git cat-file -p HEAD`, `cat .git/HEAD`.
+
+**Exercises:** (1) Show that Git names content by its hash. (2) Find the three objects behind your first commit.
+
+**Mini project:** Build a tiny version control system (`minigit`): blobs, trees, commits, log.
+
+**Open source:** [`git/git`](https://github.com/git/git); [`libgit2/libgit2`](https://github.com/libgit2/libgit2).
+
+**Interview:** "What is version control, and why Git?" / "What is a Git branch?"
+
+**Checklist:** ☐ explain version control without naming a tool ☐ explain blob, tree, commit ☐ know what `git add` and `git commit` each move ☐ never commit secrets
+
+---
+
+## Chapter 2 — Professional Git Workflow
 
 **Concept:** Trunk-based vs GitFlow, PRs, code review flow, conventional commits, and recovering from mistakes (revert, reflog).
 
-**Prereqs:** Vol 1 Ch 19–20.
+**Prereqs:** Ch 1, Vol 1 Ch 19–20.
 
 **Diagram:** A trunk-based flow: short-lived branches → PR → review → squash-merge → tag.
 
@@ -47,11 +71,11 @@
 
 ---
 
-## Chapter 2 — Monorepos
+## Chapter 3 — Monorepos
 
 **Concept:** One repo, many projects — benefits (atomic changes, shared code) and costs (scaling, tooling); workspace tooling.
 
-**Prereqs:** Ch 1.
+**Prereqs:** Ch 2.
 
 **Diagram:** A monorepo tree with shared packages and a dependency graph across them.
 
@@ -69,7 +93,7 @@
 
 ---
 
-## Chapter 3 — Dependency Injection & Inversion of Control
+## Chapter 4 — Dependency Injection & Inversion of Control
 
 **Concept:** Inject dependencies instead of constructing them; interfaces at seams; why DI enables testing and swapping implementations.
 
@@ -91,7 +115,7 @@
 
 ---
 
-## Chapter 4 — The Testing Pyramid & Test Strategy
+## Chapter 5 — The Testing Pyramid & Test Strategy
 
 **Concept:** Unit/integration/e2e proportions, test doubles, property-based testing, and flaky-test hygiene.
 
@@ -113,11 +137,11 @@
 
 ---
 
-## Chapter 5 — CI/CD
+## Chapter 6 — CI/CD
 
 **Concept:** Continuous integration (validate every change) and delivery/deployment (ship safely); pipelines as code.
 
-**Prereqs:** Ch 1.
+**Prereqs:** Ch 2.
 
 **Diagram:** A pipeline: commit → build → test → lint → stage → deploy → verify.
 
@@ -135,11 +159,11 @@
 
 ---
 
-## Chapter 6 — Packaging & Release Engineering
+## Chapter 7 — Packaging & Release Engineering
 
 **Concept:** Versioning, changelogs, artifacts, feature flags, and progressive delivery (blue-green, canary, rollbacks).
 
-**Prereqs:** Ch 5.
+**Prereqs:** Ch 6.
 
 **Diagram:** A canary ramp: 1% → 10% → 100% with rollback trigger.
 
@@ -157,7 +181,7 @@
 
 ---
 
-## Chapter 7 — Code Reviews
+## Chapter 8 — Code Reviews
 
 **Concept:** Reviewing for correctness, maintainability, security, and performance; giving and receiving feedback effectively.
 
@@ -179,7 +203,7 @@
 
 ---
 
-## Chapter 8 — Static Analysis & Type Safety at Scale
+## Chapter 9 — Static Analysis & Type Safety at Scale
 
 **Concept:** Linters/formatters/type checkers as CI gates; gradually typing a legacy codebase; design-by-contract.
 
@@ -201,7 +225,7 @@
 
 ---
 
-## Chapter 9 — Performance Engineering
+## Chapter 10 — Performance Engineering
 
 **Concept:** Profiling-driven optimization, benchmarking, caching strategies, and avoiding premature optimization.
 
@@ -223,7 +247,7 @@
 
 ---
 
-## Chapter 10 — Security & Threat Modeling
+## Chapter 11 — Security & Threat Modeling
 
 **Concept:** STRIDE/attack trees, the OWASP Top 10, secure defaults, secrets handling, and supply-chain security.
 
@@ -245,7 +269,29 @@
 
 ---
 
-## Chapter 11 — Licensing & OSS Compliance
+## Chapter 12 — Authentication & Authorization
+
+**Concept:** How a system learns who you are and decides what you may do: passwords, Basic and Digest, API keys, sessions, JWTs, access and refresh tokens, OAuth2, OpenID Connect, SSO, SAML, and access-control models (RBAC, ABAC, ReBAC).
+
+**Prereqs:** Ch 11, Vol 1 Ch 25, Ch 41, Ch 42.
+
+**Diagram:** The OAuth2 Authorization Code + PKCE flow, and a decision chart for which method to use.
+
+**Example:** `curl -u`, `Authorization: Bearer`, a client-credentials call, and verifying a JWT with pinned algorithm, audience, and issuer.
+
+**Exercises:** (1) Decode a JWT and say what is protected. (2) Fix "logout just deletes the token in the browser". (3) Pick an auth method for three systems.
+
+**Mini project:** A login service: sessions first, then JWT access tokens with refresh-token rotation and an owner check.
+
+**Open source:** [`keycloak/keycloak`](https://github.com/keycloak/keycloak); [`ory/hydra`](https://github.com/ory/hydra); [`open-policy-agent/opa`](https://github.com/open-policy-agent/opa).
+
+**Interview:** "Sessions vs JWTs?" / "OAuth2 vs OIDC?" / "How do you revoke a JWT?"
+
+**Checklist:** ☐ know authN from authZ ☐ hash passwords with Argon2id/bcrypt ☐ validate JWT signature, alg, exp, iss, aud ☐ Authorization Code + PKCE ☐ check authorization per object
+
+---
+
+## Chapter 13 — Licensing & OSS Compliance
 
 **Concept:** Licenses (MIT/Apache/GPL/AGPL), attribution, and scanning dependencies for license/security issues.
 
@@ -267,7 +313,7 @@
 
 ---
 
-## Chapter 12 — API Design & Versioning
+## Chapter 14 — API Design & Versioning
 
 **Concept:** Designing clean, evolvable APIs; naming, error contracts, pagination, idempotency; versioning (URI vs header vs field).
 
@@ -289,7 +335,7 @@
 
 ---
 
-## Chapter 13 — Documentation as a System
+## Chapter 15 — Documentation as a System
 
 **Concept:** Docs that stay current — doc-as-code, API references, runbooks, ADRs, and onboarding guides.
 
@@ -311,7 +357,7 @@
 
 ---
 
-## Chapter 14 — Observability: Logs, Metrics & Traces
+## Chapter 16 — Observability: Logs, Metrics & Traces
 
 **Concept:** The three pillars, instrumentation, dashboards, SLOs/SLIs, and debugging with traces.
 
@@ -333,11 +379,11 @@
 
 ---
 
-## Chapter 15 — Incident Response & Postmortems
+## Chapter 17 — Incident Response & Postmortems
 
 **Concept:** On-call hygiene, detection→response→remediation, blameless postmortems, and driving action items.
 
-**Prereqs:** Ch 14.
+**Prereqs:** Ch 16.
 
 **Diagram:** An incident timeline (detect → mitigate → resolve → learn).
 
@@ -355,11 +401,11 @@
 
 ---
 
-## Chapter 16 — Production Debugging
+## Chapter 18 — Production Debugging
 
 **Concept:** Debugging live systems safely — read-only access, replicating in staging, graceful degradation, and forensics.
 
-**Prereqs:** Ch 15, Vol 1 Ch 27.
+**Prereqs:** Ch 17, Vol 1 Ch 27.
 
 **Diagram:** A decision flow: observe → hypothesize → reproduce in staging → fix → verify.
 

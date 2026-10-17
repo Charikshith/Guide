@@ -38,7 +38,7 @@ Factory Method, Abstract Factory, Builder, Singleton, Prototype — intent, stru
 * It hard-codes "exactly one", which often stops being true (two databases, multi-tenant).
 * Thread-safe lazy initialization is subtle in some languages.
 
-The better alternative: create one instance in `main()` and **pass it in** ([Vol 2 Ch 3](../volume-2-software-engineering/ch03-dependency-injection-and-inversion-of-control.md)) — "single instance" without "global access".
+The better alternative: create one instance in `main()` and **pass it in** ([Vol 2 Ch 4](../volume-2-software-engineering/ch04-dependency-injection-and-inversion-of-control.md)) — "single instance" without "global access".
 
 **Avoid over-applying patterns.** A factory with one product, a builder for a 3-field object, or an abstract factory with one family is ceremony. Use a pattern when it removes real duplication or decouples a real seam.
 

@@ -1,0 +1,438 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Authentication &amp; Authorization in System Design · Guide</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;700&family=Kalam:wght@400;700&family=Patrick+Hand&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/style.css?v=25fcc24e">
+<script>try{var t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t;var n=localStorage.getItem("nav");if(n)document.documentElement.dataset.nav=n;}catch(e){}</script>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <filter id="rough" filterUnits="userSpaceOnUse" x="-500" y="-500" width="3000" height="3000">
+    <feTurbulence type="fractalNoise" baseFrequency="0.03" numOctaves="2" seed="3" result="n"/>
+    <feDisplacementMap in="SourceGraphic" in2="n" scale="3"/>
+  </filter>
+  <marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+    <path d="M1 1 L9 5 L1 9" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+  </marker>
+</defs></svg>
+<div class="notebook" id="notebook">
+  <button id="menu" class="pen tl" aria-label="Show or hide contents" title="Show / hide contents">☰</button>
+  <button id="theme" class="pen tr" aria-label="Toggle theme" title="Light / dark desk">◐</button>
+  <nav id="sidebar" aria-label="Contents"></nav>
+  <main><article id="content" class="page">Loading…</article></main>
+</div>
+<textarea id="source" hidden># Chapter 19 — Authentication &amp; Authorization in System Design
+
+&gt; **Volume 4 — High-Level Design** · [Contents](index.md) · ← [Chapter 18 — Security at the System Level](ch18-security-at-the-system-level.md) · Next → [Chapter 20 — Cloud Architecture](ch20-cloud-architecture.md)
+
+---
+
+## Concept
+
+Where identity is checked in a large system, how it travels between services, how tokens are issued, verified, rotated, and revoked at scale, how services trust each other, how permissions are decided, and how all of it survives failure.
+
+**In one sentence:** in a distributed system, authentication happens once at the edge and becomes a signed identity that every hop can verify cheaply, while authorization is decided by the service that owns the data, using a policy it can check in microseconds and a design that keeps working when the identity service is down.
+
+**Mental model — an airport.** You show your passport once at check-in (**authentication**, a central identity service). You get a boarding pass (**a token**). Each gate scans the pass without phoning the airline (**local verification**). Staff-only doors need a different badge (**service identity**). A cancelled pass is flagged on a list the gates sync every few minutes (**revocation**). The gate agent, not the check-in desk, decides whether *you* may board *this* flight (**authorization at the resource**).
+
+&gt; This chapter is the **design** view. For what a JWT, OAuth2 flow, or SSO *is*, read [Vol 2 Ch 12 — Authentication &amp; Authorization](../volume-2-software-engineering/ch12-authentication-and-authorization.md) first.
+
+### 1. The questions a design must answer
+
+| Question | Typical answer |
+|----------|----------------|
+| Who authenticates users? | one **identity service / IdP** (build on Keycloak, Cognito, Auth0, Okta; do not hand-roll) |
+| Where is the token first checked? | the **edge / API gateway** |
+| Do inner services re-check? | **yes** (zero trust: any hop can be reached by something unexpected) |
+| How does a service know *who* the caller is? | a **signed token** or mTLS identity, never a plain header from the network |
+| How do services call each other? | **workload identity** (mTLS / service tokens), plus per-service allow rules |
+| Who decides "may do X on Y"? | the **service that owns Y**, via a shared policy library or sidecar |
+| How do you cut off a stolen token? | short life + deny-list / version check |
+| What if the identity service is down? | existing tokens keep working; login degrades; keys are cached |
+
+### 2. Where to check: edge, service, or both
+
+| Pattern | What it does | Weakness |
+|---------|--------------|----------|
+| **Edge only** ("hard shell") | gateway checks the token; inner services trust anything that reaches them | one bypass (a misrouted call, a compromised pod) exposes everything |
+| **Per-service only** | every service verifies the token itself | duplicated logic, slow to change, uneven quality |
+| **Edge + service** (recommended) | gateway: authenticate, coarse checks (valid token, scopes, rate limit); each service: verify token or identity again and do fine-grained authorization | a little repeated work, which is cheap with local verification |
+| **Mesh-enforced** | the sidecar (Envoy/Istio) verifies JWTs and mTLS for every service | needs a mesh; app still owns object-level rules |
+
+The gateway cannot do object-level authorization ("may Priya read *invoice 42*?") because it does not own the data. That check always lives in the service.
+
+### 3. Token architecture
+
+**Pattern A — JWT everywhere.** The IdP issues a short-lived JWT; the gateway and each service verify it locally using cached public keys (JWKS). Fast, no per-request network call. Weakness: the token is readable by clients and hard to revoke.
+
+**Pattern B — opaque outside, JWT inside (the "phantom token" pattern).** Clients hold a random opaque token. The gateway exchanges it (introspection, with a cache) for a short-lived internal JWT and forwards that. Clients never see claims; revocation is instant at the gateway; internal calls stay stateless. Cost: one cached lookup at the edge.
+
+**Pattern C — token exchange for downstream calls.** When Service A calls Service B on a user's behalf, A swaps the user's token for a new one scoped to B (OAuth 2.0 Token Exchange, RFC 8693). B sees *who* (the user) and *via whom* (service A), and the token cannot be replayed against C. This limits the **confused deputy** problem, where a service with broad power is tricked into using it for the wrong user.
+
+**Propagating identity safely**
+
+* Never trust headers like `X-User-Id` just because they arrived. Accept them only from the gateway over mTLS, and have the gateway **strip** any client-supplied copy.
+* Prefer passing a **signed** token. Then identity survives queues and async hops (put the user ID and tenant in the message and re-check).
+* Keep claims small: IDs and scopes, not whole permission lists (tokens bloat headers; permissions change faster than tokens expire).
+
+### 4. Service-to-service identity
+
+Services are callers too, and "inside the network" is not proof of anything.
+
+| Mechanism | How | Notes |
+|-----------|-----|-------|
+| **mTLS with workload identity** | each workload gets a short-lived certificate naming it (SPIFFE ID such as `spiffe://prod/ns/prod/sa/orders`); both sides verify | automated by a mesh (Istio, Linkerd) or SPIRE; no shared secrets |
+| **OAuth2 Client Credentials** | the service gets a short-lived token for its own identity | good across trust zones and for third parties |
+| **Cloud workload identity** | the platform issues credentials to a pod/VM (IAM roles for service accounts) | no long-lived keys in config |
+| **Static API keys / passwords** | a shared secret | last resort; rotate, scope, and keep out of code |
+
+Identity is only half: add **allow rules** ("only `orders` may `POST /charges` on `payments`"). Default deny between services; open each path on purpose. This is what limits **blast radius** (see [Ch 18](ch18-security-at-the-system-level.md)).
+
+### 5. Keys and rotation at scale
+
+* The IdP signs with a private key (held in KMS/HSM). Everyone else gets only **public keys** from a **JWKS** endpoint.
+* Each token's header has a `kid` (key ID). **Rotate with overlap:** publish the new key, start signing with it, keep the old public key until every old token has expired.
+* Verifiers **cache JWKS** (minutes to hours) and refetch on an unknown `kid`, with a limit on refetches so a flood of bad `kid`s cannot hammer the IdP. A verifier that cannot reach the IdP keeps using its cache.
+* Allow a little **clock skew** (about 30–60 seconds) on `exp`/`nbf`, and keep servers on NTP.
+
+### 6. Revocation at scale
+
+A signed token cannot be recalled, so choose how stale a revocation may be:
+
+| Approach | Revocation delay | Cost |
+|----------|------------------|------|
+| **Short TTL only** (5–15 min) | up to the TTL | nothing extra; refresh tokens do the work |
+| **Deny-list of `jti`** in a shared cache | seconds | one cache lookup per request; list is small if TTL is short (entries only live until `exp`) |
+| **Per-user "tokens valid since" / version** | seconds | one cache lookup per request; one write revokes every token of a user |
+| **Introspection / opaque tokens** | immediate | a network call per request, or a short cache |
+| **Push revocation** (publish an event; gateways update a local list) | seconds | needs pub/sub ([Ch 9](ch09-message-queues-and-streaming-kafka-sqs-pub.md)) and a fallback if the event is missed |
+
+Pick by risk: a bank revokes in seconds; a news site can live with 15 minutes. Sensitive actions (change password, move money) should also demand a **fresh login** or a step-up check, whatever the token says.
+
+### 7. Sessions and the login path at scale
+
+* **Session store:** a Redis cluster keyed by random session ID, sharded by ID, with TTLs. Size is small: about 10M active sessions × ~0.5 KB ≈ 5 GB (a rough estimate; measure yours).
+* **Login is CPU-heavy on purpose.** Argon2id/bcrypt cost tens of milliseconds per check. At an illustrative 50 ms per hash, one core handles about 20 logins/s, so 2,000 logins/s needs roughly 100 cores. Put hashing in a **separate auth service** that scales on its own, so a login spike cannot starve the product.
+* **Credential stuffing** (attackers replaying leaked passwords) is the main threat to a login endpoint: rate-limit by IP *and* by account ([Ch 8](ch08-rate-limiting-throttling-and-backpressure.md)), check passwords against breach lists, add bot detection and MFA, and return the same error for "no such user" and "wrong password".
+* **MFA/passkeys** shift the load from "guess the password" to "steal a device". Offer passkeys, and require MFA for admin and sensitive actions.
+
+### 8. Authorization at scale
+
+| Placement | How | Good for | Watch for |
+|-----------|-----|----------|-----------|
+| **Library in each service** | the same policy package, in-process | low latency, simple | version drift across services |
+| **Sidecar PDP** (OPA/Cedar agent) | service asks `localhost` for a decision | one policy language, no network hop off-box | policy distribution and testing |
+| **Central PDP service** | all services call one decision service | one place to change rules, relationship graphs | an extra hop and a new critical dependency; cache and set tight timeouts |
+
+* **Relationship-based access (Zanzibar style)** answers "can X view doc Y?" by walking a graph (user → group → folder → doc). Systems like SpiceDB implement it. The hard part is **consistency**: a just-revoked permission must not be served from a stale cache (the "new enemy problem"), so these systems pass a consistency token with the write and check reads against it.
+* **List endpoints:** do not fetch 10,000 rows and filter in code. Push the permission filter into the query (`WHERE tenant_id = ? AND ...`, row-level security from [Ch 15](ch15-multi-tenancy.md)), or ask the PDP for the allowed IDs.
+* **Keep decisions fast:** budget a few milliseconds, cache positive decisions briefly, and make the failure mode explicit (fail **closed** for writes and sensitive reads).
+* **Audit:** log each decision (who, what, resource, allow/deny, policy version) for investigations and compliance.
+
+### 9. Multi-tenant and B2B identity
+
+* Put `tenant_id` in the token and **check it against the resource's tenant on every access**. Never take the tenant from the request body or URL alone.
+* **Enterprise SSO ("bring your own IdP"):** each customer connects their own OIDC or SAML IdP. Store per-tenant IdP config, map the user to a tenant at login (by email domain or tenant URL), and use **SCIM** to create and remove users when the customer's directory changes.
+* **Roles per tenant:** the same user may be admin in one tenant and viewer in another; model membership as (user, tenant, role).
+* **Impersonation / support access:** a separate, audited, time-boxed token, never a shared admin password.
+
+### 10. Third-party and public APIs
+
+* **Developers** get OAuth2 clients (for acting on a user's behalf: Authorization Code + PKCE) or Client Credentials (their own backend), with **scopes** the user approves.
+* **API keys** suit simple server-to-server use; attach scopes, an owner, **per-key rate limits** ([Ch 8](ch08-rate-limiting-throttling-and-backpressure.md)), and rotation.
+* **Webhooks** you send: sign the body with an HMAC and a timestamp so receivers can verify the sender and reject replays. **Webhooks** you receive: verify the signature before trusting anything.
+
+### 11. Availability and failure modes
+
+The identity service is on the critical path of *login*, but it should **not** be on the critical path of *every request*.
+
+* Local JWT verification + cached JWKS means requests keep flowing while the IdP is down; only **new logins and refreshes** fail.
+* Run the IdP multi-zone, and multi-region for large systems; replicate user and session data; practise failover.
+* Give refresh tokens a grace period for retries, and let clients back off with jitter so recovery is not a stampede.
+* **Fail closed** on security decisions, but separate *can't decide* from *denied*, and alert on spikes of either.
+* **Build vs buy:** identity is security-critical and unforgiving. Use a mature product or open-source IdP unless identity is your business.
+
+---
+
+## Prereqs
+
+* [Vol 2 Ch 12 — Authentication &amp; Authorization](../volume-2-software-engineering/ch12-authentication-and-authorization.md)
+* [Vol 2 Ch 11 — Security &amp; Threat Modeling](../volume-2-software-engineering/ch11-security-and-threat-modeling.md)
+* [Ch 5 — Proxies, Gateways, Web Servers &amp; Storage Types](ch05-proxies-gateways-web-servers-and-storage-types.md)
+* [Ch 10 — Service Mesh &amp; Service Discovery](ch10-service-mesh-and-service-discovery.md)
+* [Ch 15 — Multi-Tenancy](ch15-multi-tenancy.md)
+* [Ch 18 — Security at the System Level](ch18-security-at-the-system-level.md)
+
+---
+
+## Diagram
+
+**Edge authentication, token exchange, and service-to-service trust**
+
+```mermaid
+flowchart LR
+    C["client&lt;br/&gt;(opaque token)"] --&gt; GW["API gateway&lt;br/&gt;verify / introspect&lt;br/&gt;rate limit, coarse scopes"]
+    GW -- "swap for short-lived&lt;br/&gt;internal JWT" --&gt; O["orders service&lt;br/&gt;verify JWT locally&lt;br/&gt;object-level authz"]
+    IDP["identity service (IdP)&lt;br/&gt;login, MFA, token issue"] -. "JWKS (cached)" .-&gt; GW
+    IDP -. "JWKS (cached)" .-&gt; O
+    GW -. "introspect (cached)" .-&gt; IDP
+    O -- "mTLS + token exchange&lt;br/&gt;(on behalf of user)" --&gt; P["payments service&lt;br/&gt;allow: orders → POST /charges"]
+    O --&gt; PDP["policy sidecar (OPA)&lt;br/&gt;decision in &amp;lt; 5 ms"]
+```
+
+**Login and token lifecycle, with revocation**
+
+```mermaid
+sequenceDiagram
+    participant U as User
+    participant GW as Gateway
+    participant A as Auth service
+    participant R as Redis
+    participant S as Orders service
+    U-&gt;&gt;A: login (password + MFA)
+    A-&gt;&gt;A: Argon2id verify, rate limits
+    A-&gt;&gt;U: access JWT (10 min) + refresh token
+    U-&gt;&gt;GW: request + access JWT
+    GW-&gt;&gt;GW: verify signature, aud, exp (local)
+    GW-&gt;&gt;R: deny-list / user-version check
+    GW-&gt;&gt;S: forward with verified identity
+    S-&gt;&gt;S: authorize this user on this object
+    Note over U,A: access token expires
+    U-&gt;&gt;A: refresh token
+    A-&gt;&gt;R: mark old refresh used, store new
+    A-&gt;&gt;U: new access + new refresh
+    Note over A,R: password change or theft: bump user version, revoke refresh family
+```
+
+**Which revocation approach?**
+
+```mermaid
+flowchart TD
+    Q{"how fast must a revoked&lt;br/&gt;token stop working?"} -- "minutes are fine" --&gt; T["short TTL only"]
+    Q -- "seconds" --&gt; D{"many tokens per user?"}
+    D -- yes --&gt; V["per-user 'valid since' version in Redis"]
+    D -- no --&gt; L["deny-list of jti until exp"]
+    Q -- "immediately" --&gt; I["opaque tokens + introspection&lt;br/&gt;(cache for a few seconds)"]
+```
+
+---
+
+## Example
+
+```yaml
+# Envoy: verify JWTs at the edge (jwt_authn filter)
+http_filters:
+- name: envoy.filters.http.jwt_authn
+  typed_config:
+    "@type": type.googleapis.com/envoy.extensions.filters.http.jwt_authn.v3.JwtAuthentication
+    providers:
+      corp_idp:
+        issuer: https://auth.example.com
+        audiences: ["orders-api"]
+        remote_jwks:
+          http_uri:
+            uri: https://auth.example.com/.well-known/jwks.json
+            cluster: idp
+            timeout: 2s
+          cache_duration: 600s          # keep working if the IdP is briefly down
+        forward: false                  # do not pass the raw client token inward
+        payload_in_metadata: jwt_payload
+    rules:
+    - match: { prefix: /api/ }
+      requires: { provider_name: corp_idp }
+- name: envoy.filters.http.router
+  typed_config:
+    "@type": type.googleapis.com/envoy.extensions.filters.http.router.v3.Router
+```
+
+```yaml
+# Istio: only the orders workload may call POST /charges on payments (default deny otherwise)
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata: { name: payments-allow-orders, namespace: prod }
+spec:
+  selector:
+    matchLabels: { app: payments }
+  action: ALLOW
+  rules:
+  - from:
+    - source:
+        principals: ["cluster.local/ns/prod/sa/orders"]   # the caller's mTLS identity
+    to:
+    - operation:
+        methods: ["POST"]
+        paths: ["/charges"]
+```
+
+```rego
+# OPA policy: scope + same-tenant check. Anything not allowed is denied.
+package orders.authz
+import rego.v1
+
+default allow := false
+
+scopes := split(input.claims.scope, " ")
+
+allow if {
+    input.method == "GET"
+    "orders:read" in scopes
+    input.claims.tenant_id == input.resource.tenant_id
+}
+
+allow if {
+    input.method == "POST"
+    "orders:write" in scopes
+    input.claims.tenant_id == input.resource.tenant_id
+    input.claims.role in {"admin", "editor"}
+}
+```
+
+```python
+# Revocation check at the gateway: deny-list plus per-user "valid since" (Redis).
+def is_revoked(claims: dict, redis) -&gt; bool:
+    if redis.exists(f"revoked:jti:{claims['jti']}"):              # one token revoked
+        return True
+    valid_since = redis.get(f"user:{claims['sub']}:valid_since")  # all tokens before this time
+    return valid_since is not None and claims["iat"] &lt; int(valid_since)
+
+def revoke_user(redis, user_id: str, now: int):
+    redis.set(f"user:{user_id}:valid_since", now)                 # logout everywhere / password change
+```
+
+---
+
+## Exercises
+
+1. Why must inner services verify identity again if the gateway already did?
+
+   &lt;details&gt;&lt;summary&gt;Solution&lt;/summary&gt;Zero trust: the gateway can be bypassed (a misrouted call, a compromised pod, an internal tool), and only the service that owns the data can decide object-level access. A second local verification costs microseconds, so the safety is cheap. The gateway still does coarse checks and rate limiting; services do the fine ones.&lt;/details&gt;
+
+2. A service reads the user from an &lt;code&gt;X-User-Id&lt;/code&gt; header. What goes wrong and how do you fix it?
+
+   &lt;details&gt;&lt;summary&gt;Solution&lt;/summary&gt;Anything that can reach the service can set that header and become any user. Accept identity only from a signed token or an mTLS-authenticated gateway, make the gateway strip client-supplied copies, and have the service verify the signature itself.&lt;/details&gt;
+
+3. Revocation must take effect within 10 seconds for 5 million active users, with 20,000 requests per second. Pick an approach.
+
+   &lt;details&gt;&lt;summary&gt;Solution&lt;/summary&gt;Short access tokens (5–10 minutes) plus a per-user "valid since" value in a replicated Redis. Each request costs one cache read (about 20,000 reads/s is small for Redis; add a local cache of 1–5 seconds if needed). One write revokes every token of a user. Deny-list by &lt;code&gt;jti&lt;/code&gt; works too, but needs one entry per token. Opaque tokens give instant revocation but put the IdP or an introspection cache on every request.&lt;/details&gt;
+
+4. The identity service goes down for 20 minutes. What still works and what fails?
+
+   &lt;details&gt;&lt;summary&gt;Solution&lt;/summary&gt;Requests with valid, unexpired access tokens keep working (local verification with cached JWKS). New logins and token refreshes fail; clients with expiring tokens will start failing within the token lifetime. Mitigations: cache JWKS, multi-zone IdP, a refresh grace window, and client backoff with jitter. Security decisions still fail closed.&lt;/details&gt;
+
+5. A customer wants to log in with their own company SSO. What do you build?
+
+   &lt;details&gt;&lt;summary&gt;Solution&lt;/summary&gt;Per-tenant IdP configuration (OIDC or SAML), a tenant lookup at login (by email domain or tenant URL), mapping of the IdP user to a tenant membership and role, SCIM for provisioning and deprovisioning, and &lt;code&gt;tenant_id&lt;/code&gt; in the token, checked on every resource access. Keep a break-glass admin path in case their IdP is down.&lt;/details&gt;
+
+---
+
+## Mini project
+
+**A gateway, an auth service, and two services with token exchange and service-level allow rules.**
+
+```mermaid
+flowchart LR
+    U["curl / test client"] --&gt; GW["gateway&lt;br/&gt;(Envoy or Traefik)"]
+    GW --&gt; AUTH["auth service&lt;br/&gt;login, JWT, JWKS, refresh"]
+    GW --&gt; ORD["orders service"]
+    ORD -- "mTLS + exchanged token" --&gt; PAY["payments service"]
+    ORD --&gt; OPA["OPA sidecar"]
+    GW --&gt; RED[("Redis&lt;br/&gt;deny-list, user version")]
+```
+
+**Steps**
+
+1. Run an auth service that issues 10-minute RS256 JWTs (with `iss`, `aud`, `sub`, `tenant_id`, `scope`) and serves a JWKS endpoint.
+2. Put a gateway in front that verifies the JWT locally (cached JWKS), strips client-supplied identity headers, and checks Redis for revocation.
+3. Give `orders` a policy sidecar (OPA) that enforces scope and same-tenant access.
+4. Make `orders` call `payments` over mTLS using a token exchanged for audience `payments`; allow only that caller and path.
+5. Add rotation: publish a second signing key, switch signing, and keep serving both keys until old tokens expire.
+6. Chaos tests: stop the auth service and show existing tokens still work; revoke one user and show requests fail within the target time; call `payments` directly without a certificate and show it is refused; send a token for tenant A to tenant B's resource and show it is denied.
+
+**Done when:** all four chaos tests pass, key rotation causes zero failed requests, and every denial appears in a decision log with a reason.
+
+---
+
+## Design
+
+**Design 1 — Authentication for a multi-tenant B2B SaaS with enterprise SSO.**
+
+* **Requirements:** 5,000 tenants, 2M users, some tenants require SAML or OIDC SSO and SCIM, others use email + password with MFA; sensitive data separated per tenant; an admin console.
+* **Shape:** a hosted or self-run IdP fronts logins; per-tenant IdP federation; the gateway verifies JWTs; each service enforces `tenant_id` plus roles; SCIM endpoint for user lifecycle; audit log for every login and permission change.
+* **Decisions to justify:** build vs buy the IdP; how a login finds its tenant; how roles are stored and cached; how a tenant's IdP outage is handled (break-glass admin); whether each tenant gets its own signing key; how support impersonation is audited.
+
+**Design 2 — Identity for a public API platform.**
+
+* **Requirements:** third-party developers, 50,000 API clients, 20,000 requests per second at peak, user-granted access (OAuth2) and server-to-server keys, per-client limits and billing, instant disable of an abused key.
+* **Shape:** developer portal issues clients and keys; Authorization Code + PKCE for user access and Client Credentials for server access; API keys stored as hashes with a prefix, scopes, and an owner; the gateway checks keys/tokens (cached) and applies per-client rate limits; usage events go to a queue for billing; webhooks are HMAC-signed.
+* **Decisions to justify:** opaque keys with cached lookup versus JWT access tokens; how fast a disabled key must stop working and how you ensure it; how keys are rotated without downtime; what you log without logging secrets.
+
+**Design 3 — Login and sessions for a consumer app with 100M users.**
+
+* **Requirements:** 10M daily active users, peak 2,000 logins per second, mobile and web, social sign-in (OIDC), passkeys, strong defence against credential stuffing, revocation within 10 seconds on password change.
+* **Shape:** a dedicated auth service (autoscaled for password hashing) behind its own rate limits and bot checks; short-lived access JWT plus rotating refresh tokens in HttpOnly cookies (web) or secure storage (mobile); Redis for refresh families and the user "valid since" version; passkeys as the preferred factor; multi-region with a primary for writes or a globally replicated store.
+* **Decisions to justify:** sessions versus tokens for web; how many cores the login path needs and where hashing runs; how to rate-limit by IP and by account without locking out real users; whether login is multi-region active-active, and how to avoid a password change taking effect only in one region.
+
+---
+
+## Open source
+
+* [`keycloak/keycloak`](https://github.com/keycloak/keycloak) and [`ory/hydra`](https://github.com/ory/hydra) — identity providers and OAuth2/OIDC servers.
+* [`spiffe/spire`](https://github.com/spiffe/spire) — workload identity (SPIFFE IDs and short-lived certificates).
+* [`envoyproxy/envoy`](https://github.com/envoyproxy/envoy) — the `jwt_authn` and external authorization filters; [`oauth2-proxy/oauth2-proxy`](https://github.com/oauth2-proxy/oauth2-proxy) — put OIDC login in front of an app.
+* [`open-policy-agent/opa`](https://github.com/open-policy-agent/opa) and [`authzed/spicedb`](https://github.com/authzed/spicedb) — policy engine and Zanzibar-style relationship-based authorization.
+* [`hashicorp/vault`](https://github.com/hashicorp/vault) — dynamic credentials and a transit/signing engine.
+
+---
+
+## Interview
+
+1. **"Where would you authenticate in a microservices system?"**
+   &lt;details&gt;&lt;summary&gt;Answer&lt;/summary&gt;At the edge (API gateway) first: verify the token, apply rate limits and coarse scope checks. Then inside each service verify the signed identity again (local JWT verification or mTLS) and do object-level authorization, because only the service owns the data and the gateway can be bypassed. The identity service issues tokens; it is not called on every request.&lt;/details&gt;
+
+2. **"How do services call each other securely?"**
+   &lt;details&gt;&lt;summary&gt;Answer&lt;/summary&gt;Give each workload a short-lived identity (mTLS certificates via a mesh or SPIRE, or client-credentials tokens), verify it on both sides, and add default-deny allow rules per caller and path. When acting for a user, exchange the user's token for one scoped to the next service so identity propagates without replay or confused-deputy problems.&lt;/details&gt;
+
+3. **"JWT revocation at scale: how?"**
+   &lt;details&gt;&lt;summary&gt;Answer&lt;/summary&gt;Keep access tokens short (minutes) so revocation is bounded. For faster cut-off, store a per-user "valid since" version (or a &lt;code&gt;jti&lt;/code&gt; deny-list) in a replicated cache that the gateway checks — a single cheap read — and revoke refresh tokens. If immediate revocation is required, use opaque tokens with a cached introspection call.&lt;/details&gt;
+
+4. **"What happens to your system if the auth service is down?"**
+   &lt;details&gt;&lt;summary&gt;Answer&lt;/summary&gt;Valid tokens keep working because verification is local with cached public keys. New logins and refreshes fail, so tokens expire into errors within their lifetime. Reduce the impact with a multi-zone or multi-region IdP, JWKS caching, a refresh grace window, client backoff, and fail-closed security decisions with clear alerting.&lt;/details&gt;
+
+5. **"How would you design enterprise SSO for a multi-tenant SaaS?"**
+   &lt;details&gt;&lt;summary&gt;Answer&lt;/summary&gt;Per-tenant OIDC/SAML federation to the customer's IdP, tenant resolution at login (domain or tenant URL), tenant memberships and roles in your database, SCIM for provisioning, &lt;code&gt;tenant_id&lt;/code&gt; in tokens checked on every resource access, per-tenant audit logs, and a break-glass admin path for IdP outages.&lt;/details&gt;
+
+6. **"Centralized policy service or library per service?"**
+   &lt;details&gt;&lt;summary&gt;Answer&lt;/summary&gt;A library or sidecar gives low latency and no new network dependency, but risks version drift. A central decision service gives one place to change rules and supports relationship graphs, but adds a hop and a critical dependency, so cache decisions and set tight timeouts. Many systems use a shared policy language (OPA/Cedar) with sidecar evaluation and central policy distribution.&lt;/details&gt;
+
+7. **"How do you protect the login endpoint from credential stuffing?"**
+   &lt;details&gt;&lt;summary&gt;Answer&lt;/summary&gt;Rate-limit per IP and per account, check passwords against breach lists, add bot detection and CAPTCHA on suspicious patterns, require MFA or passkeys, return identical errors for unknown user and wrong password, and alert on spikes in failures. Run password hashing in its own scalable service so attacks cannot starve other traffic.&lt;/details&gt;
+
+---
+
+## Checklist
+
+- [ ] authenticate at the edge and verify again inside services
+- [ ] never trust identity headers that did not come from a verified source
+- [ ] give every workload an identity and default-deny service-to-service calls
+- [ ] rotate signing keys with overlap; cache JWKS
+- [ ] choose a revocation approach that matches the risk
+- [ ] keep the identity service off the per-request path
+- [ ] enforce tenant and object checks in the owning service
+- [ ] log every authorization decision
+
+---
+
+&gt; [Contents](index.md) · ← [Chapter 18 — Security at the System Level](ch18-security-at-the-system-level.md) · Next → [Chapter 20 — Cloud Architecture](ch20-cloud-architecture.md)
+</textarea>
+<textarea id="figs" hidden>["&lt;figure&gt;\n    &lt;svg viewBox=\"0 0 660 300\" role=\"img\" aria-label=\"Edge authentication: the client sends an opaque token to the gateway, which sends an internal JWT to the orders service; orders calls payments with mTLS and an exchanged token. The IdP supplies cached keys, Redis answers revoked checks, and an OPA sidecar answers allow checks.\"&gt;\n      &lt;rect class=\"sk\" x=\"170\" y=\"15\" width=\"120\" height=\"58\" rx=\"12\"/&gt;\n      &lt;text class=\"lbl b\" x=\"230\" y=\"40\" text-anchor=\"middle\"&gt;IdP&lt;/text&gt;\n      &lt;text class=\"lbl\" x=\"230\" y=\"60\" text-anchor=\"middle\" style=\"font-size:13px\"&gt;login, tokens&lt;/text&gt;\n      &lt;rect class=\"sk\" x=\"15\" y=\"125\" width=\"100\" height=\"56\" rx=\"12\"/&gt;\n      &lt;text class=\"lbl b\" x=\"65\" y=\"159\" text-anchor=\"middle\"&gt;Client&lt;/text&gt;\n      &lt;rect class=\"sk\" x=\"170\" y=\"125\" width=\"120\" height=\"56\" rx=\"12\"/&gt;\n      &lt;text class=\"lbl b\" x=\"230\" y=\"150\" text-anchor=\"middle\"&gt;Gateway&lt;/text&gt;\n      &lt;text class=\"lbl\" x=\"230\" y=\"169\" text-anchor=\"middle\" style=\"font-size:13px\"&gt;verify + limit&lt;/text&gt;\n      &lt;rect class=\"sk\" x=\"345\" y=\"125\" width=\"110\" height=\"56\" rx=\"12\"/&gt;\n      &lt;text class=\"lbl b\" x=\"400\" y=\"159\" text-anchor=\"middle\"&gt;Orders&lt;/text&gt;\n      &lt;rect class=\"sk\" x=\"510\" y=\"125\" width=\"130\" height=\"56\" rx=\"12\"/&gt;\n      &lt;text class=\"lbl b\" x=\"575\" y=\"159\" text-anchor=\"middle\"&gt;Payments&lt;/text&gt;\n      &lt;rect class=\"sk\" x=\"170\" y=\"235\" width=\"120\" height=\"50\" rx=\"12\"/&gt;\n      &lt;text class=\"lbl b\" x=\"230\" y=\"266\" text-anchor=\"middle\"&gt;Redis&lt;/text&gt;\n      &lt;rect class=\"sk\" x=\"345\" y=\"235\" width=\"110\" height=\"50\" rx=\"12\"/&gt;\n      &lt;text class=\"lbl b\" x=\"400\" y=\"266\" text-anchor=\"middle\"&gt;OPA&lt;/text&gt;\n      &lt;path class=\"sk blue\" d=\"M115 153 L 168 153\" style=\"color:var(--ink)\" marker-end=\"url(#arr)\"/&gt;\n      &lt;text class=\"lbl r\" x=\"141\" y=\"116\" text-anchor=\"middle\" style=\"font-size:13px\"&gt;opaque&lt;/text&gt;\n      &lt;path class=\"sk blue\" d=\"M290 153 L 343 153\" style=\"color:var(--ink)\" marker-end=\"url(#arr)\"/&gt;\n      &lt;text class=\"lbl r\" x=\"316\" y=\"116\" text-anchor=\"middle\" style=\"font-size:13px\"&gt;int. JWT&lt;/text&gt;\n      &lt;path class=\"sk blue\" d=\"M455 153 L 508 153\" style=\"color:var(--ink)\" marker-end=\"url(#arr)\"/&gt;\n      &lt;text class=\"lbl r\" x=\"482\" y=\"116\" text-anchor=\"middle\" style=\"font-size:13px\"&gt;mTLS+swap&lt;/text&gt;\n      &lt;path class=\"sk\" d=\"M230 73 L 230 123\" style=\"color:var(--ink);stroke-dasharray:6 5\" marker-end=\"url(#arr)\"/&gt;\n      &lt;path class=\"sk\" d=\"M290 44 C 340 44, 395 70, 400 123\" style=\"color:var(--ink);stroke-dasharray:6 5\" marker-end=\"url(#arr)\"/&gt;\n      &lt;text class=\"lbl\" x=\"345\" y=\"36\" style=\"font-size:13px\"&gt;JWKS cached&lt;/text&gt;\n      &lt;path class=\"sk green\" d=\"M230 181 L 230 233\" style=\"color:var(--green)\" marker-end=\"url(#arr)\"/&gt;\n      &lt;text class=\"lbl g\" x=\"244\" y=\"212\" style=\"font-size:13px\"&gt;revoked?&lt;/text&gt;\n      &lt;path class=\"sk green\" d=\"M400 181 L 400 233\" style=\"color:var(--green)\" marker-end=\"url(#arr)\"/&gt;\n      &lt;text class=\"lbl g\" x=\"414\" y=\"212\" style=\"font-size:13px\"&gt;allow?&lt;/text&gt;\n      &lt;text class=\"lbl r\" x=\"575\" y=\"208\" text-anchor=\"middle\" style=\"font-size:13px\"&gt;allow: orders&lt;/text&gt;\n      &lt;text class=\"lbl r\" x=\"575\" y=\"226\" text-anchor=\"middle\" style=\"font-size:13px\"&gt;\u2192 POST /charges&lt;/text&gt;\n    &lt;/svg&gt;\n    &lt;figcaption&gt;Fig 1: edge auth, token swap, and service-to-service trust. Dashed = cached key distribution.&lt;/figcaption&gt;\n  &lt;/figure&gt;", "&lt;figure&gt;\n    &lt;svg viewBox=\"0 0 660 185\" role=\"img\" aria-label=\"Revocation approaches from cheap and slow to costly and immediate: short TTL, valid-since or deny-list, push event, opaque with introspection.\"&gt;\n      &lt;rect class=\"sk\" x=\"15\" y=\"25\" width=\"120\" height=\"85\" rx=\"12\"/&gt;\n      &lt;text class=\"lbl b\" x=\"75\" y=\"58\" text-anchor=\"middle\"&gt;short TTL&lt;/text&gt;\n      &lt;text class=\"lbl\" x=\"75\" y=\"84\" text-anchor=\"middle\" style=\"font-size:14px\"&gt;minutes&lt;/text&gt;\n      &lt;rect class=\"sk\" x=\"185\" y=\"25\" width=\"120\" height=\"85\" rx=\"12\"/&gt;\n      &lt;text class=\"lbl b\" x=\"245\" y=\"52\" text-anchor=\"middle\" style=\"font-size:15px\"&gt;valid-since&lt;/text&gt;\n      &lt;text class=\"lbl b\" x=\"245\" y=\"72\" text-anchor=\"middle\" style=\"font-size:15px\"&gt;/ deny-list&lt;/text&gt;\n      &lt;text class=\"lbl\" x=\"245\" y=\"97\" text-anchor=\"middle\" style=\"font-size:14px\"&gt;seconds&lt;/text&gt;\n      &lt;rect class=\"sk\" x=\"355\" y=\"25\" width=\"120\" height=\"85\" rx=\"12\"/&gt;\n      &lt;text class=\"lbl b\" x=\"415\" y=\"58\" text-anchor=\"middle\"&gt;push event&lt;/text&gt;\n      &lt;text class=\"lbl\" x=\"415\" y=\"84\" text-anchor=\"middle\" style=\"font-size:14px\"&gt;seconds&lt;/text&gt;\n      &lt;rect class=\"sk\" x=\"525\" y=\"25\" width=\"120\" height=\"85\" rx=\"12\"/&gt;\n      &lt;text class=\"lbl b\" x=\"585\" y=\"52\" text-anchor=\"middle\" style=\"font-size:15px\"&gt;opaque +&lt;/text&gt;\n      &lt;text class=\"lbl b\" x=\"585\" y=\"72\" text-anchor=\"middle\" style=\"font-size:15px\"&gt;introspect&lt;/text&gt;\n      &lt;text class=\"lbl\" x=\"585\" y=\"97\" text-anchor=\"middle\" style=\"font-size:14px\"&gt;instant&lt;/text&gt;\n      &lt;path class=\"sk red\" d=\"M15 140 C 200 132, 450 148, 640 140\" style=\"color:var(--red)\" marker-end=\"url(#arr)\"/&gt;\n      &lt;text class=\"lbl r\" x=\"330\" y=\"172\" text-anchor=\"middle\" style=\"font-size:14px\"&gt;cost per request + moving parts grow \u2192&lt;/text&gt;\n    &lt;/svg&gt;\n    &lt;figcaption&gt;Fig 2: faster revocation costs more per request. Choose by risk.&lt;/figcaption&gt;\n  &lt;/figure&gt;", null, null]</textarea>
+<textarea id="codes" hidden>{"# Envoy: verify JWTs at the edge (jwt_authn filter)\nhttp_filters:\n- name: envoy.filters.http.jwt_authn\n  typed_config:\n    \"@type\": type.googleapis.com/envoy.extensions.filters.http.jwt_authn.v3.JwtAuthentication\n    providers:\n      corp_idp:\n        issuer: https://auth.example.com\n        audiences: [\"orders-api\"]\n        remote_jwks:\n          http_uri:\n            uri: https://auth.example.com/.well-known/jwks.json\n            cluster: idp\n            timeout: 2s\n          cache_duration: 600s          # keep working if the IdP is briefly down\n        forward: false                  # do not pass the raw client token inward\n        payload_in_metadata: jwt_payload\n    rules:\n    - match: { prefix: /api/ }\n      requires: { provider_name: corp_idp }\n- name: envoy.filters.http.router\n  typed_config:\n    \"@type\": type.googleapis.com/envoy.extensions.filters.http.router.v3.Router": "&lt;span class=\"cm\"&gt;# Envoy: verify JWTs at the edge (jwt_authn filter)&lt;/span&gt;\n&lt;span class=\"bi\"&gt;http_filters&lt;/span&gt;:\n&lt;span class=\"bi\"&gt;- name&lt;/span&gt;: envoy.filters.http.jwt_authn\n&lt;span class=\"bi\"&gt;  typed_config&lt;/span&gt;:\n    &lt;span class=\"st\"&gt;\"@type\"&lt;/span&gt;: type.googleapis.com/envoy.extensions.filters.http.jwt_authn.v3.JwtAuthentication\n&lt;span class=\"bi\"&gt;    providers&lt;/span&gt;:\n&lt;span class=\"bi\"&gt;      corp_idp&lt;/span&gt;:\n&lt;span class=\"bi\"&gt;        issuer&lt;/span&gt;: https://auth.example.com\n&lt;span class=\"bi\"&gt;        audiences&lt;/span&gt;: [&lt;span class=\"st\"&gt;\"orders-api\"&lt;/span&gt;]\n&lt;span class=\"bi\"&gt;        remote_jwks&lt;/span&gt;:\n&lt;span class=\"bi\"&gt;          http_uri&lt;/span&gt;:\n&lt;span class=\"bi\"&gt;            uri&lt;/span&gt;: https://auth.example.com/.well-known/jwks.json\n&lt;span class=\"bi\"&gt;            cluster&lt;/span&gt;: idp\n&lt;span class=\"bi\"&gt;            timeout&lt;/span&gt;: &lt;span class=\"nu\"&gt;2s&lt;/span&gt;\n&lt;span class=\"bi\"&gt;          cache_duration&lt;/span&gt;: &lt;span class=\"nu\"&gt;600s&lt;/span&gt;          &lt;span class=\"cm\"&gt;# keep working if the IdP is briefly down&lt;/span&gt;\n&lt;span class=\"bi\"&gt;        forward&lt;/span&gt;: &lt;span class=\"kw\"&gt;false&lt;/span&gt;                  &lt;span class=\"cm\"&gt;# do not pass the raw client token inward&lt;/span&gt;\n&lt;span class=\"bi\"&gt;        payload_in_metadata&lt;/span&gt;: jwt_payload\n&lt;span class=\"bi\"&gt;    rules&lt;/span&gt;:\n&lt;span class=\"bi\"&gt;    - match&lt;/span&gt;: { prefix: /api/ }\n&lt;span class=\"bi\"&gt;      requires&lt;/span&gt;: { provider_name: corp_idp }\n&lt;span class=\"bi\"&gt;- name&lt;/span&gt;: envoy.filters.http.router\n&lt;span class=\"bi\"&gt;  typed_config&lt;/span&gt;:\n    &lt;span class=\"st\"&gt;\"@type\"&lt;/span&gt;: type.googleapis.com/envoy.extensions.filters.http.router.v3.Router", "# Istio: only the orders workload may call POST /charges on payments (default deny otherwise)\napiVersion: security.istio.io/v1\nkind: AuthorizationPolicy\nmetadata: { name: payments-allow-orders, namespace: prod }\nspec:\n  selector:\n    matchLabels: { app: payments }\n  action: ALLOW\n  rules:\n  - from:\n    - source:\n        principals: [\"cluster.local/ns/prod/sa/orders\"]   # the caller's mTLS identity\n    to:\n    - operation:\n        methods: [\"POST\"]\n        paths: [\"/charges\"]": "&lt;span class=\"cm\"&gt;# Istio: only the orders workload may call POST /charges on payments (default deny otherwise)&lt;/span&gt;\n&lt;span class=\"bi\"&gt;apiVersion&lt;/span&gt;: security.istio.io/v1\n&lt;span class=\"bi\"&gt;kind&lt;/span&gt;: AuthorizationPolicy\n&lt;span class=\"bi\"&gt;metadata&lt;/span&gt;: { name: payments-allow-orders, namespace: prod }\n&lt;span class=\"bi\"&gt;spec&lt;/span&gt;:\n&lt;span class=\"bi\"&gt;  selector&lt;/span&gt;:\n&lt;span class=\"bi\"&gt;    matchLabels&lt;/span&gt;: { app: payments }\n&lt;span class=\"bi\"&gt;  action&lt;/span&gt;: ALLOW\n&lt;span class=\"bi\"&gt;  rules&lt;/span&gt;:\n&lt;span class=\"bi\"&gt;  - from&lt;/span&gt;:\n&lt;span class=\"bi\"&gt;    - source&lt;/span&gt;:\n&lt;span class=\"bi\"&gt;        principals&lt;/span&gt;: [&lt;span class=\"st\"&gt;\"cluster.local/ns/prod/sa/orders\"&lt;/span&gt;]   &lt;span class=\"cm\"&gt;# the caller's mTLS identity&lt;/span&gt;\n&lt;span class=\"bi\"&gt;    to&lt;/span&gt;:\n&lt;span class=\"bi\"&gt;    - operation&lt;/span&gt;:\n&lt;span class=\"bi\"&gt;        methods&lt;/span&gt;: [&lt;span class=\"st\"&gt;\"POST\"&lt;/span&gt;]\n&lt;span class=\"bi\"&gt;        paths&lt;/span&gt;: [&lt;span class=\"st\"&gt;\"/charges\"&lt;/span&gt;]", "# Revocation check at the gateway: deny-list plus per-user \"valid since\" (Redis).\ndef is_revoked(claims: dict, redis) -&gt; bool:\n    if redis.exists(f\"revoked:jti:{claims['jti']}\"):              # one token revoked\n        return True\n    valid_since = redis.get(f\"user:{claims['sub']}:valid_since\")  # all tokens before this time\n    return valid_since is not None and claims[\"iat\"] &lt; int(valid_since)\n\ndef revoke_user(redis, user_id: str, now: int):\n    redis.set(f\"user:{user_id}:valid_since\", now)                 # logout everywhere / password change": "&lt;span class=\"cm\"&gt;# Revocation check at the gateway: deny-list plus per-user \"valid since\" (Redis).&lt;/span&gt;\n&lt;span class=\"kw\"&gt;def&lt;/span&gt; &lt;span class=\"fn\"&gt;is_revoked&lt;/span&gt;(claims: &lt;span class=\"bi\"&gt;dict&lt;/span&gt;, redis) -&amp;gt; &lt;span class=\"bi\"&gt;bool&lt;/span&gt;:\n    &lt;span class=\"kw\"&gt;if&lt;/span&gt; redis.&lt;span class=\"fn\"&gt;exists&lt;/span&gt;(&lt;span class=\"st\"&gt;f\"revoked:jti:{claims['jti']}\"&lt;/span&gt;):              &lt;span class=\"cm\"&gt;# one token revoked&lt;/span&gt;\n        &lt;span class=\"kw\"&gt;return&lt;/span&gt; &lt;span class=\"kw\"&gt;True&lt;/span&gt;\n    valid_since = redis.&lt;span class=\"fn\"&gt;get&lt;/span&gt;(&lt;span class=\"st\"&gt;f\"user:{claims['sub']}:valid_since\"&lt;/span&gt;)  &lt;span class=\"cm\"&gt;# all tokens before this time&lt;/span&gt;\n    &lt;span class=\"kw\"&gt;return&lt;/span&gt; valid_since &lt;span class=\"kw\"&gt;is&lt;/span&gt; &lt;span class=\"kw\"&gt;not&lt;/span&gt; &lt;span class=\"kw\"&gt;None&lt;/span&gt; &lt;span class=\"kw\"&gt;and&lt;/span&gt; claims[&lt;span class=\"st\"&gt;\"iat\"&lt;/span&gt;] &amp;lt; &lt;span class=\"bi\"&gt;int&lt;/span&gt;(valid_since)\n\n&lt;span class=\"kw\"&gt;def&lt;/span&gt; &lt;span class=\"fn\"&gt;revoke_user&lt;/span&gt;(redis, user_id: &lt;span class=\"bi\"&gt;str&lt;/span&gt;, now: &lt;span class=\"bi\"&gt;int&lt;/span&gt;):\n    redis.&lt;span class=\"bi\"&gt;set&lt;/span&gt;(&lt;span class=\"st\"&gt;f\"user:{user_id}:valid_since\"&lt;/span&gt;, now)                 &lt;span class=\"cm\"&gt;# logout everywhere / password change&lt;/span&gt;"}</textarea>
+<script>window.GUIDE = { root: "../../", page: "volumes/volume-4-high-level-design/ch19-authentication-and-authorization-in-system-design.html", nav: [{"title": "Volume 0 \u2014 Math & Mental Models", "goal": "The math the rest of the book silently assumes. Load-bearing for algorithms (Vol 1 Part 4) and all of AI (Vol 5).", "index": "volumes/volume-0-math/index.html", "chapters": [{"n": 1, "title": "Logic & Boolean Algebra", "part": null, "md": "volumes/volume-0-math/ch01-logic-and-boolean-algebra.md", "page": "volumes/volume-0-math/ch01-logic-and-boolean-algebra.html", "exists": true}, {"n": 2, "title": "Sets, Relations & Functions", "part": null, "md": "volumes/volume-0-math/ch02-sets-relations-and-functions.md", "page": "volumes/volume-0-math/ch02-sets-relations-and-functions.html", "exists": true}, {"n": 3, "title": "Combinatorics & Counting", "part": null, "md": "volumes/volume-0-math/ch03-combinatorics-and-counting.md", "page": "volumes/volume-0-math/ch03-combinatorics-and-counting.html", "exists": true}, {"n": 4, "title": "Graph Theory Foundations", "part": null, "md": "volumes/volume-0-math/ch04-graph-theory-foundations.md", "page": "volumes/volume-0-math/ch04-graph-theory-foundations.html", "exists": true}, {"n": 5, "title": "Proof by Induction", "part": null, "md": "volumes/volume-0-math/ch05-proof-by-induction.md", "page": "volumes/volume-0-math/ch05-proof-by-induction.html", "exists": true}, {"n": 6, "title": "Asymptotic Notation (Big-O, \u0398, \u03a9)", "part": null, "md": "volumes/volume-0-math/ch06-asymptotic-notation-big-o.md", "page": "volumes/volume-0-math/ch06-asymptotic-notation-big-o.html", "exists": true}, {"n": 7, "title": "Time/Space Complexity & Amortized Analysis", "part": null, "md": "volumes/volume-0-math/ch07-time-space-complexity-and-amortized-analysis.md", "page": "volumes/volume-0-math/ch07-time-space-complexity-and-amortized-analysis.html", "exists": true}, {"n": 8, "title": "Probability, Distributions & Bayes", "part": null, "md": "volumes/volume-0-math/ch08-probability-distributions-and-bayes.md", "page": "volumes/volume-0-math/ch08-probability-distributions-and-bayes.html", "exists": true}, {"n": 9, "title": "Linear Algebra for AI", "part": null, "md": "volumes/volume-0-math/ch09-linear-algebra-for-ai.md", "page": "volumes/volume-0-math/ch09-linear-algebra-for-ai.html", "exists": true}]}, {"title": "Volume 1 \u2014 Computer Science Foundations", "goal": "Understand how computers work from the hardware up to applications.", "index": "volumes/volume-1-cs-foundations/index.html", "chapters": [{"n": 1, "title": "Variables, Data Types & Operators", "part": "Programming Fundamentals", "md": "volumes/volume-1-cs-foundations/ch01-variables-data-types-and-operators.md", "page": "volumes/volume-1-cs-foundations/ch01-variables-data-types-and-operators.html", "exists": true}, {"n": 2, "title": "Control Flow", "part": "Programming Fundamentals", "md": "volumes/volume-1-cs-foundations/ch02-control-flow.md", "page": "volumes/volume-1-cs-foundations/ch02-control-flow.html", "exists": true}, {"n": 3, "title": "Functions, Parameters, Return Values, Scope & Namespaces", "part": "Programming Fundamentals", "md": "volumes/volume-1-cs-foundations/ch03-functions-parameters-return-values-scope-and-namespaces.md", "page": "volumes/volume-1-cs-foundations/ch03-functions-parameters-return-values-scope-and-namespaces.html", "exists": true}, {"n": 4, "title": "Built-in Data Structures", "part": "Programming Fundamentals", "md": "volumes/volume-1-cs-foundations/ch04-built-in-data-structures.md", "page": "volumes/volume-1-cs-foundations/ch04-built-in-data-structures.html", "exists": true}, {"n": 5, "title": "Modules, Packages, Imports & Dependency Management", "part": "Programming Fundamentals", "md": "volumes/volume-1-cs-foundations/ch05-modules-packages-imports-and-dependency-management.md", "page": "volumes/volume-1-cs-foundations/ch05-modules-packages-imports-and-dependency-management.html", "exists": true}, {"n": 6, "title": "Error Handling", "part": "Programming Fundamentals", "md": "volumes/volume-1-cs-foundations/ch06-error-handling.md", "page": "volumes/volume-1-cs-foundations/ch06-error-handling.html", "exists": true}, {"n": 7, "title": "File I/O", "part": "Programming Fundamentals", "md": "volumes/volume-1-cs-foundations/ch07-file-i-o.md", "page": "volumes/volume-1-cs-foundations/ch07-file-i-o.html", "exists": true}, {"n": 8, "title": "Data Formats (Text): JSON, CSV, XML, YAML, TOML", "part": "Programming Fundamentals", "md": "volumes/volume-1-cs-foundations/ch08-data-formats-text-json-csv-xml-yaml.md", "page": "volumes/volume-1-cs-foundations/ch08-data-formats-text-json-csv-xml-yaml.html", "exists": true}, {"n": 9, "title": "Character Encoding & Binary Serialization", "part": "Programming Fundamentals", "md": "volumes/volume-1-cs-foundations/ch09-character-encoding-and-binary-serialization.md", "page": "volumes/volume-1-cs-foundations/ch09-character-encoding-and-binary-serialization.html", "exists": true}, {"n": 10, "title": "Generics, Traits, Interfaces & Abstract Classes", "part": "Programming Fundamentals", "md": "volumes/volume-1-cs-foundations/ch10-generics-traits-interfaces-and-abstract-classes.md", "page": "volumes/volume-1-cs-foundations/ch10-generics-traits-interfaces-and-abstract-classes.html", "exists": true}, {"n": 11, "title": "Advanced Language Features", "part": "Programming Fundamentals", "md": "volumes/volume-1-cs-foundations/ch11-advanced-language-features.md", "page": "volumes/volume-1-cs-foundations/ch11-advanced-language-features.html", "exists": true}, {"n": 12, "title": "Memory: Stack, Heap, Ownership & Garbage Collection", "part": "Programming Fundamentals", "md": "volumes/volume-1-cs-foundations/ch12-memory-stack-heap-ownership-and-garbage-collection.md", "page": "volumes/volume-1-cs-foundations/ch12-memory-stack-heap-ownership-and-garbage-collection.html", "exists": true}, {"n": 13, "title": "Concurrency: Threads, Processes, Async, Futures & Coroutines", "part": "Programming Fundamentals", "md": "volumes/volume-1-cs-foundations/ch13-concurrency-threads-processes-async-futures-and-coroutines.md", "page": "volumes/volume-1-cs-foundations/ch13-concurrency-threads-processes-async-futures-and-coroutines.html", "exists": true}, {"n": 14, "title": "Programming Paradigms", "part": "Programming Fundamentals", "md": "volumes/volume-1-cs-foundations/ch14-programming-paradigms.md", "page": "volumes/volume-1-cs-foundations/ch14-programming-paradigms.html", "exists": true}, {"n": 15, "title": "Correctness Traps", "part": "Programming Fundamentals", "md": "volumes/volume-1-cs-foundations/ch15-correctness-traps.md", "page": "volumes/volume-1-cs-foundations/ch15-correctness-traps.html", "exists": true}, {"n": 16, "title": "Linux: Filesystem, Shell, Bash, Permissions, Users & Groups", "part": "Developer Environment", "md": "volumes/volume-1-cs-foundations/ch16-linux-filesystem-shell-bash-permissions-users-and.md", "page": "volumes/volume-1-cs-foundations/ch16-linux-filesystem-shell-bash-permissions-users-and.html", "exists": true}, {"n": 17, "title": "Linux: Processes, Signals, Services, systemd, SSH, Cron & Networking", "part": "Developer Environment", "md": "volumes/volume-1-cs-foundations/ch17-linux-processes-signals-services-systemd-ssh-cron.md", "page": "volumes/volume-1-cs-foundations/ch17-linux-processes-signals-services-systemd-ssh-cron.html", "exists": true}, {"n": 18, "title": "Terminal Tools: grep, sed, awk, jq, curl, wget, find, xargs, tmux, rsync", "part": "Developer Environment", "md": "volumes/volume-1-cs-foundations/ch18-terminal-tools-grep-sed-awk-jq-curl.md", "page": "volumes/volume-1-cs-foundations/ch18-terminal-tools-grep-sed-awk-jq-curl.html", "exists": true}, {"n": 19, "title": "Git: Branching, Merge, Rebase & Cherry-Pick", "part": "Developer Environment", "md": "volumes/volume-1-cs-foundations/ch19-git-branching-merge-rebase-and-cherry-pick.md", "page": "volumes/volume-1-cs-foundations/ch19-git-branching-merge-rebase-and-cherry-pick.html", "exists": true}, {"n": 20, "title": "Git: Tags, Stash, Hooks & Internals", "part": "Developer Environment", "md": "volumes/volume-1-cs-foundations/ch20-git-tags-stash-hooks-and-internals.md", "page": "volumes/volume-1-cs-foundations/ch20-git-tags-stash-hooks-and-internals.html", "exists": true}, {"n": 21, "title": "Build Systems & Package Management", "part": "Developer Environment", "md": "volumes/volume-1-cs-foundations/ch21-build-systems-and-package-management.md", "page": "volumes/volume-1-cs-foundations/ch21-build-systems-and-package-management.html", "exists": true}, {"n": 22, "title": "Clean Code & Refactoring", "part": "Software Engineering Fundamentals", "md": "volumes/volume-1-cs-foundations/ch22-clean-code-and-refactoring.md", "page": "volumes/volume-1-cs-foundations/ch22-clean-code-and-refactoring.html", "exists": true}, {"n": 23, "title": "Documentation, ADRs & READMEs", "part": "Software Engineering Fundamentals", "md": "volumes/volume-1-cs-foundations/ch23-documentation-adrs-and-readmes.md", "page": "volumes/volume-1-cs-foundations/ch23-documentation-adrs-and-readmes.html", "exists": true}, {"n": 24, "title": "Logging", "part": "Software Engineering Fundamentals", "md": "volumes/volume-1-cs-foundations/ch24-logging.md", "page": "volumes/volume-1-cs-foundations/ch24-logging.html", "exists": true}, {"n": 25, "title": "Configuration & Secrets Management", "part": "Software Engineering Fundamentals", "md": "volumes/volume-1-cs-foundations/ch25-configuration-and-secrets-management.md", "page": "volumes/volume-1-cs-foundations/ch25-configuration-and-secrets-management.html", "exists": true}, {"n": 26, "title": "Testing: Unit, Integration, Mocking & Coverage", "part": "Software Engineering Fundamentals", "md": "volumes/volume-1-cs-foundations/ch26-testing-unit-integration-mocking-and-coverage.md", "page": "volumes/volume-1-cs-foundations/ch26-testing-unit-integration-mocking-and-coverage.html", "exists": true}, {"n": 27, "title": "Debugging & Profiling", "part": "Software Engineering Fundamentals", "md": "volumes/volume-1-cs-foundations/ch27-debugging-and-profiling.md", "page": "volumes/volume-1-cs-foundations/ch27-debugging-and-profiling.html", "exists": true}, {"n": 28, "title": "Static Analysis: Linters, Formatters & Type Checkers", "part": "Software Engineering Fundamentals", "md": "volumes/volume-1-cs-foundations/ch28-static-analysis-linters-formatters-and-type-checkers.md", "page": "volumes/volume-1-cs-foundations/ch28-static-analysis-linters-formatters-and-type-checkers.html", "exists": true}, {"n": 29, "title": "Basic Data Structures: Arrays, Linked Lists, Stack & Queue", "part": "Data Structures & Algorithms", "md": "volumes/volume-1-cs-foundations/ch29-basic-data-structures-arrays-linked-lists-stack.md", "page": "volumes/volume-1-cs-foundations/ch29-basic-data-structures-arrays-linked-lists-stack.html", "exists": true}, {"n": 30, "title": "Trees, BST, Heap & Trie", "part": "Data Structures & Algorithms", "md": "volumes/volume-1-cs-foundations/ch30-trees-bst-heap-and-trie.md", "page": "volumes/volume-1-cs-foundations/ch30-trees-bst-heap-and-trie.html", "exists": true}, {"n": 31, "title": "Hash Tables & Graphs", "part": "Data Structures & Algorithms", "md": "volumes/volume-1-cs-foundations/ch31-hash-tables-and-graphs.md", "page": "volumes/volume-1-cs-foundations/ch31-hash-tables-and-graphs.html", "exists": true}, {"n": 32, "title": "Advanced Structures: Segment Tree, Fenwick Tree & Union-Find", "part": "Data Structures & Algorithms", "md": "volumes/volume-1-cs-foundations/ch32-advanced-structures-segment-tree-fenwick-tree-and.md", "page": "volumes/volume-1-cs-foundations/ch32-advanced-structures-segment-tree-fenwick-tree-and.html", "exists": true}, {"n": 33, "title": "Sorting, Searching & Binary Search", "part": "Data Structures & Algorithms", "md": "volumes/volume-1-cs-foundations/ch33-sorting-searching-and-binary-search.md", "page": "volumes/volume-1-cs-foundations/ch33-sorting-searching-and-binary-search.html", "exists": true}, {"n": 34, "title": "Graph Algorithms: DFS, BFS, Topological Sort & Backtracking", "part": "Data Structures & Algorithms", "md": "volumes/volume-1-cs-foundations/ch34-graph-algorithms-dfs-bfs-topological-sort-and.md", "page": "volumes/volume-1-cs-foundations/ch34-graph-algorithms-dfs-bfs-topological-sort-and.html", "exists": true}, {"n": 35, "title": "Dynamic Programming, Greedy, Divide & Conquer, Sliding Window & Two Pointers", "part": "Data Structures & Algorithms", "md": "volumes/volume-1-cs-foundations/ch35-dynamic-programming-greedy-divide-and-conquer-sliding.md", "page": "volumes/volume-1-cs-foundations/ch35-dynamic-programming-greedy-divide-and-conquer-sliding.html", "exists": true}, {"n": 36, "title": "Binary, CPU, Registers, Cache & Memory Hierarchy", "part": "Computer Architecture", "md": "volumes/volume-1-cs-foundations/ch36-binary-cpu-registers-cache-and-memory-hierarchy.md", "page": "volumes/volume-1-cs-foundations/ch36-binary-cpu-registers-cache-and-memory-hierarchy.html", "exists": true}, {"n": 37, "title": "Instruction Cycle, Pipelining, SIMD & Virtual Memory", "part": "Computer Architecture", "md": "volumes/volume-1-cs-foundations/ch37-instruction-cycle-pipelining-simd-and-virtual-memory.md", "page": "volumes/volume-1-cs-foundations/ch37-instruction-cycle-pipelining-simd-and-virtual-memory.html", "exists": true}, {"n": 38, "title": "OS: Processes, Threads, Scheduling, Synchronization & Deadlocks", "part": "Operating Systems", "md": "volumes/volume-1-cs-foundations/ch38-os-processes-threads-scheduling-synchronization-and-deadlocks.md", "page": "volumes/volume-1-cs-foundations/ch38-os-processes-threads-scheduling-synchronization-and-deadlocks.html", "exists": true}, {"n": 39, "title": "OS: Memory Management, File Systems, System Calls & IPC", "part": "Operating Systems", "md": "volumes/volume-1-cs-foundations/ch39-os-memory-management-file-systems-system-calls.md", "page": "volumes/volume-1-cs-foundations/ch39-os-memory-management-file-systems-system-calls.html", "exists": true}, {"n": 40, "title": "Networking Fundamentals: OSI, TCP/IP, IP, Ports, DNS & NAT", "part": "Networking", "md": "volumes/volume-1-cs-foundations/ch40-networking-fundamentals-osi-tcp-ip-ip-ports.md", "page": "volumes/volume-1-cs-foundations/ch40-networking-fundamentals-osi-tcp-ip-ip-ports.html", "exists": true}, {"n": 41, "title": "Transport & Security: TCP, UDP, QUIC, TLS & HTTPS", "part": "Networking", "md": "volumes/volume-1-cs-foundations/ch41-transport-and-security-tcp-udp-quic-tls.md", "page": "volumes/volume-1-cs-foundations/ch41-transport-and-security-tcp-udp-quic-tls.html", "exists": true}, {"n": 42, "title": "HTTP, REST, GraphQL & JSON-RPC", "part": "Networking", "md": "volumes/volume-1-cs-foundations/ch42-http-rest-graphql-and-json-rpc.md", "page": "volumes/volume-1-cs-foundations/ch42-http-rest-graphql-and-json-rpc.html", "exists": true}, {"n": 43, "title": "WebSockets, gRPC, MQTT & SSE", "part": "Networking", "md": "volumes/volume-1-cs-foundations/ch43-websockets-grpc-mqtt-and-sse.md", "page": "volumes/volume-1-cs-foundations/ch43-websockets-grpc-mqtt-and-sse.html", "exists": true}, {"n": 44, "title": "Delivery: Load Balancing, Reverse Proxies & CDN", "part": "Networking", "md": "volumes/volume-1-cs-foundations/ch44-delivery-load-balancing-reverse-proxies-and-cdn.md", "page": "volumes/volume-1-cs-foundations/ch44-delivery-load-balancing-reverse-proxies-and-cdn.html", "exists": true}, {"n": 45, "title": "SQL & the Relational Model", "part": "Databases", "md": "volumes/volume-1-cs-foundations/ch45-sql-and-the-relational-model.md", "page": "volumes/volume-1-cs-foundations/ch45-sql-and-the-relational-model.html", "exists": true}, {"n": 46, "title": "Schema Design, Normalization & Indexing", "part": "Databases", "md": "volumes/volume-1-cs-foundations/ch46-schema-design-normalization-and-indexing.md", "page": "volumes/volume-1-cs-foundations/ch46-schema-design-normalization-and-indexing.html", "exists": true}, {"n": 47, "title": "ACID, Transactions & Isolation", "part": "Databases", "md": "volumes/volume-1-cs-foundations/ch47-acid-transactions-and-isolation.md", "page": "volumes/volume-1-cs-foundations/ch47-acid-transactions-and-isolation.html", "exists": true}, {"n": 48, "title": "NoSQL: MongoDB, Cassandra & DynamoDB", "part": "Databases", "md": "volumes/volume-1-cs-foundations/ch48-nosql-mongodb-cassandra-and-dynamodb.md", "page": "volumes/volume-1-cs-foundations/ch48-nosql-mongodb-cassandra-and-dynamodb.html", "exists": true}, {"n": 49, "title": "Redis, Elasticsearch, Neo4j & Vector Databases", "part": "Databases", "md": "volumes/volume-1-cs-foundations/ch49-redis-elasticsearch-neo4j-and-vector-databases.md", "page": "volumes/volume-1-cs-foundations/ch49-redis-elasticsearch-neo4j-and-vector-databases.html", "exists": true}, {"n": 50, "title": "CAP, Consistency & Consensus", "part": "Distributed Systems", "md": "volumes/volume-1-cs-foundations/ch50-cap-consistency-and-consensus.md", "page": "volumes/volume-1-cs-foundations/ch50-cap-consistency-and-consensus.html", "exists": true}, {"n": 51, "title": "Replication, Sharding, Raft & Paxos", "part": "Distributed Systems", "md": "volumes/volume-1-cs-foundations/ch51-replication-sharding-raft-and-paxos.md", "page": "volumes/volume-1-cs-foundations/ch51-replication-sharding-raft-and-paxos.html", "exists": true}, {"n": 52, "title": "Event Sourcing & CQRS (Distributed View)", "part": "Distributed Systems", "md": "volumes/volume-1-cs-foundations/ch52-event-sourcing-and-cqrs-distributed-view.md", "page": "volumes/volume-1-cs-foundations/ch52-event-sourcing-and-cqrs-distributed-view.html", "exists": true}, {"n": 53, "title": "ETL/ELT, Batch & Stream Processing", "part": "Data Engineering", "md": "volumes/volume-1-cs-foundations/ch53-etl-elt-batch-and-stream-processing.md", "page": "volumes/volume-1-cs-foundations/ch53-etl-elt-batch-and-stream-processing.html", "exists": true}, {"n": 54, "title": "Data Lakes, Warehouses & Orchestration", "part": "Data Engineering", "md": "volumes/volume-1-cs-foundations/ch54-data-lakes-warehouses-and-orchestration.md", "page": "volumes/volume-1-cs-foundations/ch54-data-lakes-warehouses-and-orchestration.html", "exists": true}, {"n": 55, "title": "Containers: Docker, Kubernetes & Helm", "part": "Cloud & Ops", "md": "volumes/volume-1-cs-foundations/ch55-containers-docker-kubernetes-and-helm.md", "page": "volumes/volume-1-cs-foundations/ch55-containers-docker-kubernetes-and-helm.html", "exists": true}, {"n": 56, "title": "IaC: Terraform, State & Config Drift", "part": "Cloud & Ops", "md": "volumes/volume-1-cs-foundations/ch56-iac-terraform-state-and-config-drift.md", "page": "volumes/volume-1-cs-foundations/ch56-iac-terraform-state-and-config-drift.html", "exists": true}, {"n": 57, "title": "CI/CD & GitHub Actions", "part": "Cloud & Ops", "md": "volumes/volume-1-cs-foundations/ch57-ci-cd-and-github-actions.md", "page": "volumes/volume-1-cs-foundations/ch57-ci-cd-and-github-actions.html", "exists": true}, {"n": 58, "title": "Observability: Logs, Metrics, Traces & OpenTelemetry", "part": "Cloud & Ops", "md": "volumes/volume-1-cs-foundations/ch58-observability-logs-metrics-traces-and-opentelemetry.md", "page": "volumes/volume-1-cs-foundations/ch58-observability-logs-metrics-traces-and-opentelemetry.html", "exists": true}, {"n": 59, "title": "Cost Awareness in the Cloud", "part": "Cloud & Ops", "md": "volumes/volume-1-cs-foundations/ch59-cost-awareness-in-the-cloud.md", "page": "volumes/volume-1-cs-foundations/ch59-cost-awareness-in-the-cloud.html", "exists": true}]}, {"title": "Volume 2 \u2014 Software Engineering", "goal": "Everything beyond writing code that ships and survives production.", "index": "volumes/volume-2-software-engineering/index.html", "chapters": [{"n": 1, "title": "Version Control & Git Fundamentals", "part": null, "md": "volumes/volume-2-software-engineering/ch01-version-control-and-git-fundamentals.md", "page": "volumes/volume-2-software-engineering/ch01-version-control-and-git-fundamentals.html", "exists": true}, {"n": 2, "title": "Professional Git Workflow", "part": null, "md": "volumes/volume-2-software-engineering/ch02-professional-git-workflow.md", "page": "volumes/volume-2-software-engineering/ch02-professional-git-workflow.html", "exists": true}, {"n": 3, "title": "Monorepos", "part": null, "md": "volumes/volume-2-software-engineering/ch03-monorepos.md", "page": "volumes/volume-2-software-engineering/ch03-monorepos.html", "exists": true}, {"n": 4, "title": "Dependency Injection & Inversion of Control", "part": null, "md": "volumes/volume-2-software-engineering/ch04-dependency-injection-and-inversion-of-control.md", "page": "volumes/volume-2-software-engineering/ch04-dependency-injection-and-inversion-of-control.html", "exists": true}, {"n": 5, "title": "The Testing Pyramid & Test Strategy", "part": null, "md": "volumes/volume-2-software-engineering/ch05-the-testing-pyramid-and-test-strategy.md", "page": "volumes/volume-2-software-engineering/ch05-the-testing-pyramid-and-test-strategy.html", "exists": true}, {"n": 6, "title": "CI/CD", "part": null, "md": "volumes/volume-2-software-engineering/ch06-ci-cd.md", "page": "volumes/volume-2-software-engineering/ch06-ci-cd.html", "exists": true}, {"n": 7, "title": "Packaging & Release Engineering", "part": null, "md": "volumes/volume-2-software-engineering/ch07-packaging-and-release-engineering.md", "page": "volumes/volume-2-software-engineering/ch07-packaging-and-release-engineering.html", "exists": true}, {"n": 8, "title": "Code Reviews", "part": null, "md": "volumes/volume-2-software-engineering/ch08-code-reviews.md", "page": "volumes/volume-2-software-engineering/ch08-code-reviews.html", "exists": true}, {"n": 9, "title": "Static Analysis & Type Safety at Scale", "part": null, "md": "volumes/volume-2-software-engineering/ch09-static-analysis-and-type-safety-at-scale.md", "page": "volumes/volume-2-software-engineering/ch09-static-analysis-and-type-safety-at-scale.html", "exists": true}, {"n": 10, "title": "Performance Engineering", "part": null, "md": "volumes/volume-2-software-engineering/ch10-performance-engineering.md", "page": "volumes/volume-2-software-engineering/ch10-performance-engineering.html", "exists": true}, {"n": 11, "title": "Security & Threat Modeling", "part": null, "md": "volumes/volume-2-software-engineering/ch11-security-and-threat-modeling.md", "page": "volumes/volume-2-software-engineering/ch11-security-and-threat-modeling.html", "exists": true}, {"n": 12, "title": "Authentication & Authorization", "part": null, "md": "volumes/volume-2-software-engineering/ch12-authentication-and-authorization.md", "page": "volumes/volume-2-software-engineering/ch12-authentication-and-authorization.html", "exists": true}, {"n": 13, "title": "Licensing & OSS Compliance", "part": null, "md": "volumes/volume-2-software-engineering/ch13-licensing-and-oss-compliance.md", "page": "volumes/volume-2-software-engineering/ch13-licensing-and-oss-compliance.html", "exists": true}, {"n": 14, "title": "API Design & Versioning", "part": null, "md": "volumes/volume-2-software-engineering/ch14-api-design-and-versioning.md", "page": "volumes/volume-2-software-engineering/ch14-api-design-and-versioning.html", "exists": true}, {"n": 15, "title": "Documentation as a System", "part": null, "md": "volumes/volume-2-software-engineering/ch15-documentation-as-a-system.md", "page": "volumes/volume-2-software-engineering/ch15-documentation-as-a-system.html", "exists": true}, {"n": 16, "title": "Observability: Logs, Metrics & Traces", "part": null, "md": "volumes/volume-2-software-engineering/ch16-observability-logs-metrics-and-traces.md", "page": "volumes/volume-2-software-engineering/ch16-observability-logs-metrics-and-traces.html", "exists": true}, {"n": 17, "title": "Incident Response & Postmortems", "part": null, "md": "volumes/volume-2-software-engineering/ch17-incident-response-and-postmortems.md", "page": "volumes/volume-2-software-engineering/ch17-incident-response-and-postmortems.html", "exists": true}, {"n": 18, "title": "Production Debugging", "part": null, "md": "volumes/volume-2-software-engineering/ch18-production-debugging.md", "page": "volumes/volume-2-software-engineering/ch18-production-debugging.html", "exists": true}]}, {"title": "Volume 3 \u2014 Low-Level Design", "goal": "Design clean, correct, maintainable components. Requires Volume 2.", "index": "volumes/volume-3-low-level-design/index.html", "chapters": [{"n": 1, "title": "OOP Fundamentals", "part": "Object-Oriented Foundations & Design Principles", "md": "volumes/volume-3-low-level-design/ch01-oop-fundamentals.md", "page": "volumes/volume-3-low-level-design/ch01-oop-fundamentals.html", "exists": true}, {"n": 2, "title": "SOLID Principles", "part": "Object-Oriented Foundations & Design Principles", "md": "volumes/volume-3-low-level-design/ch02-solid-principles.md", "page": "volumes/volume-3-low-level-design/ch02-solid-principles.html", "exists": true}, {"n": 3, "title": "Design Principles (Cohesion, Coupling, YAGNI, DRY, KISS)", "part": "Object-Oriented Foundations & Design Principles", "md": "volumes/volume-3-low-level-design/ch03-design-principles-cohesion-coupling-yagni-dry-kiss.md", "page": "volumes/volume-3-low-level-design/ch03-design-principles-cohesion-coupling-yagni-dry-kiss.html", "exists": true}, {"n": 4, "title": "UML & Diagramming", "part": "Object-Oriented Foundations & Design Principles", "md": "volumes/volume-3-low-level-design/ch04-uml-and-diagramming.md", "page": "volumes/volume-3-low-level-design/ch04-uml-and-diagramming.html", "exists": true}, {"n": 5, "title": "GoF Creational Patterns", "part": "Design Patterns (GoF)", "md": "volumes/volume-3-low-level-design/ch05-gof-creational-patterns.md", "page": "volumes/volume-3-low-level-design/ch05-gof-creational-patterns.html", "exists": true}, {"n": 6, "title": "GoF Structural Patterns", "part": "Design Patterns (GoF)", "md": "volumes/volume-3-low-level-design/ch06-gof-structural-patterns.md", "page": "volumes/volume-3-low-level-design/ch06-gof-structural-patterns.html", "exists": true}, {"n": 7, "title": "GoF Behavioral Patterns", "part": "Design Patterns (GoF)", "md": "volumes/volume-3-low-level-design/ch07-gof-behavioral-patterns.md", "page": "volumes/volume-3-low-level-design/ch07-gof-behavioral-patterns.html", "exists": true}, {"n": 8, "title": "Clean Architecture", "part": "Application Architecture", "md": "volumes/volume-3-low-level-design/ch08-clean-architecture.md", "page": "volumes/volume-3-low-level-design/ch08-clean-architecture.html", "exists": true}, {"n": 9, "title": "Hexagonal Architecture (Ports & Adapters)", "part": "Application Architecture", "md": "volumes/volume-3-low-level-design/ch09-hexagonal-architecture-ports-and-adapters.md", "page": "volumes/volume-3-low-level-design/ch09-hexagonal-architecture-ports-and-adapters.html", "exists": true}, {"n": 10, "title": "Domain-Driven Design (Tactical)", "part": "Application Architecture", "md": "volumes/volume-3-low-level-design/ch10-domain-driven-design-tactical.md", "page": "volumes/volume-3-low-level-design/ch10-domain-driven-design-tactical.html", "exists": true}, {"n": 11, "title": "Repository Pattern & Data Mapping", "part": "Application Architecture", "md": "volumes/volume-3-low-level-design/ch11-repository-pattern-and-data-mapping.md", "page": "volumes/volume-3-low-level-design/ch11-repository-pattern-and-data-mapping.html", "exists": true}, {"n": 12, "title": "Event Bus, CQRS & Event Sourcing", "part": "Application Architecture", "md": "volumes/volume-3-low-level-design/ch12-event-bus-cqrs-and-event-sourcing.md", "page": "volumes/volume-3-low-level-design/ch12-event-bus-cqrs-and-event-sourcing.html", "exists": true}, {"n": 13, "title": "Concurrency Patterns & Thread Safety", "part": "Concurrency & Resilience", "md": "volumes/volume-3-low-level-design/ch13-concurrency-patterns-and-thread-safety.md", "page": "volumes/volume-3-low-level-design/ch13-concurrency-patterns-and-thread-safety.html", "exists": true}, {"n": 14, "title": "Resilience Patterns (Idempotency, Retries, Backoff, Circuit Breakers)", "part": "Concurrency & Resilience", "md": "volumes/volume-3-low-level-design/ch14-resilience-patterns-idempotency-retries-backoff-circuit-breakers.md", "page": "volumes/volume-3-low-level-design/ch14-resilience-patterns-idempotency-retries-backoff-circuit-breakers.html", "exists": true}]}, {"title": "Volume 4 \u2014 High-Level Design", "goal": "Design systems that scale and stay reliable. Requires Volume 1 (Parts 7\u20139) and Volume 3.", "index": "volumes/volume-4-high-level-design/index.html", "chapters": [{"n": 1, "title": "Approaching a System Design Problem", "part": "Approach & Estimation", "md": "volumes/volume-4-high-level-design/ch01-approaching-a-system-design-problem.md", "page": "volumes/volume-4-high-level-design/ch01-approaching-a-system-design-problem.html", "exists": true}, {"n": 2, "title": "Capacity Planning", "part": "Approach & Estimation", "md": "volumes/volume-4-high-level-design/ch02-capacity-planning.md", "page": "volumes/volume-4-high-level-design/ch02-capacity-planning.html", "exists": true}, {"n": 3, "title": "Scalability & Reliability Fundamentals", "part": "Scalability & Distributed Foundations", "md": "volumes/volume-4-high-level-design/ch03-scalability-and-reliability-fundamentals.md", "page": "volumes/volume-4-high-level-design/ch03-scalability-and-reliability-fundamentals.html", "exists": true}, {"n": 4, "title": "Distributed Systems Patterns", "part": "Scalability & Distributed Foundations", "md": "volumes/volume-4-high-level-design/ch04-distributed-systems-patterns.md", "page": "volumes/volume-4-high-level-design/ch04-distributed-systems-patterns.html", "exists": true}, {"n": 5, "title": "Proxies, Gateways, Web Servers & Storage Types", "part": "The Traffic Layer", "md": "volumes/volume-4-high-level-design/ch05-proxies-gateways-web-servers-and-storage-types.md", "page": "volumes/volume-4-high-level-design/ch05-proxies-gateways-web-servers-and-storage-types.html", "exists": true}, {"n": 6, "title": "Load Balancing", "part": "The Traffic Layer", "md": "volumes/volume-4-high-level-design/ch06-load-balancing.md", "page": "volumes/volume-4-high-level-design/ch06-load-balancing.html", "exists": true}, {"n": 7, "title": "Caching Strategies", "part": "The Traffic Layer", "md": "volumes/volume-4-high-level-design/ch07-caching-strategies.md", "page": "volumes/volume-4-high-level-design/ch07-caching-strategies.html", "exists": true}, {"n": 8, "title": "Rate Limiting, Throttling & Backpressure", "part": "The Traffic Layer", "md": "volumes/volume-4-high-level-design/ch08-rate-limiting-throttling-and-backpressure.md", "page": "volumes/volume-4-high-level-design/ch08-rate-limiting-throttling-and-backpressure.html", "exists": true}, {"n": 9, "title": "Message Queues & Streaming (Kafka, SQS, Pub/Sub)", "part": "Messaging, Data & Events", "md": "volumes/volume-4-high-level-design/ch09-message-queues-and-streaming-kafka-sqs-pub.md", "page": "volumes/volume-4-high-level-design/ch09-message-queues-and-streaming-kafka-sqs-pub.html", "exists": true}, {"n": 10, "title": "Service Mesh & Service Discovery", "part": "Messaging, Data & Events", "md": "volumes/volume-4-high-level-design/ch10-service-mesh-and-service-discovery.md", "page": "volumes/volume-4-high-level-design/ch10-service-mesh-and-service-discovery.html", "exists": true}, {"n": 11, "title": "Database Scaling", "part": "Messaging, Data & Events", "md": "volumes/volume-4-high-level-design/ch11-database-scaling.md", "page": "volumes/volume-4-high-level-design/ch11-database-scaling.html", "exists": true}, {"n": 12, "title": "Event-Driven Systems", "part": "Messaging, Data & Events", "md": "volumes/volume-4-high-level-design/ch12-event-driven-systems.md", "page": "volumes/volume-4-high-level-design/ch12-event-driven-systems.html", "exists": true}, {"n": 13, "title": "Cloud Design Patterns", "part": "Cloud Patterns, Edge & Tenancy", "md": "volumes/volume-4-high-level-design/ch13-cloud-design-patterns.md", "page": "volumes/volume-4-high-level-design/ch13-cloud-design-patterns.html", "exists": true}, {"n": 14, "title": "CDN, Edge & Geo-Distribution", "part": "Cloud Patterns, Edge & Tenancy", "md": "volumes/volume-4-high-level-design/ch14-cdn-edge-and-geo-distribution.md", "page": "volumes/volume-4-high-level-design/ch14-cdn-edge-and-geo-distribution.html", "exists": true}, {"n": 15, "title": "Multi-Tenancy", "part": "Cloud Patterns, Edge & Tenancy", "md": "volumes/volume-4-high-level-design/ch15-multi-tenancy.md", "page": "volumes/volume-4-high-level-design/ch15-multi-tenancy.html", "exists": true}, {"n": 16, "title": "Performance Antipatterns & Monitoring", "part": "Operating & Protecting Systems", "md": "volumes/volume-4-high-level-design/ch16-performance-antipatterns-and-monitoring.md", "page": "volumes/volume-4-high-level-design/ch16-performance-antipatterns-and-monitoring.html", "exists": true}, {"n": 17, "title": "Disaster Recovery (Backups, RTO/RPO)", "part": "Operating & Protecting Systems", "md": "volumes/volume-4-high-level-design/ch17-disaster-recovery-backups-rto-rpo.md", "page": "volumes/volume-4-high-level-design/ch17-disaster-recovery-backups-rto-rpo.html", "exists": true}, {"n": 18, "title": "Security at the System Level", "part": "Operating & Protecting Systems", "md": "volumes/volume-4-high-level-design/ch18-security-at-the-system-level.md", "page": "volumes/volume-4-high-level-design/ch18-security-at-the-system-level.html", "exists": true}, {"n": 19, "title": "Authentication & Authorization in System Design", "part": "Operating & Protecting Systems", "md": "volumes/volume-4-high-level-design/ch19-authentication-and-authorization-in-system-design.md", "page": "volumes/volume-4-high-level-design/ch19-authentication-and-authorization-in-system-design.html", "exists": true}, {"n": 20, "title": "Cloud Architecture", "part": "Cloud, Cost & Case Studies", "md": "volumes/volume-4-high-level-design/ch20-cloud-architecture.md", "page": "volumes/volume-4-high-level-design/ch20-cloud-architecture.html", "exists": true}, {"n": 21, "title": "Cost & Capacity Economics", "part": "Cloud, Cost & Case Studies", "md": "volumes/volume-4-high-level-design/ch21-cost-and-capacity-economics.md", "page": "volumes/volume-4-high-level-design/ch21-cost-and-capacity-economics.html", "exists": true}, {"n": 22, "title": "The 30-System Design Portfolio", "part": "Cloud, Cost & Case Studies", "md": "volumes/volume-4-high-level-design/ch22-the-30-system-design-portfolio.md", "page": "volumes/volume-4-high-level-design/ch22-the-30-system-design-portfolio.html", "exists": true}]}, {"title": "Volume 5 \u2014 AI Systems Engineering", "goal": "Where all previous knowledge converges. Requires Volume 0 (linear algebra, probability) and Volume 1 (encoding, Ch 9).", "index": "volumes/volume-5-ai-systems/index.html", "chapters": [{"n": 1, "title": "LLM Internals", "part": null, "md": "volumes/volume-5-ai-systems/ch01-llm-internals.md", "page": "volumes/volume-5-ai-systems/ch01-llm-internals.html", "exists": true}, {"n": 2, "title": "Tokenization", "part": null, "md": "volumes/volume-5-ai-systems/ch02-tokenization.md", "page": "volumes/volume-5-ai-systems/ch02-tokenization.html", "exists": true}, {"n": 3, "title": "Transformers", "part": null, "md": "volumes/volume-5-ai-systems/ch03-transformers.md", "page": "volumes/volume-5-ai-systems/ch03-transformers.html", "exists": true}, {"n": 4, "title": "Inference & Serving", "part": null, "md": "volumes/volume-5-ai-systems/ch04-inference-and-serving.md", "page": "volumes/volume-5-ai-systems/ch04-inference-and-serving.html", "exists": true}, {"n": 5, "title": "Quantization & Efficiency", "part": null, "md": "volumes/volume-5-ai-systems/ch05-quantization-and-efficiency.md", "page": "volumes/volume-5-ai-systems/ch05-quantization-and-efficiency.html", "exists": true}, {"n": 6, "title": "Prompt Engineering & Structured Output", "part": null, "md": "volumes/volume-5-ai-systems/ch06-prompt-engineering-and-structured-output.md", "page": "volumes/volume-5-ai-systems/ch06-prompt-engineering-and-structured-output.html", "exists": true}, {"n": 7, "title": "Fine-Tuning, LoRA & PEFT", "part": null, "md": "volumes/volume-5-ai-systems/ch07-fine-tuning-lora-and-peft.md", "page": "volumes/volume-5-ai-systems/ch07-fine-tuning-lora-and-peft.html", "exists": true}, {"n": 8, "title": "Alignment, RLHF & Guardrails", "part": null, "md": "volumes/volume-5-ai-systems/ch08-alignment-rlhf-and-guardrails.md", "page": "volumes/volume-5-ai-systems/ch08-alignment-rlhf-and-guardrails.html", "exists": true}, {"n": 9, "title": "Embeddings & RAG", "part": null, "md": "volumes/volume-5-ai-systems/ch09-embeddings-and-rag.md", "page": "volumes/volume-5-ai-systems/ch09-embeddings-and-rag.html", "exists": true}, {"n": 10, "title": "Vector Databases", "part": null, "md": "volumes/volume-5-ai-systems/ch10-vector-databases.md", "page": "volumes/volume-5-ai-systems/ch10-vector-databases.html", "exists": true}, {"n": 11, "title": "Agent Frameworks & Tool Use", "part": null, "md": "volumes/volume-5-ai-systems/ch11-agent-frameworks-and-tool-use.md", "page": "volumes/volume-5-ai-systems/ch11-agent-frameworks-and-tool-use.html", "exists": true}, {"n": 12, "title": "Agent Memory", "part": null, "md": "volumes/volume-5-ai-systems/ch12-agent-memory.md", "page": "volumes/volume-5-ai-systems/ch12-agent-memory.html", "exists": true}, {"n": 13, "title": "MCP & A2A", "part": null, "md": "volumes/volume-5-ai-systems/ch13-mcp-and-a2a.md", "page": "volumes/volume-5-ai-systems/ch13-mcp-and-a2a.html", "exists": true}, {"n": 14, "title": "Multi-Agent Systems", "part": null, "md": "volumes/volume-5-ai-systems/ch14-multi-agent-systems.md", "page": "volumes/volume-5-ai-systems/ch14-multi-agent-systems.html", "exists": true}, {"n": 15, "title": "Voice Agents", "part": null, "md": "volumes/volume-5-ai-systems/ch15-voice-agents.md", "page": "volumes/volume-5-ai-systems/ch15-voice-agents.html", "exists": true}, {"n": 16, "title": "AI Observability", "part": null, "md": "volumes/volume-5-ai-systems/ch16-ai-observability.md", "page": "volumes/volume-5-ai-systems/ch16-ai-observability.html", "exists": true}, {"n": 17, "title": "Evaluation", "part": null, "md": "volumes/volume-5-ai-systems/ch17-evaluation.md", "page": "volumes/volume-5-ai-systems/ch17-evaluation.html", "exists": true}, {"n": 18, "title": "Cost & Latency Optimization", "part": null, "md": "volumes/volume-5-ai-systems/ch18-cost-and-latency-optimization.md", "page": "volumes/volume-5-ai-systems/ch18-cost-and-latency-optimization.html", "exists": true}, {"n": 19, "title": "AI Security", "part": null, "md": "volumes/volume-5-ai-systems/ch19-ai-security.md", "page": "volumes/volume-5-ai-systems/ch19-ai-security.html", "exists": true}, {"n": 20, "title": "GPU Infrastructure & the AI OS", "part": null, "md": "volumes/volume-5-ai-systems/ch20-gpu-infrastructure-and-the-ai-os.md", "page": "volumes/volume-5-ai-systems/ch20-gpu-infrastructure-and-the-ai-os.html", "exists": true}]}] };</script>
+<script src="https://cdn.jsdelivr.net/npm/marked@15/marked.min.js"></script>
+<script src="../../assets/app.js?v=625e1f67"></script>
+</body>
+</html>

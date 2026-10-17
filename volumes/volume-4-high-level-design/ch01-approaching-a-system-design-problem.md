@@ -37,7 +37,7 @@ What system design is, how HLD differs from LLD, and a repeatable method — req
 | Needs knowledge of | networking, databases, caching, queues, consistency, cloud | OOP, SOLID, design patterns, UML, concurrency |
 | Failure if skipped | system cannot meet scale, availability, or cost goals | code is rigid, untestable, hard to change |
 
-Where to go: LLD is Volume 3 ([Ch 1 OOP](../volume-3-low-level-design/ch01-oop-fundamentals.md), [Ch 2 SOLID](../volume-3-low-level-design/ch02-solid-principles.md), [Ch 4 UML](../volume-3-low-level-design/ch04-uml-and-diagramming.md)). HLD is the rest of this volume: [capacity](ch02-capacity-planning.md), [scalability and reliability](ch03-scalability-and-reliability-fundamentals.md), [caching](ch07-caching-strategies.md), [queues](ch09-message-queues-and-streaming-kafka-sqs-pub.md), [database scaling](ch11-database-scaling.md), and the worked cases in [Ch 21](ch21-the-30-system-design-portfolio.md).
+Where to go: LLD is Volume 3 ([Ch 1 OOP](../volume-3-low-level-design/ch01-oop-fundamentals.md), [Ch 2 SOLID](../volume-3-low-level-design/ch02-solid-principles.md), [Ch 4 UML](../volume-3-low-level-design/ch04-uml-and-diagramming.md)). HLD is the rest of this volume: [capacity](ch02-capacity-planning.md), [scalability and reliability](ch03-scalability-and-reliability-fundamentals.md), [caching](ch07-caching-strategies.md), [queues](ch09-message-queues-and-streaming-kafka-sqs-pub.md), [database scaling](ch11-database-scaling.md), and the worked cases in [Ch 22](ch22-the-30-system-design-portfolio.md).
 
 ### Monolith vs distributed systems
 
@@ -128,7 +128,7 @@ Steps loop: estimates may change the data model, the deep dive may expose a miss
 | Interoperability | can other systems and versions work with it? | open standards, stable contracts, schema evolution, adapters |
 | Usability | is it easy and predictable to use (also for API consumers)? | consistent naming, clear errors, good defaults, docs, SDKs |
 | Security | who can do what, and is data protected? | authN/authZ, encryption in transit and at rest, least privilege ([Ch 18](ch18-security-at-the-system-level.md)) |
-| Cost-effectiveness | does it meet needs at an affordable price? | right-sizing, autoscaling, tiered storage, build vs buy ([Ch 20](ch20-cost-and-capacity-economics.md)) |
+| Cost-effectiveness | does it meet needs at an affordable price? | right-sizing, autoscaling, tiered storage, build vs buy ([Ch 21](ch21-cost-and-capacity-economics.md)) |
 
 ### Optimization techniques
 
@@ -151,7 +151,7 @@ Optimize after measuring: profile first, change one thing, measure again.
 
 * **Module boundary:** group things that change together (high cohesion) and hide internals behind a narrow interface (low coupling). Boundaries follow business capabilities, not technical layers; they become service boundaries only when you must scale or deploy them separately.
 * **Contract:** the interface is a promise — inputs, outputs, errors, ordering, latency and idempotency expectations. Write it as OpenAPI, protobuf, or JSON Schema, and test against it (consumer-driven contract tests).
-* **Versioning:** adding optional fields is usually backward compatible; removing or renaming a field, or changing meaning, is breaking. Version in the URL or header, support old and new in parallel, deprecate with a date, and roll out schema changes in expand-then-contract steps. See [Vol 2 Ch 12 — API Design and Versioning](../volume-2-software-engineering/ch12-api-design-and-versioning.md).
+* **Versioning:** adding optional fields is usually backward compatible; removing or renaming a field, or changing meaning, is breaking. Version in the URL or header, support old and new in parallel, deprecate with a date, and roll out schema changes in expand-then-contract steps. See [Vol 2 Ch 14 — API Design and Versioning](../volume-2-software-engineering/ch14-api-design-and-versioning.md).
 
 ### Data structures and algorithms that show up in system design
 
@@ -332,7 +332,7 @@ print(moved / len(keys))   # about 0.2 (expected ~1/4): only keys that now belon
 
 1. Write a Markdown design-doc template with the 7 steps as headings, plus "Non-goals", "Open questions", and "Decisions (ADR links)".
 2. Extend the `estimate()` function into a CLI that reads a YAML file of assumptions and prints QPS, storage, bandwidth and instance counts, flagging every input as an assumption.
-3. Use it on three systems from [Chapter 21](ch21-the-30-system-design-portfolio.md): fill the template for each in 45 minutes, timed.
+3. Use it on three systems from [Chapter 22](ch22-the-30-system-design-portfolio.md): fill the template for each in 45 minutes, timed.
 4. Draw each architecture in Mermaid and the main workflow as an activity diagram.
 5. Swap with a peer; they review only for unmeasurable NFRs, single points of failure, and missing trade-offs.
 

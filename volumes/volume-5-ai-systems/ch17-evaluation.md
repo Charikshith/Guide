@@ -92,7 +92,7 @@ flowchart LR
 
 ```mermaid
 flowchart TD
-    DEV["change"] --> OFF["offline eval gate"] --> CAN["canary 5% (Vol 2 Ch 6)"]
+    DEV["change"] --> OFF["offline eval gate"] --> CAN["canary 5% (Vol 2 Ch 7)"]
     CAN --> ON["online: 👍 rate, judge on 2% sample,<br/>escalations, retries"]
     ON -- "worse" --> RB[rollback]
     ON -- "same or better" --> FULL[100%]

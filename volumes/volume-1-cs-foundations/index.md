@@ -1349,7 +1349,7 @@
 
 **Concept:** Automating build/test/deploy pipelines with GitHub Actions and deployment gates.
 
-**Prereqs:** Vol 1 Ch 21, Vol 2 Ch 5.
+**Prereqs:** Vol 1 Ch 21, Vol 2 Ch 6.
 
 **Diagram:** A workflow: push → build → test → deploy with a manual approval gate.
 

@@ -230,7 +230,7 @@ flowchart LR
 
 1. Data model: `conversations(id, title, settings)`, `messages(conversation_id, role, content, tokens, created_at)`.
 2. `/chat` takes a conversation ID and a new user message; builds `[system, …history, user]`; counts tokens and drops the oldest turns (or summarizes them) to fit the context budget.
-3. A provider interface (`stream(messages, params) -> AsyncIterator[str]`) with two implementations: your local server and a hosted API — dependency injection from [Vol 2 Ch 3](../volume-2-software-engineering/ch03-dependency-injection-and-inversion-of-control.md).
+3. A provider interface (`stream(messages, params) -> AsyncIterator[str]`) with two implementations: your local server and a hosted API — dependency injection from [Vol 2 Ch 4](../volume-2-software-engineering/ch04-dependency-injection-and-inversion-of-control.md).
 4. Stream over SSE; support "stop generating" (cancel the upstream request).
 5. Sampling controls in the UI, persisted per conversation; show token usage and cost per reply.
 6. Basic safety: per-user rate limits, max input size, and a system prompt that can't be overwritten from the UI.

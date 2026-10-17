@@ -26,7 +26,7 @@ Single responsibility, Open/closed, Liskov substitution, Interface segregation, 
 | **O** | **Open/Closed**: open for extension, closed for modification | a growing `if/elif` or `switch` on a type that you edit for every new case | a strategy/interface + one new class per case; register it |
 | **L** | **Liskov Substitution**: subtypes must be usable anywhere the base type is, without surprises | a subclass that throws `NotImplementedError`, strengthens preconditions, weakens guarantees (`Square(Rectangle)`, a read-only list extending a mutable one) | separate abstractions, or don't inherit |
 | **I** | **Interface Segregation**: clients shouldn't depend on methods they don't use | a fat `Machine` interface with `print`, `scan`, `fax`; `SimplePrinter` must stub `fax` | small role interfaces: `Printer`, `Scanner`, `Fax` |
-| **D** | **Dependency Inversion**: high-level policy depends on abstractions; details implement them | `OrderService` imports and constructs `MySQLOrderTable` and `StripeClient` | `OrderService(repo: OrderRepo, payments: PaymentGateway)`; adapters implement them ([Vol 2 Ch 3](../volume-2-software-engineering/ch03-dependency-injection-and-inversion-of-control.md)) |
+| **D** | **Dependency Inversion**: high-level policy depends on abstractions; details implement them | `OrderService` imports and constructs `MySQLOrderTable` and `StripeClient` | `OrderService(repo: OrderRepo, payments: PaymentGateway)`; adapters implement them ([Vol 2 Ch 4](../volume-2-software-engineering/ch04-dependency-injection-and-inversion-of-control.md)) |
 
 **LSP in detail — the contract rules.** A subtype may:
 

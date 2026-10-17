@@ -6,24 +6,33 @@
 
 # Contents
 
+**Part 1 — Object-Oriented Foundations & Design Principles**
 1. [OOP Fundamentals](ch01-oop-fundamentals.md)
 2. [SOLID Principles](ch02-solid-principles.md)
 3. [Design Principles (Cohesion, Coupling, YAGNI, DRY, KISS)](ch03-design-principles-cohesion-coupling-yagni-dry-kiss.md)
 4. [UML & Diagramming](ch04-uml-and-diagramming.md)
+
+**Part 2 — Design Patterns (GoF)**
 5. [GoF Creational Patterns](ch05-gof-creational-patterns.md)
 6. [GoF Structural Patterns](ch06-gof-structural-patterns.md)
 7. [GoF Behavioral Patterns](ch07-gof-behavioral-patterns.md)
+
+**Part 3 — Application Architecture**
 8. [Clean Architecture](ch08-clean-architecture.md)
 9. [Hexagonal Architecture (Ports & Adapters)](ch09-hexagonal-architecture-ports-and-adapters.md)
 10. [Domain-Driven Design (Tactical)](ch10-domain-driven-design-tactical.md)
 11. [Repository Pattern & Data Mapping](ch11-repository-pattern-and-data-mapping.md)
 12. [Event Bus, CQRS & Event Sourcing](ch12-event-bus-cqrs-and-event-sourcing.md)
+
+**Part 4 — Concurrency & Resilience**
 13. [Concurrency Patterns & Thread Safety](ch13-concurrency-patterns-and-thread-safety.md)
 14. [Resilience Patterns (Idempotency, Retries, Backoff, Circuit Breakers)](ch14-resilience-patterns-idempotency-retries-backoff-circuit-breakers.md)
 
 ---
 
-## Chapter 1 — OOP Fundamentals
+## Part 1 — Object-Oriented Foundations & Design Principles
+
+### Chapter 1 — OOP Fundamentals
 
 **Concept:** Encapsulation, inheritance, composition, polymorphism; objects as data + behavior with invariants.
 
@@ -45,7 +54,7 @@
 
 ---
 
-## Chapter 2 — SOLID Principles
+### Chapter 2 — SOLID Principles
 
 **Concept:** Single responsibility, Open/closed, Liskov substitution, Interface segregation, Dependency inversion — with violations and fixes.
 
@@ -67,7 +76,7 @@
 
 ---
 
-## Chapter 3 — Design Principles (Cohesion, Coupling, YAGNI, DRY, KISS)
+### Chapter 3 — Design Principles (Cohesion, Coupling, YAGNI, DRY, KISS)
 
 **Concept:** Cohesion vs coupling; YAGNI/DRY/KISS as heuristics, and when they conflict.
 
@@ -89,7 +98,7 @@
 
 ---
 
-## Chapter 4 — UML & Diagramming
+### Chapter 4 — UML & Diagramming
 
 **Concept:** Class, sequence, and component diagrams; reading and writing the diagrams that communicate design.
 
@@ -111,7 +120,9 @@
 
 ---
 
-## Chapter 5 — GoF Creational Patterns
+## Part 2 — Design Patterns (GoF)
+
+### Chapter 5 — GoF Creational Patterns
 
 **Concept:** Factory Method, Abstract Factory, Builder, Singleton, Prototype — intent, structure, and when to reach for each.
 
@@ -133,7 +144,7 @@
 
 ---
 
-## Chapter 6 — GoF Structural Patterns
+### Chapter 6 — GoF Structural Patterns
 
 **Concept:** Adapter, Decorator, Facade, Proxy, Bridge, Composite, Flyweight.
 
@@ -155,7 +166,7 @@
 
 ---
 
-## Chapter 7 — GoF Behavioral Patterns
+### Chapter 7 — GoF Behavioral Patterns
 
 **Concept:** Strategy, Observer, Command, State, Template Method, Chain of Responsibility, Mediator, Memento, Visitor.
 
@@ -177,7 +188,9 @@
 
 ---
 
-## Chapter 8 — Clean Architecture
+## Part 3 — Application Architecture
+
+### Chapter 8 — Clean Architecture
 
 **Concept:** Entities → use cases → interface adapters → frameworks; the dependency rule pointing inward.
 
@@ -199,7 +212,7 @@
 
 ---
 
-## Chapter 9 — Hexagonal Architecture (Ports & Adapters)
+### Chapter 9 — Hexagonal Architecture (Ports & Adapters)
 
 **Concept:** Ports (the contract) and adapters (the implementations) around a core; driving vs driven sides.
 
@@ -221,7 +234,7 @@
 
 ---
 
-## Chapter 10 — Domain-Driven Design (Tactical)
+### Chapter 10 — Domain-Driven Design (Tactical)
 
 **Concept:** Entities, value objects, aggregates, repositories, domain events, ubiquitous language; bounded contexts (intro).
 
@@ -243,7 +256,7 @@
 
 ---
 
-## Chapter 11 — Repository Pattern & Data Mapping
+### Chapter 11 — Repository Pattern & Data Mapping
 
 **Concept:** A collection-like abstraction over persistence; mapping domain objects to storage; unit of work.
 
@@ -265,7 +278,7 @@
 
 ---
 
-## Chapter 12 — Event Bus, CQRS & Event Sourcing
+### Chapter 12 — Event Bus, CQRS & Event Sourcing
 
 **Concept:** In-process event bus; command/query separation; storing events as the source of truth and projecting state.
 
@@ -287,7 +300,9 @@
 
 ---
 
-## Chapter 13 — Concurrency Patterns & Thread Safety
+## Part 4 — Concurrency & Resilience
+
+### Chapter 13 — Concurrency Patterns & Thread Safety
 
 **Concept:** Mutexes, channels, worker pools, actor model, lock-free patterns, and eliminating races.
 
@@ -309,7 +324,7 @@
 
 ---
 
-## Chapter 14 — Resilience Patterns (Idempotency, Retries, Backoff, Circuit Breakers)
+### Chapter 14 — Resilience Patterns (Idempotency, Retries, Backoff, Circuit Breakers)
 
 **Concept:** Making components survive failure — idempotency keys, retry with exponential backoff + jitter, and circuit breakers.
 

@@ -497,7 +497,7 @@ client = anthropic.<span class="fn">Anthropic</span>()
   <ol style="list-style:none;padding-left:0">
     <li>1. Data model: <code>conversations(id, title, settings)</code>, <code>messages(conversation_id, role, content, tokens, created_at)</code>.</li>
     <li>2. <code>/chat</code> takes a conversation ID and a new user message; builds <code>[system, …history, user]</code>; counts tokens and drops the oldest turns (or summarizes them) to fit the context budget.</li>
-    <li>3. A provider interface (<code>stream(messages, params) -&gt; AsyncIterator[str]</code>) with two implementations: your local server and a hosted API — dependency injection from <a href="../volume-2-software-engineering/ch03-dependency-injection-and-inversion-of-control.notes.html">Vol 2 Ch 3</a>.</li>
+    <li>3. A provider interface (<code>stream(messages, params) -&gt; AsyncIterator[str]</code>) with two implementations: your local server and a hosted API — dependency injection from <a href="../volume-2-software-engineering/ch04-dependency-injection-and-inversion-of-control.notes.html">Vol 2 Ch 4</a>.</li>
     <li>4. Stream over SSE; support "stop generating" (cancel the upstream request).</li>
     <li>5. Sampling controls in the UI, persisted per conversation; show token usage and cost per reply.</li>
     <li>6. Basic safety: per-user rate limits, max input size, and a system prompt that can't be overwritten from the UI.</li>

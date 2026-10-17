@@ -1,6 +1,6 @@
 # Chapter 18 — Security at the System Level
 
-> **Volume 4 — High-Level Design** · [Contents](index.md) · ← [Chapter 17 — Disaster Recovery (Backups, RTO/RPO)](ch17-disaster-recovery-backups-rto-rpo.md) · Next → [Chapter 19 — Cloud Architecture](ch19-cloud-architecture.md)
+> **Volume 4 — High-Level Design** · [Contents](index.md) · ← [Chapter 17 — Disaster Recovery (Backups, RTO/RPO)](ch17-disaster-recovery-backups-rto-rpo.md) · Next → [Chapter 19 — Authentication & Authorization in System Design](ch19-authentication-and-authorization-in-system-design.md)
 
 ---
 
@@ -63,7 +63,7 @@ Zero-trust, IAM, secrets, encryption in transit/at rest, and blast-radius reduct
 
 ## Prereqs
 
-* [Vol 2 Ch 10 — Security & Threat Modeling](../volume-2-software-engineering/ch10-security-and-threat-modeling.md)
+* [Vol 2 Ch 11 — Security & Threat Modeling](../volume-2-software-engineering/ch11-security-and-threat-modeling.md)
 
 ---
 
@@ -256,7 +256,7 @@ flowchart TB
 * **Human access:** SSO + MFA + managed devices; no standing prod access — just-in-time elevation with approval, time limits, and session recording.
 * **Blast radius:** an account per environment and per sensitive domain; per-service identities; cell-based deployment for the core; egress allow-lists.
 * **Supply chain:** only signed images from the internal registry are admitted (policy controller); SBOMs; dependency and image scanning in CI.
-* **Detect and respond:** central immutable audit logs, alerts on anomalous IAM or KMS use, and incident runbooks ([Vol 2 Ch 15](../volume-2-software-engineering/ch15-incident-response-and-postmortems.md)).
+* **Detect and respond:** central immutable audit logs, alerts on anomalous IAM or KMS use, and incident runbooks ([Vol 2 Ch 17](../volume-2-software-engineering/ch17-incident-response-and-postmortems.md)).
 
 ---
 
@@ -285,4 +285,4 @@ flowchart TB
 
 ---
 
-> [Contents](index.md) · ← [Chapter 17 — Disaster Recovery (Backups, RTO/RPO)](ch17-disaster-recovery-backups-rto-rpo.md) · Next → [Chapter 19 — Cloud Architecture](ch19-cloud-architecture.md)
+> [Contents](index.md) · ← [Chapter 17 — Disaster Recovery (Backups, RTO/RPO)](ch17-disaster-recovery-backups-rto-rpo.md) · Next → [Chapter 19 — Authentication & Authorization in System Design](ch19-authentication-and-authorization-in-system-design.md)

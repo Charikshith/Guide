@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ch 5 — The Testing Pyramid &amp; Test Strategy — Notes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;700&family=Kalam:wght@400;700&family=Patrick+Hand&display=swap" rel="stylesheet">
+<style>
+/* ===== Page tokens ===== */
+:root{
+  --line:32px;                 /* ruled-line spacing; every vertical size is a multiple */
+  --paper:#fdfbf4; --rule:#c9dcef; --margin:#e8a0a0;
+  --ink:#1f3a93;               /* blue pen (body) */
+  --ink2:#222;                 /* black pen (headings) */
+  --red:#c0392b; --green:#1e8449;
+  --hl-yellow:rgba(255,235,59,.55); --hl-pink:rgba(255,128,171,.45);
+  --hl-green:rgba(118,255,3,.35); --hl-blue:rgba(64,196,255,.35);
+  --sticky:#fff59d; --desk:#e9e4d8;
+  --hand:'Kalam','Patrick Hand','Comic Sans MS','Segoe Print','Bradley Hand',cursive;
+  --title:'Caveat','Kalam','Segoe Print','Bradley Hand',cursive;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){ --desk:#2b2b2b; }
+}
+:root[data-theme="dark"]{ --desk:#2b2b2b; }
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--desk);font-family:var(--hand);color:var(--ink);}
+
+/* ===== Notebook sheet ===== */
+.page{
+  position:relative; max-width:860px; margin:24px auto; padding:var(--line) 28px calc(var(--line)*2) 84px;
+  background:
+    linear-gradient(90deg,transparent 64px,var(--margin) 64px,var(--margin) 66px,transparent 66px),
+    repeating-linear-gradient(var(--paper) 0,var(--paper) calc(var(--line) - 1px),var(--rule) calc(var(--line) - 1px),var(--rule) var(--line));
+  background-color:var(--paper);
+  box-shadow:0 2px 6px rgba(0,0,0,.15),0 12px 28px rgba(0,0,0,.12);
+  font-size:20px; line-height:var(--line);
+}
+.page::before{ /* punched holes */
+  content:""; position:absolute; left:22px; top:0; bottom:0; width:18px;
+  background:radial-gradient(circle,var(--desk) 7px,transparent 8px) 0 40px/18px 220px repeat-y;
+}
+@media (max-width:600px){
+  .page{margin:0;padding-left:52px;padding-right:16px;font-size:18px;
+    background:
+      linear-gradient(90deg,transparent 40px,var(--margin) 40px,var(--margin) 42px,transparent 42px),
+      repeating-linear-gradient(var(--paper) 0,var(--paper) calc(var(--line) - 1px),var(--rule) calc(var(--line) - 1px),var(--rule) var(--line));
+    background-color:var(--paper);}
+  .page::before{left:10px;width:16px}
+}
+
+/* ===== Text (all margins are multiples of --line so text sits on the rules) ===== */
+.date{position:absolute;top:0;right:24px;font-family:var(--title);font-size:22px;color:var(--ink2);line-height:var(--line)}
+h1{font-family:var(--title);font-weight:700;color:var(--ink2);font-size:46px;line-height:calc(var(--line)*2);margin:0;transform:rotate(-1deg)}
+h1 .u{background:linear-gradient(transparent 62%,var(--hl-yellow) 62%,var(--hl-yellow) 92%,transparent 92%)}
+h2{font-family:var(--title);font-weight:700;color:var(--red);font-size:32px;line-height:calc(var(--line)*1.5);margin:calc(var(--line)*.5) 0 0}
+h2::before{content:"➤ ";font-size:22px}
+p,li{margin:0}
+ul,ol{margin:0;padding-left:28px}
+ul{list-style:none}
+ul>li::before{content:"–";position:absolute;margin-left:-20px}
+ul>li.star::before{content:"★";color:var(--red)}
+ul>li.arrow::before{content:"→"}
+ul>li.check::before{content:"✓";color:var(--green)}
+.gap{height:var(--line)}
+
+/* ===== Pen effects ===== */
+.hl{background:var(--hl-yellow);padding:0 3px;border-radius:3px 6px 4px 7px}
+.hl.pink{background:var(--hl-pink)} .hl.green{background:var(--hl-green)} .hl.blue{background:var(--hl-blue)}
+.red{color:var(--red)} .green{color:var(--green)} .black{color:var(--ink2)}
+.ul{text-decoration:underline wavy var(--red);text-underline-offset:5px}
+.circ{border:2px solid var(--red);border-radius:50% 45% 55% 48%;padding:0 6px}
+.strike{text-decoration:line-through 2px var(--red)}
+.term{font-weight:700;color:var(--ink2)}
+.box{display:flow-root;border:2.5px solid var(--ink2);border-radius:4px 10px 6px 12px;padding:calc(var(--line)*.5 - 2.5px) 14px;margin:calc(var(--line)*.5) 0;transform:rotate(-.4deg);background:rgba(255,255,255,.35)}
+.box.red{border-color:var(--red)}
+.formula{font-family:var(--title);font-size:28px;text-align:center;color:var(--ink2)}
+
+/* sticky note */
+.sticky{float:right;width:min(250px,42%);margin:0 0 var(--line) 20px;padding:var(--line) 16px;background:var(--sticky);
+  color:#333;transform:rotate(2.2deg);box-shadow:2px 4px 8px rgba(0,0,0,.18);font-size:18px}
+.sticky b{font-family:var(--title);font-size:24px;color:var(--red)}
+@media (max-width:600px){.sticky{float:none;width:auto;margin:var(--line) 0}}
+
+/* margin annotation (lives in the red margin) */
+.side{position:absolute;left:4px;width:58px;text-align:center;font-family:var(--title);font-size:17px;line-height:18px;color:var(--red);transform:rotate(-8deg)}
+@media (max-width:600px){.side{display:none}}
+
+/* two-column notes */
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:0 28px}
+.cols>*{min-width:0}
+@media (max-width:600px){.cols{grid-template-columns:1fr}}
+
+/* diagrams */
+figure{margin:var(--line) 0;text-align:center}
+figure svg{width:100%;max-width:640px;height:auto;overflow:visible}
+figcaption{font-family:var(--title);font-size:20px;color:var(--ink2)}
+/* phones: keep labels readable — diagram scrolls inside its own box instead of shrinking */
+@media (max-width:600px){figure{overflow-x:auto}figure svg{min-width:520px}}
+.sk{fill:none;stroke:var(--ink2);stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round}   /* wobble comes from the sketch script below */
+.sk.blue{stroke:var(--ink)} .sk.red{stroke:var(--red)} .sk.green{stroke:var(--green)}
+.lbl{font-family:var(--hand);font-size:17px;fill:var(--ink)}
+.lbl.b{font-weight:700;fill:var(--ink2)} .lbl.r{fill:var(--red)} .lbl.g{fill:var(--green)}
+
+/* table */
+.wrap{overflow-x:auto}
+table{border-collapse:collapse;margin:calc(var(--line)*.5) 0;min-width:100%}
+th,td{border:2px solid var(--ink2);padding:0 10px;text-align:left;vertical-align:top}
+th{font-family:var(--title);font-size:24px;color:var(--ink2)}
+
+/* code block: syntax-coloured pen colours, still on the ruled-line grid */
+pre.code{font-family:Consolas,'Cascadia Mono','SFMono-Regular',Menlo,monospace;font-size:16px;line-height:var(--line);
+  margin:calc(var(--line)*.5) 0;padding:calc(var(--line)*.5 - 2px) 14px;border:2px solid var(--ink2);border-radius:4px 10px 6px 12px;
+  background:rgba(255,255,255,.55);color:var(--ink2);white-space:pre;overflow-x:auto;tab-size:4}
+pre.code .kw{color:#8e24aa;font-weight:700} pre.code .st{color:var(--green)} pre.code .nu{color:#d35400}
+pre.code .cm{color:#7f8c8d;font-style:italic} pre.code .fn{color:var(--ink)} pre.code .bi{color:#00838f}
+
+@media print{body{background:#fff}.page{box-shadow:none;margin:0}.page::before{display:none}}
+/* ===== Extras for long chapter notes */
+pre.code.ascii{border-color:var(--green)}
+code{font-family:Consolas,'Courier New',monospace;font-size:.82em;background:rgba(0,0,0,.06);padding:0 3px;border-radius:3px}
+pre.code code{background:none;padding:0;font-size:inherit}
+.lang{font-family:var(--title);font-size:18px;color:var(--red)}
+h3{font-family:var(--title);font-weight:700;color:var(--ink2);font-size:26px;line-height:var(--line);margin:calc(var(--line)*.5) 0 0}
+h3::before{content:"✎ ";font-size:18px;color:var(--red)}
+.nav{display:flex;justify-content:space-between;gap:12px;font-family:var(--title);font-size:22px;line-height:var(--line)}
+.nav a{color:var(--red);text-decoration:none}
+.nav a:hover{text-decoration:underline wavy}
+.pagebreak{border-top:3px dashed var(--margin);margin:var(--line) 0;text-align:center;font-family:var(--title);color:var(--red);line-height:var(--line)}
+li.todo::before{content:"☐";color:var(--ink2)}
+a{color:var(--ink);text-decoration:underline dotted}
+</style>
+</head>
+<body>
+<!-- Give every diagram stroke class="sk": the sketch script at the bottom redraws it as a smooth hand-drawn line. -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <!-- Fallback wobble filter (only used if something references url(#rough)). One smooth noise octave + sRGB +
+       a light final blur: Chrome's displacement samples nearest-neighbour, so a raw filter leaves stair-step breaks. -->
+  <filter id="rough" filterUnits="userSpaceOnUse" x="-500" y="-500" width="3000" height="3000" color-interpolation-filters="sRGB">
+    <feTurbulence type="fractalNoise" baseFrequency="0.02" numOctaves="1" seed="3" result="t"/>
+    <feGaussianBlur in="t" stdDeviation="2" result="n"/>
+    <feDisplacementMap in="SourceGraphic" in2="n" scale="5" xChannelSelector="R" yChannelSelector="G" result="d"/>
+    <feGaussianBlur in="d" stdDeviation="0.45"/>
+  </filter>
+  <marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+    <path d="M1 1 L9 5 L1 9" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+  </marker>
+</defs></svg>
+
+<main class="page">
+  <nav class="nav"><a href="ch04-dependency-injection-and-inversion-of-control.notes.html">← Ch 4 — Dependency Injection &amp; Inversion of Control</a><a href="index.notes.html">☰ Contents</a><a href="ch06-ci-cd.notes.html">Ch 6 — CI/CD →</a></nav>
+  <div class="date">2026-10-10</div>
+  <h1><span class="u">Ch 5 — The Testing Pyramid &amp; Test Strategy</span></h1>
+  <p class="black"><b>Volume 2 — Software Engineering</b> · <a href="index.md">Contents</a> · ← <a href="ch04-dependency-injection-and-inversion-of-control.notes.html">Chapter 4 — Dependency Injection &amp; Inversion of Control</a> · Next → <a href="ch06-ci-cd.notes.html">Chapter 6 — CI/CD</a></p>
+  <p class="black">Chapter 5 — The Testing Pyramid &amp; Test Strategy</p>
+  <h2>Concept</h2>
+  <p>Unit/integration/e2e proportions, test doubles, property-based testing, and flaky-test hygiene.</p>
+  <div class="box"><span class="hl">In one sentence:</span> a test strategy decides <i>what</i> to test at <i>which</i> level so the suite catches real bugs quickly and cheaply — lots of fast unit and property tests for logic, fewer integration tests for wiring, a thin layer of end-to-end tests for critical journeys — and treats flaky tests as bugs.</div>
+  <aside class="sticky"><b>Rule of thumb!</b><br>Test each behavior at the cheapest level that <i>can</i> catch its bugs.</aside>
+  <div class="box"><span class="hl blue">Mental model — a building inspection.</span> You check every brick and beam at the factory (unit), then check that walls join properly on site (integration), then walk through the finished house once (end-to-end). Walking through the whole house to check each brick would be absurdly slow — that's a suite made only of E2E tests (the "ice-cream cone" anti-pattern).</div>
+  <h3>Proportions (a guide, not a law)</h3>
+  <div class="wrap"><table>
+  <tr><th>Level</th><th>Share</th><th>Speed per test</th><th>What it proves</th><th>Owner</th></tr>
+  <tr><td>Unit + property</td><td>~70%</td><td>&lt; 10 ms</td><td>logic, edge cases, invariants</td><td>every dev, every PR</td></tr>
+  <tr><td>Integration / component</td><td>~20%</td><td>100 ms – 2 s</td><td>DB queries, serialization, one service with real dependencies in containers</td><td>every PR</td></tr>
+  <tr><td>Contract</td><td>a few per API</td><td>fast</td><td>producer and consumer agree on the interface</td><td>both teams</td></tr>
+  <tr><td>E2E</td><td>~5–10%</td><td>seconds – minutes</td><td>critical user journeys work end to end</td><td>CI on main / pre-release</td></tr>
+  <tr><td>Manual / exploratory</td><td>ad hoc</td><td>—</td><td>usability, surprises</td><td>QA / product</td></tr>
+  </table></div>
+  <p>Shapes you'll hear about: the <b>pyramid</b> (this one); the <b>testing trophy</b> (integration-heavy, popular for frontends where "unit" means little); the <b>ice-cream cone</b> (mostly E2E and manual — an anti-pattern: slow and flaky).</p>
+  <p><b>Right ratio?</b> The one where most bugs are caught by the cheapest test that <i>can</i> catch them. Pure logic → unit. SQL correctness → integration against a real DB (mocks can't catch SQL bugs). Cross-service contracts → contract tests. "The checkout button works" → one E2E.</p>
+  <p><b>Property-based testing</b> — instead of listing examples, state a <i>property</i> that must hold for all inputs and let the tool generate hundreds of inputs, including nasty edge cases, then <i>shrink</i> any failure to a minimal counterexample.</p>
+  <div class="wrap"><table>
+  <tr><th>Property type</th><th>Example</th></tr>
+  <tr><td>Invariant</td><td><code>sorted(xs)</code> is ordered and has the same elements as <code>xs</code></td></tr>
+  <tr><td>Round trip</td><td><code>decode(encode(x)) == x</code></td></tr>
+  <tr><td>Oracle</td><td>a fast implementation equals a slow, obviously correct one</td></tr>
+  <tr><td>Idempotence</td><td><code>normalize(normalize(s)) == normalize(s)</code></td></tr>
+  <tr><td>Metamorphic</td><td><code>search(q) ⊇ search(q + " extra filter")</code></td></tr>
+  </table></div>
+  <p><b>Flaky tests</b> — tests that pass and fail without code changes. Common causes and fixes:</p>
+  <div class="wrap"><table>
+  <tr><th>Cause</th><th>Fix</th></tr>
+  <tr><td>Time: <code>now()</code>, sleeps, timezones, DST</td><td>inject a clock; freeze time; never <code>sleep</code> to "wait" — poll for a condition</td></tr>
+  <tr><td>Order dependence / shared state</td><td>isolate: fresh fixtures, transactions rolled back per test, random test order (<code>pytest-randomly</code>)</td></tr>
+  <tr><td>Concurrency / async races</td><td>await real completion signals; deterministic schedulers</td></tr>
+  <tr><td>Randomness</td><td>seed it; log the seed</td></tr>
+  <tr><td>Network / external services</td><td>fakes, or containers pinned to a version</td></tr>
+  <tr><td>Resource leaks, ports in use</td><td>ephemeral ports, cleanup fixtures</td></tr>
+  </table></div>
+  <p>Policy: <b>quarantine</b> a flaky test immediately (don't let it train people to ignore red), file a ticket with an owner, fix or delete within days, and track the flake rate.</p>
+  <h2>Prereqs</h2>
+  <ul>
+    <li><a href="../volume-1-cs-foundations/ch26-testing-unit-integration-mocking-and-coverage.notes.html">Vol 1 Ch 26 — Testing: Unit, Integration, Mocking &amp; Coverage</a></li>
+  </ul>
+  <div class="pagebreak">~ page 2 ~</div>
+  <h2>Diagram</h2>
+  <h3>The testing pyramid with effort/count annotations</h3>
+  <pre class="code ascii"><code>                      ▲ cost to write &amp; maintain, run time, flakiness
+                       ╱ ╲
+                      ╱E2E╲          ~15 tests · 6 min · Playwright
+                     ╱─────╲         critical journeys: sign up, checkout, refund
+                    ╱Contract╲       ~10 · 20 s · Pact
+                   ╱──────────╲
+                  ╱ Integration╲     ~150 · 90 s · Postgres + Redis in containers
+                 ╱──────────────╲
+                ╱  Unit + property╲  ~1,500 · 20 s · pure logic, fakes
+               ╱────────────────────╲
+               ▼ count, speed, precision of failure messages</code></pre>
+  <h3>Pick the cheapest level that can catch the bug</h3>
+  <figure>
+  <svg viewBox="0 0 592 952" style="width:592px" role="img" aria-label="Pick the cheapest level that can catch the bug: What could break?; pure logic? (pricing, parsing, rules); unit / property test; our code + a real dependency? (SQL, queue, file format); integration test with a container; an interface between teams/services?; contract test; E2E test (only if it is a critical journey)">
+  <path class="sk blue" d="M296 68 C296 96 296 96 296 124" style="color:var(--ink)" marker-end="url(#arr)"/>
+  <path class="sk blue" d="M192 220 Q169 220 169 467" style="color:var(--ink)" marker-end="url(#arr)"/>
+  <text class="lbl r" x="161" y="383" text-anchor="end" style="paint-order:stroke;stroke:#fdfbf4;stroke-width:5px;stroke-linejoin:round">yes</text>
+  <path class="sk blue" d="M400 220 Q418 220 418 372" style="color:var(--ink)" marker-end="url(#arr)"/>
+  <text class="lbl r" x="426" y="322" text-anchor="start" style="paint-order:stroke;stroke:#fdfbf4;stroke-width:5px;stroke-linejoin:round">no</text>
+  <path class="sk blue" d="M418 606 C418 656 145 656 145 707" style="color:var(--ink)" marker-end="url(#arr)"/>
+  <text class="lbl r" x="290" y="662" text-anchor="start" style="paint-order:stroke;stroke:#fdfbf4;stroke-width:5px;stroke-linejoin:round">yes</text>
+  <path class="sk blue" d="M418 606 C418 634 432 634 432 662" style="color:var(--ink)" marker-end="url(#arr)"/>
+  <text class="lbl r" x="434" y="639" text-anchor="start" style="paint-order:stroke;stroke:#fdfbf4;stroke-width:5px;stroke-linejoin:round">no</text>
+  <path class="sk blue" d="M432 812 C432 844 151 844 151 876" style="color:var(--ink)" marker-end="url(#arr)"/>
+  <text class="lbl r" x="300" y="849" text-anchor="start" style="paint-order:stroke;stroke:#fdfbf4;stroke-width:5px;stroke-linejoin:round">yes</text>
+  <path class="sk blue" d="M432 812 C432 840 385 840 385 868" style="color:var(--ink)" marker-end="url(#arr)"/>
+  <text class="lbl r" x="418" y="845" text-anchor="start" style="paint-order:stroke;stroke:#fdfbf4;stroke-width:5px;stroke-linejoin:round">no</text>
+  <rect class="sk" x="203" y="24" width="186" height="44" rx="10" style="fill:#fdfbf4"/>
+  <text class="lbl b" x="296" y="51.5" text-anchor="middle">What could break?</text>
+  <path class="sk" d="M296 124 L400 220 L296 316 L192 220 Z" style="fill:#fff3b0"/>
+  <text class="lbl b" x="296" y="194.0" text-anchor="middle">pure logic?</text>
+  <text class="lbl b" x="296" y="215.0" text-anchor="middle">(pricing,</text>
+  <text class="lbl b" x="296" y="236.0" text-anchor="middle">parsing,</text>
+  <text class="lbl b" x="296" y="257.0" text-anchor="middle">rules)</text>
+  <rect class="sk" x="62" y="467" width="214" height="44" rx="10" style="fill:#fdfbf4"/>
+  <text class="lbl b" x="169" y="494.5" text-anchor="middle">unit / property test</text>
+  <path class="sk" d="M418 372 L530 489 L418 606 L306 489 Z" style="fill:#fff3b0"/>
+  <text class="lbl b" x="418" y="452.5" text-anchor="middle">our code + a</text>
+  <text class="lbl b" x="418" y="473.5" text-anchor="middle">real</text>
+  <text class="lbl b" x="418" y="494.5" text-anchor="middle">dependency?</text>
+  <text class="lbl b" x="418" y="515.5" text-anchor="middle">(SQL, queue,</text>
+  <text class="lbl b" x="418" y="536.5" text-anchor="middle">file format)</text>
+  <rect class="sk" x="24" y="707" width="242" height="60" rx="10" style="fill:#fdfbf4"/>
+  <text class="lbl b" x="145" y="732.0" text-anchor="middle">integration test with a</text>
+  <text class="lbl b" x="145" y="753.0" text-anchor="middle">container</text>
+  <path class="sk" d="M432 662 L568 737 L432 812 L296 737 Z" style="fill:#fff3b0"/>
+  <text class="lbl b" x="432" y="721.5" text-anchor="middle">an interface</text>
+  <text class="lbl b" x="432" y="742.5" text-anchor="middle">between</text>
+  <text class="lbl b" x="432" y="763.5" text-anchor="middle">teams/services?</text>
+  <rect class="sk" x="76" y="876" width="149" height="44" rx="10" style="fill:#fdfbf4"/>
+  <text class="lbl b" x="151" y="903.5" text-anchor="middle">contract test</text>
+  <rect class="sk" x="255" y="868" width="260" height="60" rx="10" style="fill:#fdfbf4"/>
+  <text class="lbl b" x="385" y="893.0" text-anchor="middle">E2E test (only if it is a</text>
+  <text class="lbl b" x="385" y="914.0" text-anchor="middle">critical journey)</text>
+  </svg>
+  <figcaption>Fig 1: Pick the cheapest level that can catch the bug</figcaption>
+  </figure>
+  <h3>Property-based testing: generate → check → shrink</h3>
+  <pre class="code ascii"><code> property: for all lists xs, my_sort(xs) == sorted(xs)
+   generated:  [], [0], [3, -1], [5, 5, 2], [2147483648, -0.0, …] …   (200 cases)
+   failure found:  [3, 1, 2, 1, 0, 9, 1]
+   shrunk to:      [1, 0, 1]          ← the minimal failing example (a duplicate-handling bug)</code></pre>
+  <div class="pagebreak">~ page 3 ~</div>
+  <h2>Example</h2>
+  <span class="lang">python</span>
+  <pre class="code"><code><span class="cm"># Property-based tests with Hypothesis</span>
+  <span class="kw">from</span> hypothesis <span class="kw">import</span> given, strategies <span class="kw">as</span> st
+  <span class="kw">from</span> collections <span class="kw">import</span> Counter
+  
+  <span class="kw">def</span> <span class="fn">my_sort</span>(xs):                       <span class="cm"># the function under test</span>
+      <span class="kw">return</span> <span class="bi">sorted</span>(xs)
+  
+  <span class="bi">@given</span>(st.<span class="fn">lists</span>(st.<span class="fn">integers</span>()))
+  <span class="kw">def</span> <span class="fn">test_sort_is_ordered_and_a_permutation</span>(xs):
+      out = <span class="fn">my_sort</span>(xs)
+      <span class="kw">assert</span> <span class="bi">all</span>(a &lt;= b <span class="kw">for</span> a, b <span class="kw">in</span> <span class="bi">zip</span>(out, out[<span class="nu">1</span>:]))      <span class="cm"># invariant: ordered</span>
+      <span class="kw">assert</span> <span class="fn">Counter</span>(out) == <span class="fn">Counter</span>(xs)                    <span class="cm"># invariant: same elements</span>
+  
+  <span class="bi">@given</span>(st.<span class="fn">dictionaries</span>(st.<span class="fn">text</span>(), st.<span class="fn">integers</span>()))
+  <span class="kw">def</span> <span class="fn">test_json_round_trip</span>(d):
+      <span class="kw">import</span> json
+      <span class="kw">assert</span> json.<span class="fn">loads</span>(json.<span class="fn">dumps</span>(d)) == d                 <span class="cm"># round trip</span>
+  
+  <span class="bi">@given</span>(st.<span class="fn">text</span>())
+  <span class="kw">def</span> <span class="fn">test_slugify_is_idempotent</span>(s):
+      <span class="kw">assert</span> <span class="fn">slugify</span>(<span class="fn">slugify</span>(s)) == <span class="fn">slugify</span>(s)</code></pre>
+  <span class="lang">python</span>
+  <pre class="code"><code><span class="cm"># A flaky test and its fix</span>
+  <span class="kw">import</span> time
+  
+  <span class="kw">def</span> <span class="fn">test_cache_expires_FLAKY</span>():
+      cache.<span class="bi">set</span>(<span class="st">"k"</span>, <span class="nu">1</span>, ttl=<span class="nu">1</span>)
+      time.<span class="fn">sleep</span>(<span class="nu">1</span>)                        <span class="cm"># sometimes 0.999 s elapses → still cached → fails</span>
+      <span class="kw">assert</span> cache.<span class="fn">get</span>(<span class="st">"k"</span>) <span class="kw">is</span> <span class="kw">None</span>
+  
+  <span class="kw">def</span> <span class="fn">test_cache_expires</span>(fake_clock):      <span class="cm"># deterministic</span>
+      cache = <span class="fn">Cache</span>(clock=fake_clock)
+      cache.<span class="bi">set</span>(<span class="st">"k"</span>, <span class="nu">1</span>, ttl=<span class="nu">1</span>)
+      fake_clock.<span class="fn">advance</span>(seconds=<span class="nu">1.001</span>)
+      <span class="kw">assert</span> cache.<span class="fn">get</span>(<span class="st">"k"</span>) <span class="kw">is</span> <span class="kw">None</span></code></pre>
+  <span class="lang">ini</span>
+  <pre class="code"><code><span class="cm"># pytest.ini — markers keep the levels separate</span>
+<span class="kw">  [pytest]</span>
+<span class="bi">  markers</span> =
+      integration: needs containers
+      e2e: full stack, slow
+<span class="bi">  addopts</span> = -p randomly --strict-markers
+  <span class="cm"># PR:      pytest -m "not e2e"          (unit + integration, &lt; 3 min)</span>
+  <span class="cm"># nightly: pytest -m e2e</span></code></pre>
+  <h2>Exercises</h2>
+  <ol style="list-style:none;padding-left:0">
+    <li>1. Write a property-based test for a sorting invariant.
+  <div class="box"><b>Solution</b> See <code>test_sort_is_ordered_and_a_permutation</code>. Add stability as a property: sort pairs by key and check that items with equal keys keep their input order. Break <code>my_sort</code> on purpose (drop duplicates) and watch Hypothesis shrink to <code>[0, 0]</code>.</div></li>
+    <li>2. Find and fix a flaky test's root cause.
+  <div class="box"><b>Solution</b> Reproduce: run it 200 times (<code>pytest --count=200</code>) and in random order. Look for time, shared state, ordering, concurrency, or network. Typical fix: replace a <code>sleep</code> with an injected fake clock or polling for a condition; give each test its own fixture or DB transaction; seed randomness. Rerunning the test until it passes is not a fix.</div></li>
+    <li>3. Which level would you use to test: (a) VAT calculation rules, (b) a SQL query with a window function, (c) "a user can buy and receive a confirmation email", (d) the JSON shape service A sends to service B?
+  <div class="box"><b>Solution</b> (a) Unit plus property tests. (b) Integration against real Postgres. (c) One E2E test, with a fake email inbox. (d) A contract test (consumer-driven, e.g. Pact).</div></li>
+  </ol>
+  <div class="pagebreak">~ page 4 ~</div>
+  <h2>Mini project</h2>
+  <p><b>A test suite for a small API with the pyramid proportions enforced by CI.</b></p>
+  <figure>
+  <svg viewBox="0 0 660 560" style="width:640px" role="img" aria-label="A test suite for a small API with the pyramid proportions enforced by CI.: shop-api pricing · carts · orders; unit + Hypothesis pricing, discount rules; integration repo + Postgres container; E2E 2 journeys via httpx; junit.xml per level; CI script: fail if E2E &gt; 10% of tests, unit runtime &gt; 30 s, any test marked flaky &gt; 7 days">
+  <path class="sk blue" d="M330 86 C330 112 115 104 115 138" style="color:var(--ink)" marker-end="url(#arr)"/>
+  <path class="sk blue" d="M330 86 L330 138" style="color:var(--ink)" marker-end="url(#arr)"/>
+  <path class="sk blue" d="M330 86 C330 112 545 104 545 138" style="color:var(--ink)" marker-end="url(#arr)"/>
+  <path class="sk blue" d="M115 224 C115 255 290 245 290 278" style="color:var(--ink)" marker-end="url(#arr)"/>
+  <path class="sk blue" d="M330 224 L330 278" style="color:var(--ink)" marker-end="url(#arr)"/>
+  <path class="sk blue" d="M545 224 C545 255 370 245 370 278" style="color:var(--ink)" marker-end="url(#arr)"/>
+  <path class="sk blue" d="M330 338 L330 380" style="color:var(--ink)" marker-end="url(#arr)"/>
+  <rect class="sk" x="220" y="20" width="220" height="66" rx="10" style="fill:#fdfbf4"/>
+  <text class="lbl b" x="330.0" y="47.5" text-anchor="middle">shop-api</text>
+  <text class="lbl b" x="330.0" y="68.5" text-anchor="middle">pricing · carts · orders</text>
+  <rect class="sk" x="10" y="140" width="210" height="84" rx="10" style="fill:#fdfbf4"/>
+  <text class="lbl b" x="115.0" y="166.0" text-anchor="middle">unit + Hypothesis</text>
+  <text class="lbl b" x="115.0" y="187.0" text-anchor="middle">pricing,</text>
+  <text class="lbl b" x="115.0" y="208.0" text-anchor="middle">discount rules</text>
+  <rect class="sk" x="240" y="140" width="180" height="84" rx="10" style="fill:#fdfbf4"/>
+  <text class="lbl b" x="330.0" y="166.0" text-anchor="middle">integration</text>
+  <text class="lbl b" x="330.0" y="187.0" text-anchor="middle">repo +</text>
+  <text class="lbl b" x="330.0" y="208.0" text-anchor="middle">Postgres container</text>
+  <rect class="sk" x="440" y="140" width="210" height="84" rx="10" style="fill:#fdfbf4"/>
+  <text class="lbl b" x="545.0" y="176.5" text-anchor="middle">E2E</text>
+  <text class="lbl b" x="545.0" y="197.5" text-anchor="middle">2 journeys via httpx</text>
+  <rect class="sk" x="240" y="280" width="180" height="58" rx="10" style="fill:#fdfbf4"/>
+  <text class="lbl b" x="330.0" y="303.5" text-anchor="middle">junit.xml per</text>
+  <text class="lbl b" x="330.0" y="324.5" text-anchor="middle">level</text>
+  <rect class="sk" x="130" y="382" width="400" height="106" rx="10" style="fill:#fdfbf4"/>
+  <text class="lbl b" x="330.0" y="419.0" text-anchor="middle">CI script: fail if E2E &gt; 10% of tests,</text>
+  <text class="lbl b" x="330.0" y="440.0" text-anchor="middle">unit runtime &gt; 30 s,</text>
+  <text class="lbl b" x="330.0" y="461.0" text-anchor="middle">any test marked flaky &gt; 7 days</text>
+  </svg>
+  <figcaption>Fig 2: A test suite for a small API with the pyramid proportions enforced by CI.</figcaption>
+  </figure>
+  <h3>Steps</h3>
+  <ol style="list-style:none;padding-left:0">
+    <li>1. A small API with pricing rules, carts, and orders.
+  </li>
+    <li>2. Unit tests + at least 3 properties (round trip, invariant, oracle) for pricing.
+  </li>
+    <li>3. Integration tests against Postgres with a per-test transaction rollback.
+  </li>
+    <li>4. Two E2E journeys; mark them <code>e2e</code>.
+  </li>
+    <li>5. A CI step that counts tests per marker from the JUnit XML and fails if the shape drifts (e.g. E2E &gt; 10% or unit tests too slow).
+  </li>
+    <li>6. A <code>flaky</code> marker with an expiry date; CI fails when a quarantine expires.
+  </li>
+  </ol>
+  <p><b>Done when:</b> CI shows the three levels with their counts and durations, and the proportion gate fails if someone adds E2E tests for pure logic.</p>
+  <h2>Open source</h2>
+  <ul>
+    <li><a href="https://github.com/pytest-dev/pytest"><code>pytest-dev/pytest</code></a> — markers, fixtures, and plugins (<code>pytest-xdist</code>, <code>pytest-randomly</code>, <code>pytest-rerunfailures</code> for <i>detecting</i> flakes).</li>
+    <li><a href="https://github.com/HypothesisWorks/hypothesis"><code>HypothesisWorks/hypothesis</code></a> — property-based testing with shrinking, stateful testing (<code>RuleBasedStateMachine</code>), and a failure database.</li>
+  </ul>
+  <div class="pagebreak">~ page 5 ~</div>
+  <h2>Interview</h2>
+  <ol style="list-style:none;padding-left:0">
+    <li>1. <b>"What's the right unit:integration ratio?"</b>
+  <div class="box"><b>Answer</b> There's no universal number; roughly 70/20/10 is a starting point. The real rule: test each behavior at the cheapest level that can actually catch its bugs. Logic-heavy code leans unit; data-access code needs real-DB integration tests; frontends often lean toward component and integration tests (the "trophy"). Watch the outcomes: fast feedback, low flake rate, and bugs caught before production.</div></li>
+    <li>2. <b>"How do you handle flaky tests?"</b>
+  <div class="box"><b>Answer</b> Treat them as bugs. Detect them (run failures again, track flake rate per test); quarantine immediately so the main signal stays trustworthy; assign an owner and a deadline; find the root cause (time, shared state, ordering, concurrency, network, randomness) and fix it with determinism (injected clocks, isolated fixtures, awaiting real conditions); delete tests that provide no value. Never normalize "just rerun it".</div></li>
+  </ol>
+  <h2>Checklist</h2>
+  <ul>
+    <li class="todo">keep tests fast &amp; deterministic</li>
+    <li class="todo">isolate I/O in tests</li>
+    <li class="todo">use property tests for pure logic</li>
+  </ul>
+  <p class="black"><a href="index.md">Contents</a> · ← <a href="ch04-dependency-injection-and-inversion-of-control.notes.html">Chapter 4 — Dependency Injection &amp; Inversion of Control</a> · Next → <a href="ch06-ci-cd.notes.html">Chapter 6 — CI/CD</a></p>
+  <nav class="nav"><a href="ch04-dependency-injection-and-inversion-of-control.notes.html">← Ch 4 — Dependency Injection &amp; Inversion of Control</a><a href="index.notes.html">☰ Contents</a><a href="ch06-ci-cd.notes.html">Ch 6 — CI/CD →</a></nav>
+</main>
+<script>
+/* Sketch: redraw every .sk shape as a smooth hand-drawn line. The outline is resampled, each point is pushed
+   along the normal by a gentle wobble (two low-frequency sines; on closed shapes the wobble loops exactly once so
+   start and end meet), and a smooth Catmull-Rom curve is rebuilt. Pure geometry, so the line stays crisp. */
+(() => {
+  const NS = 'http://www.w3.org/2000/svg', TAU = Math.PI * 2;
+  const KEEP_OUT = /^(cx|cy|rx|ry|r|x|y|width|height|x1|y1|x2|y2|points|d)$/;
+  const sketch = (el, i) => {
+    if (!el.getTotalLength) return;
+    const dAttr = el.getAttribute('d') || '';
+    if ((dAttr.match(/[Mm]/g) || []).length > 1) return;            // several sub-paths: leave as drawn
+    const L = el.getTotalLength(); if (!(L > 4)) return;
+    const closed = /^(ellipse|circle|rect|polygon)$/.test(el.tagName) || /[Zz]\s*$/.test(dAttr);
+    const n = Math.max(8, Math.round(L / 7)), amp = Math.min(1.1, 0.45 + L / 900);
+    const k1 = closed ? Math.max(2, Math.round(L / 180)) : 0, k2 = closed ? Math.max(3, Math.round(L / 95)) : 0;
+    const f1 = closed ? TAU * k1 / L : TAU / Math.max(160, L / 2.5), f2 = closed ? TAU * k2 / L : TAU / 95;
+    const p1 = (i * 2.399) % TAU, p2 = (i * 4.17) % TAU, pts = [];
+    for (let k = 0; k < (closed ? n : n + 1); k++) {
+      const s = L * k / n, a = el.getPointAtLength(Math.max(0, s - 0.5)), b = el.getPointAtLength(Math.min(L, s + 0.5)), c = el.getPointAtLength(s);
+      let nx = -(b.y - a.y), ny = b.x - a.x; const m = Math.hypot(nx, ny) || 1;
+      const w = (closed ? amp : amp * Math.min(1, s / 12, (L - s) / 12)) * (0.8 * Math.sin(s * f1 + p1) + 0.25 * Math.sin(s * f2 + p2));
+      pts.push([c.x + nx / m * w, c.y + ny / m * w]);                // open lines: ends stay exactly in place
+    }
+    const P = k => closed ? pts[(k + pts.length) % pts.length] : pts[Math.max(0, Math.min(pts.length - 1, k))];
+    let d = `M${pts[0][0].toFixed(2)} ${pts[0][1].toFixed(2)}`;
+    for (let k = 0, last = closed ? pts.length : pts.length - 1; k < last; k++) {
+      const [x0, y0] = P(k - 1), [x1, y1] = P(k), [x2, y2] = P(k + 1), [x3, y3] = P(k + 2);
+      d += ` C${(x1 + (x2 - x0) / 6).toFixed(2)} ${(y1 + (y2 - y0) / 6).toFixed(2)} ${(x2 - (x3 - x1) / 6).toFixed(2)} ${(y2 - (y3 - y1) / 6).toFixed(2)} ${x2.toFixed(2)} ${y2.toFixed(2)}`;
+    }
+    const path = document.createElementNS(NS, 'path');
+    for (const at of el.attributes) if (!KEEP_OUT.test(at.name)) path.setAttribute(at.name, at.value);
+    path.setAttribute('d', d + (closed ? ' Z' : ''));
+    el.replaceWith(path);
+  };
+  document.querySelectorAll('svg .sk').forEach(sketch);
+})();
+</script>
+</body>
+</html>

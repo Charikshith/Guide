@@ -52,7 +52,7 @@ OpenTelemetry's **GenAI semantic conventions** standardize attribute names such 
 
 ## Prereqs
 
-* [Vol 2 Ch 14 — Observability: Logs, Metrics & Traces](../volume-2-software-engineering/ch14-observability-logs-metrics-and-traces.md)
+* [Vol 2 Ch 16 — Observability: Logs, Metrics & Traces](../volume-2-software-engineering/ch16-observability-logs-metrics-and-traces.md)
 
 ---
 

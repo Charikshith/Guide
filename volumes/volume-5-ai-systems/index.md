@@ -373,7 +373,7 @@
 
 **Concept:** Tracing LLM calls, token usage, latency, and quality signals; the three pillars applied to AI.
 
-**Prereqs:** Vol 2 Ch 14.
+**Prereqs:** Vol 2 Ch 16.
 
 **Diagram:** A trace of an agent run (spans: retrieval, LLM call, tool call).
 
@@ -441,7 +441,7 @@
 
 **Concept:** Prompt injection, jailbreaks, data exfiltration, and securing the AI supply chain.
 
-**Prereqs:** Ch 8, Vol 2 Ch 10.
+**Prereqs:** Ch 8, Vol 2 Ch 11.
 
 **Diagram:** An attack surface diagram for an AI app (inputs, tools, data stores).
 

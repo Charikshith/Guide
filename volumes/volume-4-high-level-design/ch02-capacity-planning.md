@@ -46,7 +46,7 @@ QPS, latency percentiles (p50/p99), throughput, storage sizing, and translating 
 ## Prereqs
 
 * [Vol 1 Ch 44 — Delivery: Load Balancing, Reverse Proxies & CDN](../volume-1-cs-foundations/ch44-delivery-load-balancing-reverse-proxies-and-cdn.md)
-* [Vol 2 Ch 9 — Performance Engineering](../volume-2-software-engineering/ch09-performance-engineering.md)
+* [Vol 2 Ch 10 — Performance Engineering](../volume-2-software-engineering/ch10-performance-engineering.md)
 
 ---
 

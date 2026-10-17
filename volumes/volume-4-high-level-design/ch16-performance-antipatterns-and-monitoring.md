@@ -168,7 +168,7 @@ Gotcha: if liveness checks the database, a database outage restarts every pod at
 
 ### Part 3 — Instrumentation, visualization and alerting
 
-**Instrumentation** means emitting metrics, logs and traces ([Vol 1 Ch 58](../volume-1-cs-foundations/ch58-observability-logs-metrics-traces-and-opentelemetry.md), [Vol 2 Ch 14](../volume-2-software-engineering/ch14-observability-logs-metrics-and-traces.md); using them in an incident: [Vol 2 Ch 16](../volume-2-software-engineering/ch16-production-debugging.md)) — not repeated here.
+**Instrumentation** means emitting metrics, logs and traces ([Vol 1 Ch 58](../volume-1-cs-foundations/ch58-observability-logs-metrics-traces-and-opentelemetry.md), [Vol 2 Ch 16](../volume-2-software-engineering/ch16-observability-logs-metrics-and-traces.md); using them in an incident: [Vol 2 Ch 18](../volume-2-software-engineering/ch18-production-debugging.md)) — not repeated here.
 
 | Method | For | Signals |
 |--------|-----|---------|
@@ -208,8 +208,8 @@ Rules: counters for events, gauges for current values, histograms for latency (p
 ## Prereqs
 
 * [Vol 1 Ch 58 — Observability: Logs, Metrics, Traces & OpenTelemetry](../volume-1-cs-foundations/ch58-observability-logs-metrics-traces-and-opentelemetry.md)
-* [Vol 2 Ch 14 — Observability: Logs, Metrics & Traces](../volume-2-software-engineering/ch14-observability-logs-metrics-and-traces.md)
-* [Vol 2 Ch 16 — Production Debugging](../volume-2-software-engineering/ch16-production-debugging.md)
+* [Vol 2 Ch 16 — Observability: Logs, Metrics & Traces](../volume-2-software-engineering/ch16-observability-logs-metrics-and-traces.md)
+* [Vol 2 Ch 18 — Production Debugging](../volume-2-software-engineering/ch18-production-debugging.md)
 * [Vol 3 Ch 14 — Resilience Patterns: Idempotency, Retries, Backoff & Circuit Breakers](../volume-3-low-level-design/ch14-resilience-patterns-idempotency-retries-backoff-circuit-breakers.md)
 * [Ch 8 — Rate Limiting, Throttling & Backpressure](ch08-rate-limiting-throttling-and-backpressure.md)
 * [Ch 15 — Multi-Tenancy](ch15-multi-tenancy.md)

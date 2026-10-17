@@ -45,7 +45,7 @@ Prompt injection, jailbreaks, data exfiltration, and securing the AI supply chai
 ## Prereqs
 
 * [Chapter 8 — Alignment, RLHF & Guardrails](ch08-alignment-rlhf-and-guardrails.md)
-* [Vol 2 Ch 10 — Security & Threat Modeling](../volume-2-software-engineering/ch10-security-and-threat-modeling.md)
+* [Vol 2 Ch 11 — Security & Threat Modeling](../volume-2-software-engineering/ch11-security-and-threat-modeling.md)
 
 ---
 
@@ -185,7 +185,7 @@ flowchart LR
 
 **Steps**
 
-1. Threat-model the agent ([Vol 2 Ch 10](../volume-2-software-engineering/ch10-security-and-threat-modeling.md)) with the AI threats above; mark trust boundaries.
+1. Threat-model the agent ([Vol 2 Ch 11](../volume-2-software-engineering/ch11-security-and-threat-modeling.md)) with the AI threats above; mark trust boundaries.
 2. Write ≥ 50 attack cases with automatic success detection (e.g. a canary secret appears in output, a forbidden tool is called, a request goes to a non-allowed domain).
 3. Measure the baseline attack success rate.
 4. Add layered defenses; re-measure after each layer.

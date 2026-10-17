@@ -49,7 +49,7 @@ Real SaaS usually mixes them: pool for the long tail, silo for the biggest or mo
 ## Prereqs
 
 * [Vol 1 Ch 45 — SQL & the Relational Model](../volume-1-cs-foundations/ch45-sql-and-the-relational-model.md)
-* [Vol 2 Ch 10 — Security & Threat Modeling](../volume-2-software-engineering/ch10-security-and-threat-modeling.md)
+* [Vol 2 Ch 11 — Security & Threat Modeling](../volume-2-software-engineering/ch11-security-and-threat-modeling.md)
 
 ---
 

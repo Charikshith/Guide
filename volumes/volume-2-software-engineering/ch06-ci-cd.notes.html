@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ch 6 — CI/CD — Notes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;700&family=Kalam:wght@400;700&family=Patrick+Hand&display=swap" rel="stylesheet">
+<style>
+/* ===== Page tokens ===== */
+:root{
+  --line:32px;                 /* ruled-line spacing; every vertical size is a multiple */
+  --paper:#fdfbf4; --rule:#c9dcef; --margin:#e8a0a0;
+  --ink:#1f3a93;               /* blue pen (body) */
+  --ink2:#222;                 /* black pen (headings) */
+  --red:#c0392b; --green:#1e8449;
+  --hl-yellow:rgba(255,235,59,.55); --hl-pink:rgba(255,128,171,.45);
+  --hl-green:rgba(118,255,3,.35); --hl-blue:rgba(64,196,255,.35);
+  --sticky:#fff59d; --desk:#e9e4d8;
+  --hand:'Kalam','Patrick Hand','Comic Sans MS','Segoe Print','Bradley Hand',cursive;
+  --title:'Caveat','Kalam','Segoe Print','Bradley Hand',cursive;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){ --desk:#2b2b2b; }
+}
+:root[data-theme="dark"]{ --desk:#2b2b2b; }
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--desk);font-family:var(--hand);color:var(--ink);}
+
+/* ===== Notebook sheet ===== */
+.page{
+  position:relative; max-width:860px; margin:24px auto; padding:var(--line) 28px calc(var(--line)*2) 84px;
+  background:
+    linear-gradient(90deg,transparent 64px,var(--margin) 64px,var(--margin) 66px,transparent 66px),
+    repeating-linear-gradient(var(--paper) 0,var(--paper) calc(var(--line) - 1px),var(--rule) calc(var(--line) - 1px),var(--rule) var(--line));
+  background-color:var(--paper);
+  box-shadow:0 2px 6px rgba(0,0,0,.15),0 12px 28px rgba(0,0,0,.12);
+  font-size:20px; line-height:var(--line);
+}
+.page::before{ /* punched holes */
+  content:""; position:absolute; left:22px; top:0; bottom:0; width:18px;
+  background:radial-gradient(circle,var(--desk) 7px,transparent 8px) 0 40px/18px 220px repeat-y;
+}
+@media (max-width:600px){
+  .page{margin:0;padding-left:52px;padding-right:16px;font-size:18px;
+    background:
+      linear-gradient(90deg,transparent 40px,var(--margin) 40px,var(--margin) 42px,transparent 42px),
+      repeating-linear-gradient(var(--paper) 0,var(--paper) calc(var(--line) - 1px),var(--rule) calc(var(--line) - 1px),var(--rule) var(--line));
+    background-color:var(--paper);}
+  .page::before{left:10px;width:16px}
+}
+
+/* ===== Text (all margins are multiples of --line so text sits on the rules) ===== */
+.date{position:absolute;top:0;right:24px;font-family:var(--title);font-size:22px;color:var(--ink2);line-height:var(--line)}
+h1{font-family:var(--title);font-weight:700;color:var(--ink2);font-size:46px;line-height:calc(var(--line)*2);margin:0;transform:rotate(-1deg)}
+h1 .u{background:linear-gradient(transparent 62%,var(--hl-yellow) 62%,var(--hl-yellow) 92%,transparent 92%)}
+h2{font-family:var(--title);font-weight:700;color:var(--red);font-size:32px;line-height:calc(var(--line)*1.5);margin:calc(var(--line)*.5) 0 0}
+h2::before{content:"➤ ";font-size:22px}
+p,li{margin:0}
+ul,ol{margin:0;padding-left:28px}
+ul{list-style:none}
+ul>li::before{content:"–";position:absolute;margin-left:-20px}
+ul>li.star::before{content:"★";color:var(--red)}
+ul>li.arrow::before{content:"→"}
+ul>li.check::before{content:"✓";color:var(--green)}
+.gap{height:var(--line)}
+
+/* ===== Pen effects ===== */
+.hl{background:var(--hl-yellow);padding:0 3px;border-radius:3px 6px 4px 7px}
+.hl.pink{background:var(--hl-pink)} .hl.green{background:var(--hl-green)} .hl.blue{background:var(--hl-blue)}
+.red{color:var(--red)} .green{color:var(--green)} .black{color:var(--ink2)}
+.ul{text-decoration:underline wavy var(--red);text-underline-offset:5px}
+.circ{border:2px solid var(--red);border-radius:50% 45% 55% 48%;padding:0 6px}
+.strike{text-decoration:line-through 2px var(--red)}
+.term{font-weight:700;color:var(--ink2)}
+.box{display:flow-root;border:2.5px solid var(--ink2);border-radius:4px 10px 6px 12px;padding:calc(var(--line)*.5 - 2.5px) 14px;margin:calc(var(--line)*.5) 0;transform:rotate(-.4deg);background:rgba(255,255,255,.35)}
+.box.red{border-color:var(--red)}
+.formula{font-family:var(--title);font-size:28px;text-align:center;color:var(--ink2)}
+
+/* sticky note */
+.sticky{float:right;width:min(250px,42%);margin:0 0 var(--line) 20px;padding:var(--line) 16px;background:var(--sticky);
+  color:#333;transform:rotate(2.2deg);box-shadow:2px 4px 8px rgba(0,0,0,.18);font-size:18px}
+.sticky b{font-family:var(--title);font-size:24px;color:var(--red)}
+@media (max-width:600px){.sticky{float:none;width:auto;margin:var(--line) 0}}
+
+/* margin annotation (lives in the red margin) */
+.side{position:absolute;left:4px;width:58px;text-align:center;font-family:var(--title);font-size:17px;line-height:18px;color:var(--red);transform:rotate(-8deg)}
+@media (max-width:600px){.side{display:none}}
+
+/* two-column notes */
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:0 28px}
+.cols>*{min-width:0}
+@media (max-width:600px){.cols{grid-template-columns:1fr}}
+
+/* diagrams */
+figure{margin:var(--line) 0;text-align:center}
+figure svg{width:100%;max-width:640px;height:auto;overflow:visible}
+figcaption{font-family:var(--title);font-size:20px;color:var(--ink2)}
+/* phones: keep labels readable — diagram scrolls inside its own box instead of shrinking */
+@media (max-width:600px){figure{overflow-x:auto}figure svg{min-width:520px}}
+.sk{fill:none;stroke:var(--ink2);stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round}   /* wobble comes from the sketch script below */
+.sk.blue{stroke:var(--ink)} .sk.red{stroke:var(--red)} .sk.green{stroke:var(--green)}
+.lbl{font-family:var(--hand);font-size:17px;fill:var(--ink)}
+.lbl.b{font-weight:700;fill:var(--ink2)} .lbl.r{fill:var(--red)} .lbl.g{fill:var(--green)}
+
+/* table */
+.wrap{overflow-x:auto}
+table{border-collapse:collapse;margin:calc(var(--line)*.5) 0;min-width:100%}
+th,td{border:2px solid var(--ink2);padding:0 10px;text-align:left;vertical-align:top}
+th{font-family:var(--title);font-size:24px;color:var(--ink2)}
+
+/* code block: syntax-coloured pen colours, still on the ruled-line grid */
+pre.code{font-family:Consolas,'Cascadia Mono','SFMono-Regular',Menlo,monospace;font-size:16px;line-height:var(--line);
+  margin:calc(var(--line)*.5) 0;padding:calc(var(--line)*.5 - 2px) 14px;border:2px solid var(--ink2);border-radius:4px 10px 6px 12px;
+  background:rgba(255,255,255,.55);color:var(--ink2);white-space:pre;overflow-x:auto;tab-size:4}
+pre.code .kw{color:#8e24aa;font-weight:700} pre.code .st{color:var(--green)} pre.code .nu{color:#d35400}
+pre.code .cm{color:#7f8c8d;font-style:italic} pre.code .fn{color:var(--ink)} pre.code .bi{color:#00838f}
+
+@media print{body{background:#fff}.page{box-shadow:none;margin:0}.page::before{display:none}}
+/* ===== Extras for long chapter notes */
+pre.code.ascii{border-color:var(--green)}
+code{font-family:Consolas,'Courier New',monospace;font-size:.82em;background:rgba(0,0,0,.06);padding:0 3px;border-radius:3px}
+pre.code code{background:none;padding:0;font-size:inherit}
+.lang{font-family:var(--title);font-size:18px;color:var(--red)}
+h3{font-family:var(--title);font-weight:700;color:var(--ink2);font-size:26px;line-height:var(--line);margin:calc(var(--line)*.5) 0 0}
+h3::before{content:"✎ ";font-size:18px;color:var(--red)}
+.nav{display:flex;justify-content:space-between;gap:12px;font-family:var(--title);font-size:22px;line-height:var(--line)}
+.nav a{color:var(--red);text-decoration:none}
+.nav a:hover{text-decoration:underline wavy}
+.pagebreak{border-top:3px dashed var(--margin);margin:var(--line) 0;text-align:center;font-family:var(--title);color:var(--red);line-height:var(--line)}
+li.todo::before{content:"☐";color:var(--ink2)}
+a{color:var(--ink);text-decoration:underline dotted}
+</style>
+</head>
+<body>
+<!-- Give every diagram stroke class="sk": the sketch script at the bottom redraws it as a smooth hand-drawn line. -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <!-- Fallback wobble filter (only used if something references url(#rough)). One smooth noise octave + sRGB +
+       a light final blur: Chrome's displacement samples nearest-neighbour, so a raw filter leaves stair-step breaks. -->
+  <filter id="rough" filterUnits="userSpaceOnUse" x="-500" y="-500" width="3000" height="3000" color-interpolation-filters="sRGB">
+    <feTurbulence type="fractalNoise" baseFrequency="0.02" numOctaves="1" seed="3" result="t"/>
+    <feGaussianBlur in="t" stdDeviation="2" result="n"/>
+    <feDisplacementMap in="SourceGraphic" in2="n" scale="5" xChannelSelector="R" yChannelSelector="G" result="d"/>
+    <feGaussianBlur in="d" stdDeviation="0.45"/>
+  </filter>
+  <marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+    <path d="M1 1 L9 5 L1 9" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+  </marker>
+</defs></svg>
+
+<main class="page">
+  <nav class="nav"><a href="ch05-the-testing-pyramid-and-test-strategy.notes.html">← Ch 5 — The Testing Pyramid &amp; Test Strategy</a><a href="index.notes.html">☰ Contents</a><a href="ch07-packaging-and-release-engineering.notes.html">Ch 7 — Packaging &amp; Release Engineering →</a></nav>
+  <div class="date">2026-10-10</div>
+  <h1><span class="u">Ch 6 — CI/CD</span></h1>
+  <p class="black"><b>Volume 2 — Software Engineering</b> · <a href="index.md">Contents</a> · ← <a href="ch05-the-testing-pyramid-and-test-strategy.notes.html">Chapter 5 — The Testing Pyramid &amp; Test Strategy</a> · Next → <a href="ch07-packaging-and-release-engineering.notes.html">Chapter 7 — Packaging &amp; Release Engineering</a></p>
+  <p class="black">Chapter 6 — CI/CD</p>
+  <h2>Concept</h2>
+  <p>Continuous integration (validate every change) and delivery/deployment (ship safely); pipelines as code.</p>
+  <div class="box"><span class="hl">In one sentence:</span> CI/CD is the team's safety net and conveyor belt in one — every change is automatically built and checked, and every passing change can move to production through the same repeatable, versioned pipeline, so shipping becomes boring.</div>
+  <aside class="sticky"><b>Exam tip!</b><br>Build once, promote the artifact. Red main? Revert first, debug second.</aside>
+  <div class="box"><span class="hl blue">Mental model — a car factory line.</span> Every car (commit) passes the same stations in the same order: frame (build), inspection (tests), paint check (lint), road test (staging), then delivery (deploy). The line itself is designed in a blueprint that is versioned and reviewed (pipeline as code). Nobody hand-builds a car in the parking lot.</div>
+  <p>This chapter is about the <b>practice and strategy</b> across a team. For the GitHub Actions mechanics (YAML, caching, environments), see <a href="../volume-1-cs-foundations/ch57-ci-cd-and-github-actions.notes.html">Vol 1 Ch 57</a>.</p>
+  <h3>Principles</h3>
+  <div class="wrap"><table>
+  <tr><th>Principle</th><th>Means</th></tr>
+  <tr><td>Integrate small and often</td><td>merge to main daily; small PRs; flags for unfinished work</td></tr>
+  <tr><td><b>Every commit is validated</b></td><td>the same checks on every PR; required status checks</td></tr>
+  <tr><td>Keep main green</td><td>a red main is the team's top priority; revert first, debug second</td></tr>
+  <tr><td><b>Build once, promote the artifact</b></td><td>the image or wheel built from commit X is what goes to staging <i>and</i> prod</td></tr>
+  <tr><td>Pipeline as code</td><td>pipeline definitions live in the repo, reviewed like code</td></tr>
+  <tr><td>Environments are reproducible</td><td>IaC (<a href="../volume-1-cs-foundations/ch56-iac-terraform-state-and-config-drift.notes.html">Vol 1 Ch 56</a>); config per environment, not per build</td></tr>
+  <tr><td>Fast feedback</td><td>&lt; 10 min to a PR verdict; fail fast</td></tr>
+  <tr><td>Deploys are <b>repeatable and reversible</b></td><td>one command/button; automatic rollback on bad health</td></tr>
+  <tr><td>Everything auditable</td><td>who deployed what, when, from which commit</td></tr>
+  </table></div>
+  <p><b>DORA metrics</b> — the four numbers that measure delivery performance:</p>
+  <div class="wrap"><table>
+  <tr><th>Metric</th><th>Elite teams (roughly)</th></tr>
+  <tr><td>Deployment frequency</td><td>on demand, many times per day</td></tr>
+  <tr><td>Lead time for changes (commit → production)</td><td>&lt; 1 day</td></tr>
+  <tr><td>Change failure rate</td><td>~0–15%</td></tr>
+  <tr><td>Time to restore service</td><td>&lt; 1 hour</td></tr>
+  </table></div>
+  <p>Speed and stability <i>improve together</i> with good CI/CD — small changes are easier to test, review, and roll back.</p>
+  <h3>Pipeline stages and what belongs in each</h3>
+  <div class="wrap"><table>
+  <tr><th>Stage</th><th>Contents</th><th>Budget</th></tr>
+  <tr><td>Pre-commit (local)</td><td>format, lint, fast unit tests</td><td>seconds</td></tr>
+  <tr><td>PR / CI</td><td>build, lint, types, unit + integration tests, security scans (deps, secrets, SAST), coverage</td><td>&lt; 10 min</td></tr>
+  <tr><td>Main</td><td>build the artifact once, sign it, store it with an SBOM</td><td>minutes</td></tr>
+  <tr><td>Staging deploy</td><td>deploy the artifact, run migrations, smoke / E2E / contract tests</td><td>minutes</td></tr>
+  <tr><td>Production deploy</td><td>progressive rollout (canary/blue-green, <a href="ch07-packaging-and-release-engineering.notes.html">Ch 6</a>), health checks, automatic rollback</td><td>minutes to hours</td></tr>
+  <tr><td>Post-deploy verify</td><td>SLO watch, error budget, alerting</td><td>continuous</td></tr>
+  </table></div>
+  <p><b>Making CI fast</b> — caching, parallel jobs, test sharding, affected-only builds (<a href="ch03-monorepos.notes.html">Ch 2</a>), cheap checks first, flaky-test quarantine (<a href="ch05-the-testing-pyramid-and-test-strategy.notes.html">Ch 4</a>), and bigger runners for heavy builds.</p>
+  <h2>Prereqs</h2>
+  <ul>
+    <li><a href="ch02-professional-git-workflow.notes.html">Chapter 2 — Professional Git Workflow</a></li>
+  </ul>
+  <div class="pagebreak">~ page 2 ~</div>
+  <h2>Diagram</h2>
+  <h3>A pipeline: commit → build → test → lint → stage → deploy → verify</h3>
+  <figure>
+  <svg viewBox="0 0 432 1008" style="width:432px" role="img" aria-label="A pipeline: commit → build → test → lint → stage → deploy → verify: commit / PR; build (reproducible, cached); test unit · integration; lint · types · security scans; artifact image@sha256 + SBOM + signature; stage deploy + migrate + smoke/E2E; gate (auto or approval); deploy prod canary 5% → 100%; verify SLOs, error rate; automatic rollback">
+  <path class="sk blue" d="M216 68 C216 96 216 96 216 124" style="color:var(--ink)" marker-end="url(#arr)"/>
+  <path class="sk blue" d="M216 184 C216 212 122 212 122 240" style="color:var(--ink)" marker-end="url(#arr)"/>
+  <path class="sk blue" d="M216 184 C216 212 328 212 328 240" style="color:var(--ink)" marker-end="url(#arr)"/>
+  <path class="sk blue" d="M122 300 C122 328 216 328 216 356" style="color:var(--ink)" marker-end="url(#arr)"/>
+  <path class="sk blue" d="M328 300 C328 328 216 328 216 356" style="color:var(--ink)" marker-end="url(#arr)"/>
+  <path class="sk blue" d="M216 416 C216 444 216 444 216 472" style="color:var(--ink)" marker-end="url(#arr)"/>
+  <path class="sk blue" d="M216 532 C216 560 216 560 216 588" style="color:var(--ink)" marker-end="url(#arr)"/>
+  <path class="sk blue" d="M216 652 C216 680 216 680 216 708" style="color:var(--ink)" marker-end="url(#arr)"/>
+  <path class="sk blue" d="M216 768 C216 796 216 796 216 824" style="color:var(--ink)" marker-end="url(#arr)"/>
+  <path class="sk blue" d="M216 884 C216 912 216 912 216 940" style="color:var(--ink)" marker-end="url(#arr)"/>
+  <text class="lbl r" x="225" y="917" text-anchor="start" style="paint-order:stroke;stroke:#fdfbf4;stroke-width:5px;stroke-linejoin:round">bad</text>
+  <rect class="sk" x="151" y="24" width="130" height="44" rx="10" style="fill:#fdfbf4"/>
+  <text class="lbl b" x="216" y="51.5" text-anchor="middle">commit / PR</text>
+  <rect class="sk" x="100" y="124" width="233" height="60" rx="10" style="fill:#fdfbf4"/>
+  <text class="lbl b" x="216" y="149.0" text-anchor="middle">build</text>
+  <text class="lbl b" x="216" y="170.0" text-anchor="middle">(reproducible, cached)</text>
+  <rect class="sk" x="24" y="240" width="195" height="60" rx="10" style="fill:#fdfbf4"/>
+  <text class="lbl b" x="122" y="265.0" text-anchor="middle">test</text>
+  <text class="lbl b" x="122" y="286.0" text-anchor="middle">unit · integration</text>
+  <rect class="sk" x="249" y="240" width="158" height="60" rx="10" style="fill:#fdfbf4"/>
+  <text class="lbl b" x="328" y="265.0" text-anchor="middle">lint · types ·</text>
+  <text class="lbl b" x="328" y="286.0" text-anchor="middle">security scans</text>
+  <rect class="sk" x="58" y="356" width="316" height="60" rx="10" style="fill:#fdfbf4"/>
+  <text class="lbl b" x="216" y="381.0" text-anchor="middle">artifact</text>
+  <text class="lbl b" x="216" y="402.0" text-anchor="middle">image@sha256 + SBOM + signature</text>
+  <rect class="sk" x="72" y="472" width="288" height="60" rx="10" style="fill:#fdfbf4"/>
+  <text class="lbl b" x="216" y="497.0" text-anchor="middle">stage</text>
+  <text class="lbl b" x="216" y="518.0" text-anchor="middle">deploy + migrate + smoke/E2E</text>
+  <path class="sk" d="M120 588 L312 588 L328 620 L312 652 L120 652 L104 620 Z" style="fill:#e3f2d0"/>
+  <text class="lbl b" x="216" y="615.0" text-anchor="middle">gate</text>
+  <text class="lbl b" x="216" y="636.0" text-anchor="middle">(auto or approval)</text>
+  <rect class="sk" x="127" y="708" width="177" height="60" rx="10" style="fill:#fdfbf4"/>
+  <text class="lbl b" x="216" y="733.0" text-anchor="middle">deploy prod</text>
+  <text class="lbl b" x="216" y="754.0" text-anchor="middle">canary 5% → 100%</text>
+  <rect class="sk" x="127" y="824" width="177" height="60" rx="10" style="fill:#fdfbf4"/>
+  <text class="lbl b" x="216" y="849.0" text-anchor="middle">verify</text>
+  <text class="lbl b" x="216" y="870.0" text-anchor="middle">SLOs, error rate</text>
+  <rect class="sk" x="118" y="940" width="195" height="44" rx="10" style="fill:#fdfbf4"/>
+  <text class="lbl b" x="216" y="967.5" text-anchor="middle">automatic rollback</text>
+  </svg>
+  <figcaption>Fig 1: A pipeline: commit → build → test → lint → stage → deploy → verify</figcaption>
+  </figure>
+  <h3>Build once, promote everywhere</h3>
+  <pre class="code ascii"><code>                      ┌──────────► staging    (config: staging.env)
+   commit 7a1c ─build─► image@sha256:3f9a…
+                        └──────────► production (config: prod.env)
+   ✗ never rebuild for prod — a rebuild may pull different dependencies or base images</code></pre>
+  <h3>Feedback time is the key metric</h3>
+  <pre class="code ascii"><code> PR opened ─┬─ lint 20 s ─┬─ unit 90 s ─┬─ integration 4 min ─┬─ verdict at ~5 min ✅
+              │             │             │
+              └─ fail here → the dev hears in 20 s, not after 25 min</code></pre>
+  <div class="pagebreak">~ page 3 ~</div>
+  <h2>Example</h2>
+  <span class="lang">yaml</span>
+  <pre class="code"><code><span class="cm"># A pipeline-as-code skeleton (GitHub Actions; the structure is the same in GitLab CI or Buildkite)</span>
+<span class="bi">  name</span>: pipeline
+<span class="bi">  on</span>: { pull_request: {}, push: { branches: [main] } }
+<span class="bi">  permissions</span>: { contents: read }
+<span class="bi">  concurrency</span>: { group: <span class="st">"${{ github.ref }}"</span>, cancel-in-progress: <span class="kw">true</span> }
+  
+<span class="bi">  jobs</span>:
+<span class="bi">    checks</span>:                       <span class="cm"># fast, parallel</span>
+<span class="bi">      strategy</span>: { matrix: { task: [lint, typecheck, unit, audit] } }
+<span class="bi">      runs-on</span>: ubuntu-latest
+<span class="bi">      steps</span>:
+<span class="bi">        - uses</span>: actions/checkout@v4
+<span class="bi">        - uses</span>: astral-sh/setup-uv@v3
+<span class="bi">          with</span>: { enable-cache: <span class="kw">true</span> }
+<span class="bi">        - run</span>: make ${{ matrix.task }}          <span class="cm"># the same Makefile targets devs run locally</span>
+  
+<span class="bi">    integration</span>:
+<span class="bi">      needs</span>: checks
+<span class="bi">      runs-on</span>: ubuntu-latest
+<span class="bi">      steps</span>:
+<span class="bi">        - uses</span>: actions/checkout@v4
+<span class="bi">        - run</span>: make integration                 <span class="cm"># docker compose up db; pytest -m integration</span>
+  
+<span class="bi">    artifact</span>:
+<span class="bi">      if</span>: github.ref == <span class="st">'refs/heads/main'</span>
+<span class="bi">      needs</span>: [checks, integration]
+<span class="bi">      runs-on</span>: ubuntu-latest
+<span class="bi">      permissions</span>: { contents: read, packages: write, id-token: write }
+<span class="bi">      steps</span>:
+<span class="bi">        - uses</span>: actions/checkout@v4
+<span class="bi">        - run</span>: make image IMAGE=ghcr.io/acme/api:${{ github.sha }}   <span class="cm"># build + push + sbom + cosign sign</span>
+  
+<span class="bi">    staging</span>:
+<span class="bi">      needs</span>: artifact
+<span class="bi">      environment</span>: staging
+<span class="bi">      runs-on</span>: ubuntu-latest
+<span class="bi">      steps</span>:
+<span class="bi">        - run</span>: make deploy ENV=staging IMAGE=ghcr.io/acme/api:${{ github.sha }} &amp;&amp; make smoke ENV=staging
+  
+<span class="bi">    production</span>:
+<span class="bi">      needs</span>: staging
+<span class="bi">      environment</span>: production       <span class="cm"># approval gate + prod-only secrets</span>
+<span class="bi">      runs-on</span>: ubuntu-latest
+<span class="bi">      steps</span>:
+<span class="bi">        - run</span>: make deploy ENV=prod IMAGE=ghcr.io/acme/api:${{ github.sha }} STRATEGY=canary</code></pre>
+  <span class="lang">make</span>
+  <pre class="code"><code><span class="cm"># Makefile — one interface for humans and CI</span>
+  lint:        ; uv run ruff check . &amp;&amp; uv run ruff format --check .
+  typecheck:   ; uv run mypy src
+  unit:        ; uv run pytest -q -m <span class="st">"not integration and not e2e"</span>
+  integration: ; docker compose up -d db &amp;&amp; uv run pytest -q -m integration
+  audit:       ; uv run pip-audit &amp;&amp; gitleaks detect --no-banner</code></pre>
+  <h2>Exercises</h2>
+  <ol style="list-style:none;padding-left:0">
+    <li>1. Write a CI workflow that runs tests + lints.
+  <div class="box"><b>Solution</b> See the <code>checks</code> job: a matrix over Makefile targets so CI and local development share one definition. Add it as a required status check. Keep the PR path under ~10 minutes; move slow suites to <code>main</code> or nightly.</div></li>
+    <li>2. Add caching and a manual deploy approval.
+  <div class="box"><b>Solution</b> Enable dependency caching (setup action <code>cache</code> options, keyed on the lockfile hash) and Docker layer caching (<code>cache-from: type=gha</code>). Put production deploys in a job with <code>environment: production</code>, where the environment requires reviewers; its secrets are released only after approval. Measure pipeline time before and after.</div></li>
+    <li>3. Your main branch is red for 2 days and people keep merging. What policy changes do you propose?
+  <div class="box"><b>Solution</b> Require status checks to pass before merge (branch protection), so red main blocks merges. Adopt "revert first": the author of the breaking change reverts within minutes, then fixes it forward. Quarantine flaky tests so red means real. Add a merge queue that tests each PR against the latest main before merging.</div></li>
+  </ol>
+  <div class="pagebreak">~ page 4 ~</div>
+  <h2>Mini project</h2>
+  <p><b>Full CI/CD for a toy service: automated tests + deploy to a staging environment.</b></p>
+  <figure>
+  <svg viewBox="0 0 299 893" style="width:299px" role="img" aria-label="Full CI/CD for a toy service: automated tests + deploy to a staging environment.: PR; checks + integration (&lt; 8 min); merge queue; main; build + sign image, attach SBOM; deploy to staging (kind / Fly.io / Render); smoke tests + DB migration check; record DORA metrics: lead time, deploy count, failures, restore time">
+  <path class="sk blue" d="M150 68 C150 96 150 96 150 124" style="color:var(--ink)" marker-end="url(#arr)"/>
+  <path class="sk blue" d="M150 184 C150 212 150 212 150 240" style="color:var(--ink)" marker-end="url(#arr)"/>
+  <path class="sk blue" d="M150 284 C150 312 150 312 150 340" style="color:var(--ink)" marker-end="url(#arr)"/>
+  <path class="sk blue" d="M150 384 C150 412 150 412 150 440" style="color:var(--ink)" marker-end="url(#arr)"/>
+  <path class="sk blue" d="M150 500 C150 528 150 528 150 556" style="color:var(--ink)" marker-end="url(#arr)"/>
+  <path class="sk blue" d="M150 616 C150 644 150 644 150 672" style="color:var(--ink)" marker-end="url(#arr)"/>
+  <path class="sk blue" d="M150 732 C150 760 150 760 150 788" style="color:var(--ink)" marker-end="url(#arr)"/>
+  <rect class="sk" x="126" y="24" width="47" height="44" rx="10" style="fill:#fdfbf4"/>
+  <text class="lbl b" x="150" y="51.5" text-anchor="middle">PR</text>
+  <rect class="sk" x="43" y="124" width="214" height="60" rx="10" style="fill:#fdfbf4"/>
+  <text class="lbl b" x="150" y="149.0" text-anchor="middle">checks + integration</text>
+  <text class="lbl b" x="150" y="170.0" text-anchor="middle">(&lt; 8 min)</text>
+  <rect class="sk" x="84" y="240" width="130" height="44" rx="10" style="fill:#fdfbf4"/>
+  <text class="lbl b" x="150" y="267.5" text-anchor="middle">merge queue</text>
+  <rect class="sk" x="117" y="340" width="65" height="44" rx="10" style="fill:#fdfbf4"/>
+  <text class="lbl b" x="150" y="367.5" text-anchor="middle">main</text>
+  <rect class="sk" x="47" y="440" width="205" height="60" rx="10" style="fill:#fdfbf4"/>
+  <text class="lbl b" x="150" y="465.0" text-anchor="middle">build + sign image,</text>
+  <text class="lbl b" x="150" y="486.0" text-anchor="middle">attach SBOM</text>
+  <rect class="sk" x="24" y="556" width="251" height="60" rx="10" style="fill:#fdfbf4"/>
+  <text class="lbl b" x="150" y="581.0" text-anchor="middle">deploy to staging</text>
+  <text class="lbl b" x="150" y="602.0" text-anchor="middle">(kind / Fly.io / Render)</text>
+  <rect class="sk" x="52" y="672" width="195" height="60" rx="10" style="fill:#fdfbf4"/>
+  <text class="lbl b" x="150" y="697.0" text-anchor="middle">smoke tests +</text>
+  <text class="lbl b" x="150" y="718.0" text-anchor="middle">DB migration check</text>
+  <rect class="sk" x="24" y="788" width="251" height="81" rx="10" style="fill:#fdfbf4"/>
+  <text class="lbl b" x="150" y="813.0" text-anchor="middle">record DORA metrics:</text>
+  <text class="lbl b" x="150" y="834.0" text-anchor="middle">lead time, deploy count,</text>
+  <text class="lbl b" x="150" y="855.0" text-anchor="middle">failures, restore time</text>
+  </svg>
+  <figcaption>Fig 2: Full CI/CD for a toy service: automated tests + deploy to a staging environment.</figcaption>
+  </figure>
+  <h3>Steps</h3>
+  <ol style="list-style:none;padding-left:0">
+    <li>1. A small service (reuse an earlier chapter's API) with unit and integration tests.
+  </li>
+    <li>2. The pipeline above: PR checks, a merge queue or required up-to-date branches, and artifact build on main.
+  </li>
+    <li>3. Automatic staging deploy of the exact digest; run migrations; run smoke tests against the staging URL.
+  </li>
+    <li>4. Record DORA metrics from pipeline events (commit time → deploy time; failures; restore time) into a small table or dashboard.
+  </li>
+    <li>5. Break a test on purpose and show the merge is blocked; break staging on purpose and show the rollback.
+  </li>
+  </ol>
+  <p><b>Done when:</b> merging a PR puts it on staging with no human action, and you can show your lead time and change-failure rate.</p>
+  <h2>Open source</h2>
+  <ul>
+    <li><a href="https://github.com/actions/runner"><code>actions/runner</code></a> — the GitHub Actions job runner.</li>
+    <li><a href="https://github.com/gitlab-org/gitlab-runner"><code>gitlab-org/gitlab-runner</code></a> — GitLab CI's runner; its <code>.gitlab-ci.yml</code> model (stages, rules, environments) is a good comparison. Read <i>Accelerate</i> (Forsgren, Humble, Kim) for the DORA research.</li>
+  </ul>
+  <div class="pagebreak">~ page 5 ~</div>
+  <h2>Interview</h2>
+  <ol style="list-style:none;padding-left:0">
+    <li>1. <b>"CI vs CD?"</b>
+  <div class="box"><b>Answer</b> CI: integrate changes into main frequently, with every change automatically built and tested so problems appear within minutes. CD, as Continuous Delivery: every passing build is releasable and deploys are push-button. CD, as Continuous Deployment: every passing build goes to production automatically, protected by progressive rollout, monitoring, and automatic rollback.</div></li>
+    <li>2. <b>"How do you make CI fast?"</b>
+  <div class="box"><b>Answer</b> Cache dependencies and build layers; parallelize and shard; run cheap checks first and fail fast; build and test only what's affected; keep tests hermetic and deterministic; quarantine flakes; use bigger runners where CPU-bound; move slow E2E suites off the PR path; and track pipeline duration as a team metric with a budget.</div></li>
+  </ol>
+  <h2>Checklist</h2>
+  <ul>
+    <li class="todo">every commit is validated</li>
+    <li class="todo">deploys are repeatable</li>
+    <li class="todo">cache dependencies</li>
+  </ul>
+  <p class="black"><a href="index.md">Contents</a> · ← <a href="ch05-the-testing-pyramid-and-test-strategy.notes.html">Chapter 5 — The Testing Pyramid &amp; Test Strategy</a> · Next → <a href="ch07-packaging-and-release-engineering.notes.html">Chapter 7 — Packaging &amp; Release Engineering</a></p>
+  <nav class="nav"><a href="ch05-the-testing-pyramid-and-test-strategy.notes.html">← Ch 5 — The Testing Pyramid &amp; Test Strategy</a><a href="index.notes.html">☰ Contents</a><a href="ch07-packaging-and-release-engineering.notes.html">Ch 7 — Packaging &amp; Release Engineering →</a></nav>
+</main>
+<script>
+/* Sketch: redraw every .sk shape as a smooth hand-drawn line. The outline is resampled, each point is pushed
+   along the normal by a gentle wobble (two low-frequency sines; on closed shapes the wobble loops exactly once so
+   start and end meet), and a smooth Catmull-Rom curve is rebuilt. Pure geometry, so the line stays crisp. */
+(() => {
+  const NS = 'http://www.w3.org/2000/svg', TAU = Math.PI * 2;
+  const KEEP_OUT = /^(cx|cy|rx|ry|r|x|y|width|height|x1|y1|x2|y2|points|d)$/;
+  const sketch = (el, i) => {
+    if (!el.getTotalLength) return;
+    const dAttr = el.getAttribute('d') || '';
+    if ((dAttr.match(/[Mm]/g) || []).length > 1) return;            // several sub-paths: leave as drawn
+    const L = el.getTotalLength(); if (!(L > 4)) return;
+    const closed = /^(ellipse|circle|rect|polygon)$/.test(el.tagName) || /[Zz]\s*$/.test(dAttr);
+    const n = Math.max(8, Math.round(L / 7)), amp = Math.min(1.1, 0.45 + L / 900);
+    const k1 = closed ? Math.max(2, Math.round(L / 180)) : 0, k2 = closed ? Math.max(3, Math.round(L / 95)) : 0;
+    const f1 = closed ? TAU * k1 / L : TAU / Math.max(160, L / 2.5), f2 = closed ? TAU * k2 / L : TAU / 95;
+    const p1 = (i * 2.399) % TAU, p2 = (i * 4.17) % TAU, pts = [];
+    for (let k = 0; k < (closed ? n : n + 1); k++) {
+      const s = L * k / n, a = el.getPointAtLength(Math.max(0, s - 0.5)), b = el.getPointAtLength(Math.min(L, s + 0.5)), c = el.getPointAtLength(s);
+      let nx = -(b.y - a.y), ny = b.x - a.x; const m = Math.hypot(nx, ny) || 1;
+      const w = (closed ? amp : amp * Math.min(1, s / 12, (L - s) / 12)) * (0.8 * Math.sin(s * f1 + p1) + 0.25 * Math.sin(s * f2 + p2));
+      pts.push([c.x + nx / m * w, c.y + ny / m * w]);                // open lines: ends stay exactly in place
+    }
+    const P = k => closed ? pts[(k + pts.length) % pts.length] : pts[Math.max(0, Math.min(pts.length - 1, k))];
+    let d = `M${pts[0][0].toFixed(2)} ${pts[0][1].toFixed(2)}`;
+    for (let k = 0, last = closed ? pts.length : pts.length - 1; k < last; k++) {
+      const [x0, y0] = P(k - 1), [x1, y1] = P(k), [x2, y2] = P(k + 1), [x3, y3] = P(k + 2);
+      d += ` C${(x1 + (x2 - x0) / 6).toFixed(2)} ${(y1 + (y2 - y0) / 6).toFixed(2)} ${(x2 - (x3 - x1) / 6).toFixed(2)} ${(y2 - (y3 - y1) / 6).toFixed(2)} ${x2.toFixed(2)} ${y2.toFixed(2)}`;
+    }
+    const path = document.createElementNS(NS, 'path');
+    for (const at of el.attributes) if (!KEEP_OUT.test(at.name)) path.setAttribute(at.name, at.value);
+    path.setAttribute('d', d + (closed ? ' Z' : ''));
+    el.replaceWith(path);
+  };
+  document.querySelectorAll('svg .sk').forEach(sketch);
+})();
+</script>
+</body>
+</html>

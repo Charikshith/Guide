@@ -52,7 +52,7 @@ Automating build/test/deploy pipelines with GitHub Actions and deployment gates.
 ## Prereqs
 
 * [Chapter 21 — Build Systems & Package Management](ch21-build-systems-and-package-management.md)
-* [Vol 2 Ch 5 — CI/CD](../volume-2-software-engineering/ch05-ci-cd.md)
+* [Vol 2 Ch 6 — CI/CD](../volume-2-software-engineering/ch06-ci-cd.md)
 
 ---
 

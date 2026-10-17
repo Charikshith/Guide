@@ -31,10 +31,32 @@ for vol in sorted(p for p in SRC.iterdir() if p.is_dir()):
         parts = BLOCK.split(text)
         assert len(parts) == 3, (p, len(parts))
         p.write_text(parts[0] + nav + parts[1] + nav + parts[2], encoding="utf-8")
-    items = "\n".join(f'<li class="arrow"><a href="{p.name}">{html.escape(t)}</a></li>' for p, t in zip(pages, titles))
+    def item(p, t):
+        return f'<li class="arrow"><a href="{p.name}">{html.escape(t)}</a></li>'
+
+    # Group by the "## Part N — Title" headings in the volume's index.md (volumes without Parts stay flat).
+    part_of, part = {}, None
+    for line in (vol / "index.md").read_text(encoding="utf-8").splitlines():
+        m = re.match(r"^## (Part \d+ — .+)", line)
+        if m:
+            part = m.group(1).strip()
+            continue
+        m = re.match(r"^#{2,3} Chapter (\d+) — ", line)
+        if m and part:
+            part_of[int(m.group(1))] = part
+    if part_of:
+        groups = []
+        for p, t in zip(pages, titles):
+            name = part_of.get(int(re.match(r"ch(\d+)-", p.name).group(1)))
+            if not groups or groups[-1][0] != name:
+                groups.append((name, []))
+            groups[-1][1].append(item(p, t))
+        content = "\n".join((f"<h2>{html.escape(n)}</h2>\n" if n else "") + "<ul>\n" + "\n".join(li) + "\n</ul>" for n, li in groups)
+    else:
+        content = "<ul>\n" + "\n".join(item(p, t) for p, t in zip(pages, titles)) + "\n</ul>"
     idx = TEMPLATE.read_text(encoding="utf-8")
     vtitle = vol.name.replace("-", " ").title()
     idx = idx.replace("{{TITLE}}", f"{vtitle} — Contents").replace("{{DATE}}", "2026-10-10")
-    idx = idx.replace("<!-- CONTENT GOES HERE -->", f"<ul>\n{items}\n</ul>")
+    idx = idx.replace("<!-- CONTENT GOES HERE -->", content)
     (vol / "index.notes.html").write_text(idx, encoding="utf-8")
 print("done")
