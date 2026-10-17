@@ -1,6 +1,6 @@
 # Chapter 22 — The 30-System Design Portfolio
 
-> **Volume 4 — High-Level Design** · [Contents](index.md) · ← [Chapter 21 — Cost & Capacity Economics](ch21-cost-and-capacity-economics.md)
+> **Volume 4 — High-Level Design** · [Contents](index.md) · ← [Chapter 21 — Cost & Capacity Economics](ch21-cost-and-capacity-economics.md) · Next → [Chapter 23 — Design a Collaborative Document Editor (Google Docs)](ch23-design-a-collaborative-document-editor-google-docs.md)
 
 ---
 
@@ -457,4 +457,4 @@ flowchart LR
 
 ---
 
-> [Contents](index.md) · ← [Chapter 21 — Cost & Capacity Economics](ch21-cost-and-capacity-economics.md)
+> [Contents](index.md) · ← [Chapter 21 — Cost & Capacity Economics](ch21-cost-and-capacity-economics.md) · Next → [Chapter 23 — Design a Collaborative Document Editor (Google Docs)](ch23-design-a-collaborative-document-editor-google-docs.md)

@@ -2,7 +2,7 @@
 
 > Goal: Design systems that scale and stay reliable. Requires Volume 1 (Parts 7–9) and Volume 3.
 >
-> **Chapters 1–22.** Each chapter ends by designing one or more real-world systems; by the end you will have designed **30+ systems**.
+> **Chapters 1–23.** Each chapter ends by designing one or more real-world systems; by the end you will have designed **30+ systems**.
 
 # Contents
 
@@ -41,6 +41,7 @@
 20. [Cloud Architecture](ch20-cloud-architecture.md)
 21. [Cost & Capacity Economics](ch21-cost-and-capacity-economics.md)
 22. [The 30-System Design Portfolio](ch22-the-30-system-design-portfolio.md)
+23. [Design a Collaborative Document Editor (Google Docs)](ch23-design-a-collaborative-document-editor-google-docs.md)
 
 ---
 
@@ -522,4 +523,28 @@
 
 ---
 
-**Exit criteria:** Design **30+ real-world systems** (chapter 21 portfolio).
+### Chapter 23 — Design a Collaborative Document Editor (Google Docs)
+
+**Concept:** Real-time multi-user editing: why locks and last-write-wins fail, operational transformation (OT) versus sequence CRDTs versus Figma-style property-level last-writer-wins, one owner server per document, operation log and snapshots, presence, comments, offline, undo.
+
+**Prereqs:** Ch 4, Ch 9, Ch 19, Vol 1 Ch 43, Vol 1 Ch 50, Vol 3 Ch 12.
+
+**Diagram:** The architecture; the "abc" insert/delete worked example as a sequence diagram; a chooser between OT, CRDT, and property-level last-writer-wins.
+
+**Example:** A working OT engine with a central server and a tiny sequence CRDT, both property-tested (exhaustive pair check plus thousands of random runs).
+
+**Exercises:** (1) Walk the `abc` example by hand. (2) How OT and a CRDT order two inserts at the same spot. (3) Why tombstones exist. (4) Offline for an hour. (5) Why presence stays out of the log. (6) An overloaded hot document.
+
+**Mini project:** An OT server with three clients, snapshots, operation IDs, comments, multi-character edits, and per-user undo.
+
+**Design:** Design a collaborative editor for 10M daily users: API, data model, estimates, and the decisions to justify.
+
+**Open source:** [`yjs/yjs`](https://github.com/yjs/yjs); [`automerge/automerge`](https://github.com/automerge/automerge); [`share/sharedb`](https://github.com/share/sharedb); [`ether/etherpad-lite`](https://github.com/ether/etherpad-lite).
+
+**Interview:** "How do two people edit the same document at once?" / "OT versus CRDT?" / "What is a tombstone?"
+
+**Checklist:** ☐ apply edits locally first ☐ choose OT, CRDT, or property-level LWW on purpose ☐ one owner per document orders operations ☐ log before acknowledging ☐ test convergence with randomized edits
+
+---
+
+**Exit criteria:** Design **30+ real-world systems** (chapter 22 portfolio).

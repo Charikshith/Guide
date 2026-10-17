@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ch 23 — Design a Collaborative Document Editor (Google Docs) — Notes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;700&family=Kalam:wght@400;700&family=Patrick+Hand&display=swap" rel="stylesheet">
+<style>
+/* ===== Page tokens ===== */
+:root{
+  --line:32px;                 /* ruled-line spacing; every vertical size is a multiple */
+  --paper:#fdfbf4; --rule:#c9dcef; --margin:#e8a0a0;
+  --ink:#1f3a93;               /* blue pen (body) */
+  --ink2:#222;                 /* black pen (headings) */
+  --red:#c0392b; --green:#1e8449;
+  --hl-yellow:rgba(255,235,59,.55); --hl-pink:rgba(255,128,171,.45);
+  --hl-green:rgba(118,255,3,.35); --hl-blue:rgba(64,196,255,.35);
+  --sticky:#fff59d; --desk:#e9e4d8;
+  --hand:'Kalam','Patrick Hand','Comic Sans MS','Segoe Print','Bradley Hand',cursive;
+  --title:'Caveat','Kalam','Segoe Print','Bradley Hand',cursive;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){ --desk:#2b2b2b; }
+}
+:root[data-theme="dark"]{ --desk:#2b2b2b; }
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--desk);font-family:var(--hand);color:var(--ink);}
+
+/* ===== Notebook sheet ===== */
+.page{
+  position:relative; max-width:860px; margin:24px auto; padding:var(--line) 28px calc(var(--line)*2) 84px;
+  background:
+    linear-gradient(90deg,transparent 64px,var(--margin) 64px,var(--margin) 66px,transparent 66px),
+    repeating-linear-gradient(var(--paper) 0,var(--paper) calc(var(--line) - 1px),var(--rule) calc(var(--line) - 1px),var(--rule) var(--line));
+  background-color:var(--paper);
+  box-shadow:0 2px 6px rgba(0,0,0,.15),0 12px 28px rgba(0,0,0,.12);
+  font-size:20px; line-height:var(--line);
+}
+.page::before{ /* punched holes */
+  content:""; position:absolute; left:22px; top:0; bottom:0; width:18px;
+  background:radial-gradient(circle,var(--desk) 7px,transparent 8px) 0 40px/18px 220px repeat-y;
+}
+@media (max-width:600px){
+  .page{margin:0;padding-left:52px;padding-right:16px;font-size:18px;
+    background:
+      linear-gradient(90deg,transparent 40px,var(--margin) 40px,var(--margin) 42px,transparent 42px),
+      repeating-linear-gradient(var(--paper) 0,var(--paper) calc(var(--line) - 1px),var(--rule) calc(var(--line) - 1px),var(--rule) var(--line));
+    background-color:var(--paper);}
+  .page::before{left:10px;width:16px}
+}
+
+/* ===== Text (all margins are multiples of --line so text sits on the rules) ===== */
+.date{position:absolute;top:0;right:24px;font-family:var(--title);font-size:22px;color:var(--ink2);line-height:var(--line)}
+h1{font-family:var(--title);font-weight:700;color:var(--ink2);font-size:46px;line-height:calc(var(--line)*2);margin:0;transform:rotate(-1deg)}
+h1 .u{background:linear-gradient(transparent 62%,var(--hl-yellow) 62%,var(--hl-yellow) 92%,transparent 92%)}
+h2{font-family:var(--title);font-weight:700;color:var(--red);font-size:32px;line-height:calc(var(--line)*1.5);margin:calc(var(--line)*.5) 0 0}
+h2::before{content:"➤ ";font-size:22px}
+p,li{margin:0}
+ul,ol{margin:0;padding-left:28px}
+ul{list-style:none}
+ul>li::before{content:"–";position:absolute;margin-left:-20px}
+ul>li.star::before{content:"★";color:var(--red)}
+ul>li.arrow::before{content:"→"}
+ul>li.check::before{content:"✓";color:var(--green)}
+.gap{height:var(--line)}
+
+/* ===== Pen effects ===== */
+.hl{background:var(--hl-yellow);padding:0 3px;border-radius:3px 6px 4px 7px}
+.hl.pink{background:var(--hl-pink)} .hl.green{background:var(--hl-green)} .hl.blue{background:var(--hl-blue)}
+.red{color:var(--red)} .green{color:var(--green)} .black{color:var(--ink2)}
+.ul{text-decoration:underline wavy var(--red);text-underline-offset:5px}
+.circ{border:2px solid var(--red);border-radius:50% 45% 55% 48%;padding:0 6px}
+.strike{text-decoration:line-through 2px var(--red)}
+.term{font-weight:700;color:var(--ink2)}
+.box{display:flow-root;border:2.5px solid var(--ink2);border-radius:4px 10px 6px 12px;padding:calc(var(--line)*.5 - 2.5px) 14px;margin:calc(var(--line)*.5) 0;transform:rotate(-.4deg);background:rgba(255,255,255,.35)}
+.box.red{border-color:var(--red)}
+.formula{font-family:var(--title);font-size:28px;text-align:center;color:var(--ink2)}
+
+/* sticky note */
+.sticky{float:right;width:min(250px,42%);margin:0 0 var(--line) 20px;padding:var(--line) 16px;background:var(--sticky);
+  color:#333;transform:rotate(2.2deg);box-shadow:2px 4px 8px rgba(0,0,0,.18);font-size:18px}
+.sticky b{font-family:var(--title);font-size:24px;color:var(--red)}
+@media (max-width:600px){.sticky{float:none;width:auto;margin:var(--line) 0}}
+
+/* margin annotation (lives in the red margin) */
+.side{position:absolute;left:4px;width:58px;text-align:center;font-family:var(--title);font-size:17px;line-height:18px;color:var(--red);transform:rotate(-8deg)}
+@media (max-width:600px){.side{display:none}}
+
+/* two-column notes */
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:0 28px}
+.cols>*{min-width:0}
+@media (max-width:600px){.cols{grid-template-columns:1fr}}
+
+/* diagrams */
+figure{margin:var(--line) 0;text-align:center}
+figure svg{width:100%;max-width:640px;height:auto;overflow:visible}
+figcaption{font-family:var(--title);font-size:20px;color:var(--ink2)}
+/* phones: keep labels readable — diagram scrolls inside its own box instead of shrinking */
+@media (max-width:600px){figure{overflow-x:auto}figure svg{min-width:520px}}
+.sk{fill:none;stroke:var(--ink2);stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round}   /* wobble comes from the sketch script below */
+.sk.blue{stroke:var(--ink)} .sk.red{stroke:var(--red)} .sk.green{stroke:var(--green)}
+.lbl{font-family:var(--hand);font-size:17px;fill:var(--ink)}
+.lbl.b{font-weight:700;fill:var(--ink2)} .lbl.r{fill:var(--red)} .lbl.g{fill:var(--green)}
+
+/* table */
+.wrap{overflow-x:auto}
+table{border-collapse:collapse;margin:calc(var(--line)*.5) 0;min-width:100%}
+th,td{border:2px solid var(--ink2);padding:0 10px;text-align:left;vertical-align:top}
+th{font-family:var(--title);font-size:24px;color:var(--ink2)}
+
+/* code block: syntax-coloured pen colours, still on the ruled-line grid */
+pre.code{font-family:Consolas,'Cascadia Mono','SFMono-Regular',Menlo,monospace;font-size:16px;line-height:var(--line);
+  margin:calc(var(--line)*.5) 0;padding:calc(var(--line)*.5 - 2px) 14px;border:2px solid var(--ink2);border-radius:4px 10px 6px 12px;
+  background:rgba(255,255,255,.55);color:var(--ink2);white-space:pre;overflow-x:auto;tab-size:4}
+pre.code .kw{color:#8e24aa;font-weight:700} pre.code .st{color:var(--green)} pre.code .nu{color:#d35400}
+pre.code .cm{color:#7f8c8d;font-style:italic} pre.code .fn{color:var(--ink)} pre.code .bi{color:#00838f}
+
+@media print{body{background:#fff}.page{box-shadow:none;margin:0}.page::before{display:none}}
+/* ===== Extras for long chapter notes */
+pre.code.ascii{border-color:var(--green)}
+code{font-family:Consolas,'Courier New',monospace;font-size:.82em;background:rgba(0,0,0,.06);padding:0 3px;border-radius:3px}
+pre.code code{background:none;padding:0;font-size:inherit}
+.lang{font-family:var(--title);font-size:18px;color:var(--red)}
+h3{font-family:var(--title);font-weight:700;color:var(--ink2);font-size:26px;line-height:var(--line);margin:calc(var(--line)*.5) 0 0}
+h3::before{content:"✎ ";font-size:18px;color:var(--red)}
+.nav{display:flex;justify-content:space-between;gap:12px;font-family:var(--title);font-size:22px;line-height:var(--line)}
+.nav a{color:var(--red);text-decoration:none}
+.nav a:hover{text-decoration:underline wavy}
+.pagebreak{border-top:3px dashed var(--margin);margin:var(--line) 0;text-align:center;font-family:var(--title);color:var(--red);line-height:var(--line)}
+li.todo::before{content:"☐";color:var(--ink2)}
+a{color:var(--ink);text-decoration:underline dotted}
+</style>
+</head>
+<body>
+<!-- Give every diagram stroke class="sk": the sketch script at the bottom redraws it as a smooth hand-drawn line. -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <!-- Fallback wobble filter (only used if something references url(#rough)). One smooth noise octave + sRGB +
+       a light final blur: Chrome's displacement samples nearest-neighbour, so a raw filter leaves stair-step breaks. -->
+  <filter id="rough" filterUnits="userSpaceOnUse" x="-500" y="-500" width="3000" height="3000" color-interpolation-filters="sRGB">
+    <feTurbulence type="fractalNoise" baseFrequency="0.02" numOctaves="1" seed="3" result="t"/>
+    <feGaussianBlur in="t" stdDeviation="2" result="n"/>
+    <feDisplacementMap in="SourceGraphic" in2="n" scale="5" xChannelSelector="R" yChannelSelector="G" result="d"/>
+    <feGaussianBlur in="d" stdDeviation="0.45"/>
+  </filter>
+  <marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+    <path d="M1 1 L9 5 L1 9" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+  </marker>
+</defs></svg>
+
+<main class="page">
+  <nav class="nav"><a href="ch22-the-30-system-design-portfolio.notes.html">← Ch 22 — The 30-System Design Portfolio</a><a href="index.notes.html">☰ Contents</a><span></span></nav>
+  <div class="date">2026-10-17</div>
+  <h1><span class="u">Ch 23 — Design a Collaborative Document Editor (Google Docs)</span></h1>
+  <p class="black">Volume 4 — High-Level Design · <a href="index.md">Contents</a> · ← <a href="ch22-the-30-system-design-portfolio.notes.html">Chapter 22 — The 30-System Design Portfolio</a></p>
+
+  <h2>Concept</h2>
+  <p>Many people type at once. Each sees their own keys <b>instantly</b>. Everyone must end with the <span class="hl">same</span> document.</p>
+  <div class="box"><b>In one sentence:</b> apply every edit locally at once, send it to a server that fixes <b>one global order</b>, and use <span class="term">OT</span> or a <span class="term">CRDT</span> so concurrent edits applied in different orders still give identical text.</div>
+  <h3>Mental model — two editors, one printed page</h3>
+  <p>Doc "abc". Alice inserts <code>x</code> at the start. Bob deletes <code>c</code> ("delete char 2"). Replay Bob's step unchanged on Alice's copy → deletes the wrong letter. <b>OT</b> rewrites it to "delete char 3". A <b>CRDT</b> gives every letter a permanent name, so "delete the letter named c" never depends on position.</p>
+
+  <h2>1 · Requirements</h2>
+  <div class="wrap"><table>
+    <tr><th>Functional</th><th>Non-functional</th></tr>
+    <tr><td>create, open, edit rich text</td><td>own typing appears at once</td></tr>
+    <tr><td>many editors at the same time</td><td><b>convergence</b>: identical text for all</td></tr>
+    <tr><td>cursors / presence</td><td>acknowledged edit never lost</td></tr>
+    <tr><td>comments, suggestions</td><td>big docs open fast</td></tr>
+    <tr><td>history, undo/redo</td><td>brief disconnects + offline edits merge</td></tr>
+    <tr><td>sharing + permissions</td><td>millions of docs; most have 1 editor</td></tr>
+  </table></div>
+
+  <h2>2 · Why the obvious ways fail</h2>
+  <ul>
+    <li><span class="strike">Lock the document</span> → one at a time; stale locks from closed tabs.</li>
+    <li><span class="strike">Last write wins (whole doc)</span> → second save erases the first person's work.</li>
+    <li><span class="strike">Send whole doc per keystroke</span> → too much data, still needs a merge rule.</li>
+    <li><span class="strike">"insert at position 5" unchanged</span> → positions go stale when another edit lands first.</li>
+  </ul>
+  <p class="arrow">So: send <b>operations</b>, and make concurrent ops <span class="term">commute</span> (arrival order doesn't change the result).</p>
+
+  <h2>3 · Operational transformation (OT)</h2>
+  <ul>
+    <li>Ops like <code>insert(pos, ch)</code>, <code>delete(pos)</code>. An op made on an old version is <b>transformed</b> past the ops it hasn't seen.</li>
+    <li><b>Example:</b> "abc"; O1 = insert x at 0; O2 = delete pos 2. After O1, O2 becomes <code>delete 3</code>. Either order → <span class="hl green">xab</span>.</li>
+    <li><b>TP1:</b> a then T(b,a) = b then T(a,b), for concurrent a, b.</li>
+    <li><b>TP2:</b> 3-op condition; needed when ops can be transformed in different states (no central server). <span class="red">Our demo passes TP1, not TP2</span> (8 of 729 triples fail) → OK <i>only</i> with a central server.</li>
+    <li><b>History:</b> Ellis &amp; Gibbs 1989 (first algorithm) → Jupiter 1995 (central server) → Wave / Docs (Wikipedia: 2009; Google's blog series on Docs: Sept 2010).</li>
+    <li class="star">Pros: small messages, no per-char IDs, battle-tested.</li>
+    <li class="star">Cons: transform rules explode with rich text; practical systems need a central server; undo is tricky; early algorithms had bugs, proofs are error-prone → <b>test with random runs</b>.</li>
+  </ul>
+  <aside class="sticky"><b>Remember!</b><br>OT = fix the <i>instruction</i>.<br>CRDT = fix the <i>data</i> (IDs).</aside>
+
+  <h2>4 · CRDTs</h2>
+  <ul>
+    <li>Replicas converge if they get the same updates and concurrent updates <b>commute</b> (Shapiro et al. 2011, "strong eventual consistency"). Op-based designs need <b>causal delivery</b>; state-based designs merge whole states.</li>
+    <li><b>Sequence CRDT:</b> every char has a unique ID. <b>Insert</b> = "after char ID". <b>Delete</b> = <span class="term">tombstone</span> (keep it so later refs still work). Same-spot inserts → ID order decides, identically everywhere.</li>
+    <li class="star">Pros: no central order needed; offline-first / peer-to-peer.</li>
+    <li class="star">Cons: per-char metadata; tombstones need GC; interleaving pitfalls.</li>
+    <li class="arrow"><b>Speed is about the implementation.</b> Gentle's benchmark (2021, 260k edits, ~100k chars): Automerge preview 291 s / 880 MB · list CRDT 31 s · Yjs 0.97 s / 3.3 MB · plain splice 0.61 s. One author, one machine, local single-user replay only.</li>
+  </ul>
+
+  <h2>5 · Figma-style: last writer wins per property</h2>
+  <ul>
+    <li><b>Server = authority</b>, decides order. One property of one object: last value the server gets wins. Different properties never conflict.</li>
+    <li>Child order by <b>fractional indexing</b>; parent + position stored together (atomic move); server rejects cycles.</li>
+    <li>Figma: inspired by CRDTs but <span class="red">not true CRDTs</span>; skipped OT (too complex for them).</li>
+    <li class="check">Good for design tools / forms. <span class="red">Wrong for text</span> — two people typing in one paragraph must both keep their words.</li>
+  </ul>
+
+  <h2>6 · Choosing</h2>
+  <div class="wrap"><table>
+    <tr><th></th><th>OT + server</th><th>Sequence CRDT</th><th>Property LWW</th></tr>
+    <tr><td>Best for</td><td>rich text (Docs)</td><td>offline / P2P text</td><td>object trees</td></tr>
+    <tr><td>Central order</td><td>in practice yes</td><td>no</td><td>yes</td></tr>
+    <tr><td>Message size</td><td>small</td><td>bigger (IDs)</td><td>small</td></tr>
+    <tr><td>Text merge</td><td>excellent</td><td>excellent</td><td>poor</td></tr>
+    <tr><td>Hard part</td><td>transform rules</td><td>memory, GC</td><td>which conflicts to accept</td></tr>
+    <tr><td>Undo</td><td>inverse transforms</td><td>tricky</td><td>restore old value</td></tr>
+  </table></div>
+
+  <h2>7 · Architecture</h2>
+  <ul>
+    <li><b>Client:</b> applies edit locally, queues unacked ops, talks over <b>WebSocket</b>.</li>
+    <li><b>One owner server per document</b> (Figma: a process per doc). Route by doc ID; ownership kept in a small shared store so another server can take over.</li>
+    <li><b>Op log:</b> append every accepted op with a revision number <i>before</i> the ack → durable truth.</li>
+    <li><b>Snapshots</b> every N revisions → open = snapshot + replay tail.</li>
+    <li><b>Presence</b> (cursors): ephemeral, pub/sub, <span class="red">never in the log</span>.</li>
+    <li><b>Metadata</b> (owner, title, ACL, comments): normal SQL DB.</li>
+    <li><b>Permissions</b> checked at connect <i>and</i> every op (Ch 19). A viewer can't send edits.</li>
+    <li><b>Comments</b> anchored to a range → transform the anchors with the ops.</li>
+  </ul>
+
+  <h2>8 · One edit's journey (OT)</h2>
+  <ol>
+    <li>Alice types. Her client applies it <b>at once</b>, sends <code>(op, base rev)</code> if nothing is in flight.</li>
+    <li>Server transforms it past newer ops, applies, <b>appends to log</b>, assigns next rev.</li>
+    <li>Server <b>acks</b> Alice, <b>broadcasts</b> the transformed op to the others.</li>
+    <li>Others transform it against their own unacked edits, then apply. Alice, on ack, sends her next queued edit (one in flight keeps clients simple).</li>
+  </ol>
+
+  <h2>9 · Scale, failure, edge cases</h2>
+  <ul>
+    <li><b>Hot doc</b> (100s of editors): cap active editors, rest read-only; batch 50–200 ms; coalesced stream to viewers.</li>
+    <li><b>Reconnect:</b> send last rev + unacked ops (or reload and reapply — Figma downloads a fresh copy).</li>
+    <li><b>Duplicates:</b> op ID (client ID + counter) → retry after a lost ack is ignored.</li>
+    <li><b>Server crash:</b> new owner = snapshot + log replay; clients resend anything unacked.</li>
+    <li><b>Never two servers</b> accepting ops for one doc (lease / consensus-backed owner record).</li>
+    <li><b>Log growth:</b> merge typing runs, snapshot, retention policy.</li>
+    <li><b>Undo</b> = your own last edit only (inverse op transformed / new CRDT op on same IDs).</li>
+    <li><b>Big paste</b> = one op, not thousands of single chars.</li>
+  </ul>
+
+  <h2>10 · Estimates (assumptions!)</h2>
+  <ul>
+    <li>10M DAU; peak <b>400k typing at once</b>. ~40 wpm ≈ 3–4 chars/s → at most ~3 non-empty msgs/s; take <b>2</b> average (content only, no cursors) → <b>0.8M in/s</b>.</li>
+    <li>Fan-out 1.5 → <b>1.2M out/s</b>. In + out ≈ <b>2M msgs/s</b>.</li>
+    <li>40k msgs/s per server (assumed) → <b>50 servers</b>. 1M connections at 20k each → <b>50</b>. With 2–3× headroom → <b>100–150</b>.</li>
+    <li>Log: 20 B × 3 chars/s × 400k ≈ <b>24 MB/s</b> ≈ 2 TB/day <i>only if peak lasted all day</i>. Compaction cuts it ~10× (state your factor).</li>
+  </ul>
+
+  <div class="pagebreak">~ page 2 ~</div>
+
+  <h2>Prereqs</h2>
+  <ul>
+    <li><a href="ch04-distributed-systems-patterns.notes.html">Ch 4 — Distributed Systems Patterns</a></li>
+    <li><a href="ch09-message-queues-and-streaming-kafka-sqs-pub.notes.html">Ch 9 — Message Queues &amp; Streaming</a></li>
+    <li><a href="ch19-authentication-and-authorization-in-system-design.notes.html">Ch 19 — Authentication &amp; Authorization in System Design</a></li>
+    <li><a href="../volume-1-cs-foundations/ch43-websockets-grpc-mqtt-and-sse.notes.html">Vol 1 Ch 43 — WebSockets, gRPC, MQTT &amp; SSE</a></li>
+    <li><a href="../volume-1-cs-foundations/ch50-cap-consistency-and-consensus.notes.html">Vol 1 Ch 50 — CAP, Consistency &amp; Consensus</a></li>
+    <li><a href="../volume-3-low-level-design/ch12-event-bus-cqrs-and-event-sourcing.notes.html">Vol 3 Ch 12 — Event Bus, CQRS &amp; Event Sourcing</a></li>
+  </ul>
+
+  <h2>Diagram</h2>
+  <figure>
+    <svg viewBox="0 0 660 285" role="img" aria-label="Architecture: Alice and Bob connect by WebSocket to a gateway, which routes by document ID to the collaboration server that owns the document; the server writes an operation log and snapshots; the gateway reads metadata; presence goes through pub/sub.">
+      <rect class="sk" x="15" y="40" width="110" height="56" rx="12"/>
+      <text class="lbl b" x="70" y="74" text-anchor="middle">Alice</text>
+      <rect class="sk" x="15" y="170" width="110" height="56" rx="12"/>
+      <text class="lbl b" x="70" y="204" text-anchor="middle">Bob</text>
+      <rect class="sk" x="180" y="105" width="110" height="56" rx="12"/>
+      <text class="lbl b" x="235" y="130" text-anchor="middle">gateway</text>
+      <text class="lbl" x="235" y="150" text-anchor="middle" style="font-size:13px">auth + route</text>
+      <rect class="sk" x="350" y="105" width="130" height="56" rx="12"/>
+      <text class="lbl b" x="415" y="130" text-anchor="middle">collab server</text>
+      <text class="lbl" x="415" y="150" text-anchor="middle" style="font-size:13px">owns doc d1</text>
+      <rect class="sk" x="540" y="20" width="100" height="50" rx="12"/>
+      <text class="lbl b" x="590" y="50" text-anchor="middle">op log</text>
+      <rect class="sk" x="540" y="95" width="100" height="50" rx="12"/>
+      <text class="lbl b" x="590" y="125" text-anchor="middle">snapshots</text>
+      <rect class="sk" x="180" y="220" width="110" height="50" rx="12"/>
+      <text class="lbl b" x="235" y="250" text-anchor="middle">metadata DB</text>
+      <rect class="sk" x="350" y="220" width="130" height="50" rx="12" style="stroke-dasharray:8 5"/>
+      <text class="lbl b" x="415" y="250" text-anchor="middle">pub/sub</text>
+      <path class="sk blue" d="M125 68 C 150 80, 160 110, 178 125" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M125 198 C 150 186, 160 150, 178 143" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <text class="lbl" x="150" y="40" style="font-size:13px">WebSocket</text>
+      <path class="sk blue" d="M290 133 L 348 133" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <text class="lbl r" x="319" y="98" text-anchor="middle" style="font-size:13px">by doc ID</text>
+      <path class="sk green" d="M480 118 C 505 100, 520 70, 538 55" style="color:var(--green)" marker-end="url(#arr)"/>
+      <path class="sk green" d="M480 140 C 505 138, 520 126, 538 122" style="color:var(--green)" marker-end="url(#arr)"/>
+      <path class="sk blue" d="M235 161 L 235 218" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <text class="lbl" x="250" y="196" style="font-size:13px">permissions</text>
+      <path class="sk" d="M415 161 L 415 218" style="color:var(--ink);stroke-dasharray:6 5" marker-end="url(#arr)"/>
+      <text class="lbl" x="430" y="196" style="font-size:13px">presence</text>
+    </svg>
+    <figcaption>Fig 1: one collaboration server owns each document; the log is durable, presence is not.</figcaption>
+  </figure>
+
+  <figure>
+    <svg viewBox="0 0 660 295" role="img" aria-label="Sequence: Alice sends insert x at 0 and Bob sends delete 2 against revision 0; the server applies the insert as revision 1 giving xabc, transforms the delete to delete 3 as revision 2 giving xab, then sends delete 3 to Alice and insert x at 0 to Bob; both end with xab.">
+      <rect class="sk" x="15" y="12" width="130" height="44" rx="10"/>
+      <text class="lbl b" x="80" y="40" text-anchor="middle">Alice: abc</text>
+      <rect class="sk" x="265" y="12" width="130" height="44" rx="10"/>
+      <text class="lbl b" x="330" y="40" text-anchor="middle">Server</text>
+      <rect class="sk" x="515" y="12" width="130" height="44" rx="10"/>
+      <text class="lbl b" x="580" y="40" text-anchor="middle">Bob: abc</text>
+      <path class="sk" d="M80 58 L 80 288" style="color:var(--ink);stroke-dasharray:5 6"/>
+      <path class="sk" d="M330 58 L 330 288" style="color:var(--ink);stroke-dasharray:5 6"/>
+      <path class="sk" d="M580 58 L 580 288" style="color:var(--ink);stroke-dasharray:5 6"/>
+      <path class="sk blue" d="M84 95 C 150 90, 250 100, 326 95" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <text class="lbl r" x="205" y="84" text-anchor="middle" style="font-size:14px">ins(0,x)</text>
+      <path class="sk blue" d="M576 125 C 500 120, 400 130, 334 125" style="color:var(--ink)" marker-end="url(#arr)"/>
+      <text class="lbl r" x="455" y="114" text-anchor="middle" style="font-size:14px">del(2)</text>
+      <text class="lbl g" x="345" y="165" style="font-size:14px">apply → rev 1: xabc</text>
+      <text class="lbl g" x="345" y="188" style="font-size:14px">del(2) becomes del(3)</text>
+      <text class="lbl g" x="345" y="211" style="font-size:14px">apply → rev 2: xab</text>
+      <path class="sk green" d="M326 245 C 250 240, 150 250, 84 245" style="color:var(--green)" marker-end="url(#arr)"/>
+      <text class="lbl g" x="205" y="234" text-anchor="middle" style="font-size:14px">del(3)</text>
+      <path class="sk green" d="M334 275 C 400 270, 500 280, 576 275" style="color:var(--green)" marker-end="url(#arr)"/>
+      <text class="lbl g" x="455" y="264" text-anchor="middle" style="font-size:14px">ins(0,x)</text>
+    </svg>
+    <figcaption>Fig 2: the "abc" example. Without the transform, del(2) would remove b. Both ends finish with xab.</figcaption>
+  </figure>
+
+  <h2>Example</h2>
+  <span class="lang">python</span>
+<pre class="code"><code><span class="st">"""Operational transformation for plain text: single-character insert/delete,
+a central server that orders operations (the Jupiter / Google-style design)."""</span>
+
+NOP = (<span class="st">"nop"</span>,)
+
+
+<span class="kw">def</span> <span class="fn">apply</span>(doc, op):
+    <span class="kw">if</span> op[<span class="nu">0</span>] == <span class="st">"ins"</span>:                      <span class="cm"># ("ins", pos, char, site)</span>
+        <span class="kw">return</span> doc[:op[<span class="nu">1</span>]] + op[<span class="nu">2</span>] + doc[op[<span class="nu">1</span>]:]
+    <span class="kw">if</span> op[<span class="nu">0</span>] == <span class="st">"del"</span>:                      <span class="cm"># ("del", pos)</span>
+        <span class="kw">return</span> doc[:op[<span class="nu">1</span>]] + doc[op[<span class="nu">1</span>] + <span class="nu">1</span>:]
+    <span class="kw">return</span> doc
+
+
+<span class="kw">def</span> <span class="fn">transform</span>(a, b):
+    <span class="st">"""Rewrite op `a` so it still means the same thing after concurrent op `b` has been applied."""</span>
+    <span class="kw">if</span> a == NOP <span class="kw">or</span> b == NOP:
+        <span class="kw">return</span> a
+    <span class="kw">if</span> a[<span class="nu">0</span>] == <span class="st">"ins"</span> <span class="kw">and</span> b[<span class="nu">0</span>] == <span class="st">"ins"</span>:
+        <span class="cm"># same position: the lower site id goes first, so both sides pick the same order</span>
+        <span class="kw">if</span> a[<span class="nu">1</span>] &lt; b[<span class="nu">1</span>] <span class="kw">or</span> (a[<span class="nu">1</span>] == b[<span class="nu">1</span>] <span class="kw">and</span> a[<span class="nu">3</span>] &lt; b[<span class="nu">3</span>]):
+            <span class="kw">return</span> a
+        <span class="kw">return</span> (<span class="st">"ins"</span>, a[<span class="nu">1</span>] + <span class="nu">1</span>, a[<span class="nu">2</span>], a[<span class="nu">3</span>])
+    <span class="kw">if</span> a[<span class="nu">0</span>] == <span class="st">"ins"</span> <span class="kw">and</span> b[<span class="nu">0</span>] == <span class="st">"del"</span>:
+        <span class="kw">return</span> a <span class="kw">if</span> a[<span class="nu">1</span>] &lt;= b[<span class="nu">1</span>] <span class="kw">else</span> (<span class="st">"ins"</span>, a[<span class="nu">1</span>] - <span class="nu">1</span>, a[<span class="nu">2</span>], a[<span class="nu">3</span>])
+    <span class="kw">if</span> a[<span class="nu">0</span>] == <span class="st">"del"</span> <span class="kw">and</span> b[<span class="nu">0</span>] == <span class="st">"ins"</span>:
+        <span class="kw">return</span> a <span class="kw">if</span> a[<span class="nu">1</span>] &lt; b[<span class="nu">1</span>] <span class="kw">else</span> (<span class="st">"del"</span>, a[<span class="nu">1</span>] + <span class="nu">1</span>)
+    <span class="kw">if</span> a[<span class="nu">1</span>] &lt; b[<span class="nu">1</span>]:                         <span class="cm"># del vs del</span>
+        <span class="kw">return</span> a
+    <span class="kw">if</span> a[<span class="nu">1</span>] &gt; b[<span class="nu">1</span>]:
+        <span class="kw">return</span> (<span class="st">"del"</span>, a[<span class="nu">1</span>] - <span class="nu">1</span>)
+    <span class="kw">return</span> NOP                              <span class="cm"># both deleted the same character</span>
+
+
+<span class="kw">class</span> Server:
+    <span class="kw">def</span> <span class="fn">__init__</span>(<span class="bi">self</span>, doc=<span class="st">""</span>):
+        <span class="bi">self</span>.doc, <span class="bi">self</span>.log = doc, []        <span class="cm"># log[i] = the i-th operation, in server order</span>
+
+    <span class="kw">def</span> <span class="fn">receive</span>(<span class="bi">self</span>, op, base_rev):
+        <span class="st">"""A client built `op` when it had seen `base_rev` operations."""</span>
+        <span class="kw">for</span> old <span class="kw">in</span> <span class="bi">self</span>.log[base_rev:]:     <span class="cm"># transform past everything the client has not seen</span>
+            op = <span class="fn">transform</span>(op, old)
+        <span class="bi">self</span>.doc = <span class="fn">apply</span>(<span class="bi">self</span>.doc, op)
+        <span class="bi">self</span>.log.<span class="fn">append</span>(op)
+        <span class="kw">return</span> op                           <span class="cm"># broadcast this form to the other clients</span>
+
+
+<span class="kw">class</span> Client:
+    <span class="kw">def</span> <span class="fn">__init__</span>(<span class="bi">self</span>, site, doc=<span class="st">""</span>):
+        <span class="bi">self</span>.site, <span class="bi">self</span>.doc, <span class="bi">self</span>.rev = site, doc, <span class="nu">0</span>
+        <span class="bi">self</span>.inflight, <span class="bi">self</span>.buffer = <span class="kw">None</span>, []   <span class="cm"># one op on the wire, the rest queued</span>
+
+    <span class="kw">def</span> <span class="fn">local</span>(<span class="bi">self</span>, op):
+        <span class="bi">self</span>.doc = <span class="fn">apply</span>(<span class="bi">self</span>.doc, op)      <span class="cm"># show my own edit immediately</span>
+        <span class="kw">if</span> <span class="bi">self</span>.inflight <span class="kw">is</span> <span class="kw">None</span>:
+            <span class="bi">self</span>.inflight = op
+            <span class="kw">return</span> (op, <span class="bi">self</span>.rev)           <span class="cm"># message to send to the server</span>
+        <span class="bi">self</span>.buffer.<span class="fn">append</span>(op)
+        <span class="kw">return</span> <span class="kw">None</span>
+
+    <span class="kw">def</span> <span class="fn">on_ack</span>(<span class="bi">self</span>):
+        <span class="bi">self</span>.rev += <span class="nu">1</span>
+        <span class="bi">self</span>.inflight = <span class="kw">None</span>
+        <span class="kw">if</span> <span class="bi">self</span>.buffer:
+            <span class="bi">self</span>.inflight = <span class="bi">self</span>.buffer.<span class="fn">pop</span>(<span class="nu">0</span>)
+            <span class="kw">return</span> (<span class="bi">self</span>.inflight, <span class="bi">self</span>.rev)
+        <span class="kw">return</span> <span class="kw">None</span>
+
+    <span class="kw">def</span> <span class="fn">on_remote</span>(<span class="bi">self</span>, op):
+        pending = ([<span class="bi">self</span>.inflight] <span class="kw">if</span> <span class="bi">self</span>.inflight <span class="kw">else</span> []) + <span class="bi">self</span>.buffer
+        mine = []
+        <span class="kw">for</span> p <span class="kw">in</span> pending:                   <span class="cm"># pass the remote op through my unacknowledged ops</span>
+            op, p = <span class="fn">transform</span>(op, p), <span class="fn">transform</span>(p, op)
+            mine.<span class="fn">append</span>(p)
+        <span class="kw">if</span> <span class="bi">self</span>.inflight:
+            <span class="bi">self</span>.inflight, <span class="bi">self</span>.buffer = mine[<span class="nu">0</span>], mine[<span class="nu">1</span>:]
+        <span class="kw">else</span>:
+            <span class="bi">self</span>.buffer = mine
+        <span class="bi">self</span>.doc = <span class="fn">apply</span>(<span class="bi">self</span>.doc, op)
+        <span class="bi">self</span>.rev += <span class="nu">1</span></code></pre>
+  <span class="lang">python</span>
+<pre class="code"><code><span class="st">"""A tiny sequence CRDT (RGA style): every character has a unique id; inserts name the
+character they go after; deletes leave a tombstone. Operations commute, so replicas
+converge with no central server (they must still deliver an op after the ops it depends on)."""</span>
+
+
+<span class="kw">class</span> Replica:
+    <span class="kw">def</span> <span class="fn">__init__</span>(<span class="bi">self</span>, site):
+        <span class="bi">self</span>.site, <span class="bi">self</span>.clock = site, <span class="nu">0</span>
+        <span class="bi">self</span>.nodes = [(<span class="st">"head"</span>, <span class="st">""</span>, <span class="kw">False</span>)]          <span class="cm"># (id, char, deleted); id = (counter, site)</span>
+        <span class="bi">self</span>.seen = <span class="bi">set</span>()                           <span class="cm"># ids of ops already applied (makes delivery idempotent)</span>
+
+    <span class="kw">def</span> <span class="fn">_index</span>(<span class="bi">self</span>, node_id):
+        <span class="kw">for</span> i, n <span class="kw">in</span> <span class="bi">enumerate</span>(<span class="bi">self</span>.nodes):
+            <span class="kw">if</span> n[<span class="nu">0</span>] == node_id:
+                <span class="kw">return</span> i
+        <span class="kw">return</span> <span class="kw">None</span>
+
+    <span class="kw">def</span> <span class="fn">text</span>(<span class="bi">self</span>):
+        <span class="kw">return</span> <span class="st">""</span>.<span class="fn">join</span>(c <span class="kw">for</span> _, c, dead <span class="kw">in</span> <span class="bi">self</span>.nodes <span class="kw">if</span> <span class="kw">not</span> dead)
+
+    <span class="kw">def</span> <span class="fn">_visible_ids</span>(<span class="bi">self</span>):
+        <span class="kw">return</span> [i <span class="kw">for</span> i, _, dead <span class="kw">in</span> <span class="bi">self</span>.nodes[<span class="nu">1</span>:] <span class="kw">if</span> <span class="kw">not</span> dead]
+
+    <span class="kw">def</span> <span class="fn">local_insert</span>(<span class="bi">self</span>, pos, char):
+        ids = <span class="bi">self</span>.<span class="fn">_visible_ids</span>()
+        after = ids[pos - <span class="nu">1</span>] <span class="kw">if</span> pos &gt; <span class="nu">0</span> <span class="kw">else</span> <span class="st">"head"</span>
+        <span class="bi">self</span>.clock += <span class="nu">1</span>
+        op = (<span class="st">"ins"</span>, (<span class="bi">self</span>.clock, <span class="bi">self</span>.site), after, char)
+        <span class="bi">self</span>.<span class="fn">apply</span>(op)
+        <span class="kw">return</span> op
+
+    <span class="kw">def</span> <span class="fn">local_delete</span>(<span class="bi">self</span>, pos):
+        op = (<span class="st">"del"</span>, (<span class="st">"d"</span>, <span class="bi">self</span>.<span class="fn">_visible_ids</span>()[pos]))
+        <span class="bi">self</span>.<span class="fn">apply</span>(op)
+        <span class="kw">return</span> op
+
+    <span class="kw">def</span> <span class="fn">ready</span>(<span class="bi">self</span>, op):                            <span class="cm"># have the ops this one depends on arrived?</span>
+        target = op[<span class="nu">2</span>] <span class="kw">if</span> op[<span class="nu">0</span>] == <span class="st">"ins"</span> <span class="kw">else</span> op[<span class="nu">1</span>][<span class="nu">1</span>]
+        <span class="kw">return</span> target == <span class="st">"head"</span> <span class="kw">or</span> <span class="bi">self</span>.<span class="fn">_index</span>(target) <span class="kw">is</span> <span class="kw">not</span> <span class="kw">None</span>
+
+    <span class="kw">def</span> <span class="fn">apply</span>(<span class="bi">self</span>, op):
+        <span class="kw">if</span> op[<span class="nu">0</span>] == <span class="st">"ins"</span>:
+            _, node_id, after, char = op
+            <span class="kw">if</span> node_id <span class="kw">in</span> <span class="bi">self</span>.seen:
+                <span class="kw">return</span>
+            <span class="bi">self</span>.seen.<span class="fn">add</span>(node_id)
+            <span class="bi">self</span>.clock = <span class="bi">max</span>(<span class="bi">self</span>.clock, node_id[<span class="nu">0</span>])
+            i = <span class="bi">self</span>.<span class="fn">_index</span>(after) + <span class="nu">1</span>
+            <span class="kw">while</span> i &lt; <span class="bi">len</span>(<span class="bi">self</span>.nodes) <span class="kw">and</span> <span class="bi">self</span>.nodes[i][<span class="nu">0</span>] &gt; node_id:   <span class="cm"># skip newer siblings</span>
+                i += <span class="nu">1</span>
+            <span class="bi">self</span>.nodes.<span class="fn">insert</span>(i, (node_id, char, <span class="kw">False</span>))
+        <span class="kw">else</span>:
+            target = op[<span class="nu">1</span>][<span class="nu">1</span>]
+            i = <span class="bi">self</span>.<span class="fn">_index</span>(target)
+            <span class="bi">self</span>.nodes[i] = (target, <span class="bi">self</span>.nodes[i][<span class="nu">1</span>], <span class="kw">True</span>)            <span class="cm"># tombstone; repeating it is harmless</span></code></pre>
+  <span class="lang">text</span>
+<pre class="code"><code>Test results (Python 3):
+  OT   TP1 for every pair of concurrent ops on docs up to 4 chars (165 pairs): pass
+  OT   "abc" example -> "xab": pass
+  OT   3,000 random runs (3 clients, random delays): all identical: pass
+  RGA  3,000 random runs (3 replicas, reordered + duplicated delivery): all identical: pass
+  Tests checked by breaking the code (remove the OT tie-break, or the CRDT sibling order): tests fail
+  Limits: single-character ops on plain text only; TP2 is not satisfied (central server needed)</code></pre>
+
+  <h2>Exercises</h2>
+  <ol style="list-style:none;padding-left:0">
+    <li>1. Walk the <code>abc</code> example by hand; what if the delete is not transformed?
+      <div class="box"><b>Solution</b> Alice has <code>xabc</code>; Bob has <code>ab</code>. Unchanged <code>del(2)</code> on <code>xabc</code> removes <code>b</code> → <code>xac</code> (wrong). Transformed <code>del(3)</code> removes <code>c</code> → <code>xab</code>; Bob applies <code>ins(0,x)</code> to <code>ab</code> → <code>xab</code>.</div></li>
+    <li>2. Two people insert at the same spot. How do OT and the CRDT order them?
+      <div class="box"><b>Solution</b> OT: a fixed tie-break (lower site ID first) used identically on both sides. CRDT: unique ID (counter, site); siblings sorted by ID, same on every replica.</div></li>
+    <li>3. Why keep tombstones?
+      <div class="box"><b>Solution</b> Another replica may have inserted "after" that char before seeing the delete. Removing it would leave that reference pointing at nothing. GC removes tombstones only when every replica has seen the delete.</div></li>
+    <li>4. A user is offline an hour. OT / CRDT / Figma-style?
+      <div class="box"><b>Solution</b> OT: resend unacked ops with base rev; server transforms past an hour of history (many products reload and reapply). CRDT: exchange missing ops in any order and converge. Figma-style: download a fresh copy, reapply offline edits; conflicting properties → last value the server sees.</div></li>
+    <li>5. Why keep presence out of the log?
+      <div class="box"><b>Solution</b> Changes many times a second, worthless after the user leaves, bloats log and replay. Broadcast and discard.</div></li>
+    <li>6. 800 live editors; the owning server is overloaded.
+      <div class="box"><b>Solution</b> Cap active editors, rest read-only; batch/coalesce for viewers; fan out through pub/sub or edge relays while one server still orders ops; batch edits 50–200 ms. Never let a second server accept edits.</div></li>
+  </ol>
+
+  <h2>Mini project</h2>
+  <p><b>OT server + 3 clients + a CRDT replica, with property tests.</b></p>
+  <ol>
+    <li>Start from the code above; write each server op to an append-only log with its revision.</li>
+    <li>Snapshots every 100 revisions; a new server = latest snapshot + log tail must equal a replay from rev 0.</li>
+    <li>Op IDs; a repeated <code>(client, opId)</code> is a no-op; test a lost ack.</li>
+    <li>WebSocket layer; broadcast cursor messages, don't log them.</li>
+    <li>Range comments: store start/end, transform both; test they still cover their words.</li>
+    <li>Multi-character insert/delete; property tests must still pass (where transform bugs hide).</li>
+    <li>Per-user undo, tested with concurrent edits.</li>
+  </ol>
+  <div class="box"><b class="green">Done when</b> thousands of random runs converge, a crashed server recovers the same document, a duplicate changes nothing, and comments stay on their words.</div>
+
+  <h2>Design</h2>
+  <p><b>Collaborative editor for 10M daily users.</b> Up to ~100 editors per doc (most 1–3); rich text, comments, suggestions; history; offline minutes–hours; view/comment/edit roles.</p>
+  <div class="wrap"><table>
+    <tr><th>API</th><th>Purpose</th></tr>
+    <tr><td><code>POST /docs</code>, <code>GET /docs/{id}</code></td><td>create, metadata</td></tr>
+    <tr><td><code>GET /docs/{id}/snapshot?rev=N</code></td><td>fast load</td></tr>
+    <tr><td>WebSocket <code>/docs/{id}/live</code></td><td>ops, acks, presence</td></tr>
+    <tr><td><code>GET /docs/{id}/history</code></td><td>versions by revision range</td></tr>
+    <tr><td><code>POST /docs/{id}/comments</code></td><td>comments</td></tr>
+    <tr><td><code>PUT /docs/{id}/permissions</code></td><td>sharing</td></tr>
+  </table></div>
+  <div class="wrap"><table>
+    <tr><th>Store</th><th>Key</th><th>Holds</th></tr>
+    <tr><td>docs (SQL)</td><td>doc_id</td><td>owner, title, ACL, latest_rev, snapshot_rev</td></tr>
+    <tr><td>ops (append-only)</td><td>(doc_id, rev)</td><td>op_id, author, time, payload</td></tr>
+    <tr><td>snapshots (object store)</td><td>(doc_id, rev)</td><td>full doc</td></tr>
+    <tr><td>comments (SQL)</td><td>(doc_id, comment_id)</td><td>anchor start/end, thread, state</td></tr>
+  </table></div>
+  <p><b>Justify:</b></p>
+  <ul>
+    <li>OT + owner server vs sequence CRDT (text quality, offline, team skill, rich-text transform cost).</li>
+    <li>Doc → owning server mapping; moving ownership safely on failure.</li>
+    <li>Snapshot frequency; history retention.</li>
+    <li>Editors beyond the cap. Comment anchors surviving concurrent edits.</li>
+    <li>Permissions on a live connection, incl. revoking mid-session (Ch 19).</li>
+    <li>Offline merge vs "please reload". Which estimate to load-test first.</li>
+  </ul>
+
+  <h2>Open source</h2>
+  <ul>
+    <li><b>yjs/yjs</b>, <b>automerge/automerge</b> — CRDT libraries with shared text.</li>
+    <li><b>josephg/diamond-types</b> — fast CRDT by the benchmark's author.</li>
+    <li><b>share/sharedb</b> — real-time database using OT.</li>
+    <li><b>ether/etherpad-lite</b> — long-running OT editor.</li>
+    <li><b>ProseMirror/prosemirror-collab</b> — central-authority collaboration for a rich-text editor.</li>
+  </ul>
+
+  <h2>How this was checked</h2>
+  <ul>
+    <li class="check">Figma claims: read from Figma's own post. OT facts: Wikipedia (secondary). CRDT: Shapiro et al. 2011 record. Speed numbers: Gentle 2021, one author's runs.</li>
+    <li class="check">Google Docs + OT: Google's Sept 2010 blog series exists (title + date confirmed; page text not loaded). Claim rests on Wikipedia + papers citing it. Internals aren't public.</li>
+    <li class="check">Code was run: exhaustive pair check + random runs; tests broken on purpose to prove they catch bugs. A second reviewer re-ran them and found the fixed issues (server count, rates, log size, TP2 note).</li>
+    <li class="check">Proves single-char plain text only. It does <b>not</b> prove a production rich-text OT system.</li>
+  </ul>
+
+  <h2>Interview</h2>
+  <ol style="list-style:none;padding-left:0">
+    <li>1. How do two people edit one doc without overwriting each other?
+      <div class="box"><b>Answer</b> Apply locally at once, send ops to a server that orders them, and use OT (transform concurrent ops) or a sequence CRDT (unique char IDs) so all replicas converge.</div></li>
+    <li>2. OT vs CRDT?
+      <div class="box"><b>Answer</b> OT + central server: small messages, proven for rich text, but transform rules are hard to write and verify. CRDT: converges without a central order (offline, P2P) but carries per-char metadata and needs GC. Choose by offline needs, document model, and team experience; keep a server for persistence, permissions, history.</div></li>
+    <li>3. What is a tombstone?
+      <div class="box"><b>Answer</b> A marker left where a char was deleted, so other replicas' ops that reference it still work. Removed by GC once every replica has seen the delete.</div></li>
+    <li>4. Show your own typing instantly yet stay correct?
+      <div class="box"><b>Answer</b> Apply optimistically, queue unacked ops; transform incoming remote ops against the queue (OT) or merge by ID (CRDT). The server's order is the truth; the client converges to it.</div></li>
+    <li>5. Scale to millions of docs and a few huge ones?
+      <div class="box"><b>Answer</b> Shard by doc ID, one owner per active doc. Add servers and move ownership. Hot doc: cap editors, batch + coalesce, fan out to viewers via pub/sub. Log + snapshots in durable storage so any server can take over.</div></li>
+    <li>6. Server crashes mid-edit?
+      <div class="box"><b>Answer</b> Ops are acked only after the durable log write. New server loads snapshot + replays log; clients reconnect and resend unacked ops (op IDs make retries safe).</div></li>
+    <li>7. Undo?
+      <div class="box"><b>Answer</b> Only your own last op. OT: inverse op transformed past everything since. CRDT: new op targeting the same char IDs. Test with concurrent edits.</div></li>
+    <li>8. Why not log presence?
+      <div class="box"><b>Answer</b> High-frequency, short-lived, worthless after the user leaves. Broadcast and discard; only content ops are persisted.</div></li>
+  </ol>
+
+  <h2>Checklist</h2>
+  <ul>
+    <li class="todo">apply edits locally first; reconcile with the server's order</li>
+    <li class="todo">pick OT, CRDT or property LWW on purpose, say why</li>
+    <li class="todo">one owner per document orders operations</li>
+    <li class="todo">log every accepted op durably before the ack; snapshot regularly</li>
+    <li class="todo">op IDs make retries harmless</li>
+    <li class="todo">presence stays out of the log</li>
+    <li class="todo">check permissions on the live connection</li>
+    <li class="todo">test convergence with random edits and random delivery</li>
+  </ul>
+  <div class="gap"></div>
+  <nav class="nav"><a href="ch22-the-30-system-design-portfolio.notes.html">← Ch 22 — The 30-System Design Portfolio</a><a href="index.notes.html">☰ Contents</a><span></span></nav>
+
+</main>
+<script>
+/* Sketch: redraw every .sk shape as a smooth hand-drawn line. The outline is resampled, each point is pushed
+   along the normal by a gentle wobble (two low-frequency sines; on closed shapes the wobble loops exactly once so
+   start and end meet), and a smooth Catmull-Rom curve is rebuilt. Pure geometry, so the line stays crisp. */
+(() => {
+  const NS = 'http://www.w3.org/2000/svg', TAU = Math.PI * 2;
+  const KEEP_OUT = /^(cx|cy|rx|ry|r|x|y|width|height|x1|y1|x2|y2|points|d)$/;
+  const sketch = (el, i) => {
+    if (!el.getTotalLength) return;
+    const dAttr = el.getAttribute('d') || '';
+    if ((dAttr.match(/[Mm]/g) || []).length > 1) return;            // several sub-paths: leave as drawn
+    const L = el.getTotalLength(); if (!(L > 4)) return;
+    const closed = /^(ellipse|circle|rect|polygon)$/.test(el.tagName) || /[Zz]\s*$/.test(dAttr);
+    const n = Math.max(8, Math.round(L / 7)), amp = Math.min(1.1, 0.45 + L / 900);
+    const k1 = closed ? Math.max(2, Math.round(L / 180)) : 0, k2 = closed ? Math.max(3, Math.round(L / 95)) : 0;
+    const f1 = closed ? TAU * k1 / L : TAU / Math.max(160, L / 2.5), f2 = closed ? TAU * k2 / L : TAU / 95;
+    const p1 = (i * 2.399) % TAU, p2 = (i * 4.17) % TAU, pts = [];
+    for (let k = 0; k < (closed ? n : n + 1); k++) {
+      const s = L * k / n, a = el.getPointAtLength(Math.max(0, s - 0.5)), b = el.getPointAtLength(Math.min(L, s + 0.5)), c = el.getPointAtLength(s);
+      let nx = -(b.y - a.y), ny = b.x - a.x; const m = Math.hypot(nx, ny) || 1;
+      const w = (closed ? amp : amp * Math.min(1, s / 12, (L - s) / 12)) * (0.8 * Math.sin(s * f1 + p1) + 0.25 * Math.sin(s * f2 + p2));
+      pts.push([c.x + nx / m * w, c.y + ny / m * w]);                // open lines: ends stay exactly in place
+    }
+    const P = k => closed ? pts[(k + pts.length) % pts.length] : pts[Math.max(0, Math.min(pts.length - 1, k))];
+    let d = `M${pts[0][0].toFixed(2)} ${pts[0][1].toFixed(2)}`;
+    for (let k = 0, last = closed ? pts.length : pts.length - 1; k < last; k++) {
+      const [x0, y0] = P(k - 1), [x1, y1] = P(k), [x2, y2] = P(k + 1), [x3, y3] = P(k + 2);
+      d += ` C${(x1 + (x2 - x0) / 6).toFixed(2)} ${(y1 + (y2 - y0) / 6).toFixed(2)} ${(x2 - (x3 - x1) / 6).toFixed(2)} ${(y2 - (y3 - y1) / 6).toFixed(2)} ${x2.toFixed(2)} ${y2.toFixed(2)}`;
+    }
+    const path = document.createElementNS(NS, 'path');
+    for (const at of el.attributes) if (!KEEP_OUT.test(at.name)) path.setAttribute(at.name, at.value);
+    path.setAttribute('d', d + (closed ? ' Z' : ''));
+    el.replaceWith(path);
+  };
+  document.querySelectorAll('svg .sk').forEach(sketch);
+})();
+</script>
+</body>
+</html>
