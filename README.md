@@ -15,29 +15,29 @@ Start at **[roadmap.md](roadmap.md)** for the index, prerequisite ordering, and 
 | 4 | [High-Level Design](volumes/volume-4-high-level-design/index.md) |
 | 5 | [AI Systems Engineering](volumes/volume-5-ai-systems/index.md) |
 
-## HTML view
+## Reading it in the browser
 
-Each volume folder holds an `index.md` (the contents) and one file per chapter. To browse them as a site with rendered diagrams, sidebar navigation, and checklist tracking:
+Open **`index.html`** in a browser. Every volume and chapter has its own page, in the same theme as the AI Library: a sidebar with the chapter's sections and the volume's chapters, light and dark mode, zoomable diagrams, collapsible solutions, and a progress tracker (checklists and "mark chapter complete" are saved in your browser).
+
+The Markdown files are the source of truth. After editing any of them, regenerate the pages:
 
 ```bash
-python tools/build_site.py   # writes site/ (git-ignored)
+python tools/build_pages.py   # rewrites index.html, roadmap.html and the .html next to each .md
 ```
 
-Then open `site/index.html` in a browser.
+The look lives in `assets/` (`system-design.css`, `home.css` and `system-design.js` are the AI Library theme; `guide.css` and `guide.js` hold the Guide-only parts). Pages load the Markdown renderer, diagram library and code highlighter from a CDN, so they need an internet connection.
 
-**HTML preview:** [open the site home page online](https://htmlpreview.github.io/?https://github.com/Charikshith/Guide/blob/main/site/index.html). The built site is committed in `site/`.
+**Online preview:** GitHub shows `.html` files as source code, so these links render the pages through [htmlpreview.github.io](https://htmlpreview.github.io/):
 
-Each chapter also has a handwritten-notes page (`*.notes.html`). Open `volumes/<volume>/index.notes.html` for a volume's contents. To re-apply the skill template after it changes, run `python tools/apply_handwritten_template.py`.
+| # | Volume |
+|---|--------|
+| 0 | [Math & Mental Models](https://htmlpreview.github.io/?https://github.com/Charikshith/Guide/blob/main/volumes/volume-0-math/index.html) |
+| 1 | [Computer Science Foundations](https://htmlpreview.github.io/?https://github.com/Charikshith/Guide/blob/main/volumes/volume-1-cs-foundations/index.html) |
+| 2 | [Software Engineering](https://htmlpreview.github.io/?https://github.com/Charikshith/Guide/blob/main/volumes/volume-2-software-engineering/index.html) |
+| 3 | [Low-Level Design](https://htmlpreview.github.io/?https://github.com/Charikshith/Guide/blob/main/volumes/volume-3-low-level-design/index.html) |
+| 4 | [High-Level Design](https://htmlpreview.github.io/?https://github.com/Charikshith/Guide/blob/main/volumes/volume-4-high-level-design/index.html) |
+| 5 | [AI Systems Engineering](https://htmlpreview.github.io/?https://github.com/Charikshith/Guide/blob/main/volumes/volume-5-ai-systems/index.html) |
 
-### Online preview (handwritten notes)
+[Open the home page online](https://htmlpreview.github.io/?https://github.com/Charikshith/Guide/blob/main/index.html)
 
-GitHub shows `.html` files as source code, not as a page. These links render the committed notes pages through [htmlpreview.github.io](https://htmlpreview.github.io/):
-
-| # | Volume notes |
-|---|--------------|
-| 0 | [Math & Mental Models](https://htmlpreview.github.io/?https://github.com/Charikshith/Guide/blob/main/volumes/volume-0-math/index.notes.html) |
-| 1 | [Computer Science Foundations](https://htmlpreview.github.io/?https://github.com/Charikshith/Guide/blob/main/volumes/volume-1-cs-foundations/index.notes.html) |
-| 2 | [Software Engineering](https://htmlpreview.github.io/?https://github.com/Charikshith/Guide/blob/main/volumes/volume-2-software-engineering/index.notes.html) |
-| 3 | [Low-Level Design](https://htmlpreview.github.io/?https://github.com/Charikshith/Guide/blob/main/volumes/volume-3-low-level-design/index.notes.html) |
-| 4 | [High-Level Design](https://htmlpreview.github.io/?https://github.com/Charikshith/Guide/blob/main/volumes/volume-4-high-level-design/index.notes.html) |
-| 5 | [AI Systems Engineering](https://htmlpreview.github.io/?https://github.com/Charikshith/Guide/blob/main/volumes/volume-5-ai-systems/index.notes.html) |
+> The older generated site in `site/` (and `tools/build_site.py`) is no longer updated; the pages above replace it. The handwritten-notes pages (`*.notes.html`) have been removed.

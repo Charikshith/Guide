@@ -74,7 +74,7 @@ Markdown, API docs, docstrings, Architecture Decision Records, and READMEs that 
 stateDiagram-v2
     [*] --> Proposed: PR opened
     Proposed --> Accepted: review agrees
-    Proposed --> Rejected: review disagrees (keep it: records why not)
+    Proposed --> Rejected: review disagrees (keep it, it records why not)
     Accepted --> Deprecated: no longer relevant
     Accepted --> Superseded: new ADR replaces it
     Superseded --> [*]

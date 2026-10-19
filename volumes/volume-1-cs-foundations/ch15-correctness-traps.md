@@ -101,7 +101,7 @@ gantt
     title Local clock on the spring-forward night
     section New York
     EST (UTC−5)          :a1, 00:00, 2h
-    skipped hour 02:00–02:59 :crit, a2, 02:00, 1h
+    skipped hour 2am to 3am :crit, a2, 02:00, 1h
     EDT (UTC−4)          :a3, 03:00, 3h
 ```
 
