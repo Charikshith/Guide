@@ -16,8 +16,8 @@ Forward vs reverse proxy, API gateway patterns, web vs app servers, CDN push vs 
 * [Chapter 2 — API Gateways
 ](https://charikshith.github.io/AI_Library/notes/system-design/chapters/2%20-%20Networking%20%26%20Communication.html#29-api-gateways)
 * [Chapter 2 — API Gateway Patterns](https://charikshith.github.io/AI_Library/notes/system-design/chapters/2%20-%20Networking%20%26%20Communication.html#295-api-gateway-patterns)
-* [Chapter 2 — Web Servers vs. Application Servers](https://charikshith.github.io/AI_Library/notes/system-design/chapters/2%20-%20Networking%20%26%20Communication.html#210-web-servers-vs-application-servers)
-* [Chapter 2 — Caching Strategies in CDNs](https://charikshith.github.io/AI_Library/notes/system-design/chapters/2%20-%20Networking%20%26%20Communication.html#2116-caching-strategies-in-cdns)
+* [Chapter 2 — Web Servers vs. Application Servers](https://charikshith.github.io/AI_Library/notes/system-design/chapters/2%20-%20Networking%20%26%20Communication.html#211-web-servers-vs-application-servers)
+* [Chapter 2 — Caching Strategies in CDNs](https://charikshith.github.io/AI_Library/notes/system-design/chapters/2%20-%20Networking%20%26%20Communication.html#2126-caching-strategies-in-cdns)
 * [Chapter 7 — Block vs File vs Object Storage — They're NOT Interchangeable](https://charikshith.github.io/AI_Library/notes/system-design/chapters/7%20-%20Storage%20-%20Database%20and%20Storage.html#715-block-vs-file-vs-object-storage--theyre-not-interchangeable)
 * [Chapter 7 — Database Federation](https://charikshith.github.io/AI_Library/notes/system-design/chapters/7%20-%20Storage%20-%20Database%20and%20Storage.html#717-database-federation)
 * [Chapter 7 — Graph Databases: Why Traversal Beats Joins](https://charikshith.github.io/AI_Library/notes/system-design/chapters/7%20-%20Storage%20-%20Database%20and%20Storage.html#7161-graph-databases-why-traversal-beats-joins)

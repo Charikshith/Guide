@@ -10,52 +10,12 @@ Caching at the edge, geo-routing, data residency, and multi-region consistency.
 
 **In one sentence:** the speed of light is a hard limit, so global systems put copies of content and compute close to users (CDN edges, regional deployments), route each user to the nearest healthy place, keep data where the law says it must live, and choose carefully which data is shared across regions and how consistent it must be.
 
-**Mental model — a coffee chain.** One roastery (the origin) supplies hundreds of cafés (edge PoPs). Each café keeps the popular beans on its shelf (cache) and orders from the regional warehouse (origin shield) when it runs out. Customers go to the nearest café (geo-routing). Some local laws say a city's customer loyalty records must stay in that country (data residency).
+**Read the full explanation in the AI Library** (it is explained there once, so this chapter does not repeat it):
 
-**Why distance matters**
+* [Chapter 2 — CDN, Edge and Geo-Distribution in Depth](https://charikshith.github.io/AI_Library/notes/system-design/chapters/2%20-%20Networking%20%26%20Communication.html#213-cdn-edge-and-geo-distribution-in-depth)
+* [Chapter 2 — Content Delivery Networks (CDNs)](https://charikshith.github.io/AI_Library/notes/system-design/chapters/2%20-%20Networking%20%26%20Communication.html#212-content-delivery-networks-cdns)
 
-| Route | Distance | Light in fiber (~200,000 km/s), round trip |
-|-------|---------:|--------------------------------:|
-| Same city | 50 km | 0.5 ms |
-| Frankfurt ↔ London | 640 km | ~6 ms |
-| New York ↔ London | 5,600 km | ~56 ms (~70 ms in practice) |
-| New York ↔ Sydney | 16,000 km | ~160 ms (~200+ ms in practice) |
-
-A page needing 5 sequential round trips (DNS, TCP, TLS, HTML, API) from Sydney to a US-only origin: ~1 s just in physics. From a local edge: ~50 ms.
-
-**CDN caching**
-
-| Concept | Meaning |
-|---------|---------|
-| PoP | point of presence: an edge data center near users |
-| Cache key | usually host + path + query (+ `Vary` headers); normalize it to raise hit rates |
-| TTL | from `Cache-Control: max-age / s-maxage` or edge rules |
-| **Origin shield** | a mid-tier cache in one region that all edges miss to, so the origin sees ~1 request per object instead of one per PoP |
-| Purge / invalidation | remove objects by URL, tag, or prefix (seconds to minutes) |
-| **Cache busting** | put a content hash in the file name (`app.3f9a1c.js`) → `max-age=31536000, immutable`; a new deploy means a new URL, no purge needed |
-| `stale-while-revalidate` / `stale-if-error` | serve slightly stale content while refreshing, or when the origin is down |
-| Edge compute | small functions at the PoP (Cloudflare Workers, Lambda@Edge): auth checks, redirects, A/B, personalization |
-
-**Geo-routing options**
-
-| Method | How | Notes |
-|--------|-----|-------|
-| GeoDNS / latency-based DNS | DNS answers with the nearest region's IP | depends on the resolver's location; TTL limits failover speed |
-| **Anycast** | the same IP announced from many PoPs; BGP delivers to the nearest | used by CDNs and DNS providers; fast failover |
-| Global load balancer | one anycast IP → proxies to the best healthy region | e.g. Google Cloud LB, AWS Global Accelerator |
-| Health-checked failover | remove unhealthy regions from answers | always pair routing with health checks |
-
-**Multi-region data patterns**
-
-| Pattern | Writes | Reads | Consistency | Fits |
-|---------|--------|-------|-------------|------|
-| Single primary region + read replicas | one region | local replicas | strong for writes, stale reads elsewhere | most apps; simple |
-| Active-passive (DR) | primary only; secondary on standby | primary | strong; failover loses the async lag | disaster recovery ([Ch 17](ch17-disaster-recovery-backups-rto-rpo.md)) |
-| **Geo-partitioned (home region)** | each user's data lives in their home region | local for local users | strong within a region | data residency, low latency for most traffic |
-| Active-active multi-leader | any region | local | eventual; conflicts (LWW, CRDTs) | carts, presence, likes, collaborative data |
-| Global consensus (Spanner, CockroachDB) | any region, via quorum | local (maybe stale) or quorum | strong | when correctness is non-negotiable; each write pays cross-region latency |
-
-**Data residency** — laws (GDPR, India's DPDP, China's PIPL, sector rules) may require that personal data is stored or processed in a region. Design: a user → home-region mapping at sign-up; region-local databases for PII; only non-personal or aggregated data in global services; encryption with region-held keys; logs and backups count too.
+This chapter is the **practice layer**: the diagram, worked example, exercises, mini-project, design prompt, open-source reading, interview questions and checklist below.
 
 ---
 

@@ -10,48 +10,11 @@ Sidecars, discovery, mTLS, retries/timeouts/circuit breaking at the mesh layer; 
 
 **In one sentence:** service discovery answers "where are the healthy instances of service X right now?", and a service mesh moves the networking plumbing every service needs — encryption, identity, retries, timeouts, circuit breaking, metrics — out of application code into a proxy next to each service, configured centrally.
 
-**Mental model — a city's taxi dispatch.** Discovery is the dispatch radio that always knows where each taxi is. A service mesh gives every business its own trained driver (a sidecar proxy) who knows the routes, checks IDs at the door (mTLS), takes a different road when one is blocked (retries), and reports every trip to the city office (telemetry). The businesses (services) just say "take me to billing".
+**Read the full explanation in the AI Library** (it is explained there once, so this chapter does not repeat it):
 
-**Service discovery**
+* [Chapter 2 — Service Mesh and Service Discovery](https://charikshith.github.io/AI_Library/notes/system-design/chapters/2%20-%20Networking%20%26%20Communication.html#210-service-mesh-and-service-discovery)
 
-| Approach | How | Examples |
-|----------|-----|----------|
-| DNS-based | a name resolves to the current instances | Kubernetes Services (`billing.default.svc.cluster.local`), Consul DNS |
-| Client-side registry | the client queries a registry and picks an instance | Eureka, Consul API, gRPC xDS |
-| Server-side (LB) | the client calls a fixed LB that knows the instances | AWS ALB target groups |
-| Registration | instances register and heartbeat, or the platform registers them | K8s endpoints, Consul agents |
-
-**What a mesh gives you (without code changes)**
-
-| Capability | How |
-|------------|-----|
-| **mTLS everywhere** | each workload gets a short-lived certificate (SPIFFE identity); sidecars encrypt and authenticate every call |
-| Authorization policies | "only `orders` may call `payments` on `POST /charge`" |
-| Timeouts, retries, retry budgets | per route, in config |
-| Circuit breaking / outlier detection | eject failing instances; limit pending requests |
-| Traffic shifting | canaries, mirroring, fault injection |
-| Uniform telemetry | golden metrics, traces, and access logs for every hop |
-
-**Architecture** — the **data plane** is the proxies (Envoy sidecars, Linkerd's Rust micro-proxies, or per-node "ambient" proxies); the **control plane** (istiod, Linkerd control plane) distributes config, certificates, and endpoints to them.
-
-**How mTLS works in a mesh**
-
-1. The control plane acts as a certificate authority; each workload proves its identity (Kubernetes service account token) and receives a short-lived cert (hours) with a SPIFFE ID like `spiffe://cluster.local/ns/shop/sa/orders`.
-2. Traffic from the app goes in plaintext to its local sidecar (iptables redirect).
-3. The client sidecar opens TLS to the server sidecar; **both present certificates** and verify them against the mesh CA.
-4. The server sidecar checks authorization policy on the caller's identity, then forwards to its app.
-5. Certificates rotate automatically.
-
-**When a mesh earns its cost**
-
-| Worth it | Probably not worth it |
-|----------|----------------------|
-| dozens+ of services, several languages | a monolith or a handful of services |
-| zero-trust / compliance needs mTLS everywhere | one team, one language — a shared library does it |
-| teams need consistent traffic policy and telemetry | no one to own and upgrade the mesh |
-| frequent canaries and traffic shaping | latency budget can't afford an extra proxy hop per call (~0.5–2 ms) |
-
-Costs: extra CPU and memory per pod, added latency, operational complexity, upgrades, harder debugging. Sidecarless modes (Istio ambient, Cilium) reduce some costs.
+This chapter is the **practice layer**: the diagram, worked example, exercises, mini-project, design prompt, open-source reading, interview questions and checklist below.
 
 ---
 

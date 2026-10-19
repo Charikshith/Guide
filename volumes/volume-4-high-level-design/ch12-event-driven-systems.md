@@ -10,48 +10,12 @@ Event producers/consumers, event schemas, ordering, idempotency, and eventual co
 
 **In one sentence:** in an event-driven system, services announce facts ("an order was placed") instead of calling each other directly, and any number of other services react on their own schedule — which decouples teams and absorbs load spikes, at the price of eventual consistency and careful handling of order and duplicates.
 
-**Mental model — a town crier vs phone calls.** In request/response, the order clerk must phone billing, shipping, and analytics one by one, and if shipping doesn't answer, the order is stuck. With events, the clerk shouts "Order 123 placed!" in the square once; whoever cares writes it down and acts. New listeners can join without the clerk changing anything. But nobody knows exactly *when* each listener acted.
+**Read the full explanation in the AI Library** (it is explained there once, so this chapter does not repeat it):
 
-**Event-driven vs request/response**
+* [Chapter 4 — Event-Driven Systems in Practice](https://charikshith.github.io/AI_Library/notes/system-design/chapters/4%20-%20Architectural%20Patterns%20%28System%20Design%20Fundamentals%29.html#410-event-driven-systems-in-practice)
+* [Chapter 4 — Event-Driven Architecture](https://charikshith.github.io/AI_Library/notes/system-design/chapters/4%20-%20Architectural%20Patterns%20%28System%20Design%20Fundamentals%29.html#465-event-driven-architecture)
 
-| | Request/response (sync) | Event-driven (async) |
-|-|-------------------------|----------------------|
-| Coupling | caller knows every callee, their API, and their availability | the producer knows only the event schema |
-| Failure | a callee failure fails the caller (cascades) | consumers fail independently; the log buffers |
-| Latency to the user | the sum of the chain | fast acknowledgment; work finishes later |
-| Consistency | immediate (if every step succeeded) | **eventual** |
-| Adding a new reaction | change the caller | add a consumer |
-| Debugging | a stack trace / one trace | distributed: needs correlation IDs and tracing |
-| Best for | queries; things the user needs *now* | side effects, integration, fan-out, analytics, workflows |
-
-**Kinds of events**
-
-| Kind | Payload | Example | Trade-off |
-|------|---------|---------|-----------|
-| Notification | just the ID | `OrderPlaced {order_id}` | small; consumers call back for details (coupling + load) |
-| **Event-carried state transfer** | the data consumers need | `OrderPlaced {order_id, customer, items, total}` | consumers are autonomous; bigger events; schema is a contract |
-| Domain event (event sourcing) | the state change itself | [Vol 1 Ch 52](../volume-1-cs-foundations/ch52-event-sourcing-and-cqrs-distributed-view.md) | full history |
-
-**Choreography vs orchestration**
-
-| | Choreography | Orchestration |
-|-|--------------|---------------|
-| How | each service reacts to events and emits its own | a central orchestrator (a saga coordinator, Temporal, Step Functions) tells each step what to do |
-| Pros | fully decoupled; no central point | the flow is visible in one place; easy timeouts and compensation |
-| Cons | the overall flow is implicit and hard to follow | the orchestrator knows every participant |
-| Use | simple fan-out reactions | multi-step business processes with compensation (sagas) |
-
-**The hard parts and their fixes**
-
-| Problem | Fix |
-|---------|-----|
-| Duplicates (at-least-once delivery) | **idempotent consumers**: dedup by `event_id` in the same transaction as the side effect |
-| Ordering | partition by the entity key (`order_id`); rely on per-key order only; use sequence numbers to detect gaps |
-| Writing to the DB *and* publishing the event atomically | the **transactional outbox**: write the event to an `outbox` table in the same DB transaction; a relay publishes it (or CDC with Debezium) |
-| Poison messages | bounded retries → a **dead-letter queue**, with alerting and replay tooling |
-| Schema evolution | versioned schemas in a **schema registry** with compatibility rules (backward/forward) |
-| Eventual consistency in the UI | show "processing"; return a version; read your own writes from the source |
-| Tracing a flow | carry `correlation_id` and `causation_id` in every event; propagate trace context |
+This chapter is the **practice layer**: the diagram, worked example, exercises, mini-project, design prompt, open-source reading, interview questions and checklist below.
 
 ---
 

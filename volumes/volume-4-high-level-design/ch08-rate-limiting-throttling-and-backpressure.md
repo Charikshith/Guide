@@ -10,41 +10,11 @@ Token bucket, leaky bucket, sliding window; distributed limits; backpressure ups
 
 **In one sentence:** rate limiting caps how fast any one caller can use a resource, throttling slows callers down instead of failing them, and backpressure is the downstream system telling upstream "slow down, I'm full" — together they keep one noisy client or one traffic spike from taking everyone down.
 
-**Mental model — a nightclub door.** The token bucket is a bouncer with a stack of wristbands that refills at a steady rate: a group can rush in if wristbands are saved up (a burst), but once they're gone, people wait. The leaky bucket is a turnstile that lets exactly one person through every few seconds no matter how many are queued. Backpressure is the bar inside telling the door "we're at capacity — stop letting people in."
+**Read the full explanation in the AI Library** (it is explained there once, so this chapter does not repeat it):
 
-**Algorithms**
+* [Chapter 6 — Rate Limiting, Throttling and Backpressure](https://charikshith.github.io/AI_Library/notes/system-design/chapters/6%20-%20Scalability%20in%20System%20Design.html#615-rate-limiting-throttling-and-backpressure)
 
-| Algorithm | How | Bursts | Memory per key | Accuracy |
-|-----------|-----|--------|----------------|----------|
-| Fixed window counter | count per clock minute; reset at :00 | up to 2× at window edges | 1 counter | edge spikes |
-| Sliding window log | store every timestamp; count those in the last 60 s | exact | O(requests) | exact |
-| Sliding window counter | weighted mix of current and previous window counts | smooth | 2 counters | ~approximate, very good |
-| **Token bucket** | tokens refill at rate r up to capacity b; each request takes one | **allows bursts up to b** | 2 numbers (tokens, last time) | exact for its model |
-| Leaky bucket (as a queue) | requests enter a queue drained at a fixed rate | smooths bursts into a steady flow | queue | exact |
-| Concurrency limit | at most N requests in flight | — | 1 counter | protects slow backends |
-
-**Where to limit**
-
-| Layer | Example | Protects against |
-|-------|---------|------------------|
-| Edge / API gateway | 100 req/min per API key | abuse, scraping, credential stuffing |
-| Per tenant / plan | free: 10 rps, pro: 100 rps | noisy neighbors ([Ch 15](ch15-multi-tenancy.md)) |
-| Per endpoint | login: 5/min per account+IP | brute force |
-| Service to service | client-side limits, retry budgets | cascading retries |
-| Around a dependency | max 50 concurrent DB queries | overload of shared resources |
-
-**Distributed rate limiting** — with 20 gateway nodes, a limit of 100/min must be shared.
-
-| Approach | How | Trade-off |
-|----------|-----|-----------|
-| Central store (Redis) | atomic `INCR` + `EXPIRE`, or a Lua script for a token bucket | accurate; adds ~1 ms and a dependency (fail open or closed?) |
-| Local limits = global ÷ N | each node enforces its share | no coordination; inaccurate when traffic is uneven |
-| Local + periodic sync | nodes gossip or report counts every second | approximate, fast |
-| Dedicated limit service | Envoy's global rate-limit service | central policy, a gRPC hop |
-
-**Good 429s** — return `429 Too Many Requests` with `Retry-After`, plus headers like `RateLimit-Limit`, `RateLimit-Remaining`, `RateLimit-Reset`. Clients must back off with jitter; retrying immediately makes it worse.
-
-**Backpressure** — every buffer between producer and consumer must be **bounded**. When a queue fills: block the producer (TCP flow control, bounded channels), reject new work early (load shedding with 503), drop low-priority work, or scale consumers. An unbounded queue just converts overload into latency, then into out-of-memory crashes.
+This chapter is the **practice layer**: the diagram, worked example, exercises, mini-project, design prompt, open-source reading, interview questions and checklist below.
 
 ---
 

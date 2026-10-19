@@ -13,8 +13,8 @@ QPS, latency percentiles (p50/p99), throughput, storage sizing, and translating 
 **Read the full explanation in the AI Library** (it is explained there once, so this chapter does not repeat it):
 
 * [Chapter 1 — Numbers Every Programmer Should Know](https://charikshith.github.io/AI_Library/notes/system-design/chapters/1%20-%20Introduction.html#18-numbers-every-programmer-should-know)
-* [Chapter 6 — Capacity Planning — Back-of-the-Envelope](https://charikshith.github.io/AI_Library/notes/system-design/chapters/6%20-%20Scalability%20in%20System%20Design.html#615-capacity-planning--back-of-the-envelope)
-* [Chapter 6 — Capacity Estimation Cheat Sheet](https://charikshith.github.io/AI_Library/notes/system-design/chapters/6%20-%20Scalability%20in%20System%20Design.html#6151-capacity-estimation-cheat-sheet)
+* [Chapter 6 — Capacity Planning — Back-of-the-Envelope](https://charikshith.github.io/AI_Library/notes/system-design/chapters/6%20-%20Scalability%20in%20System%20Design.html#616-capacity-planning--back-of-the-envelope)
+* [Chapter 6 — Capacity Estimation Cheat Sheet](https://charikshith.github.io/AI_Library/notes/system-design/chapters/6%20-%20Scalability%20in%20System%20Design.html#6161-capacity-estimation-cheat-sheet)
 * [Chapter 8 — Key Metrics — Latency, Throughput, Scalability & Responsiveness](https://charikshith.github.io/AI_Library/notes/system-design/chapters/8%20-%20Performance%20-%20Concepts%2C%20Tools%20%26%20Techniques.html#83-key-metrics--latency-throughput-scalability--responsiveness)
 * [Chapter 8 — Measuring Performance — SLAs, SLOs, SLIs, and Percentiles](https://charikshith.github.io/AI_Library/notes/system-design/chapters/8%20-%20Performance%20-%20Concepts%2C%20Tools%20%26%20Techniques.html#84-measuring-performance--slas-slos-slis-and-percentiles)
 

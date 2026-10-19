@@ -10,41 +10,12 @@ Cloud building blocks (compute, storage, networking, managed services), serverle
 
 **In one sentence:** cloud architecture is choosing and connecting rented building blocks — compute, storage, networking, and managed services — so the system meets its reliability, performance, security, and cost goals with the least undifferentiated work for your team.
 
-**Mental model — building with LEGO Technic vs carving wood.** On-premises you carve every part yourself: servers, racks, databases, backups. In the cloud you snap together ready-made parts (a managed database, a queue, a load balancer) that someone else maintains. The skill moves from making parts to choosing the right parts, connecting them safely, and not buying far more bricks than you need.
+**Read the full explanation in the AI Library** (it is explained there once, so this chapter does not repeat it):
 
-**The building blocks (AWS / GCP / Azure names)**
+* [Chapter 6 — Cloud Architecture Choices](https://charikshith.github.io/AI_Library/notes/system-design/chapters/6%20-%20Scalability%20in%20System%20Design.html#617-cloud-architecture-choices)
+* [Chapter 6 — Cloud Building Blocks: An AWS Service Map](https://charikshith.github.io/AI_Library/notes/system-design/chapters/6%20-%20Scalability%20in%20System%20Design.html#69-cloud-building-blocks-an-aws-service-map)
 
-| Category | Options | Use |
-|----------|---------|-----|
-| **Compute** | VMs (EC2 / Compute Engine / VMs); containers (EKS/ECS, GKE, Cloud Run, AKS, Container Apps); functions (Lambda, Cloud Functions, Azure Functions) | run code |
-| **Storage** | object (S3 / GCS / Blob); block (EBS / PD / Managed Disks); file (EFS / Filestore / Files) | files, volumes, shared file systems |
-| **Databases** | relational (RDS/Aurora, Cloud SQL/AlloyDB, Azure SQL); NoSQL (DynamoDB, Firestore/Bigtable, Cosmos DB); caches (ElastiCache, Memorystore); warehouses (Redshift, BigQuery, Synapse) | data |
-| **Networking** | VPC/VNet, subnets, NAT, load balancers, DNS, CDN, private endpoints, transit gateways | connectivity and isolation |
-| **Integration** | queues (SQS, Pub/Sub, Service Bus), streams (Kinesis, managed Kafka), workflows (Step Functions, Workflows), API gateways, event buses (EventBridge) | decoupling |
-| **Identity & security** | IAM, KMS, secrets managers, WAF | [Ch 18](ch18-security-at-the-system-level.md) |
-| **Observability** | CloudWatch, Cloud Monitoring/Logging, Azure Monitor, managed Prometheus/Grafana | operations |
-
-**Serverless vs containers vs VMs**
-
-| | Functions (Lambda) | Serverless containers (Cloud Run, Fargate) | Kubernetes / VMs |
-|-|--------------------|-------------------------------------------|------------------|
-| Unit | a function per event | a container, scaled per request | pods/processes you manage |
-| Scaling | per request, to zero, very fast | per request/concurrency, to zero (Cloud Run) | autoscalers you configure; rarely to zero |
-| Max run time | ~15 min (Lambda) | long (up to 60 min per request on Cloud Run; unlimited on Fargate tasks) | unlimited |
-| Cold starts | yes (100 ms–seconds) | yes, smaller with min instances | none |
-| Ops burden | lowest | low | highest |
-| Cost at low/bursty traffic | **lowest** (pay per ms) | low | idle capacity costs money |
-| Cost at high steady traffic | can be **highest** | moderate | **lowest** per unit (with commitments) |
-| Portability / control | lowest | high (it's a container) | highest |
-| Fits | event glue, webhooks, cron, spiky APIs | most web APIs and workers | large platforms, special hardware/networking, steady heavy load |
-
-**Break-even sketch:** Lambda at 512 MB, 100 ms per request ≈ $0.00000083 compute + $0.0000002 request ≈ **$1.03 per million requests**. A 2-vCPU container at ~$50/month handling 200 req/s sustained ≈ 518M requests/month ≈ **$0.10 per million**. Serverless wins at low or spiky volume; containers win at high steady volume. Always model your own numbers.
-
-**Managed services — when sensible:** use managed databases, queues, caches, and object storage unless you have a strong reason not to (special performance, cost at huge scale, portability requirements). Running your own Postgres HA with backups, patching, and failover is a full-time job.
-
-**Lock-in, sensibly** — lock-in isn't binary; it's a cost you weigh. Low-regret choices: standard interfaces (Postgres, Kafka API, S3 API, OCI containers, Kubernetes, OpenTelemetry, Terraform). Accept deep lock-in where the service gives a big advantage (DynamoDB, BigQuery), and keep your domain logic behind your own interfaces ([Vol 3 Ch 9](../volume-3-low-level-design/ch09-hexagonal-architecture-ports-and-adapters.md)) so a later migration touches adapters, not everything.
-
-**Well-architected pillars** (shared by the major clouds): operational excellence, security, reliability, performance efficiency, cost optimization, sustainability.
+This chapter is the **practice layer**: the diagram, worked example, exercises, mini-project, design prompt, open-source reading, interview questions and checklist below.
 
 ---
 
