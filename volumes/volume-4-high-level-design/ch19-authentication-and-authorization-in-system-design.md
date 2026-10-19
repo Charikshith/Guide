@@ -10,124 +10,15 @@ Where identity is checked in a large system, how it travels between services, ho
 
 **In one sentence:** in a distributed system, authentication happens once at the edge and becomes a signed identity that every hop can verify cheaply, while authorization is decided by the service that owns the data, using a policy it can check in microseconds and a design that keeps working when the identity service is down.
 
-**Mental model — an airport.** You show your passport once at check-in (**authentication**, a central identity service). You get a boarding pass (**a token**). Each gate scans the pass without phoning the airline (**local verification**). Staff-only doors need a different badge (**service identity**). A cancelled pass is flagged on a list the gates sync every few minutes (**revocation**). The gate agent, not the check-in desk, decides whether *you* may board *this* flight (**authorization at the resource**).
+**Read the full explanation in the AI Library** (it is explained there once, so this chapter does not repeat it):
 
-> This chapter is the **design** view. For what a JWT, OAuth2 flow, or SSO *is*, read [Vol 2 Ch 12 — Authentication & Authorization](../volume-2-software-engineering/ch12-authentication-and-authorization.md) first.
+* [Chapter 5 — Authentication Primer: Proving Who You Are](https://charikshith.github.io/AI_Library/notes/system-design/chapters/5%20-%20Web%20Concepts%20in%20System%20Design%20%28System%20Design%20Fundamentals%29.html#53-authentication-primer-proving-who-you-are)
+* [Chapter 10 — Authentication & Authorization
+](https://charikshith.github.io/AI_Library/notes/system-design/chapters/10%20-%20Security%20in%20System%20Design%20%E2%80%93%20Principles%2C%20Practices%20%26%20Protocols.html#108-authentication--authorization)
+* [Chapter 10 — Authentication and Authorization at Scale](https://charikshith.github.io/AI_Library/notes/system-design/chapters/10%20-%20Security%20in%20System%20Design%20%E2%80%93%20Principles%2C%20Practices%20%26%20Protocols.html#10812-authentication-and-authorization-at-scale)
+* [Chapter 10 — Refresh Tokens: Rotation and Storage](https://charikshith.github.io/AI_Library/notes/system-design/chapters/10%20-%20Security%20in%20System%20Design%20%E2%80%93%20Principles%2C%20Practices%20%26%20Protocols.html#1087-refresh-tokens-rotation-and-storage)
 
-### 1. The questions a design must answer
-
-| Question | Typical answer |
-|----------|----------------|
-| Who authenticates users? | one **identity service / IdP** (build on Keycloak, Cognito, Auth0, Okta; do not hand-roll) |
-| Where is the token first checked? | the **edge / API gateway** |
-| Do inner services re-check? | **yes** (zero trust: any hop can be reached by something unexpected) |
-| How does a service know *who* the caller is? | a **signed token** or mTLS identity, never a plain header from the network |
-| How do services call each other? | **workload identity** (mTLS / service tokens), plus per-service allow rules |
-| Who decides "may do X on Y"? | the **service that owns Y**, via a shared policy library or sidecar |
-| How do you cut off a stolen token? | short life + deny-list / version check |
-| What if the identity service is down? | existing tokens keep working; login degrades; keys are cached |
-
-### 2. Where to check: edge, service, or both
-
-| Pattern | What it does | Weakness |
-|---------|--------------|----------|
-| **Edge only** ("hard shell") | gateway checks the token; inner services trust anything that reaches them | one bypass (a misrouted call, a compromised pod) exposes everything |
-| **Per-service only** | every service verifies the token itself | duplicated logic, slow to change, uneven quality |
-| **Edge + service** (recommended) | gateway: authenticate, coarse checks (valid token, scopes, rate limit); each service: verify token or identity again and do fine-grained authorization | a little repeated work, which is cheap with local verification |
-| **Mesh-enforced** | the sidecar (Envoy/Istio) verifies JWTs and mTLS for every service | needs a mesh; app still owns object-level rules |
-
-The gateway cannot do object-level authorization ("may Priya read *invoice 42*?") because it does not own the data. That check always lives in the service.
-
-### 3. Token architecture
-
-**Pattern A — JWT everywhere.** The IdP issues a short-lived JWT; the gateway and each service verify it locally using cached public keys (JWKS). Fast, no per-request network call. Weakness: the token is readable by clients and hard to revoke.
-
-**Pattern B — opaque outside, JWT inside (the "phantom token" pattern).** Clients hold a random opaque token. The gateway exchanges it (introspection, with a cache) for a short-lived internal JWT and forwards that. Clients never see claims; revocation is instant at the gateway; internal calls stay stateless. Cost: one cached lookup at the edge.
-
-**Pattern C — token exchange for downstream calls.** When Service A calls Service B on a user's behalf, A swaps the user's token for a new one scoped to B (OAuth 2.0 Token Exchange, RFC 8693). B sees *who* (the user) and *via whom* (service A), and the token cannot be replayed against C. This limits the **confused deputy** problem, where a service with broad power is tricked into using it for the wrong user.
-
-**Propagating identity safely**
-
-* Never trust headers like `X-User-Id` just because they arrived. Accept them only from the gateway over mTLS, and have the gateway **strip** any client-supplied copy.
-* Prefer passing a **signed** token. Then identity survives queues and async hops (put the user ID and tenant in the message and re-check).
-* Keep claims small: IDs and scopes, not whole permission lists (tokens bloat headers; permissions change faster than tokens expire).
-
-### 4. Service-to-service identity
-
-Services are callers too, and "inside the network" is not proof of anything.
-
-| Mechanism | How | Notes |
-|-----------|-----|-------|
-| **mTLS with workload identity** | each workload gets a short-lived certificate naming it (SPIFFE ID such as `spiffe://prod/ns/prod/sa/orders`); both sides verify | automated by a mesh (Istio, Linkerd) or SPIRE; no shared secrets |
-| **OAuth2 Client Credentials** | the service gets a short-lived token for its own identity | good across trust zones and for third parties |
-| **Cloud workload identity** | the platform issues credentials to a pod/VM (IAM roles for service accounts) | no long-lived keys in config |
-| **Static API keys / passwords** | a shared secret | last resort; rotate, scope, and keep out of code |
-
-Identity is only half: add **allow rules** ("only `orders` may `POST /charges` on `payments`"). Default deny between services; open each path on purpose. This is what limits **blast radius** (see [Ch 18](ch18-security-at-the-system-level.md)).
-
-### 5. Keys and rotation at scale
-
-* The IdP signs with a private key (held in KMS/HSM). Everyone else gets only **public keys** from a **JWKS** endpoint.
-* Each token's header has a `kid` (key ID). **Rotate with overlap:** publish the new key, start signing with it, keep the old public key until every old token has expired.
-* Verifiers **cache JWKS** (minutes to hours) and refetch on an unknown `kid`, with a limit on refetches so a flood of bad `kid`s cannot hammer the IdP. A verifier that cannot reach the IdP keeps using its cache.
-* Allow a little **clock skew** (about 30–60 seconds) on `exp`/`nbf`, and keep servers on NTP.
-
-### 6. Revocation at scale
-
-A signed token cannot be recalled, so choose how stale a revocation may be:
-
-| Approach | Revocation delay | Cost |
-|----------|------------------|------|
-| **Short TTL only** (5–15 min) | up to the TTL | nothing extra; refresh tokens do the work |
-| **Deny-list of `jti`** in a shared cache | seconds | one cache lookup per request; list is small if TTL is short (entries only live until `exp`) |
-| **Per-user "tokens valid since" / version** | seconds | one cache lookup per request; one write revokes every token of a user |
-| **Introspection / opaque tokens** | immediate | a network call per request, or a short cache |
-| **Push revocation** (publish an event; gateways update a local list) | seconds | needs pub/sub ([Ch 9](ch09-message-queues-and-streaming-kafka-sqs-pub.md)) and a fallback if the event is missed |
-
-Pick by risk: a bank revokes in seconds; a news site can live with 15 minutes. Sensitive actions (change password, move money) should also demand a **fresh login** or a step-up check, whatever the token says.
-
-### 7. Sessions and the login path at scale
-
-* **Session store:** a Redis cluster keyed by random session ID, sharded by ID, with TTLs. Size is small: about 10M active sessions × ~0.5 KB ≈ 5 GB (a rough estimate; measure yours).
-* **Login is CPU-heavy on purpose.** Argon2id/bcrypt cost tens of milliseconds per check. At an illustrative 50 ms per hash, one core handles about 20 logins/s, so 2,000 logins/s needs roughly 100 cores. Put hashing in a **separate auth service** that scales on its own, so a login spike cannot starve the product.
-* **Credential stuffing** (attackers replaying leaked passwords) is the main threat to a login endpoint: rate-limit by IP *and* by account ([Ch 8](ch08-rate-limiting-throttling-and-backpressure.md)), check passwords against breach lists, add bot detection and MFA, and return the same error for "no such user" and "wrong password".
-* **MFA/passkeys** shift the load from "guess the password" to "steal a device". Offer passkeys, and require MFA for admin and sensitive actions.
-
-### 8. Authorization at scale
-
-| Placement | How | Good for | Watch for |
-|-----------|-----|----------|-----------|
-| **Library in each service** | the same policy package, in-process | low latency, simple | version drift across services |
-| **Sidecar PDP** (OPA/Cedar agent) | service asks `localhost` for a decision | one policy language, no network hop off-box | policy distribution and testing |
-| **Central PDP service** | all services call one decision service | one place to change rules, relationship graphs | an extra hop and a new critical dependency; cache and set tight timeouts |
-
-* **Relationship-based access (Zanzibar style)** answers "can X view doc Y?" by walking a graph (user → group → folder → doc). Systems like SpiceDB implement it. The hard part is **consistency**: a just-revoked permission must not be served from a stale cache (the "new enemy problem"), so these systems pass a consistency token with the write and check reads against it.
-* **List endpoints:** do not fetch 10,000 rows and filter in code. Push the permission filter into the query (`WHERE tenant_id = ? AND ...`, row-level security from [Ch 15](ch15-multi-tenancy.md)), or ask the PDP for the allowed IDs.
-* **Keep decisions fast:** budget a few milliseconds, cache positive decisions briefly, and make the failure mode explicit (fail **closed** for writes and sensitive reads).
-* **Audit:** log each decision (who, what, resource, allow/deny, policy version) for investigations and compliance.
-
-### 9. Multi-tenant and B2B identity
-
-* Put `tenant_id` in the token and **check it against the resource's tenant on every access**. Never take the tenant from the request body or URL alone.
-* **Enterprise SSO ("bring your own IdP"):** each customer connects their own OIDC or SAML IdP. Store per-tenant IdP config, map the user to a tenant at login (by email domain or tenant URL), and use **SCIM** to create and remove users when the customer's directory changes.
-* **Roles per tenant:** the same user may be admin in one tenant and viewer in another; model membership as (user, tenant, role).
-* **Impersonation / support access:** a separate, audited, time-boxed token, never a shared admin password.
-
-### 10. Third-party and public APIs
-
-* **Developers** get OAuth2 clients (for acting on a user's behalf: Authorization Code + PKCE) or Client Credentials (their own backend), with **scopes** the user approves.
-* **API keys** suit simple server-to-server use; attach scopes, an owner, **per-key rate limits** ([Ch 8](ch08-rate-limiting-throttling-and-backpressure.md)), and rotation.
-* **Webhooks** you send: sign the body with an HMAC and a timestamp so receivers can verify the sender and reject replays. **Webhooks** you receive: verify the signature before trusting anything.
-
-### 11. Availability and failure modes
-
-The identity service is on the critical path of *login*, but it should **not** be on the critical path of *every request*.
-
-* Local JWT verification + cached JWKS means requests keep flowing while the IdP is down; only **new logins and refreshes** fail.
-* Run the IdP multi-zone, and multi-region for large systems; replicate user and session data; practise failover.
-* Give refresh tokens a grace period for retries, and let clients back off with jitter so recovery is not a stampede.
-* **Fail closed** on security decisions, but separate *can't decide* from *denied*, and alert on spikes of either.
-* **Build vs buy:** identity is security-critical and unforgiving. Use a mature product or open-source IdP unless identity is your business.
+This chapter is the **practice layer**: the diagram, worked example, exercises, mini-project, design prompt, open-source reading, interview questions and checklist below.
 
 ---
 

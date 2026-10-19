@@ -10,122 +10,20 @@ Forward vs reverse proxy, API gateway patterns, web vs app servers, CDN push vs 
 
 **In one sentence:** the boxes between a client and your data — proxies, gateways, web servers, app servers — each have one job, and the boxes at the bottom — block, object, file storage, relational or graph databases — each fit one access pattern, so good design is matching each job and each access pattern to the right box.
 
-**Mental model — a hotel.** A forward proxy is the guest's personal assistant who makes calls on the guest's behalf. A reverse proxy is the front desk: guests never meet the kitchen, the desk decides who goes where. The API gateway is the concierge with a checklist (ID check, queue management, routing to the right department). Storage is the back office: a locker you rent by the shelf (block), a warehouse where you hand over whole crates and get a ticket (object), and a shared filing cabinet everyone can open (file).
+**Read the full explanation in the AI Library** (it is explained there once, so this chapter does not repeat it):
 
-### Forward proxy vs reverse proxy
+* [Chapter 2 — Forward Proxy vs. Reverse Proxy: Key Differences](https://charikshith.github.io/AI_Library/notes/system-design/chapters/2%20-%20Networking%20%26%20Communication.html#275-forward-proxy-vs-reverse-proxy-key-differences)
+* [Chapter 2 — API Gateways
+](https://charikshith.github.io/AI_Library/notes/system-design/chapters/2%20-%20Networking%20%26%20Communication.html#29-api-gateways)
+* [Chapter 2 — API Gateway Patterns](https://charikshith.github.io/AI_Library/notes/system-design/chapters/2%20-%20Networking%20%26%20Communication.html#295-api-gateway-patterns)
+* [Chapter 2 — Web Servers vs. Application Servers](https://charikshith.github.io/AI_Library/notes/system-design/chapters/2%20-%20Networking%20%26%20Communication.html#210-web-servers-vs-application-servers)
+* [Chapter 2 — Caching Strategies in CDNs](https://charikshith.github.io/AI_Library/notes/system-design/chapters/2%20-%20Networking%20%26%20Communication.html#2116-caching-strategies-in-cdns)
+* [Chapter 7 — Block vs File vs Object Storage — They're NOT Interchangeable](https://charikshith.github.io/AI_Library/notes/system-design/chapters/7%20-%20Storage%20-%20Database%20and%20Storage.html#715-block-vs-file-vs-object-storage--theyre-not-interchangeable)
+* [Chapter 7 — Database Federation](https://charikshith.github.io/AI_Library/notes/system-design/chapters/7%20-%20Storage%20-%20Database%20and%20Storage.html#717-database-federation)
+* [Chapter 7 — Graph Databases: Why Traversal Beats Joins](https://charikshith.github.io/AI_Library/notes/system-design/chapters/7%20-%20Storage%20-%20Database%20and%20Storage.html#7161-graph-databases-why-traversal-beats-joins)
+* [Chapter 8 — Normalization vs. Denormalization](https://charikshith.github.io/AI_Library/notes/system-design/chapters/8%20-%20Performance%20-%20Concepts%2C%20Tools%20%26%20Techniques.html#895-normalization-vs-denormalization)
 
-| | Forward proxy | Reverse proxy |
-|---|---------------|---------------|
-| Sits in front of | clients | servers |
-| Who configures it | the client or its network (corporate, school) | the service owner |
-| Hides | the client's identity from the server | the servers' identity and topology from the client |
-| Typical jobs | filtering, caching, anonymity, egress control | TLS termination, caching, compression, routing, load balancing |
-| Examples | Squid, corporate egress proxies | nginx, HAProxy, Envoy, Traefik |
-
-**Load balancer vs reverse proxy.** Overlap: both accept a client connection and forward it to a backend. A **load balancer's** core job is spreading traffic across many identical backends (algorithms, health checks, failover) — see [Ch 6](ch06-load-balancing.md). A **reverse proxy's** core job is standing in front of one or more backends and doing work on the way (TLS, caching, compression, rewriting, routing by path or host). In practice nginx, HAProxy and Envoy do both; "load balancer" names the role of spreading load, "reverse proxy" names the position in front of servers. Layer 4 balancers forward TCP without reading HTTP; layer 7 proxies read the request and can route on it.
-
-### Web servers vs application servers
-
-| | Web server | Application server |
-|---|-----------|--------------------|
-| Serves | static files (HTML, CSS, JS, images), plus proxying | dynamic responses: runs your business code |
-| Strength | very fast at files, many idle connections, TLS | runs the language runtime, framework, DB access |
-| Examples | nginx, Apache httpd | Gunicorn / Uvicorn (Python), Tomcat (Java servlets), Node.js, Puma, Kestrel |
-
-The line is blurry: Node and Tomcat also serve files and speak HTTP directly, and nginx can run Lua or call FastCGI. The classic split exists because they scale differently.
-
-**Concurrency models**
-
-| Model | How | Examples | Trade-off |
-|-------|-----|----------|-----------|
-| Process per request/connection | one OS process each | Apache prefork, Gunicorn sync workers (a fixed pool of pre-forked workers) | isolation; heavy memory, few connections |
-| Thread per request | thread pool | Tomcat, Apache worker MPM, Gunicorn gthread | cheaper than processes; shared memory, blocking I/O ties up a thread |
-| Event loop | one thread multiplexes many connections with non-blocking I/O | nginx (a few worker processes, each an event loop), Node.js, Apache event MPM | huge connection counts; one slow CPU task blocks the loop |
-
-**Request flow:** client → DNS → CDN (static hits end here) → load balancer / reverse proxy (TLS, routing) → web server (static files, buffers slow clients) → app server (your code) → cache / database. Putting nginx in front of Gunicorn is common because nginx absorbs slow clients while Gunicorn workers stay free for real work.
-
-### API gateway
-
-An **API gateway** is a reverse proxy that understands your API: one entry point for many services.
-
-| Responsibility | What it does |
-|----------------|--------------|
-| Authentication / authorization | validate API keys, JWTs, OAuth tokens once, pass identity downstream |
-| Rate limiting & quotas | per key or plan ([Ch 8](ch08-rate-limiting-throttling-and-backpressure.md)) |
-| Routing | `/orders/*` to the orders service, versions, canaries |
-| TLS termination | HTTPS at the edge, plain or mTLS inside |
-| Aggregation | combine several backend calls into one response |
-| Observability | access logs, metrics, tracing headers |
-
-**Gateway patterns** (names from the Azure Architecture Center cloud design patterns and Sam Newman for BFF)
-
-| Pattern | Idea | Trade-off |
-|---------|------|-----------|
-| Gateway Routing | one endpoint, route by path, host, header or version to different backends | gateway config grows; a bad route breaks many services |
-| Gateway Offloading | move shared cross-cutting work (TLS, auth, rate limits, compression, logging) from every service into the gateway | services must trust the gateway; keep business logic out of it |
-| Gateway Aggregation | the client makes one call; the gateway fans out to N services and merges the results | fewer client round trips; added latency of the slowest call, partial-failure handling |
-| Backends for Frontend (BFF) | one gateway per client type (web, mobile, partner), each shaped for that client | more services to run; duplicated logic if teams don't share libraries |
-
-**Trade-offs of any gateway:** it is a **single point of failure** unless run as a redundant fleet behind a load balancer; it adds a hop of latency; and it can become a **coupling hotspot** — every team needs to change it, and logic creeping in turns it into a distributed monolith's brain. Keep it thin, declarative, and owned by a platform team (or per-team in the BFF style). It differs from a service mesh ([Ch 10](ch10-service-mesh-and-service-discovery.md)): the gateway handles north-south traffic (clients to services), the mesh handles east-west (service to service).
-
-### CDN push vs pull
-
-CDN basics are in [Ch 14](ch14-cdn-edge-and-geo-distribution.md); this is only the two ways content reaches the edge.
-
-| | Pull CDN | Push CDN |
-|---|----------|----------|
-| How content arrives | edge fetches from your origin on the first miss, then caches for the TTL | you upload content to the CDN or its storage ahead of time |
-| Setup | point the CDN at the origin; set `Cache-Control` | deploy step must publish every file, and delete old ones |
-| First request | slow (miss), later fast | fast everywhere |
-| Invalidation | wait for TTL, purge by URL or tag, or version file names | you replace or delete the pushed object |
-| Cost | origin egress on misses; storage only for what is requested | storage for everything pushed, even if never requested |
-| Best for | large or changing catalogues, websites, APIs with cacheable GETs | small, rarely-changing sets: software releases, big media launches, files you know will be hot |
-
-Most sites use pull with content-hashed file names (`app.3f9a1c.js`), which makes invalidation unnecessary.
-
-### Storage types
-
-| | Block | Object | File |
-|---|-------|--------|------|
-| Model | raw fixed-size blocks, you put a file system or database on top | flat namespace of key → object + metadata, over an HTTP API | hierarchy of directories and files, POSIX-style |
-| Examples | AWS EBS, a local SSD, SAN | AWS S3, GCS, Azure Blob, MinIO | AWS EFS, NFS, SMB, Azure Files |
-| Access | attached to one machine (usually) as a disk | `PUT`/`GET` whole objects; no in-place edits | mounted by many machines at once |
-| Latency | lowest | highest of the three (a network API call) | in between |
-| Scalability | bounded by volume size | effectively unlimited objects | large but shared-metadata limits |
-| Cost per GB | highest | lowest | middle to high |
-| Use for | databases, boot disks, low-latency random I/O | images, video, backups, logs, data lake, static sites | shared content, home directories, lift-and-shift apps needing a shared file system |
-
-**File system storage vs database storage.** A plain file or object store gives you bytes by name. A **database** adds **indexes** (find rows without scanning), **queries** (filter, join, aggregate), **transactions** (atomic multi-row updates, isolation), **constraints**, and concurrent-write safety. Plain files or objects win when data is **large, opaque and read whole** (a photo, a video, a PDF, a log archive), when you only look up by key, and when cost per GB matters. The usual pattern: **bytes in object storage, metadata and the key in a database**.
-
-### Database federation
-
-**Federation (functional partitioning)** splits databases **by function**: a users DB, a products DB, an orders DB, each on its own server. **Sharding** ([Ch 11](ch11-database-scaling.md)) instead splits **one table's rows** across servers by a key.
-
-| | Federation | Sharding |
-|---|-----------|----------|
-| Split by | feature / bounded context | row key (user id, hash) |
-| Benefit | less read/write load per server, smaller working sets, per-domain scaling and ownership | scales one huge dataset horizontally |
-| Cost | cross-DB joins become application code or API calls; transactions across DBs need sagas or two-phase commit | resharding, hot shards, cross-shard queries |
-| When | clear domain boundaries; first step toward microservices | one domain's data outgrows one machine |
-
-Federation does not remove the single-writer limit inside one function: a busy orders DB may still need replicas or sharding later.
-
-### Graph databases
-
-A **graph database** stores **nodes** and **relationships** as first-class data. In the **property graph** model, nodes and relationships carry labels/types and key-value properties. Relationships are stored as direct pointers, so traversing "friends of friends" follows links instead of computing a join.
-
-| Fits | Examples |
-|------|----------|
-| deep relationship traversals | social networks, org charts |
-| recommendations | "people who bought X also bought Y" |
-| fraud and risk | rings of accounts sharing devices or cards |
-| network and dependency analysis, knowledge graphs | IT topology, permissions graphs |
-
-Versus relational: a relational query needs one self-join per hop, and cost grows with hops and table size; a graph traversal cost grows with the part of the graph visited. If your queries are mostly filters, aggregates and fixed-depth lookups, a relational database is the better default. Examples: Neo4j (query language Cypher), Amazon Neptune, JanusGraph, ArangoDB; PostgreSQL can also do recursive queries.
-
-### Denormalization and SQL tuning
-
-Denormalizing (duplicating data to avoid joins) and tuning queries (indexes, `EXPLAIN`, avoiding N+1) are covered in [Vol 1 Ch 46](../volume-1-cs-foundations/ch46-schema-design-normalization-and-indexing.md) and, at scale (replicas, partitioning, caching), in [Ch 11](ch11-database-scaling.md). Rule of thumb: normalize first, tune the slow queries, denormalize only for measured read hot spots and own the cost of keeping copies in sync.
+This chapter is the **practice layer**: the diagram, worked example, exercises, mini-project, design prompt, open-source reading, interview questions and checklist below.
 
 ---
 
