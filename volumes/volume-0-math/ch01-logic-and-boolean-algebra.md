@@ -69,17 +69,14 @@ None. This is the first chapter of the guide.
 
 **De Morgan as a Venn diagram** — `¬(A ∧ B)` is "everything outside the overlap", which is exactly "outside A **or** outside B".
 
-```
-      ¬(A ∧ B)  =  ¬A ∨ ¬B
- ┌──────────────────────────────┐
- │ ░░░░░░░░░░░░░░░░░░░░░░░░░░░░ │   ░ = shaded (true)
- │ ░░░░ ╭───────╮╭───────╮ ░░░░ │
- │ ░░░░ │ ░░A░░ ││░░B░░░ │ ░░░░ │   The only unshaded
- │ ░░░░ │ ░░░░░ ╭┼╮░░░░░ │ ░░░░ │   region is the
- │ ░░░░ │ ░░░░░ │ │░░░░░ │ ░░░░ │   overlap A ∧ B.
- │ ░░░░ │ ░░░░░ ╰┼╯░░░░░ │ ░░░░ │
- │ ░░░░ ╰───────╯╰───────╯ ░░░░ │
- └──────────────────────────────┘
+```venn
+title: De Morgan: ¬(A ∧ B) = ¬A ∨ ¬B
+sets: A | B
+shade: outside, A, B
+label A: A only
+label B: B only
+label A&B: A ∧ B
+note: Shaded = true. The only unshaded region is the overlap A ∧ B, so "not (A and B)" means "outside A or outside B".
 ```
 
 **Rewriting a condition with De Morgan**

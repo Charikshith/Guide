@@ -894,3 +894,17 @@ pre::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius:
 .sd-diagram .flowchart-link, .sd-diagram .messageLine0, .sd-diagram .messageLine1 { stroke-width: 1.6px; }
 .sd-diagram .actor { rx: 8px; ry: 8px; }
 .sd-diagram .edgeLabel { border-radius: 6px; }
+
+/* ============================== VENN DIAGRAMS (```venn blocks, see assets/venn.js) ============================== */
+.sd-venn .venn-host { display: block; }
+.venn-row { display: flex; flex-wrap: wrap; gap: 26px 34px; justify-content: center; align-items: flex-start; padding: 22px 18px; }
+.venn-item { flex: 0 1 auto; text-align: center; }
+.venn-title { font: 700 13px 'Inter', system-ui, sans-serif; letter-spacing: .02em; color: var(--text); margin-bottom: 6px; }
+.venn-cap { font-size: 12.5px; line-height: 1.5; color: var(--text-muted); margin: 8px auto 0; max-width: 340px; }
+.venn-item svg { display: block; margin: 0 auto; overflow: visible; }
+.venn-item .v-universe { fill: none; stroke: var(--border-strong); stroke-width: 1.5; stroke-dasharray: 5 4; }
+.venn-item .v-set { font: 700 15px 'Inter', system-ui, sans-serif; paint-order: stroke; stroke: var(--bg-elevated); stroke-width: 3px; }
+.venn-item .v-label { font: 600 13px 'Inter', system-ui, sans-serif; fill: var(--text); paint-order: stroke; stroke: var(--bg-elevated); stroke-width: 3px; pointer-events: none; }
+.venn-item .v-label.v-out { fill: var(--text-muted); font-weight: 500; }
+.venn-item .v-hit rect { transition: fill-opacity 120ms; cursor: zoom-in; }
+.venn-item .v-hit:hover rect { fill-opacity: .2; }

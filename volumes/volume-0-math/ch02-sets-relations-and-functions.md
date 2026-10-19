@@ -56,16 +56,17 @@ Sets, subsets, unions/intersections/differences, Cartesian products; relations (
 
 **Two overlapping sets**
 
-```
-        A = {1, 2, 3, 4}          B = {3, 4, 5}
-     ╭───────────────╮
-     │   1      ╭────┼──────────╮
-     │     2    │ 3  │          │
-     │          │ 4  │    5     │
-     ╰──────────┼────╯          │
-                ╰───────────────╯
-   A − B = {1,2}   A ∩ B = {3,4}   B − A = {5}
-   A ∪ B = {1,2,3,4,5}
+```venn
+title: Two overlapping sets
+sets: A | B
+name A: A = {1, 2, 3, 4}
+name B: B = {3, 4, 5}
+label A: 1
+2
+label A&B: 3
+4
+label B: 5
+note: A − B = {1, 2} · A ∩ B = {3, 4} · B − A = {5} · A ∪ B = {1, 2, 3, 4, 5}
 ```
 
 **Arrow diagrams of functions**

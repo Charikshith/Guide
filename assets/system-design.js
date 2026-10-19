@@ -307,5 +307,5 @@ window.SDDiagrams = (function () {
   let timer;
   window.addEventListener('resize', () => { clearTimeout(timer); timer = setTimeout(() => document.querySelectorAll('.main .mermaid').forEach(fit), 150); });
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', text); else text();
-  return { mermaid: mermaid, text: text };
+  return { mermaid: mermaid, text: text, lightbox: lightbox, figure: figure, button: button, flash: flash, titleFor: titleFor };
 })();

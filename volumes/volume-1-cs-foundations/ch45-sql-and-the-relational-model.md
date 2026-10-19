@@ -121,13 +121,39 @@ erDiagram
                                      Cy   │ NULL    ← kept, with no match
 ```
 
-```
-   INNER            LEFT             anti-join (LEFT … WHERE o.id IS NULL)
-  ╭───╮╭───╮      ╭───╮╭───╮       ╭───╮╭───╮
-  │ U ││█O │      │███││█O │       │███││ O │
-  │  █││█  │      │███││█  │       │███││   │
-  ╰───╯╰───╯      ╰───╯╰───╯       ╰───╯╰───╯
-   overlap only    all of U         U without O
+```venn
+title: INNER JOIN
+sets: U | O
+name U: users
+name O: orders
+universe: off
+shade: U&O
+label U: only U
+label U&O: match
+label O: only O
+note: Overlap only: rows with a match on both sides.
+---
+title: LEFT JOIN
+sets: U | O
+name U: users
+name O: orders
+universe: off
+shade: U, U&O
+label U: no match
+label U&O: match
+label O: dropped
+note: All of U, with NULL where O has no match.
+---
+title: Anti-join (LEFT … WHERE o.id IS NULL)
+sets: U | O
+name U: users
+name O: orders
+universe: off
+shade: U
+label U: no order
+label U&O: excluded
+label O: excluded
+note: U without O.
 ```
 
 ---
