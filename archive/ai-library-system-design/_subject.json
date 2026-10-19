@@ -1,0 +1,220 @@
+{
+  "title": "System Design",
+  "course_title": "Mastering System Design",
+  "layout": "course",
+  "author": "Charikshith",
+  "eyebrow": "A {chapters}-Chapter Course",
+  "description": "A full system-design course — fundamentals (networking, protocols, architecture, scalability, storage, performance, reliability, security) through end-to-end designs of real systems like TinyURL, YouTube, Uber, and Google Drive. Diagram-heavy.",
+  "tagline": "From basics to cracking interviews — a complete journey through networking, scalability, storage, performance, security, and 8 real-world case studies.",
+  "intro": "Whether you're new to system design or preparing for tough interviews, this course gives you the structured thinking to design robust, scalable systems — for real-world impact, not just whiteboarding.",
+  "tags": [
+    "system-design",
+    "architecture",
+    "scalability",
+    "interview"
+  ],
+  "added": "2026-06-10",
+  "stats": [
+    {
+      "num": "{chapters}",
+      "label": "Chapters"
+    },
+    {
+      "num": "{count:Case Studies}",
+      "label": "Case Studies"
+    },
+    {
+      "num": "~30h",
+      "label": "Reading Time"
+    },
+    {
+      "num": "200+",
+      "label": "Diagrams & Tables"
+    }
+  ],
+  "learn": [
+    "Reason about latency, throughput, and trade-offs intuitively",
+    "Apply the 4-step design framework to any problem",
+    "Choose between monolith, microservices, or event-driven",
+    "Design real systems: YouTube, Uber, Google Docs, and more",
+    "Recognize anti-patterns before they cost you"
+  ],
+  "cta_secondary": {
+    "chapter": "The System Design Blueprint",
+    "label": "Skip to Interview Blueprint"
+  },
+  "phases": [
+    {
+      "icon": "📚",
+      "title": "Foundations",
+      "from": 1,
+      "to": 15,
+      "foot": "Read chapter →"
+    },
+    {
+      "icon": "🏗️",
+      "title": "Case Studies",
+      "from": 16,
+      "to": 28,
+      "label": "Case Study",
+      "foot": "Read case study →"
+    },
+    {
+      "icon": "🎯",
+      "title": "Final Prep",
+      "from": 29,
+      "to": 999,
+      "label": "Final Prep",
+      "foot": "Wrap up →"
+    }
+  ],
+  "chapters": {
+    "Introduction": {
+      "icon": "🚀",
+      "short": "Introduction",
+      "phase": "Foundations",
+      "summary": "What system design is, why it matters, the 4-step framework, latency numbers every programmer should know, and common anti-patterns.",
+      "subtitle": "Whether you're new to system design or preparing for tough interviews, this guide builds a rock-solid foundation and gives you the tools to design robust, scalable systems — for real-world impact, not just whiteboarding."
+    },
+    "Networking & Communication": {
+      "icon": "🌐",
+      "short": "Networking & Communication",
+      "phase": "Foundations",
+      "summary": "IP, DNS, proxies, load balancers, API gateways, CDNs, and the canonical \"what happens when you type google.com\" trace.",
+      "subtitle": "Networking is the backbone of every large-scale system. This chapter walks through IP addresses, DNS, the client-server model, proxies, load balancers, API gateways, and CDNs — the building blocks that move bytes between every component you'll ever design."
+    },
+    "Protocols (System Design Fundamentals)": {
+      "icon": "📡",
+      "short": "Protocols",
+      "phase": "Foundations",
+      "summary": "UDP, TCP, HTTP/1.1 vs HTTP/2 vs HTTP/3, REST, GraphQL, gRPC, WebSockets, Server-Sent Events — how clients and servers actually talk.",
+      "subtitle": "From TCP's reliable handshakes to HTTP/3 over QUIC, from REST's CRUD verbs to WebSockets, SSE, gRPC streams and GraphQL queries — protocols decide how every byte travels. This chapter is the practical, interview-ready tour you'll keep coming back to."
+    },
+    "Architectural Patterns (System Design Fundamentals)": {
+      "icon": "🏛️",
+      "short": "Architectural Patterns",
+      "phase": "Foundations",
+      "summary": "Monolith, modular monolith, microservices, event-driven, BFF, CQRS, Event Sourcing, Saga — and when NOT to use microservices.",
+      "subtitle": "From the humble monolith to microservices, event-driven systems, and patterns like BFF, CQRS, and Saga — learn which architecture fits which problem, and how to evolve a system as it grows."
+    },
+    "Web Concepts in System Design (System Design Fundamentals)": {
+      "icon": "🔐",
+      "short": "Web Concepts",
+      "phase": "Foundations",
+      "summary": "Sessions, cookies, JWT, CORS, security headers, OAuth flows, the modern BFF + HttpOnly cookie pattern, and XSS/CSRF defense.",
+      "subtitle": "From sessions, cookies, and JWT to CORS, security headers, OAuth, and the modern BFF authentication pattern — master the web fundamentals that power scalable, efficient, and secure applications."
+    },
+    "Scalability in System Design": {
+      "icon": "📈",
+      "short": "Scalability",
+      "phase": "Foundations",
+      "summary": "Horizontal vs vertical, Amdahl's Law, USL, stateless design, circuit breakers, bulkheads, rate limiting, backpressure, capacity planning.",
+      "subtitle": "Vertical, horizontal, and diagonal scaling; load balancing, autoscaling, and Amdahl's Law; circuit breakers, bulkheads, and rate limiting — everything you need to grow a system from 1,000 to 1 billion users without it falling over."
+    },
+    "Storage - Database and Storage": {
+      "icon": "🗄️",
+      "short": "Storage",
+      "phase": "Foundations",
+      "summary": "SQL vs NoSQL, CAP theorem, sharding, replication, B-Tree vs LSM-Tree, consistency spectrum, specialized DBs (time-series, vector, graph).",
+      "subtitle": "Master the storage layer of modern systems — SQL vs. NoSQL trade-offs, the CAP theorem during partitions, sharding and replication strategies, B-Tree vs. LSM-Tree engines, and when to reach for object, file, block, or specialized databases."
+    },
+    "Performance - Concepts, Tools & Techniques": {
+      "icon": "⚡",
+      "short": "Performance",
+      "phase": "Foundations",
+      "summary": "Caching patterns (5 of them), cache stampede, N+1 query, message queues, indexing, query optimization, concurrency vs parallelism.",
+      "subtitle": "Master the levers that make systems feel fast: caching strategies, message queues for decoupling, concurrency models, database indexing and query tuning — plus the anti-patterns (N+1 queries, cache stampedes, blocking I/O) that quietly destroy production performance."
+    },
+    "Reliability, Availability & Disaster Recovery": {
+      "icon": "🛡️",
+      "short": "Reliability & DR",
+      "phase": "Foundations",
+      "summary": "9s of availability, retry-with-backoff, idempotency keys, active-active vs active-passive, RTO/RPO, chaos engineering.",
+      "subtitle": "From the nine 9s of availability and retry-with-backoff to idempotency keys, active-active vs active-passive topologies, chaos engineering, and RTO/RPO — the patterns that keep modern systems standing when things go wrong."
+    },
+    "Security in System Design – Principles, Practices & Protocols": {
+      "icon": "🔒",
+      "short": "Security",
+      "phase": "Foundations",
+      "summary": "CIA triad, STRIDE, OAuth 2.0 flows, JWT pitfalls, defense-in-depth, encryption, secrets management, Zero Trust.",
+      "subtitle": "Security is a core pillar — not a feature. This chapter walks through the CIA triad, threat modeling, OAuth 2.0 flows, JWT pitfalls, encryption & PKI, network segmentation, Zero Trust, defense-in-depth, OWASP Top 10, and the security headers every app should set by default."
+    },
+    "The System Design Blueprint": {
+      "icon": "🧭",
+      "short": "The System Design Blueprint",
+      "phase": "Foundations",
+      "summary": "The 4-step methodology, interview frameworks (RADIO, REACTO), managing 45 minutes, reading the interviewer.",
+      "subtitle": "The capstone of the foundational chapters — a proven 4-step methodology, time-management tactics for the 45-minute interview, and the interview frameworks (RADIO, REACTO) you'll lean on for every case study that follows."
+    },
+    "Design a URL Shortener (TinyURL)": {
+      "icon": "🔗",
+      "short": "URL Shortener",
+      "phase": "Case Studies",
+      "summary": "bit.ly clone — base62 encoding, key generation, caching, custom aliases, abuse prevention, click analytics.",
+      "subtitle": "A complete bit.ly-style case study: from extreme read-write asymmetry and base62 encoding to Zookeeper-coordinated ID generation, hot-URL caching, custom aliases, and abuse prevention — applying the 4-step blueprint end-to-end."
+    },
+    "Design an Auction Platform (aka eBay)": {
+      "icon": "💎",
+      "short": "Auction Platform (eBay)",
+      "phase": "Case Studies",
+      "summary": "Concurrent bidding, anti-sniping extension, search/discovery, reviews, dispute resolution, multi-warehouse inventory.",
+      "subtitle": "A fascinating challenge that touches latency, concurrency, real-time fan-out, and user trust — we'll architect a scalable, fair, and real-time auction platform that handles last-second bid storms, anti-sniping extensions, payments, and search."
+    },
+    "Design a Cloud Storage Solution (aka Google Drive, Dropbox)": {
+      "icon": "☁️",
+      "short": "Cloud Storage (Drive)",
+      "phase": "Case Studies",
+      "summary": "Chunking, block-level dedup, sync, sharing graph (Zanzibar), offline editing, conflict resolution (LWW vs three-way merge).",
+      "subtitle": "Build a Drive- or Dropbox-class platform: chunked resumable uploads, block-level deduplication, real-time multi-device sync, fine-grained sharing, and conflict resolution at petabyte scale."
+    },
+    "Design a Video Sharing Platform (aka YouTube)": {
+      "icon": "▶️",
+      "short": "Video Sharing (YouTube)",
+      "phase": "Case Studies",
+      "summary": "Transcoding pipeline, HLS/DASH adaptive streaming, view counter at scale, recommendations, Content ID, VOD vs Live.",
+      "subtitle": "Walk through the end-to-end architecture of a modern video platform — chunked uploads, a multi-resolution encoding pipeline, global CDN delivery, HLS/DASH adaptive streaming, sharded view counters, and a two-stage recommendation engine."
+    },
+    "Design a Search Engine(aka Google)": {
+      "icon": "🔍",
+      "short": "Search Engine (Google)",
+      "phase": "Case Studies",
+      "summary": "Crawling, inverted index, TF-IDF, PageRank, query understanding, autocomplete, lexical vs semantic search.",
+      "subtitle": "From distributed crawling and inverted indexes to PageRank, query understanding, autocomplete, and learned ranking — this case study walks through architecting a web-scale search engine that serves billions of pages in under 200 ms."
+    },
+    "Design an E-Commerce Platform(aka Amazon)": {
+      "icon": "🛒",
+      "short": "E-Commerce (Amazon)",
+      "phase": "Case Studies",
+      "summary": "Catalog, cart, checkout Saga, multi-warehouse inventory, faceted search, recommendations, returns workflow, fraud detection.",
+      "subtitle": "Architect a high-scale multi-vendor marketplace like Amazon — from catalog and cart to a checkout Saga, multi-warehouse inventory, recommendations, and real-time fraud detection — without a distributed transaction in sight."
+    },
+    "Design a Taxi Hailing App (aka Uber)": {
+      "icon": "🚖",
+      "short": "Taxi App (Uber)",
+      "phase": "Case Studies",
+      "summary": "Geohash/S2/H3 spatial indexing, driver matching, surge pricing, ETA prediction, real-time location, fraud detection.",
+      "subtitle": "Geospatial matching with H3/geohash, surge pricing as a near-real-time supply/demand signal, ETA prediction beyond Haversine, live location streaming, and fraud detection — the full stack of a real-time, two-sided marketplace at planet scale."
+    },
+    "Design a Collaborative Document Editor (aka Google Docs)": {
+      "icon": "📝",
+      "short": "Collaborative Docs",
+      "phase": "Case Studies",
+      "summary": "Operational Transformation vs CRDTs, real-time presence, offline editing, comments anchoring, WebSocket fan-out.",
+      "subtitle": "Build a real-time multi-user editor like Google Docs — from OT vs CRDT conflict resolution and WebSocket fan-out to presence, offline editing, comments, and revision history. A case study in distributed concurrency under millisecond latency."
+    },
+    "Final Prep, Mindset & Moving Forward": {
+      "icon": "🎓",
+      "short": "Final Prep & Mindset",
+      "phase": "Final Prep",
+      "summary": "Interview formats at top companies, what L4/L5/L6/L7 candidates do differently, when you get stuck, mock interview resources.",
+      "subtitle": "The closing chapter of your system design journey — interview mindset, the repeatable 4-step framework, how top companies evaluate candidates, mock interview tactics, and how to keep growing as a system thinker after the offer."
+    },
+    "Resources": {
+      "icon": "📎",
+      "short": "Resources",
+      "phase": "Final Prep",
+      "summary": "Videos and channels worth following once the course is done.",
+      "subtitle": ""
+    }
+  }
+}
