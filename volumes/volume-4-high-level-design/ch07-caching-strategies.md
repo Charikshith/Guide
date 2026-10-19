@@ -10,37 +10,13 @@ Cache-aside, write-through/write-around/write-back, invalidation, TTLs, stampede
 
 **In one sentence:** a cache is a small, fast copy of slow data, and every caching strategy is a different answer to one question — *when the data changes, who updates the copy?*
 
-**Mental model — the kitchen counter.** The database is the pantry in the basement: it holds everything, but a trip takes time. The cache is the counter next to the stove: small, fast, and only holds what you use often. Every strategy below is a rule for how food moves between pantry and counter.
+**Read the full explanation in the AI Library** (it is explained there once, so this chapter does not repeat it):
 
-**Why it matters — the latency ladder**
+* [Chapter 8 — Caching for Speed Optimization](https://charikshith.github.io/AI_Library/notes/system-design/chapters/8%20-%20Performance%20-%20Concepts%2C%20Tools%20%26%20Techniques.html#86-caching-for-speed-optimization)
+* [Chapter 8 — Choosing a Write Strategy and Reading the Numbers](https://charikshith.github.io/AI_Library/notes/system-design/chapters/8%20-%20Performance%20-%20Concepts%2C%20Tools%20%26%20Techniques.html#868-choosing-a-write-strategy-and-reading-the-numbers)
+* [Chapter 8 — Cache Patterns — The Full Picture](https://charikshith.github.io/AI_Library/notes/system-design/chapters/8%20-%20Performance%20-%20Concepts%2C%20Tools%20%26%20Techniques.html#811-cache-patterns--the-full-picture)
 
-| Source | Typical latency | Relative to RAM cache |
-|--------|-----------------|-----------------------|
-| In-process memory (dict/LRU) | ~100 ns | 1× |
-| Redis / Memcached (same region) | ~0.5 ms | ~5,000× |
-| Database query (indexed) | ~5 ms | ~50,000× |
-| Database query (complex join) | ~50–500 ms | ~1,000,000× |
-| Cross-region call | ~70–150 ms | ~1,000,000× |
-
-A 95% hit rate turns a 50 ms average read into roughly `0.95 × 0.5 + 0.05 × 50 ≈ 3 ms`.
-
-**The four write strategies**
-
-| Strategy | Read path | Write path | Good for | Risk |
-|----------|-----------|------------|----------|------|
-| **Cache-aside** (lazy loading) | App checks cache → miss → reads DB → fills cache | App writes DB, then **deletes** the cache key | Most read-heavy apps; default choice | First read after change is slow; race windows |
-| **Write-through** | Read from cache | App writes cache **and** DB together (synchronously) | Data read right after write | Every write pays double latency; caches cold data |
-| **Write-around** | Like cache-aside | App writes DB only; cache fills on next read | Write-once, read-rarely data (logs, uploads) | Recent writes always miss |
-| **Write-back** (write-behind) | Read from cache | App writes cache only; cache flushes to DB later | Very high write rate (counters, metrics) | **Data loss** if cache dies before flush |
-
-**Key terms**
-
-* **TTL (time to live)** — how long a key lives before it expires. A safety net for missed invalidations.
-* **Invalidation** — removing or updating a cached value when the source changes. Famously one of the two hard problems in computer science.
-* **Stampede** (thundering herd, dog-piling) — a hot key expires, and thousands of requests miss at once and all hit the database.
-* **Cache coherence** — keeping many copies (many cache nodes, many app servers with local caches) in agreement.
-* **Hit rate** — `hits / (hits + misses)`. The single most important cache metric.
-* **Eviction** — what gets thrown out when the cache is full (LRU, LFU, random).
+This chapter is the **practice layer**: the diagram, worked example, exercises, mini-project, design prompt, open-source reading, interview questions and checklist below.
 
 ---
 

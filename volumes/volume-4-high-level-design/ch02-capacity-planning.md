@@ -10,36 +10,15 @@ QPS, latency percentiles (p50/p99), throughput, storage sizing, and translating 
 
 **In one sentence:** capacity planning turns product numbers ("10 million daily users") into engineering numbers (requests per second, servers, terabytes, dollars) with quick, explicit, back-of-envelope math — sized for the peak, not the average.
 
-**Mental model — planning a wedding.** You know the guest count (DAU), how much each guest eats (requests per user), and that everyone arrives at dinner time (the peak). From that you work out tables (servers), food (storage), and budget (cost). You don't need the exact count to the plate — within 2× is enough to pick the right venue.
+**Read the full explanation in the AI Library** (it is explained there once, so this chapter does not repeat it):
 
-**Core quantities**
+* [Chapter 1 — Numbers Every Programmer Should Know](https://charikshith.github.io/AI_Library/notes/system-design/chapters/1%20-%20Introduction.html#18-numbers-every-programmer-should-know)
+* [Chapter 6 — Capacity Planning — Back-of-the-Envelope](https://charikshith.github.io/AI_Library/notes/system-design/chapters/6%20-%20Scalability%20in%20System%20Design.html#615-capacity-planning--back-of-the-envelope)
+* [Chapter 6 — Capacity Estimation Cheat Sheet](https://charikshith.github.io/AI_Library/notes/system-design/chapters/6%20-%20Scalability%20in%20System%20Design.html#6151-capacity-estimation-cheat-sheet)
+* [Chapter 8 — Key Metrics — Latency, Throughput, Scalability & Responsiveness](https://charikshith.github.io/AI_Library/notes/system-design/chapters/8%20-%20Performance%20-%20Concepts%2C%20Tools%20%26%20Techniques.html#83-key-metrics--latency-throughput-scalability--responsiveness)
+* [Chapter 8 — Measuring Performance — SLAs, SLOs, SLIs, and Percentiles](https://charikshith.github.io/AI_Library/notes/system-design/chapters/8%20-%20Performance%20-%20Concepts%2C%20Tools%20%26%20Techniques.html#84-measuring-performance--slas-slos-slis-and-percentiles)
 
-| Quantity | Formula / meaning |
-|----------|-------------------|
-| Average QPS | `DAU × requests per user per day ÷ 86,400` |
-| Peak QPS | `average × peak factor` (2–10×; 5× is a common assumption) |
-| Read : write ratio | often 10:1 to 100:1 for consumer apps |
-| Servers | `peak QPS ÷ QPS per server`, then add headroom (target ~60–70% utilization) and N+2 for failures |
-| Storage | `items per day × bytes per item × retention days × replication factor` |
-| Bandwidth | `QPS × response size` |
-| Throughput vs latency | requests/second the system handles vs how long one request takes |
-
-**Latency percentiles** — the *p99* is the time under which 99% of requests finish. Averages hide the tail. With fan-out, the tail dominates: a page calling 100 services each with a 1% chance of being slow is slow ~63% of the time (`1 − 0.99¹⁰⁰`). Track **p50** (typical), **p99** (tail users feel), and **p99.9** for high-volume services.
-
-**Numbers worth memorizing**
-
-| Item | Value |
-|------|-------|
-| Seconds per day | 86,400 ≈ 10⁵ |
-| 1 M requests/day | ≈ 12 QPS |
-| 1 B requests/day | ≈ 12,000 QPS |
-| Memory read, 1 MB sequential | ~3 µs (RAM), ~50 µs (SSD), ~1 ms (network in DC) |
-| Round trip in a datacenter | ~0.5 ms; cross-continent ~100–150 ms |
-| One app server (typical web API) | ~1,000 QPS (varies 100–10,000+) |
-| One Postgres primary (simple queries) | ~10k–50k QPS |
-| Powers of 2 | 2¹⁰ ≈ 10³ (KB), 2²⁰ ≈ 10⁶ (MB), 2³⁰ ≈ 10⁹ (GB), 2⁴⁰ ≈ 10¹² (TB) |
-
-**State assumptions explicitly.** Every estimate is only as good as its inputs. Write them down so others can challenge the right number.
+This chapter is the **practice layer**: the diagram, worked example, exercises, mini-project, design prompt, open-source reading, interview questions and checklist below.
 
 ---
 

@@ -10,36 +10,14 @@ Read replicas, caching, sharding (key selection), partitioning, and the read/wri
 
 **In one sentence:** you scale a database in steps — tune queries and indexes, scale the machine up, add a cache and read replicas for reads, partition large tables, and only then shard writes across many databases by a carefully chosen key — because each step adds complexity the previous one didn't.
 
-**Mental model — a busy library.** First you organize the shelves better (indexes). Then you hire a bigger building (vertical scaling). Then you put photocopies of popular books at a front desk (cache) and open branch libraries with copies of the whole collection for reading only (read replicas). When even writing new books into the catalog overwhelms one building, you split the collection by author's last name across several buildings (sharding) — and now finding "all books about cats" means visiting every building.
+**Read the full explanation in the AI Library** (it is explained there once, so this chapter does not repeat it):
 
-**The scaling ladder (climb in order)**
+* [Chapter 7 — Advanced Database Topics](https://charikshith.github.io/AI_Library/notes/system-design/chapters/7%20-%20Storage%20-%20Database%20and%20Storage.html#79-advanced-database-topics)
+* [Chapter 7 — The Database Scaling Ladder](https://charikshith.github.io/AI_Library/notes/system-design/chapters/7%20-%20Storage%20-%20Database%20and%20Storage.html#792-the-database-scaling-ladder)
+* [Chapter 7 — Choosing a Shard Key, Hot Spots and Cross-Shard Queries](https://charikshith.github.io/AI_Library/notes/system-design/chapters/7%20-%20Storage%20-%20Database%20and%20Storage.html#7943-choosing-a-shard-key-hot-spots-and-cross-shard-queries)
+* [Chapter 8 — Database Performance Optimization Techniques](https://charikshith.github.io/AI_Library/notes/system-design/chapters/8%20-%20Performance%20-%20Concepts%2C%20Tools%20%26%20Techniques.html#89-database-performance-optimization-techniques)
 
-| Step | Helps | Cost |
-|------|-------|------|
-| 1. Query + index tuning ([Vol 1 Ch 46](../volume-1-cs-foundations/ch46-schema-design-normalization-and-indexing.md)), connection pooling (PgBouncer) | everything | engineering time |
-| 2. Vertical scaling | everything, instantly | money; a ceiling |
-| 3. Caching ([Ch 7](ch07-caching-strategies.md)) | read-heavy hot data | invalidation, staleness |
-| 4. **Read replicas** | read throughput, reporting isolation | replication lag → stale reads |
-| 5. Table **partitioning** (one DB) | huge tables: time-based retention, index size | partition-key-aware queries |
-| 6. Functional split | different domains on different DBs | cross-domain joins disappear |
-| 7. **Sharding** | write throughput and data size beyond one node | cross-shard queries and transactions, resharding, operations |
-
-**Read/write split and its consistency cost** — writes go to the primary; reads go to replicas. Asynchronous replicas lag (milliseconds, sometimes seconds under load), so a user who just saved a profile may read the old one. Fixes: read-your-writes routing (read from the primary for a few seconds after a write, or wait until the replica has reached the write's LSN), sticky routing for critical reads, and monitoring replica lag.
-
-**Choosing a shard key**
-
-| Good key | Why | Watch out |
-|----------|-----|-----------|
-| `tenant_id` / `user_id` | most queries are "for this user"; spreads evenly | whale tenants → dedicated shards |
-| hash of an entity ID | even distribution | range queries across the whole set need scatter-gather |
-| composite `(user_id, time bucket)` | bounds per-key growth | more complex routing |
-| **Bad:** `created_at`, `country`, `status` | all new writes hit one shard; low cardinality | **hot shards** |
-
-**Hot spots** — a celebrity account, a viral post, or a monotonically increasing key concentrates load. Mitigations: hash the key, add salt/suffix buckets for hot keys, give whales dedicated shards, cache hot reads.
-
-**Cross-shard queries** — scatter-gather to all shards and merge (slower, tail latency adds up); maintain global secondary indexes or denormalized lookup tables; route analytics to a warehouse instead; avoid cross-shard transactions (use sagas instead, [Vol 3 Ch 12](../volume-3-low-level-design/ch12-event-bus-cqrs-and-event-sourcing.md)).
-
-**Routing** — the application computes the shard (a library), or a proxy does (Vitess, Citus, ProxySQL), using consistent hashing or a directory (key → shard map) that makes moving data easier.
+This chapter is the **practice layer**: the diagram, worked example, exercises, mini-project, design prompt, open-source reading, interview questions and checklist below.
 
 ---
 

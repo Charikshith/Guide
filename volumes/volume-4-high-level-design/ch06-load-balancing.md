@@ -10,36 +10,14 @@ L4 vs L7, algorithms (round-robin, least-conn, consistent hashing), health check
 
 **In one sentence:** a load balancer decides which backend gets each connection or request, and at system-design level the questions are *which layer* it works at, *which algorithm* fits the workload, *how it learns* a backend is unhealthy, and *what happens when the load balancer itself fails*.
 
-**Mental model — airport check-in.** An L4 balancer is the person at the entrance pointing each traveler to a desk by ticket number only. An L7 balancer reads your boarding pass and sends business class to one desk and baggage drop to another. Consistent hashing is "the same family always goes to the same desk" — handy when that desk already knows them (cache affinity).
+**Read the full explanation in the AI Library** (it is explained there once, so this chapter does not repeat it):
 
-The mechanics (nginx/Envoy config, basic algorithms) are in [Vol 1 Ch 44](../volume-1-cs-foundations/ch44-delivery-load-balancing-reverse-proxies-and-cdn.md). This chapter is about **design choices**.
+* [Chapter 2 — Load Balancing](https://charikshith.github.io/AI_Library/notes/system-design/chapters/2%20-%20Networking%20%26%20Communication.html#28-load-balancing)
+* [Chapter 6 — Load Balancing — The Backbone of Scalability](https://charikshith.github.io/AI_Library/notes/system-design/chapters/6%20-%20Scalability%20in%20System%20Design.html#67-load-balancing--the-backbone-of-scalability)
+* [Chapter 6 — Choosing a Load-Balancing Algorithm for the Workload](https://charikshith.github.io/AI_Library/notes/system-design/chapters/6%20-%20Scalability%20in%20System%20Design.html#677-choosing-a-load-balancing-algorithm-for-the-workload)
+* [Chapter 6 — Health Checks in Depth](https://charikshith.github.io/AI_Library/notes/system-design/chapters/6%20-%20Scalability%20in%20System%20Design.html#678-health-checks-in-depth)
 
-**Which algorithm for which workload**
-
-| Workload | Algorithm | Why |
-|----------|-----------|-----|
-| Short, uniform requests; identical servers | round robin / weighted RR | simple, even |
-| Long or variable requests (uploads, reports, streaming) | **least connections** / least outstanding requests | adapts to real load |
-| Latency-sensitive, large fleets | power of two choices (P2C) with EWMA latency | near-optimal, no global state |
-| **Cache or state affinity** (sharded caches, per-user state, WebSocket rooms) | **consistent hashing** (ring, Maglev, rendezvous) | the same key → the same backend, and minimal remapping when backends change |
-| Hot keys with consistent hashing | consistent hashing **with bounded loads** | caps any backend at, e.g., 1.25× average |
-| Canary / A/B | weighted routing by percentage or header | controlled exposure |
-
-**Why consistent hashing?** With `hash(key) % N`, adding one server remaps almost every key (≈ (N−1)/N of them), which empties every cache at once. With a hash ring, adding one of N servers moves only ~1/(N+1) of keys.
-
-**Sticky sessions** — pin a client to one backend (cookie or IP hash). Useful for legacy stateful apps and WebSockets, but it unbalances load, breaks when that backend dies, and complicates scaling. Prefer stateless backends ([Ch 3](ch03-scalability-and-reliability-fundamentals.md)).
-
-**Health checks**
-
-| Type | How | Catches |
-|------|-----|---------|
-| Active | LB probes `/readyz` every few seconds; rise/fall thresholds | dead or not-ready nodes |
-| Passive / outlier detection | eject backends that return 5xx or time out on real traffic | gray failures active checks miss |
-| Deep vs shallow | deep checks test dependencies | deep checks can cascade: one DB blip ejects *every* node — keep readiness about the node itself |
-
-**The LB itself must not be a single point of failure** — run pairs with a floating VIP (keepalived/VRRP), use managed cloud LBs (multi-AZ by design), use anycast + ECMP for L4 fleets, and put DNS health checks across regions.
-
-**Global load balancing** — GeoDNS or latency-based DNS (Route 53), anycast IPs (Cloudflare, Google), and global L7 load balancers that route users to the nearest healthy region and fail over when a region is down.
+This chapter is the **practice layer**: the diagram, worked example, exercises, mini-project, design prompt, open-source reading, interview questions and checklist below.
 
 ---
 

@@ -10,43 +10,15 @@ Vertical vs horizontal scaling, statelessness, redundancy, failure domains, avai
 
 **In one sentence:** you scale by buying a bigger machine (vertical) or more machines (horizontal); horizontal scaling needs stateless servers; and reliability comes from redundancy spread across independent failure domains, which you can reason about with simple probability.
 
-**Mental model — a bakery.** Vertical scaling is buying a bigger oven: easy, but there's a largest oven money can buy, and if it breaks, no bread. Horizontal scaling is adding more ovens: more complex to coordinate, but no ceiling, and one broken oven doesn't stop the shop. Stateless bakers can work at any oven because the recipe is on the wall (shared storage), not in one baker's head.
+**Read the full explanation in the AI Library** (it is explained there once, so this chapter does not repeat it):
 
-**Vertical vs horizontal**
+* [Chapter 6 — Types of Scalability](https://charikshith.github.io/AI_Library/notes/system-design/chapters/6%20-%20Scalability%20in%20System%20Design.html#64-types-of-scalability)
+* [Chapter 6 — Stateless Service Design](https://charikshith.github.io/AI_Library/notes/system-design/chapters/6%20-%20Scalability%20in%20System%20Design.html#613-stateless-service-design)
+* [Chapter 9 — The 9s of Availability — What "Five Nines" Actually Means](https://charikshith.github.io/AI_Library/notes/system-design/chapters/9%20-%20Reliability%2C%20Availability%20%26%20Disaster%20Recovery.html#913-the-9s-of-availability--what-five-nines-actually-means)
+* [Chapter 9 — Availability Math and Failure Domains](https://charikshith.github.io/AI_Library/notes/system-design/chapters/9%20-%20Reliability%2C%20Availability%20%26%20Disaster%20Recovery.html#9132-availability-math-and-failure-domains)
+* [Chapter 9 — High Availability, Fault Tolerance & Failover](https://charikshith.github.io/AI_Library/notes/system-design/chapters/9%20-%20Reliability%2C%20Availability%20%26%20Disaster%20Recovery.html#96-high-availability-fault-tolerance--failover)
 
-| | Vertical (scale up) | Horizontal (scale out) |
-|-|---------------------|------------------------|
-| How | bigger CPU, RAM, disk | more nodes behind a load balancer |
-| Limit | the biggest machine available | effectively none (coordination costs grow) |
-| Complexity | low: no code changes | needs stateless apps, partitioning, service discovery |
-| Failure | one box = single point of failure | survives node loss |
-| Cost curve | gets expensive fast at the top end | roughly linear with commodity nodes |
-| Good for | databases (first), quick wins | stateless web/API tiers, workers, caches |
-
-**Statelessness** — a server is stateless when any request can go to any instance. Move session data, uploads, and caches out of process memory into shared stores (Redis, a database, object storage) or into signed client tokens. Then you can add, remove, and replace instances freely.
-
-**Failure domains** — things that fail together: a process, a host, a rack, an availability zone (AZ), a region, a cloud provider, a deploy, a config push. Spread replicas across domains so one failure never takes out all copies. Correlated failures (same bad deploy everywhere, same dependency) are the real enemy.
-
-**Availability math**
-
-| Setup | Formula | Example with 99.9% parts |
-|-------|---------|--------------------------|
-| **Series** (A needs B needs C) | `A × B × C` | 2 in series: 99.8% |
-| **Parallel** (any one of n is enough) | `1 − (1 − A)ⁿ` | 2 in parallel: 99.9999% |
-| 5 services in series | `0.999⁵` | 99.5% |
-
-Parallel math assumes *independent* failures — the reason to use different AZs.
-
-**What the nines allow**
-
-| Availability | Downtime per year | per month |
-|--------------|------------------:|----------:|
-| 99% | 3.65 days | 7.3 h |
-| 99.9% | 8.76 h | 43.8 min |
-| 99.99% | 52.6 min | 4.4 min |
-| 99.999% | 5.26 min | 26 s |
-
-**Reliability levers** — redundancy (N+1, N+2), health checks and automatic failover, timeouts, retries with backoff, circuit breakers ([Vol 3 Ch 14](../volume-3-low-level-design/ch14-resilience-patterns-idempotency-retries-backoff-circuit-breakers.md)), load shedding, graceful degradation, and gradual rollouts.
+This chapter is the **practice layer**: the diagram, worked example, exercises, mini-project, design prompt, open-source reading, interview questions and checklist below.
 
 ---
 

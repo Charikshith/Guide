@@ -10,35 +10,14 @@ Queues vs logs, at-least/at-most/exactly-once, ordering, DLQs, and stream proces
 
 **In one sentence:** a message broker lets producers hand off work or events without waiting for consumers — a *queue* hands each message to one worker and forgets it, a *log* keeps an ordered history that many consumers read at their own pace — and every design must decide what happens when a message is lost, duplicated, or out of order.
 
-**Mental model — a bakery's order tickets vs a newspaper archive.** A queue (SQS, RabbitMQ) is the ticket spike in a kitchen: each ticket is taken by exactly one cook and thrown away when done. A log (Kafka, Pulsar, Kinesis) is a newspaper archive: every edition is kept in order, and each reader (consumer group) has a bookmark (offset) — they can read at different speeds or start again from the beginning.
+**Read the full explanation in the AI Library** (it is explained there once, so this chapter does not repeat it):
 
-**Queue vs log**
+* [Chapter 4 — Building Block Primer: Message Queues in Plain Terms](https://charikshith.github.io/AI_Library/notes/system-design/chapters/4%20-%20Architectural%20Patterns%20%28System%20Design%20Fundamentals%29.html#44-building-block-primer-message-queues-in-plain-terms)
+* [Chapter 8 — Messaging & Queues for Decoupling](https://charikshith.github.io/AI_Library/notes/system-design/chapters/8%20-%20Performance%20-%20Concepts%2C%20Tools%20%26%20Techniques.html#87-messaging--queues-for-decoupling)
+* [Chapter 8 — Delivery Semantics in Practice and the Outbox Pattern](https://charikshith.github.io/AI_Library/notes/system-design/chapters/8%20-%20Performance%20-%20Concepts%2C%20Tools%20%26%20Techniques.html#878-delivery-semantics-in-practice-and-the-outbox-pattern)
+* [Chapter 8 — Ordering, FIFO Queues and Visibility Timeout](https://charikshith.github.io/AI_Library/notes/system-design/chapters/8%20-%20Performance%20-%20Concepts%2C%20Tools%20%26%20Techniques.html#879-ordering-fifo-queues-and-visibility-timeout)
 
-| | Queue (SQS, RabbitMQ) | Log / stream (Kafka, Kinesis, Pulsar) |
-|-|-----------------------|----------------------------------------|
-| After consumption | deleted (acked) | **retained** (hours to forever) |
-| Consumers | competing workers share the messages | many independent **consumer groups**, each sees everything |
-| Ordering | none (SQS standard) or FIFO per group | **per partition** |
-| Replay | no | yes: reset the offset |
-| Scaling | add workers | add partitions (≤ one consumer per partition per group) |
-| Per-message features | visibility timeout, delays, priorities, per-message ack | offsets, compaction, very high throughput |
-| Best for | job/task queues, work distribution | event streams, CDC, analytics, event sourcing, fan-out to many systems |
-
-**Delivery semantics**
-
-| Semantic | How | Risk |
-|----------|-----|------|
-| At most once | ack/commit *before* processing | a crash loses the message |
-| **At least once** (the usual default) | ack *after* processing | a crash after processing → redelivery → duplicates |
-| "Exactly once" | at-least-once delivery + **idempotent processing** (dedup by message ID, upserts, offsets stored with results), or Kafka transactions for read-process-write within Kafka | only end-to-end if every side effect is idempotent or transactional |
-
-**Rule:** design every consumer to be idempotent. "Exactly once" at the broker doesn't cover your database or the email you sent.
-
-**Ordering** — Kafka guarantees order only *within a partition*. Pick the partition key so that everything needing order shares it (`order_id`, `account_id`). A global order means one partition = no parallelism. SQS FIFO orders within a `MessageGroupId`.
-
-**Failures and DLQs** — after N failed attempts, move the message to a **dead-letter queue** so one poison message doesn't block the rest; alert on DLQ depth; provide a redrive tool. Use exponential backoff between retries (delay queues or retry topics).
-
-**Consumer-group rebalance (Kafka)** — when a consumer joins, leaves, or stops heartbeating, partitions are reassigned among the group. During a rebalance consumption pauses and uncommitted work may be redone (another reason for idempotency). Cooperative-sticky assignment and static membership reduce the disruption.
+This chapter is the **practice layer**: the diagram, worked example, exercises, mini-project, design prompt, open-source reading, interview questions and checklist below.
 
 ---
 

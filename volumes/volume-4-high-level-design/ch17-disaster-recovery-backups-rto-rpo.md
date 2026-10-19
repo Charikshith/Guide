@@ -10,52 +10,14 @@ Backup strategies, restore testing, RTO/RPO, and multi-region failover.
 
 **In one sentence:** disaster recovery answers two questions agreed with the business — how much data may we lose (RPO) and how long may we be down (RTO) — and then proves, by actually restoring and failing over on a schedule, that the system can meet them.
 
-**Mental model — a fire drill and a photo album.** Backups are copies of your photo album kept in another building; how often you copy them decides how many recent photos a fire can take (RPO). The fire drill is how you prove everyone can get out and set up again elsewhere, and how long it takes (RTO). An album copy you've never tried to open is a hope, not a backup.
+**Read the full explanation in the AI Library** (it is explained there once, so this chapter does not repeat it):
 
-**RPO vs RTO**
+* [Chapter 9 — Backup & Recovery Strategies](https://charikshith.github.io/AI_Library/notes/system-design/chapters/9%20-%20Reliability%2C%20Availability%20%26%20Disaster%20Recovery.html#911-backup--recovery-strategies)
+* [Chapter 9 — Disaster Recovery in Practice](https://charikshith.github.io/AI_Library/notes/system-design/chapters/9%20-%20Reliability%2C%20Availability%20%26%20Disaster%20Recovery.html#912-disaster-recovery-in-practice)
+* [Chapter 9 — Replication Is Not a Backup](https://charikshith.github.io/AI_Library/notes/system-design/chapters/9%20-%20Reliability%2C%20Availability%20%26%20Disaster%20Recovery.html#91210-replication-is-not-a-backup)
+* [Chapter 9 — Disaster-Recovery Strategies: Cost vs. Recovery Time](https://charikshith.github.io/AI_Library/notes/system-design/chapters/9%20-%20Reliability%2C%20Availability%20%26%20Disaster%20Recovery.html#91211-disaster-recovery-strategies-cost-vs-recovery-time)
 
-| | RPO — Recovery Point Objective | RTO — Recovery Time Objective |
-|-|-------------------------------|-------------------------------|
-| Question | how much *data* can we lose? | how long can we be *down*? |
-| Measured | time between the last recoverable point and the disaster | time from the disaster to service restored |
-| Driven by | backup frequency, replication lag, sync vs async | detection, automation, restore speed, DNS, people |
-| Example | "≤ 5 minutes of orders" | "back within 1 hour" |
-
-**What you're protecting against**
-
-| Disaster | Replication helps? | Backups help? |
-|----------|:-:|:-:|
-| Disk / node failure | ✓ | ✓ |
-| Zone outage | ✓ multi-AZ | ✓ |
-| Region outage | ✓ cross-region | ✓ (if stored cross-region) |
-| **Accidental `DELETE` / bad migration / bug corrupting data** | ✗ replicas copy the mistake instantly | ✓ **point-in-time recovery** |
-| **Ransomware / malicious admin** | ✗ | ✓ only if backups are **immutable** and in a separate account |
-| Provider / account compromise | ✗ | ✓ with an off-provider or separate-account copy |
-
-Replication is for availability; backups are for recovery. You need both.
-
-**Backup strategies**
-
-| Type | What | Pros / cons |
-|------|------|-------------|
-| Full snapshot | the whole volume or DB at time T | simple restore; large and slow |
-| Incremental / differential | changes since the last backup | small and fast; restore needs a chain |
-| **Continuous WAL / binlog archiving** | every change streamed to object storage | **point-in-time recovery (PITR)** to any second; RPO ≈ seconds |
-| Logical dump (`pg_dump`) | SQL or data export | portable across versions; slow for large DBs |
-| Object storage versioning + replication | S3 versioning, cross-region replication | protects files against deletes and overwrites |
-
-**The 3-2-1 rule (plus immutability):** 3 copies, on 2 different media or services, with 1 off-site — and at least 1 immutable (object lock / WORM) in a separate account.
-
-**DR strategies (cost ↔ RTO)**
-
-| Strategy | Secondary region has | RTO | RPO | Cost |
-|----------|---------------------|-----|-----|------|
-| Backup & restore | only backups | hours–a day | hours (or minutes with PITR) | $ |
-| Pilot light | the data replicated; minimal core infrastructure off or tiny | tens of minutes | minutes | $$ |
-| Warm standby | a scaled-down, fully working copy | minutes | seconds–minutes | $$$ |
-| Multi-site active-active | full capacity serving traffic | ~0 (reroute) | ~0 (sync) or seconds | $$$$ |
-
-**Why test restores, not just backups?** Backups fail silently: expired credentials, missing tables, corrupt files, incompatible versions, a restore that takes 14 hours instead of the 1 you promised, or a runbook nobody can follow. The only real measure of RTO and RPO is a timed restore.
+This chapter is the **practice layer**: the diagram, worked example, exercises, mini-project, design prompt, open-source reading, interview questions and checklist below.
 
 ---
 

@@ -10,54 +10,15 @@ Zero-trust, IAM, secrets, encryption in transit/at rest, and blast-radius reduct
 
 **In one sentence:** system-level security assumes any component can be compromised, so every request is authenticated and authorized regardless of network location (zero trust), every identity gets only the permissions it needs, credentials are short-lived and rotated, data is encrypted everywhere, and the architecture is split so a breach in one part can't spread to the rest.
 
-**Mental model — a modern office building.** The old model is a castle: a strong wall, and anyone inside is trusted. Zero trust is an office where your badge is checked at *every* door, each badge opens only the rooms your job needs, badges expire each evening, the safes are locked even inside locked rooms (encryption at rest), and fire doors divide the building so one fire can't burn it all down (blast radius).
+**Read the full explanation in the AI Library** (it is explained there once, so this chapter does not repeat it):
 
-**Zero trust vs perimeter**
+* [Chapter 10 — Zero Trust Security Model](https://charikshith.github.io/AI_Library/notes/system-design/chapters/10%20-%20Security%20in%20System%20Design%20%E2%80%93%20Principles%2C%20Practices%20%26%20Protocols.html#1012-zero-trust-security-model)
+* [Chapter 10 — Secrets Management — Don't Put Secrets in Code](https://charikshith.github.io/AI_Library/notes/system-design/chapters/10%20-%20Security%20in%20System%20Design%20%E2%80%93%20Principles%2C%20Practices%20%26%20Protocols.html#1020-secrets-management--dont-put-secrets-in-code)
+* [Chapter 10 — Defense in Depth — Layered Security](https://charikshith.github.io/AI_Library/notes/system-design/chapters/10%20-%20Security%20in%20System%20Design%20%E2%80%93%20Principles%2C%20Practices%20%26%20Protocols.html#1019-defense-in-depth--layered-security)
+* [Chapter 10 — Reducing the Blast Radius](https://charikshith.github.io/AI_Library/notes/system-design/chapters/10%20-%20Security%20in%20System%20Design%20%E2%80%93%20Principles%2C%20Practices%20%26%20Protocols.html#10191-reducing-the-blast-radius)
+* [Chapter 10 — Data Protection & Secure Communication](https://charikshith.github.io/AI_Library/notes/system-design/chapters/10%20-%20Security%20in%20System%20Design%20%E2%80%93%20Principles%2C%20Practices%20%26%20Protocols.html#109-data-protection--secure-communication)
 
-| | Perimeter ("castle and moat") | Zero trust |
-|-|-------------------------------|------------|
-| Trust based on | network location (inside the VPN = trusted) | verified identity + device + context, per request |
-| East-west traffic | often unauthenticated plaintext | mTLS with workload identities |
-| After a breach | the attacker moves laterally freely | each hop requires new authorization |
-| Access | broad network access (VPN) | per-application, least-privilege access (identity-aware proxies) |
-
-**IAM principles**
-
-| Principle | Practice |
-|-----------|----------|
-| **Least privilege** | grant specific actions on specific resources (`s3:GetObject` on `bucket/reports/*`), not `*` |
-| Identities for workloads, not shared keys | IAM roles for services, Kubernetes service accounts → cloud roles (workload identity), SPIFFE IDs |
-| **Short-lived credentials** | STS tokens (15 min–1 h), OIDC federation for CI, Vault dynamic DB credentials |
-| Separation of duties | whoever deploys can't also approve their own access; break-glass accounts audited |
-| Policy as code | IAM in Terraform, reviewed; automated checks for wildcards and public access |
-| Continuous review | access analyzers; remove unused permissions (e.g. unused for 90 days) |
-
-**Secrets at scale**
-
-| Level | Approach |
-|-------|----------|
-| Bad | secrets in code, images, env files in git, Slack |
-| OK | a secrets manager, read at startup, rotated manually |
-| **Good** | a secrets manager + automatic rotation + workload identity to fetch them (no bootstrap secret) + audit logs |
-| Best | no long-lived secrets at all: dynamic, per-instance credentials that expire (Vault DB engine, IAM auth to RDS) |
-
-**Encryption**
-
-| Where | How |
-|-------|-----|
-| **In transit** | TLS 1.2+/1.3 at the edge; **mTLS** between services (a mesh or SPIFFE/SPIRE); TLS to databases |
-| **At rest** | disk/volume encryption (default on major clouds); database TDE; object storage SSE-KMS |
-| **Envelope encryption** | a KMS master key encrypts per-object data keys; data keys encrypt data. Rotating the master key doesn't re-encrypt all data; per-tenant keys enable crypto-shredding |
-| Application level | encrypt specific fields (national IDs, tokens) so even DB admins see ciphertext |
-| Key management | KMS/HSM; keys never leave; access logged; separate duties for key admins and data admins |
-
-**Blast-radius reduction**
-
-* Separate cloud **accounts/projects** per environment and per sensitive system (prod ≠ staging ≠ security tooling).
-* Network segmentation: private subnets, security groups allowing only needed ports from needed sources, deny egress by default.
-* Cell-based architecture: shards of users served by independent stacks.
-* One service = one identity = its own permissions and secrets.
-* Rate limits, quotas, and budgets so a compromised key can't do unlimited damage.
+This chapter is the **practice layer**: the diagram, worked example, exercises, mini-project, design prompt, open-source reading, interview questions and checklist below.
 
 ---
 
