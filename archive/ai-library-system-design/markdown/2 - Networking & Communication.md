@@ -56,14 +56,14 @@ When you read "L4 load balancer" later in this chapter, picture a thing that onl
 - [2.5 DNS — The Domain Name System](#25-dns--the-domain-name-system)
 - [2.6 The Client-Server Model](#26-the-client-server-model)
 - [2.7 Proxies — Forward and Reverse](#27-proxies--forward-and-reverse)
-- [2.15.5 Load Balancing](#2155-load-balancing)
+- [2.18.5 Load Balancing](#2185-load-balancing)
 - [2.9 API Gateways](#29-api-gateways)
-- [2.10 Content Delivery Networks (CDNs)](#210-content-delivery-networks-cdns)
-- [2.12 Combining an API Gateway with a CDN](#212-combining-an-api-gateway-with-a-cdn)
-- [2.14 Combined Tips & Tricks for System Design Interviews](#214-combined-tips--tricks-for-system-design-interviews)
-- [2.15 Sample Interview Questions](#215-sample-interview-questions)
-- [2.16 Summary](#216-summary)
-- [2.17 Further Reading](#217-further-reading)
+- [2.12 Content Delivery Networks (CDNs)](#212-content-delivery-networks-cdns)
+- [2.15 Combining an API Gateway with a CDN](#215-combining-an-api-gateway-with-a-cdn)
+- [2.17 Combined Tips & Tricks for System Design Interviews](#217-combined-tips--tricks-for-system-design-interviews)
+- [2.18 Sample Interview Questions](#218-sample-interview-questions)
+- [2.19 Summary](#219-summary)
+- [2.20 Further Reading](#220-further-reading)
 
 ---
 
@@ -1321,7 +1321,20 @@ This is *the* most common confusion. Both sit in front of your services. Both ca
 - **API Gateway** = API product surface. Use it when you're exposing APIs to external developers, multiple internal teams, or partners — anywhere you need quotas, plans, and a polished contract.
 - **In practice you often use both:** a reverse proxy (e.g., NGINX) close to your services for routing/TLS, plus a managed API gateway at the edge for auth, quotas, and developer experience.
 
-### 2.9.5 API Gateways — Tips
+### 2.9.5 API Gateway Patterns
+
+Four named patterns cover most of what a gateway is used for (names from the Azure Architecture Center and Sam Newman).
+
+| Pattern | Idea | Trade-off |
+|---------|------|-----------|
+| Gateway Routing | One endpoint; route by path, host, header or version to different backends | Config grows; one bad route breaks many services |
+| Gateway Offloading | Move shared cross-cutting work (TLS, auth, rate limits, compression, logging) out of every service into the gateway | Services must trust the gateway; keep business logic out of it |
+| Gateway Aggregation | The client makes one call; the gateway fans out to N services and merges the results | Fewer client round trips, but latency of the slowest call and partial-failure handling |
+| Backends for Frontend (BFF) | One gateway per client type (web, mobile, partner), each shaped for that client | More services to run; duplicated logic unless teams share libraries |
+
+**Trade-offs of any gateway:** it is a single point of failure unless run as a redundant fleet behind a load balancer; it adds a hop of latency; and it becomes a coupling hotspot if business logic creeps in. Keep it thin, declarative and owned by a platform team. A gateway handles **north-south** traffic (clients to services); a service mesh handles **east-west** traffic (service to service).
+
+### 2.9.6 API Gateways — Tips
 
 - **Use JWT/OAuth2** for robust authentication and authorization.
 - **Implement rate limiting** at the gateway to prevent abuse.
@@ -1329,7 +1342,7 @@ This is *the* most common confusion. Both sit in front of your services. Both ca
 - **Monitor logs** for suspicious activity and performance bottlenecks.
 - **Cache GET responses** for expensive, non-sensitive data.
 
-### 2.9.6 API Gateways — Interview Questions
+### 2.9.7 API Gateways — Interview Questions
 
 - What is an API gateway and why is it important?
 - How does an API gateway differ from a load balancer?
@@ -1338,11 +1351,80 @@ This is *the* most common confusion. Both sit in front of your services. Both ca
 
 ---
 
-## 2.10 Content Delivery Networks (CDNs)
+## 2.10 Service Mesh and Service Discovery
+
+Sidecars, discovery, mTLS, retries/timeouts/circuit breaking at the mesh layer; when a mesh earns its cost.
+
+**In one sentence:** service discovery answers "where are the healthy instances of service X right now?", and a service mesh moves the networking plumbing every service needs — encryption, identity, retries, timeouts, circuit breaking, metrics — out of application code into a proxy next to each service, configured centrally.
+
+**Mental model — a city's taxi dispatch.** Discovery is the dispatch radio that always knows where each taxi is. A service mesh gives every business its own trained driver (a sidecar proxy) who knows the routes, checks IDs at the door (mTLS), takes a different road when one is blocked (retries), and reports every trip to the city office (telemetry). The businesses (services) just say "take me to billing".
+
+**Service discovery**
+
+| Approach | How | Examples |
+|----------|-----|----------|
+| DNS-based | a name resolves to the current instances | Kubernetes Services (`billing.default.svc.cluster.local`), Consul DNS |
+| Client-side registry | the client queries a registry and picks an instance | Eureka, Consul API, gRPC xDS |
+| Server-side (LB) | the client calls a fixed LB that knows the instances | AWS ALB target groups |
+| Registration | instances register and heartbeat, or the platform registers them | K8s endpoints, Consul agents |
+
+**What a mesh gives you (without code changes)**
+
+| Capability | How |
+|------------|-----|
+| **mTLS everywhere** | each workload gets a short-lived certificate (SPIFFE identity); sidecars encrypt and authenticate every call |
+| Authorization policies | "only `orders` may call `payments` on `POST /charge`" |
+| Timeouts, retries, retry budgets | per route, in config |
+| Circuit breaking / outlier detection | eject failing instances; limit pending requests |
+| Traffic shifting | canaries, mirroring, fault injection |
+| Uniform telemetry | golden metrics, traces, and access logs for every hop |
+
+**Architecture** — the **data plane** is the proxies (Envoy sidecars, Linkerd's Rust micro-proxies, or per-node "ambient" proxies); the **control plane** (istiod, Linkerd control plane) distributes config, certificates, and endpoints to them.
+
+**How mTLS works in a mesh**
+
+1. The control plane acts as a certificate authority; each workload proves its identity (Kubernetes service account token) and receives a short-lived cert (hours) with a SPIFFE ID like `spiffe://cluster.local/ns/shop/sa/orders`.
+2. Traffic from the app goes in plaintext to its local sidecar (iptables redirect).
+3. The client sidecar opens TLS to the server sidecar; **both present certificates** and verify them against the mesh CA.
+4. The server sidecar checks authorization policy on the caller's identity, then forwards to its app.
+5. Certificates rotate automatically.
+
+**When a mesh earns its cost**
+
+| Worth it | Probably not worth it |
+|----------|----------------------|
+| dozens+ of services, several languages | a monolith or a handful of services |
+| zero-trust / compliance needs mTLS everywhere | one team, one language — a shared library does it |
+| teams need consistent traffic policy and telemetry | no one to own and upgrade the mesh |
+| frequent canaries and traffic shaping | latency budget can't afford an extra proxy hop per call (~0.5–2 ms) |
+
+Costs: extra CPU and memory per pod, added latency, operational complexity, upgrades, harder debugging. Sidecarless modes (Istio ambient, Cilium) reduce some costs.
+
+## 2.11 Web Servers vs. Application Servers
+
+| | Web server | Application server |
+|---|-----------|--------------------|
+| Serves | Static files (HTML, CSS, JS, images) and proxies requests | Dynamic responses: runs your business code |
+| Strength | Very fast at files, many idle connections, TLS | Runs the language runtime, framework, DB access |
+| Examples | nginx, Apache httpd | Gunicorn / Uvicorn (Python), Tomcat (Java), Node.js, Puma, Kestrel |
+
+The line is blurry (Node and Tomcat also serve files; nginx can call FastCGI), but the classic split exists because the two scale differently. Putting nginx in front of Gunicorn is common because nginx absorbs slow clients while Gunicorn workers stay free for real work.
+
+**Concurrency models**
+
+| Model | How | Examples | Trade-off |
+|-------|-----|----------|-----------|
+| Process per request | One OS process each | Apache prefork, Gunicorn sync workers | Isolation, but heavy memory and few connections |
+| Thread per request | A thread pool | Tomcat, Apache worker MPM | Cheaper than processes; blocking I/O ties up a thread |
+| Event loop | One thread multiplexes many connections with non-blocking I/O | nginx, Node.js | Huge connection counts; one slow CPU task blocks the loop |
+
+**Request flow:** client → DNS → CDN (static hits end here) → load balancer / reverse proxy (TLS, routing) → web server (static files, buffers slow clients) → app server (your code) → cache / database.
+
+## 2.12 Content Delivery Networks (CDNs)
 
 A **Content Delivery Network (CDN)** is a globally distributed network of servers (also called Points of Presence, or PoPs) designed to deliver content (web pages, images, videos, APIs, etc.) to users efficiently, reliably, and securely. By caching content closer to users, CDNs reduce latency, enhance availability, and offload traffic from origin servers.
 
-### 2.10.1 Why Do We Need CDNs?
+### 2.12.1 Why Do We Need CDNs?
 
 Without a CDN, every client request must travel the entire distance to the origin server (which could be on another continent), resulting in:
 
@@ -1358,7 +1440,7 @@ CDNs solve these problems by:
 - Handling massive traffic and DDoS attacks.
 - Optimizing bandwidth and cost.
 
-### 2.10.2 CDN Architecture & Components
+### 2.12.2 CDN Architecture & Components
 
 | Component             | Description                                                                       |
 |-----------------------|-----------------------------------------------------------------------------------|
@@ -1393,7 +1475,7 @@ graph LR
 (Requests routed to nearest edge server)
 ```
 
-### 2.10.3 How a CDN Handles Requests
+### 2.12.3 How a CDN Handles Requests
 
 1. **User Requests Content:** A user tries to load a resource (e.g., image, video, API data).
 2. **CDN Resolves to Nearest Edge Server:** DNS and routing logic direct the request to the best PoP (based on geography, latency, load).
@@ -1412,7 +1494,7 @@ flowchart LR
     EdgeServer-->|Content|User
 ```
 
-### 2.10.4 CDN Request Flow (Sequence Diagram)
+### 2.12.4 CDN Request Flow (Sequence Diagram)
 
 ```mermaid
 sequenceDiagram
@@ -1433,7 +1515,7 @@ sequenceDiagram
     end
 ```
 
-### 2.10.5 Key CDN Features & Benefits
+### 2.12.5 Key CDN Features & Benefits
 
 | Feature                       | Benefit                                                |
 |-------------------------------|--------------------------------------------------------|
@@ -1442,7 +1524,7 @@ sequenceDiagram
 | **Compression & Optimization**| Reduces bandwidth, speeds up delivery.                 |
 | **Security**                  | DDoS mitigation, SSL/TLS, bot filtering.               |
 
-### 2.10.6 Caching Strategies in CDNs
+### 2.12.6 Caching Strategies in CDNs
 
 CDNs cache frequently accessed content at edge servers. Key concepts:
 
@@ -1467,7 +1549,7 @@ app.get('/static/*', (req, res) => {
 });
 ```
 
-### 2.10.7 Request Routing, Load Balancing, and Failover
+### 2.12.7 Request Routing, Load Balancing, and Failover
 
 CDNs use intelligent algorithms for:
 
@@ -1477,7 +1559,7 @@ CDNs use intelligent algorithms for:
 
 **Failover Handling:** If a PoP fails, traffic is rerouted to the next closest or most responsive PoP, ensuring high availability.
 
-### 2.10.8 Compression, Minification, and Optimization
+### 2.12.8 Compression, Minification, and Optimization
 
 CDNs further optimize content delivery by:
 
@@ -1499,21 +1581,21 @@ const app = express();
 app.use(compression());
 ```
 
-### 2.10.9 Security Features
+### 2.12.9 Security Features
 
 - **DDoS Protection:** Rate limiting, traffic filtering, anomaly detection.
 - **SSL/TLS Offloading:** Edge servers handle encryption, reducing load on origin.
 - **Bot Mitigation:** Block malicious bots before reaching origin.
 - **Web Application Firewall (WAF):** Protects against common web threats.
 
-### 2.10.10 CDN Use Cases
+### 2.12.10 CDN Use Cases
 
 - **Static Content Delivery:** Images, CSS, JS, videos, HTML.
 - **Dynamic Content Optimization:** API responses, personalized pages (with careful caching).
 - **API Acceleration:** Edge caching of API responses for speed.
 - **Edge Computing:** Run lightweight computation at the edge (e.g., video transcoding, A/B testing).
 
-### 2.10.11 CDN Nuances Worth Knowing
+### 2.12.11 CDN Nuances Worth Knowing
 
 - **Pull CDN (most common):** Edge fetches from origin on first cache miss, then serves cached copy. Cloudflare, CloudFront, Fastly default to this. **Easy to set up** (just point DNS at the CDN).
 - **Push CDN:** You manually upload assets to the CDN. Used for very large, rarely-changing files (game patches, software downloads).
@@ -1522,7 +1604,7 @@ app.use(compression());
 - **Signed URLs:** For private content (paid videos, private documents), the CDN won't serve unless the URL includes a short-lived signature your origin generated. Lets you put auth at the origin while still using the CDN for delivery.
 - **Cache invalidation:** Two strategies — **purge** (CDN evicts on demand, often costly/slow) or **versioning** (rename the file: `style.css?v=42`, and old versions just expire). Versioning is almost always better.
 
-### 2.10.12 Sample Code: CDN Integration
+### 2.12.12 Sample Code: CDN Integration
 
 **1. Using a CDN with HTML Assets**
 
@@ -1559,7 +1641,7 @@ cdn:
     ssl: enabled
 ```
 
-### 2.10.13 CDN — Tips & Best Practices
+### 2.12.13 CDN — Tips & Best Practices
 
 - **Set Appropriate TTLs:** Static assets get longer TTLs (days/weeks); dynamic content gets shorter TTLs or no caching.
 - **Use Versioning:** Change asset filenames when deploying updates to avoid stale caches.
@@ -1575,7 +1657,7 @@ cdn:
 - **Enable SSL/TLS termination** at the CDN for better security and performance.
 - **Monitor CDN analytics** for usage patterns and anomalies.
 
-### 2.10.14 CDN — Interview Questions
+### 2.12.14 CDN — Interview Questions
 
 **Basics:**
 
@@ -1616,7 +1698,7 @@ cdn:
 - How would you design a CDN for a large-scale video streaming platform?
 - How do CDNs help in real-time applications like online gaming or stock trading?
 
-### 2.10.15 CDN — Further Reading
+### 2.12.15 CDN — Further Reading
 
 - [Cloudflare CDN Docs](https://developers.cloudflare.com/cdn/)
 - [AWS CloudFront](https://aws.amazon.com/cloudfront/)
@@ -1625,7 +1707,60 @@ cdn:
 
 ---
 
-## 2.11 API Gateway vs. CDN
+## 2.13 CDN, Edge and Geo-Distribution in Depth
+
+Caching at the edge, geo-routing, data residency, and multi-region consistency.
+
+**In one sentence:** the speed of light is a hard limit, so global systems put copies of content and compute close to users (CDN edges, regional deployments), route each user to the nearest healthy place, keep data where the law says it must live, and choose carefully which data is shared across regions and how consistent it must be.
+
+**Mental model — a coffee chain.** One roastery (the origin) supplies hundreds of cafés (edge PoPs). Each café keeps the popular beans on its shelf (cache) and orders from the regional warehouse (origin shield) when it runs out. Customers go to the nearest café (geo-routing). Some local laws say a city's customer loyalty records must stay in that country (data residency).
+
+**Why distance matters**
+
+| Route | Distance | Light in fiber (~200,000 km/s), round trip |
+|-------|---------:|--------------------------------:|
+| Same city | 50 km | 0.5 ms |
+| Frankfurt ↔ London | 640 km | ~6 ms |
+| New York ↔ London | 5,600 km | ~56 ms (~70 ms in practice) |
+| New York ↔ Sydney | 16,000 km | ~160 ms (~200+ ms in practice) |
+
+A page needing 5 sequential round trips (DNS, TCP, TLS, HTML, API) from Sydney to a US-only origin: ~1 s just in physics. From a local edge: ~50 ms.
+
+**CDN caching**
+
+| Concept | Meaning |
+|---------|---------|
+| PoP | point of presence: an edge data center near users |
+| Cache key | usually host + path + query (+ `Vary` headers); normalize it to raise hit rates |
+| TTL | from `Cache-Control: max-age / s-maxage` or edge rules |
+| **Origin shield** | a mid-tier cache in one region that all edges miss to, so the origin sees ~1 request per object instead of one per PoP |
+| Purge / invalidation | remove objects by URL, tag, or prefix (seconds to minutes) |
+| **Cache busting** | put a content hash in the file name (`app.3f9a1c.js`) → `max-age=31536000, immutable`; a new deploy means a new URL, no purge needed |
+| `stale-while-revalidate` / `stale-if-error` | serve slightly stale content while refreshing, or when the origin is down |
+| Edge compute | small functions at the PoP (Cloudflare Workers, Lambda@Edge): auth checks, redirects, A/B, personalization |
+
+**Geo-routing options**
+
+| Method | How | Notes |
+|--------|-----|-------|
+| GeoDNS / latency-based DNS | DNS answers with the nearest region's IP | depends on the resolver's location; TTL limits failover speed |
+| **Anycast** | the same IP announced from many PoPs; BGP delivers to the nearest | used by CDNs and DNS providers; fast failover |
+| Global load balancer | one anycast IP → proxies to the best healthy region | e.g. Google Cloud LB, AWS Global Accelerator |
+| Health-checked failover | remove unhealthy regions from answers | always pair routing with health checks |
+
+**Multi-region data patterns**
+
+| Pattern | Writes | Reads | Consistency | Fits |
+|---------|--------|-------|-------------|------|
+| Single primary region + read replicas | one region | local replicas | strong for writes, stale reads elsewhere | most apps; simple |
+| Active-passive (DR) | primary only; secondary on standby | primary | strong; failover loses the async lag | disaster recovery (Ch 17) |
+| **Geo-partitioned (home region)** | each user's data lives in their home region | local for local users | strong within a region | data residency, low latency for most traffic |
+| Active-active multi-leader | any region | local | eventual; conflicts (LWW, CRDTs) | carts, presence, likes, collaborative data |
+| Global consensus (Spanner, CockroachDB) | any region, via quorum | local (maybe stale) or quorum | strong | when correctness is non-negotiable; each write pays cross-region latency |
+
+**Data residency** — laws (GDPR, India's DPDP, China's PIPL, sector rules) may require that personal data is stored or processed in a region. Design: a user → home-region mapping at sign-up; region-local databases for PII; only non-personal or aggregated data in global services; encryption with region-held keys; logs and backups count too.
+
+## 2.14 API Gateway vs. CDN
 
 In large systems you typically use both. They overlap in some functionality but serve different primary purposes.
 
@@ -1643,7 +1778,7 @@ In large systems you typically use both. They overlap in some functionality but 
 
 ---
 
-## 2.12 Combining an API Gateway with a CDN
+## 2.15 Combining an API Gateway with a CDN
 
 A common design is to put the CDN in front of the API Gateway for caching API responses and absorbing DDoS attacks, then let the API Gateway handle authentication, routing, and business logic.
 
@@ -1659,7 +1794,7 @@ This layered approach gives you the best of both worlds: low-latency static deli
 
 ---
 
-## 2.13 The Canonical Trace: What Happens When You Type `google.com`
+## 2.16 The Canonical Trace: What Happens When You Type `google.com`
 
 This is the most asked networking interview question — and the best way to confirm you've absorbed everything in this chapter. Here's the journey, with approximate latencies from Chapter 1's reference table.
 
@@ -1723,11 +1858,11 @@ This is the most asked networking interview question — and the best way to con
 
 ---
 
-## 2.14 Combined Tips & Tricks for System Design Interviews
+## 2.17 Combined Tips & Tricks for System Design Interviews
 
 A consolidated master list, drawn from across all sections.
 
-### 2.14.1 General Networking Tips
+### 2.17.1 General Networking Tips
 
 - **Always clarify requirements.** Ask about traffic volume, latency tolerance, security needs, etc.
 - **Draw diagrams.** Visuals help communicate architecture clearly.
@@ -1740,33 +1875,33 @@ A consolidated master list, drawn from across all sections.
 - **Understand protocol choices:** HTTP for RESTful APIs, WebSockets for real-time, gRPC for high-performance RPC, etc. (See Ch. 3.)
 - **Monitor and log all networking layers** — from DNS queries to API gateway access — for proactive troubleshooting.
 
-### 2.14.2 IP-Specific Tips
+### 2.17.2 IP-Specific Tips
 
 - Know the standard private IP ranges (10.x.x.x, 172.16-31.x.x, 192.168.x.x).
 - Use private IPs internally; expose only what's necessary via public IPs.
 - Mention NAT for IPv4; mention IPv6 as the future direction.
 
-### 2.14.3 DNS-Specific Tips
+### 2.17.3 DNS-Specific Tips
 
 - Set appropriate TTLs (short for changing, long for stable).
 - Use multiple DNS providers for redundancy.
 - Leverage Anycast for global scale.
 - Implement DNSSEC.
 
-### 2.14.4 Client-Server Tips
+### 2.17.4 Client-Server Tips
 
 - Prefer stateless servers for scalability.
 - Use HTTPS everywhere.
 - Choose the right protocol for the use case.
 - Plan for graceful degradation.
 
-### 2.14.5 Proxy Tips
+### 2.17.5 Proxy Tips
 
 - Use reverse proxies for SSL termination, load balancing, and security.
 - Don't expose backend servers directly.
 - Remember: forward proxy = client-side; reverse proxy = server-side.
 
-### 2.14.6 Load Balancer Tips
+### 2.17.6 Load Balancer Tips
 
 - Always enable health checks.
 - Use sticky sessions only if session state requires it.
@@ -1774,14 +1909,14 @@ A consolidated master list, drawn from across all sections.
 - Integrate auto-scaling.
 - Add rate limiting at the LB or API Gateway.
 
-### 2.14.7 API Gateway Tips
+### 2.17.7 API Gateway Tips
 
 - Use JWT/OAuth2 for auth.
 - Implement rate limiting.
 - Aggregate requests (API composition) to reduce roundtrips.
 - Monitor logs for anomalies.
 
-### 2.14.8 CDN Tips
+### 2.17.8 CDN Tips
 
 - Set appropriate cache headers.
 - Use versioned asset filenames to avoid stale caches.
@@ -1791,17 +1926,17 @@ A consolidated master list, drawn from across all sections.
 
 ---
 
-## 2.15 Sample Interview Questions
+## 2.18 Sample Interview Questions
 
 A consolidated list from all sections.
 
-### 2.15.1 Foundations
+### 2.18.1 Foundations
 
 - Walk through what happens when you type `google.com` in your browser. (Tests: DNS, client-server, proxies, load balancer.)
 - What's the difference between public and private IPs? Why do we need both?
 - How does NAT work and what problem does it solve?
 
-### 2.15.2 DNS
+### 2.18.2 DNS
 
 - Explain the DNS resolution process step by step.
 - Authoritative vs. recursive DNS servers — what's the difference?
@@ -1810,33 +1945,33 @@ A consolidated list from all sections.
 - How does DNS-based load balancing work?
 - What is DNS cache poisoning, and how is it mitigated?
 
-### 2.15.3 Client-Server
+### 2.18.3 Client-Server
 
 - What is the client-server model?
 - Stateless vs. stateful servers — when to use each?
 - How does a browser load a webpage end-to-end?
 - How does WebSocket communication differ from REST?
 
-### 2.15.4 Proxies
+### 2.18.4 Proxies
 
 - Forward vs. reverse proxy — what's the difference?
 - When would you choose a reverse proxy?
 - How does SSL termination work at a reverse proxy?
 
-### 2.15.5 Load Balancing
+### 2.18.5 Load Balancing
 
 - What is load balancing and why does it matter?
 - L4 vs. L7 — which would you choose for content-aware routing?
 - Compare round-robin, least-connections, and IP hashing.
 - How would you handle session persistence behind a load balancer?
 
-### 2.15.6 API Gateway
+### 2.18.6 API Gateway
 
 - What is an API gateway and how does it differ from a plain load balancer?
 - How would you implement rate limiting and authentication in an API gateway?
 - When does API aggregation help?
 
-### 2.15.7 CDN
+### 2.18.7 CDN
 
 - What is a CDN and how does it improve performance?
 - Cache hit vs. cache miss — explain in the context of a CDN.
@@ -1845,7 +1980,7 @@ A consolidated list from all sections.
 
 ---
 
-## 2.16 Summary
+## 2.19 Summary
 
 - Networking is foundational to system design — it enables communication, scalability, and security.
 - **IP addresses** identify devices; IPv4 is widely deployed but limited, IPv6 is the future.
@@ -1860,7 +1995,7 @@ These concepts not only help build robust real-world systems — they are also s
 
 ---
 
-## 2.17 Further Reading
+## 2.20 Further Reading
 
 **IP Addresses:**
 

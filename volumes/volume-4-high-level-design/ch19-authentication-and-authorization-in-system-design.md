@@ -10,15 +10,507 @@ Where identity is checked in a large system, how it travels between services, ho
 
 **In one sentence:** in a distributed system, authentication happens once at the edge and becomes a signed identity that every hop can verify cheaply, while authorization is decided by the service that owns the data, using a policy it can check in microseconds and a design that keeps working when the identity service is down.
 
-**Read the full explanation in the AI Library** (it is explained there once, so this chapter does not repeat it):
+### Authentication Primer: Proving Who You Are
 
-* [Chapter 5 — Authentication Primer: Proving Who You Are](https://charikshith.github.io/AI_Library/notes/system-design/chapters/5%20-%20Web%20Concepts%20in%20System%20Design%20%28System%20Design%20Fundamentals%29.html#53-authentication-primer-proving-who-you-are)
-* [Chapter 10 — Authentication & Authorization
-](https://charikshith.github.io/AI_Library/notes/system-design/chapters/10%20-%20Security%20in%20System%20Design%20%E2%80%93%20Principles%2C%20Practices%20%26%20Protocols.html#108-authentication--authorization)
-* [Chapter 10 — Authentication and Authorization at Scale](https://charikshith.github.io/AI_Library/notes/system-design/chapters/10%20-%20Security%20in%20System%20Design%20%E2%80%93%20Principles%2C%20Practices%20%26%20Protocols.html#10812-authentication-and-authorization-at-scale)
-* [Chapter 10 — Refresh Tokens: Rotation and Storage](https://charikshith.github.io/AI_Library/notes/system-design/chapters/10%20-%20Security%20in%20System%20Design%20%E2%80%93%20Principles%2C%20Practices%20%26%20Protocols.html#1087-refresh-tokens-rotation-and-storage)
+> **Why this sits here:** earlier chapters already mentioned cookies, JWT, OAuth and API keys. This primer puts the whole picture in one place before the next section goes into sessions and tokens in detail. Chapter 10 later covers attacks and secure flows.
 
-This chapter is the **practice layer**: the diagram, worked example, exercises, mini-project, design prompt, open-source reading, interview questions and checklist below.
+#### Authentication vs. Authorization
+
+| | **Authentication (AuthN)** | **Authorization (AuthZ)** |
+|--|----------------------------|---------------------------|
+| Question | *Who are you?* | *What are you allowed to do?* |
+| Happens | first | after authentication |
+| Failure response | **401 Unauthorized** (we do not know who you are) | **403 Forbidden** (we know you, but you may not do this) |
+| Example | logging in with a password | a normal user trying to open the admin page |
+
+Every method below answers only the first question. A request arrives carrying some **credential** (password, key, token), the server checks it, and either lets the request continue or rejects it with 401.
+
+#### The Authentication Methods, From Simplest to Most Modern
+
+##### Basic Authentication
+
+The client sends the username and password on **every request** in a header: `Authorization: Basic <base64(username:password)>`.
+
+- Base64 is an *encoding*, not encryption. Anyone who sees the header can decode it instantly, so basic auth is acceptable only over HTTPS.
+- Even then it is mostly limited to internal tools, because the secret travels with every single request.
+
+##### Digest Authentication
+
+An attempt to avoid sending the password. The server first answers `401` with a challenge, and the client replies with a **hash** of the credentials combined with that challenge (traditionally computed with MD5). The password itself is not sent.
+
+- It relies on old hashing and is rarely used today. Know it exists; do not choose it for new systems.
+
+##### API Keys
+
+A random string issued to each client (an app or a partner), sent with every request, usually in an `X-API-Key` header.
+
+| Aspect | Detail |
+|--------|--------|
+| Server side | stores a **hash** of each key plus what it may do (its *scopes*); looks the key up on every request |
+| Missing or wrong key | `401` |
+| Strength | simple; easy to issue and revoke per client; good for server-to-server calls |
+| Weakness | if the key leaks, anyone can act as the owner; no expiry unless you build it; the key itself carries no information, so every check needs a lookup |
+
+Treat keys like passwords: keep them out of source code, rotate them, and give each one the narrowest permissions possible.
+
+##### Sessions (Server-Side State)
+
+After the user logs in, the server creates a **session** record and sends back only a **session ID** inside a **cookie**. The browser returns the cookie on every request, and the server looks the ID up.
+
+- The server must remember every session, so this is **stateful**. Sessions are usually stored in a fast shared store such as Redis, so any server can find them.
+- Great for traditional websites; awkward for APIs spread across many servers. The next section covers sessions in depth.
+
+##### Bearer Tokens and JWT
+
+The client logs in once and receives a **token**. It then sends `Authorization: Bearer <token>` with every request. "Bearer" only means *whoever holds this token gets in*; it describes how the token is used, not what is inside it.
+
+- An older style of token was an **opaque random string** that the server looked up in a database each time, which is stateful again.
+- A **JWT (JSON Web Token)** is a *signed* package of facts (user id, expiry time, roles). Any server holding the verification key can check the signature **without a database lookup**. That makes it **stateless** and easy to scale.
+- Trade-off: a signed token cannot simply be "switched off" before it expires, so keep its lifetime short.
+
+##### Access Tokens and Refresh Tokens
+
+Modern systems hand out a **pair** of tokens at login:
+
+| Token | Lifetime | Used for |
+|-------|----------|----------|
+| **Access token** | short (about 15 minutes to an hour) | every API call |
+| **Refresh token** | long (days to weeks) | only to get a new access token |
+
+```mermaid
+sequenceDiagram
+    participant C as Client
+    participant A as Auth server
+    participant API as API
+    C->>A: log in with credentials
+    A-->>C: access token + refresh token
+    C->>API: request with access token
+    API-->>C: 200 data
+    Note over C,API: later, the access token expires
+    C->>API: request with expired access token
+    API-->>C: 401
+    C->>A: send refresh token
+    A-->>C: new access token
+    C->>API: retry with new access token
+    API-->>C: 200 data
+```
+
+The user stays logged in without retyping the password, and a stolen access token is useful only briefly. **Where to keep the refresh token:** not in `localStorage`, where any injected script can read it; prefer an `HttpOnly`, `Secure`, `SameSite` cookie, or keep it on the server side.
+
+#### Letting Other Apps In: OAuth 2.0 and OpenID Connect
+
+These two are the most misunderstood pieces.
+
+**OAuth 2.0 is about authorization**: *what may this app do on my behalf?* Example: you let a photo-printing app read your Google Drive files.
+
+1. The app sends you to Google's **consent screen**, which lists the permissions it wants.
+2. You approve, and Google gives the app a short-lived **authorization code**.
+3. The app exchanges the code for an **access token**.
+4. The app calls the Drive API with that token.
+
+The access token proves the app may touch certain files. It does **not** tell the app who you are.
+
+**OpenID Connect (OIDC)** adds the missing identity part on top of OAuth 2.0. The same flow also returns an **ID token**, a JWT that carries identity facts such as user id and email. The app verifies its signature and learns who logged in. This is what "**Sign in with Google / GitHub / Microsoft**" uses.
+
+#### Single Sign-On (SSO)
+
+SSO is a **user experience**: log in once, then use many services without logging in again, such as one Google account for Gmail, Drive and Calendar. A company **identity provider** (Okta, Microsoft Entra, Google) keeps a central login session. When you open a second app, that app redirects you to the identity provider, which sees you are already signed in and sends you straight back with proof of identity.
+
+That proof is carried by one of two protocols:
+
+| | **SAML 2.0** | **OpenID Connect** |
+|--|--------------|--------------------|
+| Format | XML **assertion** | JSON **ID token** (a JWT) |
+| Age | older | modern, built on OAuth 2.0 |
+| Typical use | enterprise and legacy systems (Salesforce, corporate portals) | consumer and mobile apps, "Sign in with ..." buttons |
+
+Both are secure and both are still widely used; pick whichever the other side supports.
+
+#### The Terms People Mix Up
+
+| Term | What it really is |
+|------|-------------------|
+| Basic, digest, API key, session | concrete **authentication methods** |
+| **Bearer** | a **pattern**: whoever holds the token gets access |
+| **JWT** | a **token format** (signed JSON), not a method by itself |
+| **OAuth 2.0** | an **authorization framework** (not authentication) |
+| **OpenID Connect** | an **identity layer** on top of OAuth 2.0 (this one is authentication) |
+| **SSO** | a **user experience** built with SAML or OIDC |
+
+#### Which Should You Pick?
+
+| Situation | Reasonable choice |
+|-----------|-------------------|
+| Traditional server-rendered website | session cookie, with sessions in Redis |
+| Public API, mobile app, many microservices | short-lived JWT access token plus a refresh token |
+| Another company's server calling yours | API key (scoped, rotated), or mutual TLS |
+| "Sign in with Google / GitHub" for your users | OpenID Connect |
+| Employees using many internal apps | SSO with an identity provider (SAML or OIDC) |
+| Anything new | avoid basic and digest |
+
+*Goes deeper in:* the next section (sessions, cookies and JWT in detail), Chapter 10 (secure OAuth flows, JWT pitfalls, SSO, attacks).
+
+*(From AI Library chapter 5.)*
+
+### Authentication & Authorization
+
+#### Authentication vs. Authorization
+
+| Concept            | What is it?                                       | Example                       | Mnemonic                |
+|--------------------|---------------------------------------------------|-------------------------------|-------------------------|
+| **Authentication** | Verifying *who* the user is                       | Logging in with password/MFA  | "Who are you?"          |
+| **Authorization**  | Deciding *what* the authenticated user can do     | Accessing admin dashboard     | "What can you do here?" |
+
+**Key point:** You *authenticate* first, then the system *authorizes* your actions.
+
+#### Common Authentication Methods
+
+##### Basic Authentication
+
+Username and password sent with every request (use only with HTTPS).
+
+```http
+GET /protected HTTP/1.1
+Authorization: Basic dXNlcjpwYXNz
+```
+
+##### OAuth 2.0
+
+Delegated access: third-party apps access user data without seeing credentials. Example: "Login with Google" or "Login with Facebook".
+
+##### OpenID Connect
+
+Built on OAuth2; adds an identity layer for authentication. Use case: Single Sign-On (SSO) across multiple apps.
+
+##### JWT (JSON Web Token)
+
+Stateless: server issues a signed token after login; client sends it with each request.
+
+```json
+{
+  "sub": "1234567890",
+  "name": "John Doe",
+  "role": "admin",
+  "exp": 1711234567
+}
+```
+
+#### Session-Based vs. Token-Based Authentication
+
+| Feature            | Session-Based                  | Token-Based (e.g., JWT)          |
+|--------------------|--------------------------------|----------------------------------|
+| **Storage**        | Server memory/database         | Client-side (token)              |
+| **Scalability**    | Challenging in distributed env | Scales easily in microservices   |
+| **State**          | Stateful                       | Stateless                        |
+| **Security Concerns** | Session hijacking, CSRF     | Token theft, token expiry        |
+
+**Session-based flow:**
+
+1. User logs in.
+2. Server creates a session, sends session ID cookie.
+3. Client sends cookie with each request.
+4. Cons: Scalability challenges in distributed systems.
+
+**Token-based flow:**
+
+1. User logs in.
+2. Server issues signed JWT.
+3. Client sends JWT in `Authorization` header.
+4. Cons: Requires secure token storage and handling.
+
+#### Access Control Models (Authorization)
+
+##### RBAC — Role-Based Access Control
+
+- Assign permissions to roles, roles to users.
+- **Example roles:** `admin`, `editor`, `viewer`.
+- **Pros:** Simple, scalable for standard teams.
+- **Cons:** Not granular for complex orgs.
+
+##### ABAC — Attribute-Based Access Control
+
+- Access based on user attributes (department, project, clearance).
+- **Pros:** Fine-grained control.
+- **Cons:** Harder to manage at scale.
+
+##### DAC — Discretionary Access Control
+
+- Resource owners set access permissions.
+- **Example:** File-sharing apps.
+
+##### MAC — Mandatory Access Control
+
+- Central authority enforces strict policies.
+- **Example:** Military/government systems.
+
+#### Single Sign-On (SSO) & Identity Federation
+
+- **SSO:** User logs in once, gains access to multiple apps/services without re-authenticating.
+- **Identity Federation:** Trust external identity providers (Google, Facebook, Microsoft) for authentication across organizational boundaries.
+- **Benefit:** Fewer passwords, less friction, better user experience.
+
+#### SAML 2.0 in Depth
+
+**SAML** (Security Assertion Markup Language) is an XML-based protocol that lets a company's **identity provider (IdP)** vouch for a user to many **service providers (SPs)**, which are the applications. It is common in enterprises (Salesforce, internal portals).
+
+```mermaid
+sequenceDiagram
+    participant U as User browser
+    participant SP as Service provider (the app)
+    participant IdP as Identity provider
+    U->>SP: open the app
+    SP-->>U: redirect with an authentication request
+    U->>IdP: authentication request
+    IdP->>U: login page (skipped if already signed in)
+    U->>IdP: credentials
+    IdP-->>U: signed SAML assertion (in an HTML form)
+    U->>SP: post the assertion to the SP's ACS URL
+    SP->>SP: verify signature, audience, time window
+    SP-->>U: start the app's own session
+```
+
+**What the assertion carries:** who the user is, attributes (email, groups), who issued it, **who it is meant for** (the audience), and a validity window.
+
+**What the service provider must verify:** the XML **signature** against the IdP's certificate (exchanged earlier as *metadata*), the **audience** and **recipient** (so an assertion for another app cannot be replayed here), the `NotOnOrAfter` time, and that the assertion has not been used before.
+
+**Common mistakes:** trusting an unsigned assertion; checking the signature on the wrong element (*XML signature wrapping*); skipping the audience check; accepting assertions with no expiry.
+
+**SAML or OIDC?** Use SAML when enterprise customers or legacy apps demand it. Prefer OpenID Connect for new consumer, mobile and single-page apps. Both give single sign-on; they differ in format (XML assertion vs. JSON ID token). See the authentication primer in Chapter 5 for the comparison.
+
+#### Refresh Tokens: Rotation and Storage
+
+Short-lived access tokens limit damage, but the **refresh token** that creates new ones is now the valuable secret.
+
+- **Rotation:** every time a refresh token is used, issue a **new** refresh token and invalidate the old one.
+- **Reuse detection:** if an already-used refresh token appears again, assume it was stolen. Revoke the **entire token family** (every token from that login) and force a new sign-in.
+- **Expiry:** use an **absolute lifetime** (for example 30 days) as well as an idle timeout, so a session cannot live forever.
+- **Revoke on events:** password change, logout, suspected compromise, or removing a device.
+- **Where to keep it:** in a browser, an `HttpOnly`, `Secure`, `SameSite` cookie (never `localStorage`); in a mobile app, the platform keystore (iOS Keychain, Android Keystore); on a server, encrypted at rest.
+- **Bind it** to the client where possible (device or sender-constrained tokens) so a copied token is useless elsewhere.
+
+#### API Key Hygiene
+
+API keys are simple, which is why they leak. Handle them like passwords:
+
+| Practice | Why |
+|----------|-----|
+| Generate keys with a cryptographically secure random source, at least 32 bytes | guessing must be impossible |
+| Give each key a **visible prefix** (`sk_live_...`) | lets you recognise it in logs and secret scanners without exposing it |
+| Store only a **hash** of the key, and show the full key once at creation | a database leak does not reveal usable keys |
+| Attach **scopes** and an owner to every key | least privilege; you can tell whose key was used |
+| Support **rotation** with two valid keys during the switch-over | no downtime when replacing a key |
+| Set **expiry** and allow instant **revocation** | contain leaks |
+| Never put keys in URLs, source code, client-side code or logs | URLs are logged and cached; code gets published |
+| Rate-limit and monitor **per key** | abuse and leaks show up as unusual volume |
+| For high-value calls, sign each request (HMAC) or use mutual TLS | a stolen key alone is not enough |
+
+#### Code Examples
+
+##### JWT Authentication with Node.js / Express
+
+```javascript
+const jwt = require('jsonwebtoken');
+
+// Issue JWT after login
+app.post('/login', (req, res) => {
+  // ...validate user
+  const token = jwt.sign({ userId: user.id, role: user.role }, process.env.JWT_SECRET, { expiresIn: '1h' });
+  res.json({ token });
+});
+
+// Verify JWT on protected route
+function authenticateJWT(req, res, next) {
+  const authHeader = req.headers.authorization;
+  if (authHeader) {
+    const token = authHeader.split(' ')[1];
+    jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
+      if (err) return res.sendStatus(403);
+      req.user = user;
+      next();
+    });
+  } else {
+    res.sendStatus(401);
+  }
+}
+```
+
+A simpler form:
+
+```js
+const jwt = require('jsonwebtoken');
+function authenticate(req, res, next) {
+  const token = req.header('Authorization').replace('Bearer ', '');
+  try {
+    const payload = jwt.verify(token, process.env.JWT_SECRET);
+    req.user = payload;
+    next();
+  } catch (err) {
+    res.status(401).json({error: 'Unauthorized'});
+  }
+}
+```
+
+##### RBAC Middleware
+
+```javascript
+function authorizeRoles(...allowedRoles) {
+  return (req, res, next) => {
+    if (req.user && allowedRoles.includes(req.user.role)) {
+      next();
+    } else {
+      res.sendStatus(403); // Forbidden
+    }
+  }
+}
+
+// Usage:
+app.get('/admin', authenticateJWT, authorizeRoles('admin'), (req, res) => {
+  res.send('Welcome, admin!');
+});
+```
+
+#### Diagrams
+
+**Authentication & Authorization Flow:**
+
+```mermaid
+sequenceDiagram
+    participant U as User
+    participant C as Client/App
+    participant S as Server
+    U->>C: Enter username/password
+    C->>S: Send credentials
+    S->>S: Authenticate user
+    alt Success
+        S->>C: Return JWT token
+        C->>S: Send JWT in Authorization header
+        S->>S: Verify JWT
+        S->>C: Return resource (if authorized)
+    else Failure
+        S->>C: Return error
+    end
+```
+
+**RBAC Model:**
+
+```mermaid
+graph TD
+    User1[User: Alice] -->|Role: Admin| Role1(Admin)
+    User2[User: Bob] -->|Role: Editor| Role2(Editor)
+    Role1 -->|Permission: Read, Write, Delete| Resource1[Resource: Dashboard]
+    Role2 -->|Permission: Read, Write| Resource1
+```
+
+**End-to-end auth flow:**
+
+```mermaid
+graph TD
+  User-->|Login| AuthService
+  AuthService-->|JWT Token| ClientApp
+  ClientApp-->|Token| API
+  API-->|Policy Check| RBAC_ABAC[RBAC/ABAC]
+```
+
+#### Authentication / Authorization Tips
+
+- **Always use HTTPS** even for development.
+- **Keep JWTs short-lived:** Use refresh tokens for longer sessions.
+- **Never store sensitive data in JWTs:** Tokens can be decoded by anyone.
+- **Secure cookies:** Set `HttpOnly`, `Secure`, and `SameSite` attributes.
+- **Centralize session/token invalidation** to handle logout and token revocation.
+- **Use established libraries:** Don't roll your own crypto/auth code.
+- **Implement rate limiting:** Protect authentication endpoints from brute-force attacks.
+- **Audit permissions regularly:** Remove unused roles/permissions (principle of least privilege).
+- **Log authentication events** for auditing and intrusion detection.
+- **Educate users:** Encourage strong passwords and enable MFA.
+
+---
+
+#### Authentication and Authorization at Scale
+
+In a distributed system, authenticate once at the edge, turn the result into a signed identity every hop can verify cheaply, and let the service that owns the data make the authorization decision. The identity service must not sit on the critical path of every request.
+
+**Where to check**
+
+| Pattern | What it does | Weakness |
+|---------|--------------|----------|
+| Edge only | The gateway checks the token; inner services trust anything that reaches them | One bypass or compromised pod exposes everything |
+| Per-service only | Every service verifies the token itself | Duplicated logic, uneven quality |
+| Edge + service (recommended) | Gateway: authenticate, coarse checks (valid token, scopes, rate limit). Service: verify again and do fine-grained, object-level authorization | A little repeated work, cheap with local verification |
+| Mesh-enforced | The sidecar verifies JWTs and mTLS for every service | Needs a mesh; the app still owns object-level rules |
+
+The gateway cannot decide "may Priya read invoice 42?" because it does not own the data. That check always lives in the service.
+
+**Token architecture**
+
+| Pattern | How it works | Notes |
+|---------|--------------|-------|
+| JWT everywhere | The IdP issues a short-lived JWT; every hop verifies it locally with cached public keys | Fast, but claims are readable by clients and revocation is hard |
+| Opaque outside, JWT inside ("phantom token") | Clients hold a random opaque token; the gateway swaps it (cached introspection) for a short-lived internal JWT | Claims stay hidden, revocation is instant at the gateway, one cached lookup at the edge |
+| Token exchange for downstream calls | When service A calls B for a user, A swaps the user's token for one scoped to B (OAuth 2.0 Token Exchange, RFC 8693) | B sees who (the user) and via whom (A); limits the confused-deputy problem, where a powerful service is tricked into acting for the wrong user |
+
+Propagate identity safely: never trust a header such as `X-User-Id` just because it arrived. Accept it only from the gateway over mTLS, and have the gateway strip any client-supplied copy. Prefer a signed token, so identity survives queues and async hops. Keep claims small (IDs and scopes, not whole permission lists).
+
+**Service-to-service identity**
+
+| Mechanism | How | Notes |
+|-----------|-----|-------|
+| mTLS with workload identity | Each workload gets a short-lived certificate naming it (a SPIFFE ID such as `spiffe://prod/ns/prod/sa/orders`) | Automated by a mesh or SPIRE; no shared secrets |
+| OAuth2 Client Credentials | The service gets a token for its own identity | Good across trust zones and for third parties |
+| Cloud workload identity | The platform issues credentials to a pod or VM | No long-lived keys in config |
+| Static API keys | A shared secret | Last resort: rotate, scope, keep out of code |
+
+Identity is half the job: add allow rules ("only `orders` may call `POST /charges` on `payments`"), default deny between services, and open each path on purpose.
+
+**Keys and rotation**
+
+* The IdP signs with a private key held in a KMS or HSM; everyone else gets only public keys from a **JWKS** endpoint.
+* Each token header carries a `kid` (key ID). Rotate with overlap: publish the new key, start signing with it, and keep the old public key until every old token has expired.
+* Verifiers cache the JWKS and refetch on an unknown `kid`, with a limit so a flood of bad `kid`s cannot hammer the IdP. A verifier that cannot reach the IdP keeps using its cache.
+* Allow about 30-60 seconds of clock skew on `exp` and `nbf`.
+
+**Revocation: choose how stale it may be**
+
+| Approach | Delay | Cost |
+|----------|-------|------|
+| Short TTL only (5-15 min) | Up to the TTL | Nothing extra; refresh tokens do the work |
+| Deny-list of token IDs (`jti`) in a shared cache | Seconds | One cache lookup per request; entries only live until `exp` |
+| Per-user "tokens valid since" version | Seconds | One lookup per request; one write revokes all of a user's tokens |
+| Introspection / opaque tokens | Immediate | A network call per request, or a short cache |
+| Push revocation over pub/sub | Seconds | Needs a messaging system and a fallback if an event is missed |
+
+A bank revokes in seconds; a news site can live with 15 minutes. Sensitive actions (change password, move money) should demand a fresh login whatever the token says.
+
+**The login path at scale**
+
+* Sessions live in a Redis cluster keyed by a random session ID with TTLs. 10M active sessions at about 0.5 KB each is roughly 5 GB (measure yours).
+* Password hashing is CPU-heavy on purpose. At an illustrative 50 ms per hash one core does about 20 logins per second, so 2,000 logins per second needs about 100 cores. Put hashing in a separate auth service that scales on its own, so a login spike cannot starve the product.
+* **Credential stuffing** (replaying leaked passwords) is the main threat: rate-limit by IP and by account, check passwords against breach lists, add bot detection and MFA, and return the same error for "no such user" and "wrong password".
+* Offer passkeys, and require MFA for admin and sensitive actions.
+
+**Authorization at scale**
+
+| Placement | How | Good for | Watch for |
+|-----------|-----|----------|-----------|
+| Library in each service | The same policy package, in-process | Low latency, simple | Version drift |
+| Sidecar decision point (OPA, Cedar agent) | The service asks `localhost` | One policy language, no off-box hop | Policy distribution and testing |
+| Central decision service | All services call one service | One place to change rules; relationship graphs | An extra hop and a critical dependency: cache, set tight timeouts |
+
+* **Relationship-based access (Zanzibar style, e.g. SpiceDB)** answers "can X view doc Y?" by walking a graph (user, group, folder, doc). The hard part is consistency: a just-revoked permission must not be served from a stale cache (the "new enemy problem"), so these systems pass a consistency token with the write.
+* **List endpoints:** do not fetch 10,000 rows and filter in code. Push the permission filter into the query (`WHERE tenant_id = ?`, row-level security) or ask the decision point for the allowed IDs.
+* Budget a few milliseconds per decision, cache positive decisions briefly, fail closed for writes and sensitive reads, and log every decision (who, what, resource, allow or deny, policy version).
+
+**Multi-tenant and third-party identity**
+
+* Put `tenant_id` in the token and check it against the resource's tenant on every access; never trust a tenant taken only from the body or URL.
+* Enterprise "bring your own IdP": store per-tenant OIDC or SAML config, map users to a tenant at login (email domain or tenant URL), and use **SCIM** to create and remove users when the customer's directory changes. Model membership as (user, tenant, role). Support access should be a separate, audited, time-boxed token.
+* Public APIs: OAuth2 Authorization Code + PKCE for acting on a user's behalf, Client Credentials for a developer's backend, API keys with scopes, owner, per-key rate limits and rotation. Sign outgoing webhooks with an HMAC and a timestamp; verify signatures on incoming ones.
+
+**Availability.** Local JWT verification with a cached JWKS means requests keep flowing while the IdP is down; only new logins and refreshes fail. Run the IdP multi-zone (multi-region at large scale), give refresh tokens a retry grace period, have clients back off with jitter, fail closed on security decisions (but separate "can't decide" from "denied"), and buy or adopt a mature IdP unless identity is your business.
+
+*(From AI Library chapter 10.)*
+
+The diagram, worked example, exercises, mini-project, design prompt, open-source reading, interview questions and checklist below are this chapter's practice layer.
 
 ---
 

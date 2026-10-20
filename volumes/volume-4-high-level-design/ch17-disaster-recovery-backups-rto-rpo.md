@@ -10,14 +10,359 @@ Backup strategies, restore testing, RTO/RPO, and multi-region failover.
 
 **In one sentence:** disaster recovery answers two questions agreed with the business — how much data may we lose (RPO) and how long may we be down (RTO) — and then proves, by actually restoring and failing over on a schedule, that the system can meet them.
 
-**Read the full explanation in the AI Library** (it is explained there once, so this chapter does not repeat it):
+### Backup & Recovery Strategies
 
-* [Chapter 9 — Backup & Recovery Strategies](https://charikshith.github.io/AI_Library/notes/system-design/chapters/9%20-%20Reliability%2C%20Availability%20%26%20Disaster%20Recovery.html#911-backup--recovery-strategies)
-* [Chapter 9 — Disaster Recovery in Practice](https://charikshith.github.io/AI_Library/notes/system-design/chapters/9%20-%20Reliability%2C%20Availability%20%26%20Disaster%20Recovery.html#912-disaster-recovery-in-practice)
-* [Chapter 9 — Replication Is Not a Backup](https://charikshith.github.io/AI_Library/notes/system-design/chapters/9%20-%20Reliability%2C%20Availability%20%26%20Disaster%20Recovery.html#91210-replication-is-not-a-backup)
-* [Chapter 9 — Disaster-Recovery Strategies: Cost vs. Recovery Time](https://charikshith.github.io/AI_Library/notes/system-design/chapters/9%20-%20Reliability%2C%20Availability%20%26%20Disaster%20Recovery.html#91211-disaster-recovery-strategies-cost-vs-recovery-time)
+#### What and Why
 
-This chapter is the **practice layer**: the diagram, worked example, exercises, mini-project, design prompt, open-source reading, interview questions and checklist below.
+- **Backup:** Creating copies of data to protect against loss.
+- **Recovery:** Restoring data after failure/corruption.
+- Critical for: disaster recovery, ransomware protection, compliance, human error.
+
+**Scenarios demanding backup & recovery:**
+
+- Hardware or software failure.
+- Human error (accidental deletion).
+- Cyber attacks (ransomware).
+- Natural disasters (fire, flood).
+- Compliance & legal retention requirements.
+
+> **Remember:** Backup and recovery **complement** redundancy and replication; they're not substitutes.
+
+#### Backup Types
+
+| Type             | Description                          | Pros                | Cons                  |
+|------------------|--------------------------------------|---------------------|-----------------------|
+| **Full**         | Copies all data                      | Simple restore      | High storage & time   |
+| **Incremental**  | Changes since last backup            | Fast backup         | Slower restore        |
+| **Differential** | Changes since last full backup       | Faster restore      | Larger than incremental |
+
+```mermaid
+flowchart LR
+    M["Monday<br/><b>Full backup</b>"] --> T["Tuesday<br/><b>Incremental 1</b>"] --> W["Wednesday<br/><b>Incremental 2</b>"] --> Th["Thursday<br/><b>Differential 1</b>"] --> F["Friday<br/><b>Incremental 3</b>"]
+    classDef full fill:#2563eb,stroke:#1d4ed8,color:#ffffff
+    classDef inc fill:#10b981,stroke:#047857,color:#ffffff
+    classDef diff fill:#f59e0b,stroke:#b45309,color:#111827
+    class M full
+    class T,W,F inc
+    class Th diff
+```
+
+**Hybrid approach example:** Weekly full backups, daily incremental backups.
+
+#### Recovery Models: Cold, Warm, Hot
+
+| Model    | Resources Provisioned   | Downtime         | Cost     | Use Case                |
+|----------|-------------------------|------------------|----------|-------------------------|
+| **Cold** | None / backups offline  | Hours to days    | Low      | Non-critical apps       |
+| **Warm** | Some / pre-provisioned  | Minutes to hours | Medium   | Business apps           |
+| **Hot**  | Full (always ready)     | Seconds or less  | High     | Mission-critical systems|
+
+```mermaid
+graph TD
+    A[Primary Data Center] -- Replication --> B[Warm Standby]
+    A -- Full Sync --> C[Hot Standby]
+    D[Offline Backups] -. Restore .-> A
+```
+
+#### Key Metrics: RTO & RPO
+
+- **RTO (Recovery Time Objective):** How quickly can you recover? (e.g., 1 hour)
+- **RPO (Recovery Point Objective):** How much data loss is acceptable? (e.g., 15 minutes)
+
+> **Shorter RTO/RPO = higher cost and complexity.**
+
+##### Real-World Mapping
+
+- **Banking system:** RTO = 5 minutes, RPO = near zero.
+- **Internal tool:** RTO = 1 day, RPO = 12 hours.
+
+```mermaid
+gantt
+    dateFormat  HH:mm
+    axisFormat  %H:%M
+    title Backup and Recovery Timeline
+    section Normal operation
+    Uptime                :done,    des1, 00:00, 4h
+    section Failure and Recovery
+    Failure Detected      :active,  des2, 04:00, 30m
+    Recovery In Progress  :         des3, 04:30, 1h
+```
+
+#### Designing Your Backup & Recovery Strategy
+
+**Key trade-offs:**
+
+- **Cost vs. recovery speed:** Faster recovery usually means more redundancy and higher storage/infra spend.
+- **Complexity:** More frequent backups = more management overhead.
+- **Business criticality:** Mission-critical? Invest more.
+- **Compliance:** Are there legal retention or encryption needs?
+- **Infrastructure maturity:** Can your team automate and manage complex strategies?
+
+**Sample hybrid strategy:**
+
+- **Full backup:** Sunday 2 AM.
+- **Incremental:** Daily at 2 AM.
+- **Retention:** 30 days on disk, 1 year in cloud cold storage.
+
+#### Best Practices: The 3-2-1 Rule
+
+- **3** copies of your data (primary + 2 backups).
+- **2** different storage media (e.g., disk, cloud).
+- **1** backup offsite (remote/cloud).
+
+**Other best practices:**
+
+- **Automate everything:** Automate both backup creation and restore testing. Monitor backup jobs and alert on failures.
+- **Encrypt data:** Use strong encryption at rest (AES-256) and in transit (TLS).
+
+#### Sample Backup Automation Code
+
+**Automated daily database backup with AWS S3 (Python):**
+
+```python
+import boto3
+import subprocess
+import datetime
+
+def backup_postgres(db_name, s3_bucket, s3_prefix):
+    timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+    filename = f"/tmp/{db_name}_backup_{timestamp}.sql.gz"
+    # Dump and compress the database
+    subprocess.run([
+        "pg_dump", db_name,
+        "--no-owner", "--no-acl"
+    ], stdout=subprocess.PIPE)
+    subprocess.run(["gzip", "-c"], stdin=subprocess.PIPE, stdout=open(filename, 'wb'))
+
+    # Upload to S3
+    s3 = boto3.client('s3')
+    s3.upload_file(filename, s3_bucket, f"{s3_prefix}/{filename}")
+    print(f"Backup uploaded to s3://{s3_bucket}/{s3_prefix}/{filename}")
+
+# Usage
+backup_postgres("mydb", "my-backup-bucket", "db-backups")
+```
+
+**Restore example:**
+
+```sh
+# Download from S3
+aws s3 cp s3://my-backup-bucket/db-backups/mydb_backup_20230601_020000.sql.gz .
+gunzip mydb_backup_20230601_020000.sql.gz
+psql mydb < mydb_backup_20230601_020000.sql
+```
+
+**Linux cron backup:**
+
+```bash
+# Automated daily backup (cronjob)
+0 2 * * * tar -czf /backups/app-$(date +\%F).tar.gz /data/app
+```
+
+*(From AI Library chapter 9.)*
+
+### Disaster Recovery in Practice
+
+In today's digital world, downtime is expensive — not just in dollars, but also in lost trust and missed opportunities. Mission-critical systems in finance, healthcare, e-commerce, and beyond must be designed to recover gracefully from disasters — hardware failures, cyberattacks, or entire regional outages.
+
+#### Why Disaster Recovery REALLY Matters
+
+- **Downtime costs money & trust:** Even a few minutes of outage can mean lost revenue and broken user trust.
+- **Beyond backups:** DR is not just about saving data; it's about keeping the *whole system* resilient and available.
+- **Compliance:** For regulated industries (finance, healthcare), DR is a legal requirement, not just a best practice.
+
+> DR builds on your backup strategy but focuses on *system-level* recovery — bringing apps, services, and infrastructure *all back online*.
+
+#### DR for Mission-Critical Applications
+
+**Example targets:**
+
+| System Type     | Target RTO  | Target RPO    |
+|-----------------|-------------|---------------|
+| Bank Core       | < 5 minutes | < 1 minute    |
+| E-commerce Cart | < 15 min    | < 5 minutes   |
+| Social Media    | < 1 hour    | < 15 minutes  |
+
+#### DR Architecture: Key Layers of Redundancy
+
+- **Compute redundancy:** Multiple servers/VMs/containers.
+- **Storage redundancy:** Replicated databases, distributed storage.
+- **Network redundancy:** Multiple paths, routers, ISPs.
+- **Geo-redundancy:** Multiple regions/data centers.
+
+#### Backup vs. Failover: Why You Need Both
+
+- **Backup:** Restores *data* after corruption, deletion, or ransomware.
+- **Failover:** Keeps *services* running by switching to healthy infrastructure during a failure.
+
+| Backup Only                              | Failover Only                                | Combined (Best)                              |
+|------------------------------------------|----------------------------------------------|----------------------------------------------|
+| Data recovery, but no service continuity | Service continuity, but not data loss        | Both service continuity and data integrity   |
+
+**Diagram: DR Coverage**
+
+```mermaid
+flowchart TB
+    D["Disaster event"] --> DL["Data loss"]
+    D --> IO["Infrastructure outage"]
+    DL --> B["Backup"]
+    IO --> F["Failover"]
+    B --> R(["Complete resilience"])
+    F --> R
+```
+
+
+#### Recovery Automation and Testing
+
+> *"If you haven't tested your DR plan, you don't really have one."*
+
+**Automate key actions:**
+
+- Failover switching (primary <-> secondary).
+- Data validation after restore.
+- Notifications and logging.
+
+**Regularly run DR drills:** Simulate failures to test team readiness and system behavior.
+
+**Sample pseudocode: Automated Failover**
+
+```python
+def disaster_recovery_monitor():
+    while True:
+        if not is_primary_healthy():
+            promote_secondary()
+            notify_team()
+            log_event("Failover occurred at {}".format(datetime.now()))
+        sleep(10)
+
+def promote_secondary():
+    # Switch DNS, reconfigure load balancer, etc.
+    # Example for AWS Route53:
+    subprocess.run([
+        "aws", "route53", "change-resource-record-sets",
+        "--hosted-zone-id", "<zone-id>",
+        "--change-batch", "file://failover.json"
+    ])
+```
+
+#### Circuit Breaker Pattern
+
+```python
+class CircuitBreaker:
+    def __init__(self, failure_threshold):
+        self.failure_threshold = failure_threshold
+        self.failure_count = 0
+        self.open = False
+
+    def call(self, func, *args, **kwargs):
+        if self.open:
+            raise Exception("Circuit is open!")
+        try:
+            return func(*args, **kwargs)
+        except Exception:
+            self.failure_count += 1
+            if self.failure_count >= self.failure_threshold:
+                self.open = True
+            raise
+
+    def reset(self):
+        self.failure_count = 0
+        self.open = False
+```
+
+#### Geo-Distributed Systems: DR Challenges
+
+Geo-distribution increases resilience but also complexity:
+
+- **Data consistency across regions:** Updates must be synchronized without conflict.
+- **Latency:** Failover to distant regions can introduce delays.
+- **Regulatory constraints:** Laws like GDPR may restrict where data can be stored.
+- **Coordinated multi-region failover:** Avoiding split-brain and ensuring quorum is vital.
+
+#### Geo-Redundancy & Quorum-Based Design
+
+**Geo-Redundancy:**
+
+Deploy services across multiple physical locations/regions.
+
+```
++----------+       +----------+       +----------+
+|  RegionA |<----->|  RegionB |<----->|  RegionC |
++----------+       +----------+       +----------+
+      |                 |                  |
+  [Users]           [Users]            [Users]
+```
+
+If one region fails, others continue serving requests.
+
+**Quorum-Based Design:**
+
+**Quorum:** Minimum number of nodes that must agree for an operation to be considered successful.
+
+**Why:** Prevents "split-brain" scenarios and ensures consistency.
+
+**Example: Write operation in a distributed DB**
+
+- 5 nodes, quorum = 3.
+- Operation succeeds if at least 3 nodes acknowledge the write.
+
+```python
+def write_with_quorum(data, nodes, quorum=3):
+    acks = 0
+    for node in nodes:
+        if node.write(data):
+            acks += 1
+        if acks >= quorum:
+            return True
+    return False
+```
+
+```mermaid
+graph TD
+A[Primary Region] -.sync.-> B[Secondary Region]
+A --> Quorum["Quorum (majority nodes)"]
+```
+
+#### Testing Your DR Plan: Example DR Drill
+
+1. **Simulate failure:** Shut down a region or primary database.
+2. **Observe automation:** Ensure failover scripts trigger; monitoring and alerting fire.
+3. **Validate data:** Run integrity checks on restored data.
+4. **Review logs:** Confirm timelines, actions, and gaps.
+
+---
+
+#### Replication Is Not a Backup
+
+Replication keeps a **live copy**, which is exactly why it also copies your mistakes. Match each disaster to the right protection:
+
+| Disaster | Replication helps? | Backups help? |
+|----------|:-:|:-:|
+| Disk or node failure | yes | yes |
+| Zone outage | yes (multi-zone) | yes |
+| Region outage | yes (cross-region) | yes, if stored cross-region |
+| **Accidental `DELETE`, a bad migration, a bug corrupting data** | **no**: replicas copy the mistake instantly | **yes**, with point-in-time recovery |
+| **Ransomware or a malicious admin** | no | yes, **only if** backups are immutable and in a separate account |
+| Provider or account compromise | no | yes, with a copy in another account or provider |
+
+Replication is for **availability**; backups are for **recovery**. You need both.
+
+**The 3-2-1 rule, plus immutability:** keep **3** copies, on **2** different media or services, with **1** off-site, and make at least one copy **immutable** (object lock / write-once) in a separate account.
+
+#### Disaster-Recovery Strategies: Cost vs. Recovery Time
+
+| Strategy | The secondary region has | RTO | RPO | Cost |
+|----------|--------------------------|-----|-----|------|
+| **Backup and restore** | only backups | hours to a day | hours (minutes with point-in-time recovery) | $ |
+| **Pilot light** | data replicated; a minimal core of infrastructure, off or tiny | tens of minutes | minutes | $$ |
+| **Warm standby** | a scaled-down, fully working copy | minutes | seconds to minutes | $$$ |
+| **Multi-site active-active** | full capacity serving live traffic | near zero (just reroute) | near zero (synchronous) or seconds | $$$$ |
+
+**Test restores, not just backups.** Backups fail silently: expired credentials, missing tables, corrupt files, incompatible versions, a restore that takes 14 hours instead of the 1 you promised, a runbook nobody can follow. The only real measure of your RTO and RPO is a **timed restore**, rehearsed on a schedule.
+
+*(From AI Library chapter 9.)*
+
+The diagram, worked example, exercises, mini-project, design prompt, open-source reading, interview questions and checklist below are this chapter's practice layer.
 
 ---
 

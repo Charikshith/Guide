@@ -139,6 +139,34 @@
       "summary": "CIA triad, STRIDE, OAuth 2.0 flows, JWT pitfalls, defense-in-depth, encryption, secrets management, Zero Trust.",
       "subtitle": "Security is a core pillar — not a feature. This chapter walks through the CIA triad, threat modeling, OAuth 2.0 flows, JWT pitfalls, encryption & PKI, network segmentation, Zero Trust, defense-in-depth, OWASP Top 10, and the security headers every app should set by default."
     },
+    "Distributed Systems Fundamentals": {
+      "icon": "🧩",
+      "short": "Distributed Systems Fundamentals",
+      "phase": "Foundations",
+      "summary": "Replication, quorums, consistency trade-offs, failure modes and event-driven systems in practice.",
+      "subtitle": "Replication, quorums, consistency trade-offs, failure modes and event-driven systems in practice."
+    },
+    "Cloud Design Patterns": {
+      "icon": "☁️",
+      "short": "Cloud Design Patterns",
+      "phase": "Foundations",
+      "summary": "A catalog of named patterns for messaging, data, design, reliability and security, and which to learn first.",
+      "subtitle": "A catalog of named patterns for messaging, data, design, reliability and security, and which to learn first."
+    },
+    "Multi-Tenancy": {
+      "icon": "🏢",
+      "short": "Multi-Tenancy",
+      "phase": "Foundations",
+      "summary": "Isolation models, tenant-aware routing, noisy neighbours and cross-tenant safety for SaaS.",
+      "subtitle": "Isolation models, tenant-aware routing, noisy neighbours and cross-tenant safety for SaaS."
+    },
+    "Cloud Architecture & Cost": {
+      "icon": "💰",
+      "short": "Cloud Architecture & Cost",
+      "phase": "Foundations",
+      "summary": "Choosing managed services, serverless vs containers vs VMs, and designing with unit economics in mind.",
+      "subtitle": "Choosing managed services, serverless vs containers vs VMs, and designing with unit economics in mind."
+    },
     "The System Design Blueprint": {
       "icon": "🧭",
       "short": "The System Design Blueprint",
@@ -215,6 +243,41 @@
       "phase": "Final Prep",
       "summary": "Videos and channels worth following once the course is done.",
       "subtitle": ""
+    },
+    "Design a Chat & Messaging App (aka WhatsApp)": {
+      "icon": "💬",
+      "short": "Chat & Messaging",
+      "phase": "Case Studies",
+      "summary": "Persistent connections, per-conversation ordering, delivery receipts, group fan-out, offline sync and end-to-end encryption.",
+      "subtitle": "Persistent connections, per-conversation ordering, delivery receipts, group fan-out, offline sync and end-to-end encryption."
+    },
+    "Design a News Feed (aka Twitter and Instagram)": {
+      "icon": "📰",
+      "short": "News Feed",
+      "phase": "Case Studies",
+      "summary": "Fan-out on write vs read, the celebrity problem, timeline caches, cursor pagination and ranking.",
+      "subtitle": "Fan-out on write vs read, the celebrity problem, timeline caches, cursor pagination and ranking."
+    },
+    "Design a Distributed Key-Value Store & Cache": {
+      "icon": "🗄️",
+      "short": "Key-Value Store & Cache",
+      "phase": "Case Studies",
+      "summary": "Consistent hashing, N/R/W quorums, hinted handoff, vector clocks, LSM trees, and the cache variant.",
+      "subtitle": "Consistent hashing, N/R/W quorums, hinted handoff, vector clocks, LSM trees, and the cache variant."
+    },
+    "Design a Payment System": {
+      "icon": "💳",
+      "short": "Payment System",
+      "phase": "Case Studies",
+      "summary": "Idempotency, double-entry ledgers, payment state machines, unknown outcomes, outbox, reconciliation and PCI.",
+      "subtitle": "Idempotency, double-entry ledgers, payment state machines, unknown outcomes, outbox, reconciliation and PCI."
+    },
+    "Design a Ticket Booking System (aka Ticketmaster)": {
+      "icon": "🎟️",
+      "short": "Ticket Booking",
+      "phase": "Case Studies",
+      "summary": "Preventing double booking, seat holds with expiry, flash-sale waiting rooms and payment races.",
+      "subtitle": "Preventing double booking, seat holds with expiry, flash-sale waiting rooms and payment races."
     }
   }
 }

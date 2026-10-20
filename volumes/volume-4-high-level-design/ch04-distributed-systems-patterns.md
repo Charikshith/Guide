@@ -10,11 +10,43 @@ Replication, partitioning, leader/follower, quorums, idempotency, and the failur
 
 **In one sentence:** almost every large system combines a few patterns — copy data for safety (replication), split data for scale (partitioning), let one node decide writes (leader/follower), require overlapping majorities (quorums), and make repeated requests harmless (idempotency) — because networks lose, delay, and duplicate messages and nodes fail in partial, confusing ways.
 
-**Read the full explanation in the AI Library** (it is explained there once, so this chapter does not repeat it):
+### Distributed Systems Patterns and Failure Modes
 
-* [Chapter 11 — Distributed Systems Patterns and Failure Modes](https://charikshith.github.io/AI_Library/notes/system-design/chapters/11%20-%20Distributed%20Systems%20Fundamentals.html#112-distributed-systems-patterns-and-failure-modes)
+**Mental model — a team spread across cities.** Each office keeps copies of important files (replication), each office owns certain customers (partitioning), one manager signs off changes (leader), big decisions need a majority vote (quorum), and every instruction has a reference number so doing it twice doesn't double-pay anyone (idempotency). The phone lines are unreliable, so every rule assumes a message may be lost or arrive twice.
 
-This chapter is the **practice layer**: the diagram, worked example, exercises, mini-project, design prompt, open-source reading, interview questions and checklist below.
+**The patterns**
+
+| Pattern | Solves | Key trade-off | Deep dive |
+|---------|--------|---------------|-----------|
+| Replication | durability, availability, read scale | consistency lag (async) vs latency (sync) | Vol 1 Ch 51 |
+| Partitioning / sharding | write scale, data size | cross-partition queries, hot spots, resharding | Ch 11 |
+| Leader / follower | a single place to order writes | failover time; leader bottleneck | |
+| Leader election / consensus | exactly one leader, even after failures | needs a majority; slower writes | Raft, etcd |
+| **Quorums** | tunable consistency without a single leader | R + W > N for overlap | Dynamo, Cassandra |
+| **Idempotency** | safe retries in a world of duplicates | storing keys / dedup state | Vol 3 Ch 14 |
+| Leases + fencing tokens | safe locks despite pauses | clock assumptions | |
+| Heartbeats + timeouts | failure detection | false positives vs slow detection | |
+
+**Quorums** — with N replicas, a write waits for W acknowledgments and a read asks R replicas. If **R + W > N**, every read set overlaps every write set in at least one replica, so a read sees the latest acknowledged write (use version numbers to pick it). Common: N = 3, W = 2, R = 2. Trade: W = 1 is fast writes but weak durability; R = 1 is fast reads but possibly stale.
+
+**Failure modes that shape every design**
+
+| Failure | What it looks like | Defense |
+|---------|--------------------|---------|
+| Crash | a node stops | replication + failover |
+| **Partial failure** | a node is slow, or some requests fail | timeouts, retries with backoff, hedging, circuit breakers |
+| Network partition | two groups can't talk | quorums; the minority side refuses writes |
+| **Split-brain** | two nodes both think they are leader | majority-based election, fencing tokens, STONITH |
+| Message loss / duplication / reordering | retries create duplicates | idempotency keys, sequence numbers |
+| Clock skew | timestamps disagree across nodes | logical clocks, avoid last-write-wins on wall time |
+| Gray failure | health checks pass but real traffic fails | health checks that exercise real paths; outlier detection |
+| Cascading failure | retries and overload spread to neighbors | load shedding, backpressure (Ch 8), retry budgets |
+
+**The eight fallacies of distributed computing** — the network is reliable; latency is zero; bandwidth is infinite; the network is secure; topology doesn't change; there is one administrator; transport cost is zero; the network is homogeneous. Every one is false.
+
+*(From AI Library chapter 11.)*
+
+The diagram, worked example, exercises, mini-project, design prompt, open-source reading, interview questions and checklist below are this chapter's practice layer.
 
 ---
 

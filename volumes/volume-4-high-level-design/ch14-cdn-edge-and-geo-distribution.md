@@ -10,12 +10,345 @@ Caching at the edge, geo-routing, data residency, and multi-region consistency.
 
 **In one sentence:** the speed of light is a hard limit, so global systems put copies of content and compute close to users (CDN edges, regional deployments), route each user to the nearest healthy place, keep data where the law says it must live, and choose carefully which data is shared across regions and how consistent it must be.
 
-**Read the full explanation in the AI Library** (it is explained there once, so this chapter does not repeat it):
+### CDN, Edge and Geo-Distribution in Depth
 
-* [Chapter 2 — CDN, Edge and Geo-Distribution in Depth](https://charikshith.github.io/AI_Library/notes/system-design/chapters/2%20-%20Networking%20%26%20Communication.html#213-cdn-edge-and-geo-distribution-in-depth)
-* [Chapter 2 — Content Delivery Networks (CDNs)](https://charikshith.github.io/AI_Library/notes/system-design/chapters/2%20-%20Networking%20%26%20Communication.html#212-content-delivery-networks-cdns)
+**Mental model — a coffee chain.** One roastery (the origin) supplies hundreds of cafés (edge PoPs). Each café keeps the popular beans on its shelf (cache) and orders from the regional warehouse (origin shield) when it runs out. Customers go to the nearest café (geo-routing). Some local laws say a city's customer loyalty records must stay in that country (data residency).
 
-This chapter is the **practice layer**: the diagram, worked example, exercises, mini-project, design prompt, open-source reading, interview questions and checklist below.
+**Why distance matters**
+
+| Route | Distance | Light in fiber (~200,000 km/s), round trip |
+|-------|---------:|--------------------------------:|
+| Same city | 50 km | 0.5 ms |
+| Frankfurt ↔ London | 640 km | ~6 ms |
+| New York ↔ London | 5,600 km | ~56 ms (~70 ms in practice) |
+| New York ↔ Sydney | 16,000 km | ~160 ms (~200+ ms in practice) |
+
+A page needing 5 sequential round trips (DNS, TCP, TLS, HTML, API) from Sydney to a US-only origin: ~1 s just in physics. From a local edge: ~50 ms.
+
+**CDN caching**
+
+| Concept | Meaning |
+|---------|---------|
+| PoP | point of presence: an edge data center near users |
+| Cache key | usually host + path + query (+ `Vary` headers); normalize it to raise hit rates |
+| TTL | from `Cache-Control: max-age / s-maxage` or edge rules |
+| **Origin shield** | a mid-tier cache in one region that all edges miss to, so the origin sees ~1 request per object instead of one per PoP |
+| Purge / invalidation | remove objects by URL, tag, or prefix (seconds to minutes) |
+| **Cache busting** | put a content hash in the file name (`app.3f9a1c.js`) → `max-age=31536000, immutable`; a new deploy means a new URL, no purge needed |
+| `stale-while-revalidate` / `stale-if-error` | serve slightly stale content while refreshing, or when the origin is down |
+| Edge compute | small functions at the PoP (Cloudflare Workers, Lambda@Edge): auth checks, redirects, A/B, personalization |
+
+**Geo-routing options**
+
+| Method | How | Notes |
+|--------|-----|-------|
+| GeoDNS / latency-based DNS | DNS answers with the nearest region's IP | depends on the resolver's location; TTL limits failover speed |
+| **Anycast** | the same IP announced from many PoPs; BGP delivers to the nearest | used by CDNs and DNS providers; fast failover |
+| Global load balancer | one anycast IP → proxies to the best healthy region | e.g. Google Cloud LB, AWS Global Accelerator |
+| Health-checked failover | remove unhealthy regions from answers | always pair routing with health checks |
+
+**Multi-region data patterns**
+
+| Pattern | Writes | Reads | Consistency | Fits |
+|---------|--------|-------|-------------|------|
+| Single primary region + read replicas | one region | local replicas | strong for writes, stale reads elsewhere | most apps; simple |
+| Active-passive (DR) | primary only; secondary on standby | primary | strong; failover loses the async lag | disaster recovery (Ch 17) |
+| **Geo-partitioned (home region)** | each user's data lives in their home region | local for local users | strong within a region | data residency, low latency for most traffic |
+| Active-active multi-leader | any region | local | eventual; conflicts (LWW, CRDTs) | carts, presence, likes, collaborative data |
+| Global consensus (Spanner, CockroachDB) | any region, via quorum | local (maybe stale) or quorum | strong | when correctness is non-negotiable; each write pays cross-region latency |
+
+**Data residency** — laws (GDPR, India's DPDP, China's PIPL, sector rules) may require that personal data is stored or processed in a region. Design: a user → home-region mapping at sign-up; region-local databases for PII; only non-personal or aggregated data in global services; encryption with region-held keys; logs and backups count too.
+
+*(From AI Library chapter 2.)*
+
+### Content Delivery Networks (CDNs)
+
+A **Content Delivery Network (CDN)** is a globally distributed network of servers (also called Points of Presence, or PoPs) designed to deliver content (web pages, images, videos, APIs, etc.) to users efficiently, reliably, and securely. By caching content closer to users, CDNs reduce latency, enhance availability, and offload traffic from origin servers.
+
+#### Why Do We Need CDNs?
+
+Without a CDN, every client request must travel the entire distance to the origin server (which could be on another continent), resulting in:
+
+- **High latency** due to geographical distance.
+- **Overloaded origin servers** under heavy traffic.
+- **Bandwidth bottlenecks** and slow load times.
+
+CDNs solve these problems by:
+
+- Serving content from the nearest edge server.
+- Distributing user load across many servers.
+- Caching and optimizing content to reduce bandwidth and cost.
+- Handling massive traffic and DDoS attacks.
+- Optimizing bandwidth and cost.
+
+#### CDN Architecture & Components
+
+| Component             | Description                                                                       |
+|-----------------------|-----------------------------------------------------------------------------------|
+| **Origin Server**     | Central server hosting the original content.                                       |
+| **Edge Server / PoP** | Distributed servers caching and serving content closer to users.                   |
+| **Request Routing**   | Logic that directs traffic to the optimal edge server (geo, latency, load).        |
+
+**Basic CDN Architecture:**
+
+```mermaid
+graph LR
+    A[User] -->|Request| B[Edge Server/PoP]
+    B -->|Cache Miss| C[Origin Server]
+    C -->|Response| B
+    B -->|Cache Hit/Response| A
+```
+
+**ASCII view:**
+
+```plaintext
+           +-----------------+
+           | Origin Server   |
+           +-----------------+
+                |
+        +-------+---------+
+        |                 |
++----------------+  +----------------+
+| Edge Server 1  |  | Edge Server 2  | ... More PoPs
++----------------+  +----------------+
+      |                   |
+   User 1              User 2
+(Requests routed to nearest edge server)
+```
+
+#### How a CDN Handles Requests
+
+1. **User Requests Content:** A user tries to load a resource (e.g., image, video, API data).
+2. **CDN Resolves to Nearest Edge Server:** DNS and routing logic direct the request to the best PoP (based on geography, latency, load).
+3. **Cache Hit:** If the content is cached at the edge, it is served instantly.
+4. **Cache Miss:** If not cached, the edge server fetches from the origin, caches it for future requests, and serves the user.
+5. **Subsequent Requests:** Future users benefit from the cached content, improving speed and reliability.
+
+A combined flow showing the user → edge → origin → cache journey:
+
+```mermaid
+flowchart LR
+    User-->|Request|EdgeServer
+    EdgeServer-->|Cache Hit|User
+    EdgeServer-->|Cache Miss|OriginServer
+    OriginServer-->|Content|EdgeServer
+    EdgeServer-->|Content|User
+```
+
+#### CDN Request Flow (Sequence Diagram)
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant DNS
+    participant Edge as Edge Server/PoP
+    participant Origin as Origin Server
+
+    User->>DNS: Resolve domain
+    DNS->>User: Return nearest PoP IP
+    User->>Edge: Request content
+    alt Cache Hit
+        Edge->>User: Serve cached content
+    else Cache Miss
+        Edge->>Origin: Fetch from origin
+        Origin->>Edge: Return content
+        Edge->>User: Serve content & cache it
+    end
+```
+
+#### Key CDN Features & Benefits
+
+| Feature                       | Benefit                                                |
+|-------------------------------|--------------------------------------------------------|
+| **Caching & Replication** (copies of data kept closer to users or on several machines; Chapters 7 and 8)     | Reduces latency and origin server load.                |
+| **Load Balancing**            | Handles massive traffic, provides high availability.   |
+| **Compression & Optimization**| Reduces bandwidth, speeds up delivery.                 |
+| **Security**                  | DDoS mitigation, SSL/TLS, bot filtering.               |
+
+#### Caching Strategies in CDNs
+
+CDNs cache frequently accessed content at edge servers. Key concepts:
+
+**Cache Expiration (TTL):** determines how long an object stays cached before being refreshed.
+
+```http
+Cache-Control: public, max-age=86400
+```
+
+**Cache Invalidation** techniques to ensure freshness:
+
+- **Manual Purge:** Explicitly remove/refresh objects.
+- **Stale-While-Revalidate:** Serve stale content while fetching the latest version asynchronously.
+- **Cache-Control Headers:** Fine-tune caching via HTTP headers.
+
+**Example: Setting Cache-Control headers in Express.js**
+
+```js
+app.get('/static/*', (req, res) => {
+  res.set('Cache-Control', 'public, max-age=86400'); // Cache for 1 day
+  res.sendFile(/* ... */);
+});
+```
+
+#### Request Routing, Load Balancing, and Failover
+
+CDNs use intelligent algorithms for:
+
+- **Geo-Based Routing:** Directs users to the geographically nearest PoP.
+- **Latency-Based Routing:** Picks the PoP with the fastest response time.
+- **Load-Aware Routing:** Avoids sending requests to overloaded PoPs.
+
+**Failover Handling:** If a PoP fails, traffic is rerouted to the next closest or most responsive PoP, ensuring high availability.
+
+#### Compression, Minification, and Optimization
+
+CDNs further optimize content delivery by:
+
+- **Compression:**
+  - Gzip/Brotli for text files (HTML, CSS, JS)
+  - Image compression (WebP, AVIF)
+- **Minification:**
+  - Remove whitespace and comments from JS/CSS.
+- **Bundling:**
+  - Combine multiple files into one to reduce HTTP requests.
+
+**Example: Enable Gzip Compression in Node.js**
+
+```js
+const express = require('express');
+const compression = require('compression');
+
+const app = express();
+app.use(compression());
+```
+
+#### Security Features
+
+- **DDoS Protection:** Rate limiting, traffic filtering, anomaly detection.
+- **SSL/TLS Offloading:** Edge servers handle encryption, reducing load on origin.
+- **Bot Mitigation:** Block malicious bots before reaching origin.
+- **Web Application Firewall (WAF):** Protects against common web threats.
+
+#### CDN Use Cases
+
+- **Static Content Delivery:** Images, CSS, JS, videos, HTML.
+- **Dynamic Content Optimization:** API responses, personalized pages (with careful caching).
+- **API Acceleration:** Edge caching of API responses for speed.
+- **Edge Computing:** Run lightweight computation at the edge (e.g., video transcoding, A/B testing).
+
+#### CDN Nuances Worth Knowing
+
+- **Pull CDN (most common):** Edge fetches from origin on first cache miss, then serves cached copy. Cloudflare, CloudFront, Fastly default to this. **Easy to set up** (just point DNS at the CDN).
+- **Push CDN:** You manually upload assets to the CDN. Used for very large, rarely-changing files (game patches, software downloads).
+- **Origin shield:** A *single* designated edge in front of your origin so all other edges fetch from it on a miss. Reduces load on your origin during a stampede.
+- **Cache key design:** Two URLs that should serve the same content (e.g., with vs. without a marketing query parameter) need to share a cache key, or you'll cache them separately and waste hit-rate. Most CDNs let you strip irrelevant query params from the key.
+- **Signed URLs:** For private content (paid videos, private documents), the CDN won't serve unless the URL includes a short-lived signature your origin generated. Lets you put auth at the origin while still using the CDN for delivery.
+- **Cache invalidation:** Two strategies — **purge** (CDN evicts on demand, often costly/slow) or **versioning** (rename the file: `style.css?v=42`, and old versions just expire). Versioning is almost always better.
+
+#### Sample Code: CDN Integration
+
+**1. Using a CDN with HTML Assets**
+
+```html
+<!-- Using Cloudflare CDN for jQuery -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+```
+
+**2. Setting Cache Headers for CDN in Express.js**
+
+```js
+app.use('/static', express.static('public', {
+  maxAge: '7d', // Cache static files for 7 days
+  setHeaders: function (res, path) {
+    res.setHeader('Cache-Control', 'public, max-age=604800');
+  }
+}));
+```
+
+**3. Configuring a CDN (Pseudocode Example)**
+
+```yaml
+cdn:
+  origin: https://mywebsite.com
+  edge_servers:
+    - location: us-east
+    - location: eu-west
+    - location: asia
+  cache:
+    ttl: 86400 # 24 hours
+    stale_while_revalidate: true
+  security:
+    ddos_protection: true
+    ssl: enabled
+```
+
+#### CDN — Tips & Best Practices
+
+- **Set Appropriate TTLs:** Static assets get longer TTLs (days/weeks); dynamic content gets shorter TTLs or no caching.
+- **Use Versioning:** Change asset filenames when deploying updates to avoid stale caches.
+- **Purge Carefully:** Only purge what's necessary to avoid cache stampedes.
+- **Leverage Compression & Minification:** Serve compressed/minified assets to reduce bandwidth and speed up delivery.
+- **Secure Your CDN:** Enforce HTTPS, enable DDoS protection, and configure WAF rules.
+- **Monitor Edge Cache Hit Ratio:** Optimize your caching strategy for the highest possible hit ratio.
+- **Edge Computing:** Use edge functions for lightweight logic (A/B testing, geofencing, etc.).
+- **API Caching:** Use with care — define cache keys and invalidation logic for APIs to avoid stale data.
+- **Set appropriate cache headers** (`Cache-Control`, `ETag`, `Expires`) in your API/gateway responses to control CDN caching.
+- **Use edge caching** for high-traffic API endpoints that serve the same data to many users.
+- **Purge CDN cache** immediately on deployment of new content or API changes to avoid serving stale data.
+- **Enable SSL/TLS termination** at the CDN for better security and performance.
+- **Monitor CDN analytics** for usage patterns and anomalies.
+
+#### CDN — Interview Questions
+
+**Basics:**
+
+- What is a CDN, and how does it work?
+- Why do we need CDNs in modern system design?
+- What are the key benefits of using a CDN?
+
+**Architecture:**
+
+- Explain the difference between an origin server and an edge server in a CDN.
+- What is a PoP in a CDN?
+- How does request routing work in a CDN?
+
+**Caching:**
+
+- What is the difference between a cache hit and a cache miss?
+- How does cache expiration (TTL) work in a CDN?
+- Describe cache invalidation strategies in a CDN.
+
+**Load Balancing & Failover:**
+
+- How do CDNs use load balancing?
+- What happens if a CDN PoP fails?
+
+**Optimization:**
+
+- What compression and minification techniques do CDNs use?
+- How does API acceleration work in a CDN?
+
+**Security:**
+
+- How does a CDN protect against DDoS attacks?
+- What is SSL/TLS offloading, and why is it useful?
+
+**Advanced:**
+
+- What is edge computing in the context of CDNs?
+- How would you design a CDN for a large-scale video streaming platform?
+- How do CDNs help in real-time applications like online gaming or stock trading?
+
+#### CDN — Further Reading
+
+- [Cloudflare CDN Docs](https://developers.cloudflare.com/cdn/)
+- [AWS CloudFront](https://aws.amazon.com/cloudfront/)
+- [Google Cloud CDN](https://cloud.google.com/cdn/)
+- [Akamai CDN](https://www.akamai.com/)
+
+*(From AI Library chapter 2.)*
+
+The diagram, worked example, exercises, mini-project, design prompt, open-source reading, interview questions and checklist below are this chapter's practice layer.
 
 ---
 

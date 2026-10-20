@@ -10,12 +10,234 @@ Event producers/consumers, event schemas, ordering, idempotency, and eventual co
 
 **In one sentence:** in an event-driven system, services announce facts ("an order was placed") instead of calling each other directly, and any number of other services react on their own schedule — which decouples teams and absorbs load spikes, at the price of eventual consistency and careful handling of order and duplicates.
 
-**Read the full explanation in the AI Library** (it is explained there once, so this chapter does not repeat it):
+### Event-Driven Systems in Practice
 
-* [Chapter 11 — Event-Driven Systems in Practice](https://charikshith.github.io/AI_Library/notes/system-design/chapters/11%20-%20Distributed%20Systems%20Fundamentals.html#113-event-driven-systems-in-practice)
-* [Chapter 4 — Event-Driven Architecture](https://charikshith.github.io/AI_Library/notes/system-design/chapters/4%20-%20Architectural%20Patterns%20%28System%20Design%20Fundamentals%29.html#465-event-driven-architecture)
+**Mental model — a town crier vs phone calls.** In request/response, the order clerk must phone billing, shipping, and analytics one by one, and if shipping doesn't answer, the order is stuck. With events, the clerk shouts "Order 123 placed!" in the square once; whoever cares writes it down and acts. New listeners can join without the clerk changing anything. But nobody knows exactly *when* each listener acted.
 
-This chapter is the **practice layer**: the diagram, worked example, exercises, mini-project, design prompt, open-source reading, interview questions and checklist below.
+**Event-driven vs request/response**
+
+| | Request/response (sync) | Event-driven (async) |
+|-|-------------------------|----------------------|
+| Coupling | caller knows every callee, their API, and their availability | the producer knows only the event schema |
+| Failure | a callee failure fails the caller (cascades) | consumers fail independently; the log buffers |
+| Latency to the user | the sum of the chain | fast acknowledgment; work finishes later |
+| Consistency | immediate (if every step succeeded) | **eventual** |
+| Adding a new reaction | change the caller | add a consumer |
+| Debugging | a stack trace / one trace | distributed: needs correlation IDs and tracing |
+| Best for | queries; things the user needs *now* | side effects, integration, fan-out, analytics, workflows |
+
+**Kinds of events**
+
+| Kind | Payload | Example | Trade-off |
+|------|---------|---------|-----------|
+| Notification | just the ID | `OrderPlaced {order_id}` | small; consumers call back for details (coupling + load) |
+| **Event-carried state transfer** | the data consumers need | `OrderPlaced {order_id, customer, items, total}` | consumers are autonomous; bigger events; schema is a contract |
+| Domain event (event sourcing) | the state change itself | Vol 1 Ch 52 | full history |
+
+**Choreography vs orchestration**
+
+| | Choreography | Orchestration |
+|-|--------------|---------------|
+| How | each service reacts to events and emits its own | a central orchestrator (a saga coordinator, Temporal, Step Functions) tells each step what to do |
+| Pros | fully decoupled; no central point | the flow is visible in one place; easy timeouts and compensation |
+| Cons | the overall flow is implicit and hard to follow | the orchestrator knows every participant |
+| Use | simple fan-out reactions | multi-step business processes with compensation (sagas) |
+
+**The hard parts and their fixes**
+
+| Problem | Fix |
+|---------|-----|
+| Duplicates (at-least-once delivery) | **idempotent consumers**: dedup by `event_id` in the same transaction as the side effect |
+| Ordering | partition by the entity key (`order_id`); rely on per-key order only; use sequence numbers to detect gaps |
+| Writing to the DB *and* publishing the event atomically | the **transactional outbox**: write the event to an `outbox` table in the same DB transaction; a relay publishes it (or CDC with Debezium) |
+| Poison messages | bounded retries → a **dead-letter queue**, with alerting and replay tooling |
+| Schema evolution | versioned schemas in a **schema registry** with compatibility rules (backward/forward) |
+| Eventual consistency in the UI | show "processing"; return a version; read your own writes from the source |
+| Tracing a flow | carry `correlation_id` and `causation_id` in every event; propagate trace context |
+
+*(From AI Library chapter 11.)*
+
+### Event-Driven Architecture
+
+In **event-driven architecture (EDA)**, components communicate asynchronously via events/messages rather than direct calls, enabling **loose coupling** and **real-time responses**.
+
+#### Diagram
+
+```mermaid
+flowchart LR
+    Producer[Event Producer] --> Broker[Event Broker]
+    Broker --> Consumer1[Consumer 1]
+    Broker --> Consumer2[Consumer 2]
+```
+
+A sequence diagram:
+
+```mermaid
+sequenceDiagram
+  participant Producer
+  participant Broker
+  participant Consumer
+
+  Producer->>Broker: Emit Event
+  Broker->>Consumer: Deliver Event
+```
+
+```mermaid
+graph LR
+    Producer(Event Producer) --> Broker(Event Broker)
+    Broker --> Consumer1(Event Consumer 1)
+    Broker --> Consumer2(Event Consumer 2)
+```
+
+A more detailed scenario with multiple producers/consumers:
+
+```mermaid
+flowchart LR
+    subgraph EventProducers [Event Producers]
+        A[Order Service]
+        B[User Service]
+    end
+    subgraph EventBroker [Event Broker]
+        C[Kafka / RabbitMQ / EventBridge]
+    end
+    subgraph EventConsumers [Event Consumers]
+        D[Payment Service]
+        E[Inventory Service]
+        F[Notification Service]
+    end
+    subgraph EventStorage [Event Storage]
+        G[Event Log / Kinesis]
+    end
+
+    A -- "OrderPlaced Event" --> C
+    B -- "UserCreated Event" --> C
+    C -- "OrderPlaced Event" --> D
+    C -- "OrderPlaced Event" --> E
+    C -- "OrderPlaced Event" --> F
+    C --> G
+```
+
+A sequence diagram showing user-triggered flows:
+
+```mermaid
+sequenceDiagram
+  participant User
+  participant Frontend
+  participant EventBus
+  participant MicroserviceA
+  participant MicroserviceB
+
+  User->>Frontend: Triggers Action
+  Frontend->>EventBus: Emits Event (e.g., OrderCreated)
+  EventBus->>MicroserviceA: Notifies
+  EventBus->>MicroserviceB: Notifies
+```
+
+ASCII view:
+
+```
++-------------+        +-------------+
+| Producer(s) |----->  | Event Broker|-----> [Consumer(s)]
++-------------+        +-------------+
+(e.g., Kafka, RabbitMQ)
+```
+
+#### Example Code: Event Publishing
+
+**Node.js + Kafka:**
+
+```js
+const { Kafka } = require('kafkajs');
+const kafka = new Kafka({ clientId: 'app', brokers: ['localhost:9092'] });
+const producer = kafka.producer();
+
+async function publish() {
+  await producer.connect();
+  await producer.send({
+    topic: 'orders',
+    messages: [{ value: JSON.stringify({ orderId: 42 }) }],
+  });
+  await producer.disconnect();
+}
+publish();
+```
+
+**Python + Kafka:**
+
+```python
+from kafka import KafkaProducer
+producer = KafkaProducer(bootstrap_servers='localhost:9092')
+producer.send('orders', b'OrderPlaced:12345')
+```
+
+**Python consumer with kafka-python:**
+
+```python
+from kafka import KafkaConsumer
+consumer = KafkaConsumer('orders', bootstrap_servers='localhost:9092')
+for msg in consumer:
+    handle_order(msg.value)
+```
+
+**Python + RabbitMQ (pika):**
+
+```python
+import pika
+
+connection = pika.BlockingConnection(pika.ConnectionParameters('localhost'))
+channel = connection.channel()
+channel.queue_declare(queue='events')
+
+channel.basic_publish(exchange='', routing_key='events', body='UserRegistered')
+print("Event Published")
+connection.close()
+```
+
+A second pika example with JSON event payload:
+
+```python
+import pika
+
+connection = pika.BlockingConnection(pika.ConnectionParameters('localhost'))
+channel = connection.channel()
+channel.queue_declare(queue='order_events')
+
+channel.basic_publish(exchange='',
+                      routing_key='order_events',
+                      body='{"event": "order_created", "data": {"order_id": 123}}')
+connection.close()
+```
+
+**Simple in-process event handler (Python):**
+
+```python
+def on_user_created(event):
+    print(f"User created: {event['username']}")
+
+# Emitting an event
+event = {'username': 'alice'}
+on_user_created(event)
+```
+
+#### Pros & Cons
+
+| Pros                                       | Cons                                           |
+|--------------------------------------------|------------------------------------------------|
+| Highly decoupled, scalable                 | Harder to debug / troubleshoot                 |
+| Supports asynchronous workflows, real-time | Eventual consistency can be tricky             |
+| Flexible and resilient                     | Requires good monitoring                       |
+| Scales well under high traffic             | Ensuring ordering / consistency is hard        |
+
+#### Use Cases
+
+- Real-time systems (chat, notifications)
+- IoT applications
+- Financial trading platforms
+- E-commerce order workflows
+
+*(From AI Library chapter 4.)*
+
+The diagram, worked example, exercises, mini-project, design prompt, open-source reading, interview questions and checklist below are this chapter's practice layer.
 
 ---
 

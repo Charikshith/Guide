@@ -786,6 +786,34 @@ A --> Quorum["Quorum (majority nodes)"]
 
 ---
 
+### 9.12.10 Replication Is Not a Backup
+
+Replication keeps a **live copy**, which is exactly why it also copies your mistakes. Match each disaster to the right protection:
+
+| Disaster | Replication helps? | Backups help? |
+|----------|:-:|:-:|
+| Disk or node failure | yes | yes |
+| Zone outage | yes (multi-zone) | yes |
+| Region outage | yes (cross-region) | yes, if stored cross-region |
+| **Accidental `DELETE`, a bad migration, a bug corrupting data** | **no**: replicas copy the mistake instantly | **yes**, with point-in-time recovery |
+| **Ransomware or a malicious admin** | no | yes, **only if** backups are immutable and in a separate account |
+| Provider or account compromise | no | yes, with a copy in another account or provider |
+
+Replication is for **availability**; backups are for **recovery**. You need both.
+
+**The 3-2-1 rule, plus immutability:** keep **3** copies, on **2** different media or services, with **1** off-site, and make at least one copy **immutable** (object lock / write-once) in a separate account.
+
+### 9.12.11 Disaster-Recovery Strategies: Cost vs. Recovery Time
+
+| Strategy | The secondary region has | RTO | RPO | Cost |
+|----------|--------------------------|-----|-----|------|
+| **Backup and restore** | only backups | hours to a day | hours (minutes with point-in-time recovery) | $ |
+| **Pilot light** | data replicated; a minimal core of infrastructure, off or tiny | tens of minutes | minutes | $$ |
+| **Warm standby** | a scaled-down, fully working copy | minutes | seconds to minutes | $$$ |
+| **Multi-site active-active** | full capacity serving live traffic | near zero (just reroute) | near zero (synchronous) or seconds | $$$$ |
+
+**Test restores, not just backups.** Backups fail silently: expired credentials, missing tables, corrupt files, incompatible versions, a restore that takes 14 hours instead of the 1 you promised, a runbook nobody can follow. The only real measure of your RTO and RPO is a **timed restore**, rehearsed on a schedule.
+
 ## 9.13 The 9s of Availability — What "Five Nines" Actually Means
 
 | Availability  | Allowed downtime per year | Per month     | Per day      |
@@ -809,6 +837,22 @@ If your service depends on 3 things, each 99.9% available:
 **Lesson:** the more dependencies, the lower your composite availability. Either make each component *more* reliable, or design to **work in degraded mode** when a dependency is down.
 
 ---
+
+### 9.13.2 Availability Math and Failure Domains
+
+**Series and parallel.** Availability multiplies when parts depend on each other, and improves when parts back each other up.
+
+| Setup | Formula | Example with 99.9% parts |
+|-------|---------|--------------------------|
+| **Series** (A needs B needs C) | `A × B × C` | 2 in series: 99.8% |
+| **Parallel** (any one of n is enough) | `1 − (1 − A)ⁿ` | 2 in parallel: 99.9999% |
+| 5 services in series | `0.999⁵` | about 99.5%, roughly 44 hours of downtime a year |
+
+Parallel math assumes the failures are **independent**. That is the reason to spread replicas across different zones, not just different servers.
+
+**Failure domains** are things that fail together: a process, a host, a rack, an availability zone, a region, a cloud provider, a deploy, a configuration push. Spread replicas across domains so one failure never takes out every copy. **Correlated failures** (the same bad deploy everywhere, the same shared dependency) are the real enemy, because they defeat the parallel math.
+
+**Levers that raise reliability:** redundancy (N+1, N+2), health checks with automatic failover, timeouts, retries with backoff, circuit breakers, **load shedding** (deliberately rejecting excess work so the rest succeeds), graceful degradation, and gradual rollouts.
 
 ## 9.14 Retry Patterns Done Right
 

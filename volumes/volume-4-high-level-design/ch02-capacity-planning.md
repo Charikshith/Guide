@@ -10,15 +10,186 @@ QPS, latency percentiles (p50/p99), throughput, storage sizing, and translating 
 
 **In one sentence:** capacity planning turns product numbers ("10 million daily users") into engineering numbers (requests per second, servers, terabytes, dollars) with quick, explicit, back-of-envelope math — sized for the peak, not the average.
 
-**Read the full explanation in the AI Library** (it is explained there once, so this chapter does not repeat it):
+### Numbers Every Programmer Should Know
 
-* [Chapter 1 — Numbers Every Programmer Should Know](https://charikshith.github.io/AI_Library/notes/system-design/chapters/1%20-%20Introduction.html#18-numbers-every-programmer-should-know)
-* [Chapter 6 — Capacity Planning — Back-of-the-Envelope](https://charikshith.github.io/AI_Library/notes/system-design/chapters/6%20-%20Scalability%20in%20System%20Design.html#616-capacity-planning--back-of-the-envelope)
-* [Chapter 6 — Capacity Estimation Cheat Sheet](https://charikshith.github.io/AI_Library/notes/system-design/chapters/6%20-%20Scalability%20in%20System%20Design.html#6161-capacity-estimation-cheat-sheet)
-* [Chapter 8 — Key Metrics — Latency, Throughput, Scalability & Responsiveness](https://charikshith.github.io/AI_Library/notes/system-design/chapters/8%20-%20Performance%20-%20Concepts%2C%20Tools%20%26%20Techniques.html#83-key-metrics--latency-throughput-scalability--responsiveness)
-* [Chapter 8 — Measuring Performance — SLAs, SLOs, SLIs, and Percentiles](https://charikshith.github.io/AI_Library/notes/system-design/chapters/8%20-%20Performance%20-%20Concepts%2C%20Tools%20%26%20Techniques.html#84-measuring-performance--slas-slos-slis-and-percentiles)
+This table is the single most important reference in this course. **Memorize the orders of magnitude.** They will let you reason about why caching helps, why a cross-region call is bad, why disk seek is to be avoided, and why "just put it in memory" works.
 
-This chapter is the **practice layer**: the diagram, worked example, exercises, mini-project, design prompt, open-source reading, interview questions and checklist below.
+Adapted from Jeff Dean's classic talk:
+
+| Operation                                  | Time                | Mental shorthand                 |
+|--------------------------------------------|---------------------|----------------------------------|
+| L1 cache reference                         | 0.5 ns              | basically free                   |
+| Branch mispredict                          | 5 ns                |                                  |
+| L2 cache reference                         | 7 ns                | 14× L1                           |
+| Mutex lock/unlock                          | 25 ns               |                                  |
+| Main memory reference                      | 100 ns              | 200× L1, 20× L2                  |
+| Compress 1 KB with Snappy                  | 3,000 ns (3 µs)     |                                  |
+| Send 2 KB over commodity network           | ~1,000 ns (1 µs)    |                                  |
+| Read 1 MB sequentially from memory         | 250,000 ns (250 µs) |                                  |
+| Round trip within same datacenter          | 500,000 ns (0.5 ms) | network within a datacenter      |
+| Read 4 KB randomly from SSD                | 150,000 ns (150 µs) |                                  |
+| Read 1 MB sequentially from SSD            | 1,000,000 ns (1 ms) |                                  |
+| Disk seek                                  | 10,000,000 ns (10 ms) | always avoid if possible       |
+| Read 1 MB sequentially from disk           | 20,000,000 ns (20 ms) |                                |
+| Round trip CA → Netherlands → CA           | 150,000,000 ns (150 ms) | speed of light over fiber     |
+
+#### What this means in practice
+
+- **Memory is ~100× faster than SSD, ~100,000× faster than disk seek.** That's why caches exist.
+- **Same-datacenter round trip (0.5 ms) is ~300× faster than cross-continent (150 ms).** That's why CDNs and regional replicas matter.
+- **Compression often pays off:** 3 µs to compress vs. saving network/disk time later.
+- **A modern API endpoint that takes >100 ms has spent most of its time on something *other* than CPU.** It's usually network or disk.
+
+> **Whenever you propose a design, sanity-check it against this table.** If your design has 5 sequential cross-region calls in a hot path, your p99 is already ≥ 750 ms — no amount of code optimization will fix that.
+
+*(From AI Library chapter 1.)*
+
+### Capacity Planning — Back-of-the-Envelope
+
+Given:
+- p99 latency budget: **100 ms**
+- Each request takes: **~20 ms** of CPU
+- Each server: **8 cores**
+
+**Throughput per server:** `(8 cores × 1000 ms/s) / 20 ms ≈ 400 req/s` (ignoring I/O wait)
+
+**At 10K req/s peak load:** `10,000 / 400 = 25 servers`, plus **+50% headroom** for spikes and rolling deploys → **40 servers**.
+
+> **Rule of thumb:** aim for **60-70% steady-state utilization.** Higher = no margin for spikes. Lower = wasted money.
+
+---
+
+#### Capacity Estimation Cheat Sheet
+
+Turn product numbers ("10 million daily users") into engineering numbers with quick, explicit math. Size for the **peak**, not the average, and be right within about 2×.
+
+| Quantity | Formula or rule of thumb |
+|----------|--------------------------|
+| Average QPS | `daily active users × requests per user per day ÷ 86,400` |
+| Peak QPS | `average × peak factor` (2–10×; 5× is a common assumption) |
+| Read : write ratio | often 10:1 to 100:1 for consumer apps |
+| Servers | `peak QPS ÷ QPS per server`, then add headroom (aim for about 60–70% utilization) and N+2 spare capacity for failures |
+| Storage | `items per day × bytes per item × retention days × replication factor` |
+| Bandwidth | `QPS × response size` |
+
+**Numbers worth memorizing**
+
+| Item | Value |
+|------|-------|
+| Seconds per day | 86,400, roughly 10⁵ |
+| 1 million requests per day | about 12 QPS |
+| 1 billion requests per day | about 12,000 QPS |
+| One typical web/API server | about 1,000 QPS (anywhere from 100 to 10,000+) |
+| One PostgreSQL primary, simple queries | about 10,000–50,000 QPS |
+| Round trip inside a data center | about 0.5 ms; across continents about 100–150 ms |
+| Powers of two | 2¹⁰ ≈ 10³ (KB), 2²⁰ ≈ 10⁶ (MB), 2³⁰ ≈ 10⁹ (GB), 2⁴⁰ ≈ 10¹² (TB) |
+
+**The tail dominates when requests fan out.** A page that calls 100 services, each with a 1% chance of being slow, is slow about 63% of the time (`1 − 0.99¹⁰⁰`). So track **p50** (typical), **p99** (what the unlucky users feel) and **p99.9** for high-volume services, not just the average.
+
+**State your assumptions.** Every estimate is only as good as its inputs. Write them down so others can challenge the right number.
+
+*(From AI Library chapter 6.)*
+
+### Key Metrics — Latency, Throughput, Scalability & Responsiveness
+
+#### Latency vs. Throughput
+
+| Metric      | Description                          | Unit       | Affects                |
+|-------------|--------------------------------------|------------|------------------------|
+| Latency     | Time to process a single request     | ms, s      | Responsiveness         |
+| Throughput  | Requests processed per second        | RPS, TPS   | Scalability            |
+
+> **Note:** Low latency ≠ high throughput. Both must be balanced per use case.
+
+#### Code: Measuring Latency and Throughput (Python)
+
+```python
+import time
+import requests
+
+def measure_latency(url):
+    start = time.time()
+    response = requests.get(url)
+    latency = time.time() - start
+    return latency
+
+def measure_throughput(url, n_requests):
+    start = time.time()
+    for _ in range(n_requests):
+        requests.get(url)
+    total_time = time.time() - start
+    return n_requests / total_time
+
+print("Latency:", measure_latency("https://example.com"))
+print("Throughput:", measure_throughput("https://example.com", 100), "req/sec")
+```
+
+#### Diagram: Latency vs. Throughput
+
+```
+|--- Latency ---|
+[Client]----request---->[Server]----response---->[Client]
+            (1 request)
+Throughput = Requests handled in 1 second
+```
+
+```mermaid
+sequenceDiagram
+    participant Client
+    participant Server
+
+    Client->>Server: Request 1
+    Server-->>Client: Response 1 (Latency)
+    Client->>Server: Request 2
+    Server-->>Client: Response 2
+    Note over Server: Throughput = Total requests/time
+```
+
+#### Scalability vs. Responsiveness
+
+- **Scalability:** Can the system handle more load as users/data grow?
+  - **Horizontal scaling:** Adding more servers.
+  - **Vertical scaling:** Increasing resources of existing servers.
+- **Responsiveness:** How quickly the system replies, even under heavy load. Tightly linked to latency.
+
+> **Goal:** Good design should ensure responsiveness at scale.
+
+*(From AI Library chapter 8.)*
+
+### Measuring Performance — SLAs, SLOs, SLIs, and Percentiles
+
+#### SLAs, SLOs, and SLIs
+
+- **SLA (Service Level Agreement):** External contractual performance guarantee.
+- **SLO (Service Level Objective):** Internal performance target.
+- **SLI (Service Level Indicator):** Actual measured value.
+
+**Example:**
+
+```
+SLA: 99.9% uptime for customers
+SLO: 95% of requests < 300ms latency
+SLI: Actual: 93% of requests < 300ms (need improvement!)
+```
+
+#### Percentiles: P50, P95, P99
+
+**Why not just use averages?** Because averages hide outliers.
+
+- **P50:** 50% (median) requests are faster.
+- **P95:** 95% of requests are faster; 5% are slower.
+- **P99:** The slowest 1% (tail latency) — critical for user experience.
+
+**Visualization:**
+
+```
+|----|------------------|------------------|------------------|----|
+  0%   50% (P50)         95% (P95)          99% (P99)         100%
+```
+
+*(From AI Library chapter 8.)*
+
+The diagram, worked example, exercises, mini-project, design prompt, open-source reading, interview questions and checklist below are this chapter's practice layer.
 
 ---
 

@@ -734,4 +734,4 @@ Designing a real-time auction platform is a multi-disciplinary effort that deman
 
 ---
 
-**Next Up:** *(Chapter 22 reserved.)* [Chapter 23 — Design a Cloud Storage Solution (Google Drive, Dropbox) →](./23%20-%20Design%20a%20Cloud%20Storage%20Solution%20(aka%20Google%20Drive%2C%20Dropbox).md)
+**Next Up:** [Chapter 22 — Design a Ticket Booking System (Ticketmaster) →](./22%20-%20Design%20a%20Ticket%20Booking%20System%20(aka%20Ticketmaster).md)

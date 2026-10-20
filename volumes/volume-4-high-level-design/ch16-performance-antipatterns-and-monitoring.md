@@ -10,12 +10,257 @@ The ten classic performance antipatterns, the bulkhead fix, and the five kinds o
 
 **In one sentence:** most slow or fragile systems are slow in one of ten well-known ways, and you only find which one by instrumenting the system (metrics, logs, traces), watching the right signals, and alerting on user-visible symptoms rather than every internal blip.
 
-**Read the full explanation in the AI Library** (it is explained there once, so this chapter does not repeat it):
+### Performance Antipatterns Catalog and Monitoring
 
-* [Chapter 8 — Performance Antipatterns Catalog and Monitoring](https://charikshith.github.io/AI_Library/notes/system-design/chapters/8%20-%20Performance%20-%20Concepts%2C%20Tools%20%26%20Techniques.html#812-performance-antipatterns-catalog-and-monitoring)
-* [Chapter 8 — Performance Anti-Patterns (and How to Fix Them)](https://charikshith.github.io/AI_Library/notes/system-design/chapters/8%20-%20Performance%20-%20Concepts%2C%20Tools%20%26%20Techniques.html#810-performance-anti-patterns-and-how-to-fix-them)
+**Mental model — a restaurant kitchen.** An antipattern is a kitchen habit that works at lunch for four tables and collapses at dinner for forty: one cook doing every dish (busy frontend), a trip to the market for each egg (chatty I/O), buying the whole cow to use one steak (extraneous fetching). Monitoring is the pass where the head chef sees ticket times, which stations are backed up, and whether the fridge is still cold — and the alarm should ring when customers wait too long, not whenever a pan clatters.
 
-This chapter is the **practice layer**: the diagram, worked example, exercises, mini-project, design prompt, open-source reading, interview questions and checklist below.
+##### Part 1 — Performance antipatterns
+
+These ten come from the Azure Architecture Center's performance antipatterns catalogue: recurring mistakes that are invisible at low load and dominate at scale.
+
+**1. Busy Database**
+
+* **Symptom and cause:** DB CPU and I/O saturate while app servers idle, because too much work (formatting, business logic in stored procedures, heavy reports on the primary) runs inside the database.
+* **Detect:** high DB CPU with low app CPU; slow-query log; long statements in `pg_stat_activity`.
+* **Fix:** move formatting and logic to the app tier, send reports to read replicas (Ch 11), cache hot results (Ch 7).
+
+**2. Busy Frontend**
+
+* **Symptom and cause:** request threads are all occupied, so even trivial requests queue, because CPU-heavy or long work (image resizing, PDF generation) runs on the threads that serve users.
+* **Detect:** high CPU on web nodes, worker-pool saturation, cheap endpoints slow only while expensive ones run.
+* **Fix:** return `202 Accepted`, enqueue the job (Ch 9) and process it on a separate worker pool.
+
+**3. Chatty I/O**
+
+* **Symptom and cause:** latency is the sum of round trips, not of work, because of N+1 queries, one HTTP call per item or one write per row.
+* **Detect:** traces showing a "comb" of short spans; query count per request; call rate to a dependency far above the user request rate.
+* **Fix:** batch, join or use `IN (...)`, paginate, offer coarser endpoints, prefetch or cache.
+
+```python
+# BAD: 1 + N queries
+orders = db.query("SELECT * FROM orders WHERE user_id = %s", uid)
+for o in orders:
+    o.items = db.query("SELECT * FROM items WHERE order_id = %s", o.id)
+
+# GOOD: 2 queries total
+orders = db.query("SELECT * FROM orders WHERE user_id = %s", uid)
+items = db.query("SELECT * FROM items WHERE order_id = ANY(%s)", [o.id for o in orders])
+```
+
+**4. Extraneous Fetching**
+
+* **Symptom and cause:** high bandwidth, memory and DB I/O for little output, because of `SELECT *`, filtering a whole table in the app, or no pagination.
+* **Detect:** rows fetched vs rows used; response sizes in traces; egress per request.
+* **Fix:** select only needed columns, filter and aggregate in the query, paginate, use covering indexes.
+
+```python
+# BAD: pull everything, filter in memory
+recent = [r for r in db.query("SELECT * FROM events") if r.ts > cutoff][:50]
+# GOOD: let the database do it
+recent = db.query("SELECT id, ts, kind FROM events WHERE ts > %s ORDER BY ts DESC LIMIT 50", cutoff)
+```
+
+**5. Improper Instantiation**
+
+* **Symptom and cause:** socket exhaustion, a TLS handshake on every call, memory churn, because shareable objects (HTTP clients, DB connections, compiled regexes) are created per request.
+* **Detect:** many `TIME_WAIT` sockets, connections near limits, high connect time in traces.
+* **Fix:** create once and reuse (singletons, dependency injection, pools, keep-alive).
+
+```python
+# BAD: a new client (new TCP + TLS handshake) per call
+def get_price(sku): return requests.get(f"https://prices.internal/{sku}").json()
+# GOOD: one pooled session per process
+session = requests.Session()
+def get_price(sku): return session.get(f"https://prices.internal/{sku}", timeout=2).json()
+```
+
+**6. Monolithic Persistence**
+
+* **Symptom and cause:** one database is too slow for search, too costly for blobs and too contended for sessions, because every kind of data lives in one store.
+* **Detect:** wildly different access patterns inside one cluster; one workload's spikes slow another's.
+* **Fix:** polyglot persistence: relational for transactions, object storage for blobs, a search engine for text, a cache for sessions. The cost is more systems to run and keep consistent (Ch 12).
+
+**7. No Caching**
+
+* **Symptom and cause:** identical expensive reads repeat and hammer the database or an upstream API, because there is no cache or its hit ratio is near zero (bad keys or TTLs).
+* **Detect:** cache hit ratio; identical queries in the slow-query log; high read QPS on rarely changing data.
+* **Fix:** cache at the right layer (CDN, app, Redis), choose the pattern and TTL deliberately, protect against stampedes (Ch 7).
+
+**8. Noisy Neighbor**
+
+* **Symptom and cause:** one tenant, job or service degrades everyone sharing a resource, because shared pools, CPUs, disks or queues have no per-tenant limit.
+* **Detect:** per-tenant breakdown of latency and resource use; one tenant's spikes correlating with others' errors.
+* **Fix:** quotas and rate limits (Ch 8), multi-tenancy isolation, and bulkheads (below).
+
+**9. Retry Storm**
+
+* **Symptom and cause:** a brief dependency blip becomes a long outage, because clients retry at once, without backoff, jitter or a budget, often at several layers.
+* **Detect:** request rate to a dependency exceeds user request rate; synchronized retry waves right after errors begin.
+* **Fix:** timeouts, exponential backoff with jitter, retry budgets, retry at one layer, circuit breakers, idempotency (Vol 3 Ch 14).
+
+```
+ retry amplification: 3 layers, each makes up to 3 attempts
+ client ──×3──► gateway ──×3──► service ──×3──► database (already failing)
+ one user request can become 3 × 3 × 3 = 27 database attempts
+```
+
+**10. Synchronous I/O**
+
+* **Symptom and cause:** low CPU but high latency and low throughput, because calling threads block on network or disk and a small pool caps concurrency.
+* **Detect:** worker pool fully busy with idle CPU; threads parked in socket reads in a thread dump.
+* **Fix:** async/non-blocking I/O, a sized pool for blocking calls, and run independent calls concurrently.
+
+```python
+# BAD: sequential (latency = a + b + c)
+user = fetch_user(uid); orders = fetch_orders(uid); recs = fetch_recs(uid)
+# GOOD: concurrent (latency ≈ max(a, b, c))
+user, orders, recs = await asyncio.gather(fetch_user(uid), fetch_orders(uid), fetch_recs(uid))
+```
+
+**Summary**
+
+| Antipattern | Typical symptom | Usual cause | Main fix |
+|-------------|-----------------|-------------|----------|
+| Busy Database | DB CPU/I/O saturated | logic and formatting in the DB | move work to app tier, replicas, cache |
+| Busy Frontend | request threads exhausted | heavy work on request threads | queue + background workers |
+| Chatty I/O | latency = sum of round trips | N+1, one call per item | batch, join, coarser APIs |
+| Extraneous Fetching | high bandwidth and memory | `SELECT *`, filter in app | project, filter in query, paginate |
+| Improper Instantiation | socket exhaustion, handshakes | new client per request | reuse pooled clients |
+| Monolithic Persistence | one store fits no workload | everything in one database | polyglot persistence |
+| No Caching | repeated identical reads | no cache, or bad keys/TTLs | layered caching |
+| Noisy Neighbor | one tenant hurts others | shared resource, no limits | quotas, isolation, bulkheads |
+| Retry Storm | blip becomes outage | immediate unbounded retries | backoff + jitter + budget + breaker |
+| Synchronous I/O | idle CPU, low throughput | blocking calls on few threads | async, concurrency |
+
+##### Bulkhead
+
+**Bulkhead** — named after the watertight compartments of a ship's hull: partition resources so a failure or overload in one compartment cannot sink the rest. It is the structural fix for noisy neighbors and cascading failure: give each tenant, endpoint or dependency its own pool (threads, connections, semaphore permits, queue slots) with a hard cap.
+
+| Variant | Isolates | Example |
+|---------|----------|---------|
+| Semaphore bulkhead | concurrent calls | max 20 in-flight calls to the payments API |
+| Thread-pool bulkhead | threads plus a queue | a separate pool per downstream dependency |
+| Connection-pool partition | DB connections | reporting gets 5 connections, checkout gets 30 |
+| Per-tenant / per-tier | tenant traffic | premium and free tenants on separate pools or cells |
+| Deployment-level | whole stacks | separate clusters or cells per region or customer group |
+
+Combine it with timeouts and a circuit breaker (Vol 3 Ch 14); per-tenant limits are in Ch 8 and Ch 15. The cost is lower utilization: idle capacity in one compartment cannot be lent to another.
+
+##### Part 2 — Monitoring
+
+Each kind of monitoring answers a different question.
+
+| Kind | Question it answers | Example signals | Typical tools |
+|------|---------------------|-----------------|---------------|
+| Health monitoring | Is each component alive and able to serve? | liveness/readiness probes, dependency checks, restarts | Kubernetes probes, load balancer health checks |
+| Availability monitoring | Can users actually reach and use it? | synthetic checks from outside, success ratio, uptime vs SLO | `blackbox_exporter`, uptime services |
+| Performance monitoring | How fast and how efficiently? | latency percentiles, throughput, saturation, queue depth, cache hit ratio | Prometheus + Grafana, APM, traces |
+| Security monitoring | Is something hostile or unexpected happening? | failed logins, permission denials, unusual egress, audit-log anomalies | SIEM, audit logs, Falco |
+| Usage monitoring | What do users do, and what does it cost? | active users, feature adoption, requests per tenant, quota use | product analytics, billing metering |
+
+**Health endpoint monitoring.** Expose cheap HTTP endpoints that monitors and orchestrators poll.
+
+| Probe | Question | On failure | Should check |
+|-------|----------|------------|--------------|
+| Liveness (`/healthz`) | Is the process stuck and in need of a restart? | restart the container | only the process itself, never dependencies |
+| Readiness (`/readyz`) | Can this instance take traffic right now? | remove from the load balancer, do not restart | warm-up done, critical dependencies reachable |
+| Startup | Has a slow-starting app finished booting? | hold off the other probes | initialization |
+
+Gotcha: if liveness checks the database, a database outage restarts every pod at once and turns a partial failure into a total one. Keep health checks cheap and fast, and separate from deep dependency checks.
+
+##### Part 3 — Instrumentation, visualization and alerting
+
+**Instrumentation** means emitting metrics, logs and traces (Vol 1 Ch 58, Vol 2 Ch 16; using them in an incident: Vol 2 Ch 18) — not repeated here.
+
+| Method | For | Signals |
+|--------|-----|---------|
+| RED | request-driven services | **R**ate, **E**rrors, **D**uration |
+| USE | resources (CPU, disk, pools, queues) | **U**tilization, **S**aturation, **E**rrors |
+| Four golden signals (Google SRE) | any user-facing system | latency, traffic, errors, saturation |
+
+Rules: counters for events, gauges for current values, histograms for latency (percentiles can be computed from buckets and aggregated across instances); label only by low-cardinality dimensions (route template, status code), never user ID or raw URL — every distinct label combination is a new time series.
+
+**Visualization.** A dashboard answers "is it healthy?" in five seconds: SLIs on top (success rate, p99), then RED per service, then USE per resource, with deploy markers; link panels to runbooks and traces.
+
+**Alerting** — alert on symptoms, investigate causes.
+
+| Practice | Why |
+|----------|-----|
+| Symptom alerts page, cause alerts only inform | "error rate above SLO" matters to users; "CPU 85%" may not |
+| Every page is actionable and urgent | otherwise it is noise |
+| SLO-based, multi-window burn-rate alerts | catch fast burns quickly and slow burns before the budget is gone |
+| Route by severity and ownership | page for urgent, ticket for slow, dashboard for informational |
+
+**Alert fatigue** — too many low-value alerts train people to ignore pages, so a real one is missed. Delete or demote alerts nobody acts on, group and deduplicate (Alertmanager), add `for:` durations, and review pages in every post-incident review.
+
+**Burn rate** = error rate ÷ (1 − SLO); 1 uses the error budget exactly over the SLO window. For a 30-day window the Google SRE Workbook suggests paging at 14.4× over 1 hour (2% of budget) and 6× over 6 hours (5%), and a ticket at 1× over 3 days (10%), each paired with a window about 1/12 as long so the alert clears quickly.
+
+```yaml
+# 99.9% SLO: page on fast burn (14.4 x budget) over 1h AND 5m
+- alert: HighErrorBudgetBurn
+  expr: |
+    ( sum(rate(http_requests_total{code=~"5.."}[1h])) / sum(rate(http_requests_total[1h])) ) > (14.4 * 0.001)
+    and
+    ( sum(rate(http_requests_total{code=~"5.."}[5m])) / sum(rate(http_requests_total[5m])) ) > (14.4 * 0.001)
+  labels: { severity: page }
+```
+
+*(From AI Library chapter 8.)*
+
+### Performance Anti-Patterns (and How to Fix Them)
+
+#### Cache Stampede / Thundering Herd
+
+A popular key expires. **1,000 concurrent requests** all miss the cache simultaneously and all hit the database. The DB falls over.
+
+**Fixes (in order of complexity):**
+1. **Randomized TTL** — instead of `TTL = 60s`, use `TTL = 60s ± 5s` so keys don't all expire at the same moment.
+2. **Lock on regeneration** — first request that misses takes a lock, regenerates the value, others wait. Use Redis SETNX or distributed locks.
+3. **Probabilistic early expiration** — regenerate slightly before expiry, in the background. Avoids the cliff entirely.
+
+#### N+1 Query Problem
+
+You fetch 100 users, then loop and run `SELECT * FROM orders WHERE user_id = ?` for each. That's **1 + 100 = 101 queries** instead of 1.
+
+```python
+# BAD
+users = db.query("SELECT * FROM users LIMIT 100")
+for user in users:
+    user.orders = db.query("SELECT * FROM orders WHERE user_id = ?", user.id)
+
+# GOOD — single JOIN
+results = db.query("""
+    SELECT u.*, o.*
+    FROM users u LEFT JOIN orders o ON u.id = o.user_id
+    LIMIT 100
+""")
+```
+
+> **Most ORMs make this easy to hit accidentally.** Use eager loading (`.includes` in Rails, `selectinload` in SQLAlchemy, `Include` in EF).
+
+#### Database Connection Pool Sized Wrong
+
+Common mistake: setting pool size to a huge number like 500, assuming "more is better."
+
+**Reality:** PostgreSQL recommends `connections ≈ ((core_count × 2) + effective_spindle_count)`. For an 8-core SSD-backed DB that's about **20 connections.** Past that, context-switching overhead and lock contention slow things down.
+
+**Use a pooler** (PgBouncer, ProxySQL) if you have many app servers. App-level pool stays small; pooler multiplexes.
+
+#### Blocking I/O on Hot Path
+
+A 5 ms log-to-disk call doesn't sound bad — until you do it on every request and your p99 doubles.
+
+**Fix:** offload I/O to a background queue or async logger. The hot path should *never* block on disk/network for non-essential work.
+
+#### Synchronous Calls in a Chain
+
+Service A → Service B → Service C, all synchronous. Total latency = sum of all three; failure of any one fails the whole request.
+
+**Fix:** parallelize where possible (call B and C concurrently); make non-essential calls async; use circuit breakers.
+
+*(From AI Library chapter 8.)*
+
+The diagram, worked example, exercises, mini-project, design prompt, open-source reading, interview questions and checklist below are this chapter's practice layer.
 
 ---
 

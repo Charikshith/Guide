@@ -10,12 +10,94 @@ Cloud building blocks (compute, storage, networking, managed services), serverle
 
 **In one sentence:** cloud architecture is choosing and connecting rented building blocks — compute, storage, networking, and managed services — so the system meets its reliability, performance, security, and cost goals with the least undifferentiated work for your team.
 
-**Read the full explanation in the AI Library** (it is explained there once, so this chapter does not repeat it):
+### Cloud Architecture Choices
 
-* [Chapter 14 — Cloud Architecture Choices](https://charikshith.github.io/AI_Library/notes/system-design/chapters/14%20-%20Cloud%20Architecture%20%26%20Cost.html#142-cloud-architecture-choices)
-* [Chapter 6 — Cloud Building Blocks: An AWS Service Map](https://charikshith.github.io/AI_Library/notes/system-design/chapters/6%20-%20Scalability%20in%20System%20Design.html#69-cloud-building-blocks-an-aws-service-map)
+**Mental model — building with LEGO Technic vs carving wood.** On-premises you carve every part yourself: servers, racks, databases, backups. In the cloud you snap together ready-made parts (a managed database, a queue, a load balancer) that someone else maintains. The skill moves from making parts to choosing the right parts, connecting them safely, and not buying far more bricks than you need.
 
-This chapter is the **practice layer**: the diagram, worked example, exercises, mini-project, design prompt, open-source reading, interview questions and checklist below.
+**The building blocks (AWS / GCP / Azure names)**
+
+| Category | Options | Use |
+|----------|---------|-----|
+| **Compute** | VMs (EC2 / Compute Engine / VMs); containers (EKS/ECS, GKE, Cloud Run, AKS, Container Apps); functions (Lambda, Cloud Functions, Azure Functions) | run code |
+| **Storage** | object (S3 / GCS / Blob); block (EBS / PD / Managed Disks); file (EFS / Filestore / Files) | files, volumes, shared file systems |
+| **Databases** | relational (RDS/Aurora, Cloud SQL/AlloyDB, Azure SQL); NoSQL (DynamoDB, Firestore/Bigtable, Cosmos DB); caches (ElastiCache, Memorystore); warehouses (Redshift, BigQuery, Synapse) | data |
+| **Networking** | VPC/VNet, subnets, NAT, load balancers, DNS, CDN, private endpoints, transit gateways | connectivity and isolation |
+| **Integration** | queues (SQS, Pub/Sub, Service Bus), streams (Kinesis, managed Kafka), workflows (Step Functions, Workflows), API gateways, event buses (EventBridge) | decoupling |
+| **Identity & security** | IAM, KMS, secrets managers, WAF | Ch 18 |
+| **Observability** | CloudWatch, Cloud Monitoring/Logging, Azure Monitor, managed Prometheus/Grafana | operations |
+
+**Serverless vs containers vs VMs**
+
+| | Functions (Lambda) | Serverless containers (Cloud Run, Fargate) | Kubernetes / VMs |
+|-|--------------------|-------------------------------------------|------------------|
+| Unit | a function per event | a container, scaled per request | pods/processes you manage |
+| Scaling | per request, to zero, very fast | per request/concurrency, to zero (Cloud Run) | autoscalers you configure; rarely to zero |
+| Max run time | ~15 min (Lambda) | long (up to 60 min per request on Cloud Run; unlimited on Fargate tasks) | unlimited |
+| Cold starts | yes (100 ms–seconds) | yes, smaller with min instances | none |
+| Ops burden | lowest | low | highest |
+| Cost at low/bursty traffic | **lowest** (pay per ms) | low | idle capacity costs money |
+| Cost at high steady traffic | can be **highest** | moderate | **lowest** per unit (with commitments) |
+| Portability / control | lowest | high (it's a container) | highest |
+| Fits | event glue, webhooks, cron, spiky APIs | most web APIs and workers | large platforms, special hardware/networking, steady heavy load |
+
+**Break-even sketch:** Lambda at 512 MB, 100 ms per request ≈ $0.00000083 compute + $0.0000002 request ≈ **$1.03 per million requests**. A 2-vCPU container at ~$50/month handling 200 req/s sustained ≈ 518M requests/month ≈ **$0.10 per million**. Serverless wins at low or spiky volume; containers win at high steady volume. Always model your own numbers.
+
+**Managed services — when sensible:** use managed databases, queues, caches, and object storage unless you have a strong reason not to (special performance, cost at huge scale, portability requirements). Running your own Postgres HA with backups, patching, and failover is a full-time job.
+
+**Lock-in, sensibly** — lock-in isn't binary; it's a cost you weigh. Low-regret choices: standard interfaces (Postgres, Kafka API, S3 API, OCI containers, Kubernetes, OpenTelemetry, Terraform). Accept deep lock-in where the service gives a big advantage (DynamoDB, BigQuery), and keep your domain logic behind your own interfaces (Vol 3 Ch 9) so a later migration touches adapters, not everything.
+
+**Well-architected pillars** (shared by the major clouds): operational excellence, security, reliability, performance efficiency, cost optimization, sustainability.
+
+*(From AI Library chapter 14.)*
+
+### Cloud Building Blocks: An AWS Service Map
+
+> **Why this is here:** case studies and interviews name cloud services constantly. This map groups the common Amazon Web Services by the job they do, so each name has a place in your head. Other clouds have equivalents (Google Cloud, Azure); the **jobs** are the same.
+
+| Job | Services | Plain meaning |
+|-----|----------|---------------|
+| **DNS and edge** | **Route 53**, **CloudFront** | DNS with health checks and routing; a CDN that caches content near users |
+| **Edge security** | **WAF**, **Shield** | filter malicious requests; absorb DDoS floods |
+| **API front door and sign-in** | **API Gateway**, **Cognito** | one entry point with throttling and auth; managed user sign-up, login and tokens (OpenID Connect) |
+| **Load balancing** | **Elastic Load Balancing** (ALB for HTTP, NLB for raw TCP/UDP) | spread traffic across servers |
+| **Compute** | **EC2**, **ECS / EKS**, **Fargate**, **Lambda** | virtual servers; container orchestration (Docker / Kubernetes); containers without managing servers; functions that run on demand |
+| **Queues and events** | **SQS**, **SNS**, **EventBridge**, **Kinesis**, **Step Functions** | message queue; publish/subscribe fan-out; event routing; streaming log; workflow orchestration |
+| **Relational databases** | **RDS**, **Aurora** | managed MySQL/PostgreSQL and others; a cloud-built MySQL/PostgreSQL-compatible engine with faster failover and replicas |
+| **NoSQL and search** | **DynamoDB**, **OpenSearch** | key-value/document store at massive scale; search and log analytics |
+| **Caching** | **ElastiCache**, **MemoryDB** | managed Redis/Memcached cache; a durable Redis-compatible in-memory database |
+| **Storage** | **S3**, **EBS**, **EFS** | object storage; block storage for one server; shared network file system |
+| **Config and secrets** | **AppConfig**, **Secrets Manager**, **Parameter Store**, **KMS** | feature flags and runtime config; store passwords and keys; encryption keys |
+| **Identity and access** | **IAM** | who and what may call which AWS API |
+| **Observability** | **CloudWatch**, **X-Ray** | metrics, logs and alarms; distributed tracing |
+
+#### A Typical Web Request Path
+
+```mermaid
+flowchart TB
+    U([User]) --> R53["Route 53 (DNS)"] --> CF["CloudFront CDN"] --> WAF["WAF"] --> GW["API Gateway or ALB"]
+    GW --> COG["Cognito checks the token"]
+    GW --> SVC["Service on ECS, EKS or Lambda"]
+    SVC --> CACHE[("ElastiCache")]
+    SVC --> DB[("Aurora / RDS")]
+    SVC --> CW["CloudWatch logs and metrics"]
+    SVC --> Q[["SQS queue"]] --> W["Worker service"] --> S3[("S3")]
+```
+
+#### Choosing Between Look-Alikes
+
+| Question | Guidance |
+|----------|----------|
+| EC2 vs containers vs Lambda | EC2 for full control; containers for steady services that scale; Lambda for spiky or event-driven work with short runtimes |
+| SQS vs SNS vs EventBridge vs Kinesis | SQS: one consumer group pulls work; SNS: push to many subscribers; EventBridge: route events by rules between services and SaaS; Kinesis: ordered, replayable stream |
+| ElastiCache vs MemoryDB | ElastiCache when losing the cache is acceptable (it is a copy of data); MemoryDB when it must be the durable primary store |
+| RDS vs Aurora vs DynamoDB | RDS for standard relational needs; Aurora for higher scale and faster failover; DynamoDB for key-based access at huge scale with no joins |
+| Secrets Manager vs Parameter Store vs AppConfig | secrets with rotation; simple config values; feature flags and gradual config rollout |
+
+> **Interview habit:** name the *job* first ("a managed queue"), then the product ("SQS"), and say what you would trade away by picking it.
+
+*(From AI Library chapter 6.)*
+
+The diagram, worked example, exercises, mini-project, design prompt, open-source reading, interview questions and checklist below are this chapter's practice layer.
 
 ---
 

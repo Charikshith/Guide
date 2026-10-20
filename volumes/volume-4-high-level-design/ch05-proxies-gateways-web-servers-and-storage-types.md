@@ -10,20 +10,285 @@ Forward vs reverse proxy, API gateway patterns, web vs app servers, CDN push vs 
 
 **In one sentence:** the boxes between a client and your data — proxies, gateways, web servers, app servers — each have one job, and the boxes at the bottom — block, object, file storage, relational or graph databases — each fit one access pattern, so good design is matching each job and each access pattern to the right box.
 
-**Read the full explanation in the AI Library** (it is explained there once, so this chapter does not repeat it):
+### Forward Proxy vs. Reverse Proxy: Key Differences
 
-* [Chapter 2 — Forward Proxy vs. Reverse Proxy: Key Differences](https://charikshith.github.io/AI_Library/notes/system-design/chapters/2%20-%20Networking%20%26%20Communication.html#275-forward-proxy-vs-reverse-proxy-key-differences)
-* [Chapter 2 — API Gateways
-](https://charikshith.github.io/AI_Library/notes/system-design/chapters/2%20-%20Networking%20%26%20Communication.html#29-api-gateways)
-* [Chapter 2 — API Gateway Patterns](https://charikshith.github.io/AI_Library/notes/system-design/chapters/2%20-%20Networking%20%26%20Communication.html#295-api-gateway-patterns)
-* [Chapter 2 — Web Servers vs. Application Servers](https://charikshith.github.io/AI_Library/notes/system-design/chapters/2%20-%20Networking%20%26%20Communication.html#211-web-servers-vs-application-servers)
-* [Chapter 2 — Caching Strategies in CDNs](https://charikshith.github.io/AI_Library/notes/system-design/chapters/2%20-%20Networking%20%26%20Communication.html#2126-caching-strategies-in-cdns)
-* [Chapter 7 — Block vs File vs Object Storage — They're NOT Interchangeable](https://charikshith.github.io/AI_Library/notes/system-design/chapters/7%20-%20Storage%20-%20Database%20and%20Storage.html#715-block-vs-file-vs-object-storage--theyre-not-interchangeable)
-* [Chapter 7 — Database Federation](https://charikshith.github.io/AI_Library/notes/system-design/chapters/7%20-%20Storage%20-%20Database%20and%20Storage.html#717-database-federation)
-* [Chapter 7 — Graph Databases: Why Traversal Beats Joins](https://charikshith.github.io/AI_Library/notes/system-design/chapters/7%20-%20Storage%20-%20Database%20and%20Storage.html#7161-graph-databases-why-traversal-beats-joins)
-* [Chapter 8 — Normalization vs. Denormalization](https://charikshith.github.io/AI_Library/notes/system-design/chapters/8%20-%20Performance%20-%20Concepts%2C%20Tools%20%26%20Techniques.html#895-normalization-vs-denormalization)
+| Aspect           | Forward Proxy                      | Reverse Proxy                              |
+|------------------|------------------------------------|--------------------------------------------|
+| Placement        | In front of clients                | In front of backend servers                |
+| Protects         | Clients                            | Servers                                    |
+| Use Case         | Anonymity, filtering, caching      | Load balancing, security, caching          |
+| Common Users     | Individuals, organizations         | Web apps, APIs, cloud services             |
+| Examples         | Squid, VPN, Tor                    | NGINX, HAProxy, Cloudflare, AWS ELB        |
+| Visibility       | Hides client from server           | Hides server from client                   |
 
-This chapter is the **practice layer**: the diagram, worked example, exercises, mini-project, design prompt, open-source reading, interview questions and checklist below.
+*(From AI Library chapter 2.)*
+
+### API Gateways
+
+An **API Gateway** is a server that acts as a centralized entry point for all client requests to your backend services. It is responsible for request routing, composition, protocol translation, authentication, rate limiting, caching, logging, and more.
+
+#### Key Functions
+
+- **Authentication & Authorization** (OAuth, JWT, API keys: ways to prove who is calling and what they may do; explained in Chapters 5 and 10)
+- **Security** — DDoS protection, SSL termination, bot protection
+- **Routing** — forwards requests to the correct backend service
+- **Rate Limiting & Throttling**
+- **Caching** — stores common responses to reduce backend load and response time
+- **Request/Response Transformation** — modifies formats
+- **Logging & Monitoring** — centralized observability
+- **API Composition** — aggregates calls to multiple backend services
+
+#### API Gateway Diagram
+
+```mermaid
+flowchart LR
+    Client-->|API Request|APIGateway
+    APIGateway-->|Route to Service|Service1
+    APIGateway-->|Route to Service|Service2
+    Service1-->|Response|APIGateway
+    APIGateway-->|Response|Client
+```
+
+A more detailed view showing aggregation:
+
+```mermaid
+flowchart LR
+  subgraph ClientSide [Client Side]
+    A[Web/Mobile Client]
+  end
+  A -->|API Request| GW[API Gateway]
+  GW -->|Transformed, Authenticated Request| S1[Service 1]
+  GW -->|...| S2[Service 2]
+  GW -->|...| S3[Service 3]
+  S1 -->|Response| GW
+  S2 -->|...| GW
+  S3 -->|...| GW
+  GW -->|Aggregated/Transformed Response| A
+```
+
+#### Sample API Gateway Implementation (Node.js + Express + http-proxy-middleware)
+
+```js
+const express = require('express');
+const { createProxyMiddleware } = require('http-proxy-middleware');
+const rateLimit = require('express-rate-limit');
+const app = express();
+
+// Rate Limiting
+const limiter = rateLimit({
+  windowMs: 1 * 60 * 1000, // 1 minute window
+  max: 60                  // limit each IP to 60 requests per windowMs
+});
+app.use(limiter);
+
+// Simple auth middleware
+app.use((req, res, next) => {
+  if (req.headers['x-api-key'] !== 'your-api-key') {
+    return res.status(401).send('Unauthorized');
+  }
+  next();
+});
+
+// Proxy setup
+app.use('/service1', createProxyMiddleware({ target: 'http://localhost:5001', changeOrigin: true }));
+app.use('/service2', createProxyMiddleware({ target: 'http://localhost:5002', changeOrigin: true }));
+
+app.listen(3000, () => console.log('API Gateway running on port 3000'));
+```
+
+#### API Gateway vs. Reverse Proxy — When to Use Which
+
+This is *the* most common confusion. Both sit in front of your services. Both can route, terminate TLS, and load-balance. So what's different?
+
+| Concern              | Reverse Proxy (NGINX, HAProxy)  | API Gateway (Kong, AWS API GW, Apigee) |
+|----------------------|----------------------------------|-----------------------------------------|
+| Routing              | ✓ by URL/host                   | ✓ by URL/host + API contract            |
+| SSL termination      | ✓                                | ✓                                       |
+| Load balancing       | ✓ first-class                    | sometimes (often delegates to LB)       |
+| Authentication       | basic (mTLS, basic auth)         | first-class (OAuth, JWT, API keys)      |
+| Rate limiting        | basic (global, per-IP)           | rich (per-API key, per-route, per-tier) |
+| API composition      | ✗                                | ✓                                       |
+| Request transform    | basic (headers)                  | ✓ (body, schema)                        |
+| Schema validation    | ✗                                | ✓ (OpenAPI / GraphQL)                   |
+| Developer portal     | ✗                                | ✓                                       |
+| Pricing model        | free, open-source                | often per-API-call (managed services)   |
+
+**Rule of thumb:**
+- **Reverse proxy** = traffic infrastructure. You'd run it for any web service.
+- **API Gateway** = API product surface. Use it when you're exposing APIs to external developers, multiple internal teams, or partners — anywhere you need quotas, plans, and a polished contract.
+- **In practice you often use both:** a reverse proxy (e.g., NGINX) close to your services for routing/TLS, plus a managed API gateway at the edge for auth, quotas, and developer experience.
+
+#### API Gateway Patterns
+
+Four named patterns cover most of what a gateway is used for (names from the Azure Architecture Center and Sam Newman).
+
+| Pattern | Idea | Trade-off |
+|---------|------|-----------|
+| Gateway Routing | One endpoint; route by path, host, header or version to different backends | Config grows; one bad route breaks many services |
+| Gateway Offloading | Move shared cross-cutting work (TLS, auth, rate limits, compression, logging) out of every service into the gateway | Services must trust the gateway; keep business logic out of it |
+| Gateway Aggregation | The client makes one call; the gateway fans out to N services and merges the results | Fewer client round trips, but latency of the slowest call and partial-failure handling |
+| Backends for Frontend (BFF) | One gateway per client type (web, mobile, partner), each shaped for that client | More services to run; duplicated logic unless teams share libraries |
+
+**Trade-offs of any gateway:** it is a single point of failure unless run as a redundant fleet behind a load balancer; it adds a hop of latency; and it becomes a coupling hotspot if business logic creeps in. Keep it thin, declarative and owned by a platform team. A gateway handles **north-south** traffic (clients to services); a service mesh handles **east-west** traffic (service to service).
+
+#### API Gateways — Tips
+
+- **Use JWT/OAuth2** for robust authentication and authorization.
+- **Implement rate limiting** at the gateway to prevent abuse.
+- **Aggregate requests** in the gateway to reduce client-server roundtrips (API composition).
+- **Monitor logs** for suspicious activity and performance bottlenecks.
+- **Cache GET responses** for expensive, non-sensitive data.
+
+#### API Gateways — Interview Questions
+
+- What is an API gateway and why is it important?
+- How does an API gateway differ from a load balancer?
+- How would you implement rate limiting and authentication in an API gateway?
+- Describe a scenario where API aggregation/composition is beneficial.
+
+*(From AI Library chapter 2.)*
+
+### Web Servers vs. Application Servers
+
+| | Web server | Application server |
+|---|-----------|--------------------|
+| Serves | Static files (HTML, CSS, JS, images) and proxies requests | Dynamic responses: runs your business code |
+| Strength | Very fast at files, many idle connections, TLS | Runs the language runtime, framework, DB access |
+| Examples | nginx, Apache httpd | Gunicorn / Uvicorn (Python), Tomcat (Java), Node.js, Puma, Kestrel |
+
+The line is blurry (Node and Tomcat also serve files; nginx can call FastCGI), but the classic split exists because the two scale differently. Putting nginx in front of Gunicorn is common because nginx absorbs slow clients while Gunicorn workers stay free for real work.
+
+**Concurrency models**
+
+| Model | How | Examples | Trade-off |
+|-------|-----|----------|-----------|
+| Process per request | One OS process each | Apache prefork, Gunicorn sync workers | Isolation, but heavy memory and few connections |
+| Thread per request | A thread pool | Tomcat, Apache worker MPM | Cheaper than processes; blocking I/O ties up a thread |
+| Event loop | One thread multiplexes many connections with non-blocking I/O | nginx, Node.js | Huge connection counts; one slow CPU task blocks the loop |
+
+**Request flow:** client → DNS → CDN (static hits end here) → load balancer / reverse proxy (TLS, routing) → web server (static files, buffers slow clients) → app server (your code) → cache / database.
+
+*(From AI Library chapter 2.)*
+
+### Caching Strategies in CDNs
+
+CDNs cache frequently accessed content at edge servers. Key concepts:
+
+**Cache Expiration (TTL):** determines how long an object stays cached before being refreshed.
+
+```http
+Cache-Control: public, max-age=86400
+```
+
+**Cache Invalidation** techniques to ensure freshness:
+
+- **Manual Purge:** Explicitly remove/refresh objects.
+- **Stale-While-Revalidate:** Serve stale content while fetching the latest version asynchronously.
+- **Cache-Control Headers:** Fine-tune caching via HTTP headers.
+
+**Example: Setting Cache-Control headers in Express.js**
+
+```js
+app.get('/static/*', (req, res) => {
+  res.set('Cache-Control', 'public, max-age=86400'); // Cache for 1 day
+  res.sendFile(/* ... */);
+});
+```
+
+*(From AI Library chapter 2.)*
+
+### Block vs File vs Object Storage — They're NOT Interchangeable
+
+Probably the most common confusion in storage design.
+
+| Type     | Access pattern                  | Examples                          | Use case                            |
+|----------|----------------------------------|-----------------------------------|--------------------------------------|
+| **Block** | Raw blocks, low-level, fast    | AWS EBS, Azure Disk, on-prem SAN  | Database disks, VM filesystems       |
+| **File**  | Hierarchical filesystem, POSIX | AWS EFS, Azure Files, NFS         | Shared filesystem across servers     |
+| **Object**| HTTP API, no hierarchy         | S3, GCS, Azure Blob               | Media, backups, data lakes, static sites |
+
+> **Rule:** Use **block** for things that need a filesystem (DBs, VMs). Use **file** for legacy apps that need shared file access. Use **object** for everything else — it's cheaper, infinitely scalable, and HTTP-native.
+
+*(From AI Library chapter 7.)*
+
+### Database Federation
+
+**Federation (functional partitioning)** splits databases **by function**: a users DB, a products DB, an orders DB, each on its own server. **Sharding** instead splits one table's rows across servers by a key.
+
+| | Federation | Sharding |
+|---|-----------|----------|
+| Split by | Feature / bounded context | Row key (user id, hash) |
+| Benefit | Less load per server, smaller working sets, per-domain ownership | Scales one huge dataset horizontally |
+| Cost | Cross-DB joins become application code; cross-DB transactions need sagas or two-phase commit | Resharding, hot shards, cross-shard queries |
+| When | Clear domain boundaries; a first step toward microservices | One domain's data outgrows one machine |
+
+Federation does not remove the single-writer limit inside one function: a busy orders DB may still need replicas or sharding later.
+
+*(From AI Library chapter 7.)*
+
+### Graph Databases: Why Traversal Beats Joins
+
+A **graph database** stores **nodes** (people, companies) and **edges** (relationships such as *knows* or *works at*), both of which can carry properties. Examples: Neo4j, Amazon Neptune, Dgraph, and Meta's in-house graph store (TAO) behind its social graph.
+
+**The problem it solves.** Question: *which of my connections, or their connections, work at Stripe?*
+
+- In **SQL** you keep a `friendships` table and an `employment` table. Each extra hop needs another join: one for friends, one for friends of friends, one more for the employer. Cost grows quickly with depth.
+- In a **graph database** the relationships are stored directly with each node, so the query simply **walks** the connections. Work depends on the neighbourhood you touch, not on the size of the whole table.
+
+```cypher
+// Neo4j Cypher: people within 3 hops of me who work at Stripe
+MATCH (me:Person {name: "You"})-[:KNOWS*1..3]-(p:Person)-[:WORKS_AT]->(:Company {name: "Stripe"})
+RETURN DISTINCT p.name
+```
+
+**Trade-offs:** excellent for highly connected data (social networks, fraud rings, recommendations, knowledge graphs); weaker at bulk scans and aggregations over everything, and harder to split across machines (partition) than key-based stores.
+
+*(From AI Library chapter 7.)*
+
+### Normalization vs. Denormalization
+
+(See `image-21.png` for diagram.)
+
+#### Normalization
+
+- **Goal:** Reduce data redundancy by organizing data into tables.
+- **Benefits:** Minimizes storage costs and eliminates anomalies.
+- **Drawback:** Can lead to complex joins and slower read performance.
+- Splits data into related tables to reduce redundancy. Ideal for transactional (OLTP) systems.
+
+#### Denormalization
+
+- **Goal:** Introduce redundancy to reduce join operations and speed up reads.
+- **Benefits:** Faster read performance.
+- **Drawback:** Increased storage and potential data anomalies.
+- Best for reporting/analytics (OLAP).
+
+#### When to Use Each
+
+- **Normalization:** For transactional systems (OLTP).
+- **Denormalization:** For reporting systems or read-heavy workloads.
+
+**Example:**
+
+- *Normalized:* Separate `users` and `orders` tables, joined by `user_id`.
+- *Denormalized:* Store user info directly in `orders` for faster reporting.
+
+```sql
+-- Normalized
+SELECT u.name, o.amount
+FROM users u
+JOIN orders o ON u.id = o.user_id;
+
+-- Denormalized: No join needed
+SELECT customer_name, amount
+FROM orders_denormalized;
+```
+
+> **Tip:** Normalize for consistency; denormalize for read performance (especially in reporting / data warehouse scenarios).
+
+*(From AI Library chapter 8.)*
+
+The diagram, worked example, exercises, mini-project, design prompt, open-source reading, interview questions and checklist below are this chapter's practice layer.
 
 ---
 

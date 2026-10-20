@@ -725,4 +725,4 @@ Designing a scalable, reliable, and high-performance URL shortener requires care
 
 ---
 
-**Next Up:** *(Chapters 17-20 reserved.)* [Chapter 21 — Design an Auction Platform (eBay) →](./21%20-%20Design%20an%20Auction%20Platform%20(aka%20eBay).md)
+**Next Up:** [Chapter 17 — Design a Chat & Messaging App (WhatsApp) →](./17%20-%20Design%20a%20Chat%20%26%20Messaging%20App%20(aka%20WhatsApp).md).md)

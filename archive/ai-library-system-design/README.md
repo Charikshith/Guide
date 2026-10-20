@@ -3,8 +3,8 @@
 A verbatim copy of the AI Library's **System Design** course, kept here so that nothing is lost while the Guide and the library are restructured, and so the content can be reconstructed later.
 
 - **Source:** the AI Library repository, `notes/system-design/markdown/` and `notes/system-design/_subject.json`
-- **Library commit:** `fc83109` (taken 2026-10-19)
-- **Contents:** 20 numbered chapter files plus `Resources.md` (chapter numbers follow the library's own numbering, with 11–14, 17–20 and 22 reserved), and the subject metadata
+- **Library commit:** `311adcb` (refreshed 2026-10-20)
+- **Contents:** all 29 numbered chapter files plus `Resources.md` (including chapters 11-14, 17-20 and 22), and the subject metadata
 
 ## Notes
 

@@ -461,6 +461,88 @@ graph TD
 
 ---
 
+### 10.8.12 Authentication and Authorization at Scale
+
+In a distributed system, authenticate once at the edge, turn the result into a signed identity every hop can verify cheaply, and let the service that owns the data make the authorization decision. The identity service must not sit on the critical path of every request.
+
+**Where to check**
+
+| Pattern | What it does | Weakness |
+|---------|--------------|----------|
+| Edge only | The gateway checks the token; inner services trust anything that reaches them | One bypass or compromised pod exposes everything |
+| Per-service only | Every service verifies the token itself | Duplicated logic, uneven quality |
+| Edge + service (recommended) | Gateway: authenticate, coarse checks (valid token, scopes, rate limit). Service: verify again and do fine-grained, object-level authorization | A little repeated work, cheap with local verification |
+| Mesh-enforced | The sidecar verifies JWTs and mTLS for every service | Needs a mesh; the app still owns object-level rules |
+
+The gateway cannot decide "may Priya read invoice 42?" because it does not own the data. That check always lives in the service.
+
+**Token architecture**
+
+| Pattern | How it works | Notes |
+|---------|--------------|-------|
+| JWT everywhere | The IdP issues a short-lived JWT; every hop verifies it locally with cached public keys | Fast, but claims are readable by clients and revocation is hard |
+| Opaque outside, JWT inside ("phantom token") | Clients hold a random opaque token; the gateway swaps it (cached introspection) for a short-lived internal JWT | Claims stay hidden, revocation is instant at the gateway, one cached lookup at the edge |
+| Token exchange for downstream calls | When service A calls B for a user, A swaps the user's token for one scoped to B (OAuth 2.0 Token Exchange, RFC 8693) | B sees who (the user) and via whom (A); limits the confused-deputy problem, where a powerful service is tricked into acting for the wrong user |
+
+Propagate identity safely: never trust a header such as `X-User-Id` just because it arrived. Accept it only from the gateway over mTLS, and have the gateway strip any client-supplied copy. Prefer a signed token, so identity survives queues and async hops. Keep claims small (IDs and scopes, not whole permission lists).
+
+**Service-to-service identity**
+
+| Mechanism | How | Notes |
+|-----------|-----|-------|
+| mTLS with workload identity | Each workload gets a short-lived certificate naming it (a SPIFFE ID such as `spiffe://prod/ns/prod/sa/orders`) | Automated by a mesh or SPIRE; no shared secrets |
+| OAuth2 Client Credentials | The service gets a token for its own identity | Good across trust zones and for third parties |
+| Cloud workload identity | The platform issues credentials to a pod or VM | No long-lived keys in config |
+| Static API keys | A shared secret | Last resort: rotate, scope, keep out of code |
+
+Identity is half the job: add allow rules ("only `orders` may call `POST /charges` on `payments`"), default deny between services, and open each path on purpose.
+
+**Keys and rotation**
+
+* The IdP signs with a private key held in a KMS or HSM; everyone else gets only public keys from a **JWKS** endpoint.
+* Each token header carries a `kid` (key ID). Rotate with overlap: publish the new key, start signing with it, and keep the old public key until every old token has expired.
+* Verifiers cache the JWKS and refetch on an unknown `kid`, with a limit so a flood of bad `kid`s cannot hammer the IdP. A verifier that cannot reach the IdP keeps using its cache.
+* Allow about 30-60 seconds of clock skew on `exp` and `nbf`.
+
+**Revocation: choose how stale it may be**
+
+| Approach | Delay | Cost |
+|----------|-------|------|
+| Short TTL only (5-15 min) | Up to the TTL | Nothing extra; refresh tokens do the work |
+| Deny-list of token IDs (`jti`) in a shared cache | Seconds | One cache lookup per request; entries only live until `exp` |
+| Per-user "tokens valid since" version | Seconds | One lookup per request; one write revokes all of a user's tokens |
+| Introspection / opaque tokens | Immediate | A network call per request, or a short cache |
+| Push revocation over pub/sub | Seconds | Needs a messaging system and a fallback if an event is missed |
+
+A bank revokes in seconds; a news site can live with 15 minutes. Sensitive actions (change password, move money) should demand a fresh login whatever the token says.
+
+**The login path at scale**
+
+* Sessions live in a Redis cluster keyed by a random session ID with TTLs. 10M active sessions at about 0.5 KB each is roughly 5 GB (measure yours).
+* Password hashing is CPU-heavy on purpose. At an illustrative 50 ms per hash one core does about 20 logins per second, so 2,000 logins per second needs about 100 cores. Put hashing in a separate auth service that scales on its own, so a login spike cannot starve the product.
+* **Credential stuffing** (replaying leaked passwords) is the main threat: rate-limit by IP and by account, check passwords against breach lists, add bot detection and MFA, and return the same error for "no such user" and "wrong password".
+* Offer passkeys, and require MFA for admin and sensitive actions.
+
+**Authorization at scale**
+
+| Placement | How | Good for | Watch for |
+|-----------|-----|----------|-----------|
+| Library in each service | The same policy package, in-process | Low latency, simple | Version drift |
+| Sidecar decision point (OPA, Cedar agent) | The service asks `localhost` | One policy language, no off-box hop | Policy distribution and testing |
+| Central decision service | All services call one service | One place to change rules; relationship graphs | An extra hop and a critical dependency: cache, set tight timeouts |
+
+* **Relationship-based access (Zanzibar style, e.g. SpiceDB)** answers "can X view doc Y?" by walking a graph (user, group, folder, doc). The hard part is consistency: a just-revoked permission must not be served from a stale cache (the "new enemy problem"), so these systems pass a consistency token with the write.
+* **List endpoints:** do not fetch 10,000 rows and filter in code. Push the permission filter into the query (`WHERE tenant_id = ?`, row-level security) or ask the decision point for the allowed IDs.
+* Budget a few milliseconds per decision, cache positive decisions briefly, fail closed for writes and sensitive reads, and log every decision (who, what, resource, allow or deny, policy version).
+
+**Multi-tenant and third-party identity**
+
+* Put `tenant_id` in the token and check it against the resource's tenant on every access; never trust a tenant taken only from the body or URL.
+* Enterprise "bring your own IdP": store per-tenant OIDC or SAML config, map users to a tenant at login (email domain or tenant URL), and use **SCIM** to create and remove users when the customer's directory changes. Model membership as (user, tenant, role). Support access should be a separate, audited, time-boxed token.
+* Public APIs: OAuth2 Authorization Code + PKCE for acting on a user's behalf, Client Credentials for a developer's backend, API keys with scopes, owner, per-key rate limits and rotation. Sign outgoing webhooks with an HMAC and a timestamp; verify signatures on incoming ones.
+
+**Availability.** Local JWT verification with a cached JWKS means requests keep flowing while the IdP is down; only new logins and refreshes fail. Run the IdP multi-zone (multi-region at large scale), give refresh tokens a retry grace period, have clients back off with jitter, fail closed on security decisions (but separate "can't decide" from "denied"), and buy or adopt a mature IdP unless identity is your business.
+
 ## 10.9 Data Protection & Secure Communication
 
 ### 10.9.1 Encryption: The Heart of Data Protection
@@ -1420,6 +1502,16 @@ flowchart TB
 
 ---
 
+### 10.19.1 Reducing the Blast Radius
+
+Assume some component will eventually be compromised, and design so the damage stays small:
+
+- Use separate cloud **accounts or projects** for each environment and each sensitive system (production, staging and security tooling are different accounts).
+- **Segment the network:** private subnets, security groups that allow only the needed ports from the needed sources, and egress denied by default.
+- Use a **cell-based architecture**: shards of users served by independent stacks, so a failure or breach touches one cell.
+- Give each service its **own identity**, with its own permissions and secrets (one service, one identity).
+- Apply **rate limits, quotas and budgets** so a stolen key cannot do unlimited damage.
+
 ## 10.20 Secrets Management — Don't Put Secrets in Code
 
 Hard-coded API keys, DB passwords, and TLS certs in source repos are how breaches happen. Use a **secrets manager.**
@@ -1561,4 +1653,4 @@ A consolidated master list from all sections.
 
 ---
 
-**Next Up:** *(Chapters 11–14 reserved.)* [Chapter 15 — The System Design Blueprint →](./15%20-%20The%20System%20Design%20Blueprint.md) — a 4-step methodology for tackling any system design problem.
+**Next Up:** [Chapter 11 — Distributed Systems Fundamentals →](./11%20-%20Distributed%20Systems%20Fundamentals.md) — a 4-step methodology for tackling any system design problem.

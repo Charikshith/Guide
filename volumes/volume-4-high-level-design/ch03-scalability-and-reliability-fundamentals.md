@@ -10,15 +10,361 @@ Vertical vs horizontal scaling, statelessness, redundancy, failure domains, avai
 
 **In one sentence:** you scale by buying a bigger machine (vertical) or more machines (horizontal); horizontal scaling needs stateless servers; and reliability comes from redundancy spread across independent failure domains, which you can reason about with simple probability.
 
-**Read the full explanation in the AI Library** (it is explained there once, so this chapter does not repeat it):
+### Types of Scalability
 
-* [Chapter 6 — Types of Scalability](https://charikshith.github.io/AI_Library/notes/system-design/chapters/6%20-%20Scalability%20in%20System%20Design.html#64-types-of-scalability)
-* [Chapter 6 — Stateless Service Design](https://charikshith.github.io/AI_Library/notes/system-design/chapters/6%20-%20Scalability%20in%20System%20Design.html#613-stateless-service-design)
-* [Chapter 9 — The 9s of Availability — What "Five Nines" Actually Means](https://charikshith.github.io/AI_Library/notes/system-design/chapters/9%20-%20Reliability%2C%20Availability%20%26%20Disaster%20Recovery.html#913-the-9s-of-availability--what-five-nines-actually-means)
-* [Chapter 9 — Availability Math and Failure Domains](https://charikshith.github.io/AI_Library/notes/system-design/chapters/9%20-%20Reliability%2C%20Availability%20%26%20Disaster%20Recovery.html#9132-availability-math-and-failure-domains)
-* [Chapter 9 — High Availability, Fault Tolerance & Failover](https://charikshith.github.io/AI_Library/notes/system-design/chapters/9%20-%20Reliability%2C%20Availability%20%26%20Disaster%20Recovery.html#96-high-availability-fault-tolerance--failover)
+There are three main ways to scale a system.
 
-This chapter is the **practice layer**: the diagram, worked example, exercises, mini-project, design prompt, open-source reading, interview questions and checklist below.
+#### Vertical Scaling ("Scaling Up")
+
+Add more resources (CPU, RAM, Disk) to a single server.
+
+```mermaid
+flowchart TD
+    A[User Requests] --> B[Load Balancer]
+    B --> C["Powerful Server (CPU↑, RAM↑)"]
+```
+
+A simpler view:
+
+```mermaid
+graph TD
+    A[User Requests] --> B[Single Server]
+    B --> C[Database]
+```
+
+**Pros:**
+
+- Simple to implement.
+- Fast upgrades.
+- No need for distributed coordination.
+
+**Cons:**
+
+- Physical hardware caps.
+- Single point of failure (SPOF).
+- Costly at scale.
+
+**Example: Upgrading an AWS EC2 instance:**
+
+```bash
+aws ec2 modify-instance-attribute --instance-id i-1234567890abcdef0 --instance-type "{\"Value\": \"t3.2xlarge\"}"
+```
+
+#### Horizontal Scaling ("Scaling Out")
+
+Add more servers/nodes, distributing traffic and workload.
+
+```mermaid
+flowchart TD
+    A[User Requests] --> B[Load Balancer]
+    B --> C1[Server 1]
+    B --> C2[Server 2]
+    B --> C3[Server 3]
+```
+
+A more detailed version showing the shared database:
+
+```mermaid
+graph TD
+    A[User Requests] --> LB[Load Balancer]
+    LB --> S1[Server 1]
+    LB --> S2[Server 2]
+    LB --> S3[Server 3]
+    S1 & S2 & S3 --> D[(Shared Database)]
+```
+
+**Pros:**
+
+- High resilience and availability.
+- Can scale indefinitely.
+- Parallelism, redundancy.
+
+**Cons:**
+
+- Requires stateless design or careful coordination.
+- Needs load balancers.
+- Complex setup (data consistency, replication).
+
+**Example: Kubernetes Horizontal Pod Autoscaler (HPA) YAML:** *(Kubernetes runs your containers across many machines; the HPA adds or removes copies of a container as load changes.)*
+
+```yaml
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: web-app-hpa
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: web-app
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+```
+
+#### Diagonal Scaling (Hybrid)
+
+Begin with vertical scaling for simplicity; transition to horizontal as needed. Common in cloud-native apps.
+
+```mermaid
+flowchart LR
+    A[Start: Small Server] --Upgrade--> B[Bigger Server]
+    B --Add More Servers--> C{Clustered Servers}
+```
+
+A two-phase view:
+
+```mermaid
+graph TD
+    subgraph Phase1 [Phase 1: Vertical]
+        A1[User Requests] --> S1v[Single Powerful Server]
+    end
+    subgraph Phase2 [Phase 2: Horizontal]
+        A2[User Requests] --> LBd[Load Balancer]
+        LBd --> S2v[Upgraded Server 1]
+        LBd --> S3v[Upgraded Server 2]
+    end
+```
+
+*Start vertical, then scale horizontally as needed.*
+
+A single-graph view of all 3 types:
+
+```mermaid
+graph TB
+    A[Start] --> B["Vertical Scaling (Upgrade existing server)"]
+    A --> C["Horizontal Scaling (Add more servers)"]
+    A --> D["Diagonal Scaling (Upgrade, then add servers)"]
+```
+
+**Real-world examples:**
+
+- **AWS Lambda:** Starts small (vertical), but can auto-scale (horizontal) based on demand.
+- **Twitter:** From monolith (vertical) to microservices (horizontal) as user base grew.
+
+#### Scaling Types — Comparison
+
+A summary of all three types side-by-side:
+
+| Scaling Type      | Approach                                  | Pros                | Cons                           |
+|-------------------|-------------------------------------------|---------------------|--------------------------------|
+| Vertical Scaling  | Upgrade single machine (CPU/RAM/Disk)     | Simple, fast        | Physical limits, SPOF*         |
+| Horizontal Scaling| Add more machines/nodes                   | Resilient, scalable | Complex architecture           |
+| Diagonal Scaling  | Start vertical, then add horizontal nodes | Flexible, cost-wise | Hybrid (must manage both)      |
+
+> *SPOF: Single Point of Failure.
+
+A version focused on pros/cons:
+
+| Type              | Description                              | Pros                        | Cons                       |
+|-------------------|------------------------------------------|-----------------------------|----------------------------|
+| **Vertical**      | Add resources (CPU/RAM) to a single node | Simple, fast upgrades       | Physical limits, SPOF      |
+| **Horizontal**    | Add more nodes/servers                   | High resilience, big scale  | Complex, needs LB/replica  |
+| **Diagonal**      | Start vertical, then go horizontal       | Flexible, cost-efficient    | Coordination complexity    |
+
+#### Trade-Offs: Cost, Complexity, and Performance
+
+|   Strategy   | Cost (Initial) | Cost (Growth) | Complexity | Performance       |
+|--------------|----------------|---------------|------------|-------------------|
+| Vertical     | Low            | High          | Low        | High (initial)    |
+| Horizontal   | Medium         | Linear        | High       | High (scalable)   |
+| Diagonal     | Balanced       | Balanced      | Medium     | Balanced          |
+
+**Summary:**
+
+- **Vertical scaling** is easy and cheap to start, but gets expensive and risky at scale.
+- **Horizontal scaling** is robust and future-proof, but requires orchestration, monitoring, and stateless patterns.
+- **Diagonal scaling** gives early simplicity and long-term scalability, favored by modern cloud-native architectures.
+
+*(From AI Library chapter 6.)*
+
+### Stateless Service Design
+
+The single most important enabler of horizontal scaling. A **stateless** service holds no per-request memory between requests; any instance can serve any request.
+
+#### Where to Put the State Instead
+
+| State                   | Where it goes               | Why                                  |
+|-------------------------|------------------------------|--------------------------------------|
+| User session            | Redis / Memcached            | Any instance can look it up by ID    |
+| File uploads in progress| Object storage with session tokens | Resumable uploads work across servers |
+| In-progress workflows   | Database or workflow engine (Temporal, Step Functions) | Survives restarts          |
+| WebSocket state         | Pub/Sub layer (Redis Streams, Kafka) | Any WebSocket server can deliver to any user |
+
+> **Rule:** if your service can't be killed and restarted at any moment without users noticing, you have hidden state. Find it.
+
+*(From AI Library chapter 6.)*
+
+### The 9s of Availability — What "Five Nines" Actually Means
+
+| Availability  | Allowed downtime per year | Per month     | Per day      |
+|---------------|---------------------------|---------------|--------------|
+| 99%           | 3.65 days                 | 7.2 hours     | 14.4 minutes |
+| 99.9%         | 8.77 hours                | 43.8 minutes  | 1.44 minutes |
+| 99.95%        | 4.38 hours                | 21.9 minutes  | 43.2 seconds |
+| 99.99%        | 52.6 minutes              | 4.38 minutes  | 8.64 seconds |
+| 99.999%       | 5.26 minutes              | 26.3 seconds  | 0.86 seconds |
+
+> **Reality check:** "Five nines" (99.999%) means **less than 6 minutes of downtime per year.** That includes deploys, patches, and unforeseen incidents. Achieving it requires multi-region active-active, automated failover, no single points of failure anywhere, and rigorous testing. It's *expensive*.
+>
+> Most products live at 99.9% (three nines) and that's usually fine.
+
+#### Compounding: System ≠ Component Availability
+
+If your service depends on 3 things, each 99.9% available:
+
+`0.999 × 0.999 × 0.999 ≈ 0.997` = 99.7% (about 26 hours of downtime/year).
+
+**Lesson:** the more dependencies, the lower your composite availability. Either make each component *more* reliable, or design to **work in degraded mode** when a dependency is down.
+
+---
+
+#### Availability Math and Failure Domains
+
+**Series and parallel.** Availability multiplies when parts depend on each other, and improves when parts back each other up.
+
+| Setup | Formula | Example with 99.9% parts |
+|-------|---------|--------------------------|
+| **Series** (A needs B needs C) | `A × B × C` | 2 in series: 99.8% |
+| **Parallel** (any one of n is enough) | `1 − (1 − A)ⁿ` | 2 in parallel: 99.9999% |
+| 5 services in series | `0.999⁵` | about 99.5%, roughly 44 hours of downtime a year |
+
+Parallel math assumes the failures are **independent**. That is the reason to spread replicas across different zones, not just different servers.
+
+**Failure domains** are things that fail together: a process, a host, a rack, an availability zone, a region, a cloud provider, a deploy, a configuration push. Spread replicas across domains so one failure never takes out every copy. **Correlated failures** (the same bad deploy everywhere, the same shared dependency) are the real enemy, because they defeat the parallel math.
+
+**Levers that raise reliability:** redundancy (N+1, N+2), health checks with automatic failover, timeouts, retries with backoff, circuit breakers, **load shedding** (deliberately rejecting excess work so the rest succeeds), graceful degradation, and gradual rollouts.
+
+*(From AI Library chapter 9.)*
+
+### High Availability, Fault Tolerance & Failover
+
+#### Redundancy
+
+Redundancy prevents single points of failure. Types include:
+
+- **Hardware:** Multiple servers/storage devices.
+- **Network:** Multiple data centers, network connections, routers, paths.
+- **Service:** Replicated microservices/databases.
+
+```mermaid
+graph LR
+A[Client] --> LB1[Load Balancer]
+LB1 --> S1[Server 1]
+LB1 --> S2[Server 2]
+LB1 --> S3[Server 3]
+```
+
+#### Redundancy Strategies
+
+| Strategy           | Description                                          | Use Case                         |
+|--------------------|------------------------------------------------------|----------------------------------|
+| **N+1**            | One extra instance for failover                      | 3 servers for 2 needed           |
+| **Active-Active**  | Multiple nodes handle requests together              | Load balancing across regions    |
+| **Active-Passive** | One active node, standby nodes activated on failure  | Standby backup DB or service     |
+
+##### N+1 Redundancy
+
+- One more instance than needed (e.g., 3 servers for a 2-server load).
+- If any one fails, the system remains available.
+
+```
+Required = N
+Provisioned = N+1
+If one fails, N remain to serve traffic.
+```
+
+##### Active-Active
+
+- All nodes are active, sharing the workload.
+- High availability and load distribution.
+- Requires robust load balancing and state synchronization.
+
+```mermaid
+graph LR
+Client1 --> LB[Load Balancer]
+Client2 --> LB
+LB --> S1[Active Node 1]
+LB --> S2[Active Node 2]
+LB --> S3[Active Node 3]
+```
+
+ASCII view:
+
+```
+Active-Active:
+User --> [LB] --> Node A (active)
+                    |--> Node B (active)
+                    |--> Node C (active)
+```
+
+##### Active-Passive
+
+- Only one node is active; others are on standby.
+- On failure, a passive node becomes active.
+- Simpler, but less load-efficient and has failover latency.
+
+```mermaid
+graph LR
+Client --> LB[Load Balancer]
+LB --> A[Active Node]
+LB -.-> P1[Passive Node 1]
+LB -.-> P2[Passive Node 2]
+A --failure--> P1
+```
+
+ASCII view:
+
+```
+Active-Passive:
+User --> [LB] --> Node A (active)
+                    |--> Node B (standby)
+```
+
+---
+
+#### Single Points of Failure (SPOF)
+
+A **single point of failure** is any one component whose failure takes the whole system down. It is the most common reason a system is less reliable than the sum of its parts.
+
+**Why it matters:**
+
+- **Reliability:** one failed part means lost business and unhappy users (for example, nobody can reach checkout).
+- **Scalability:** a design full of single points struggles to grow, because every extra component is one more thing that can break the chain.
+
+**Finding them:** walk the path of one request from the user to the data and ask of every box, *"if this dies right now, what happens?"* If the answer is "everything stops", you have found one.
+
+```mermaid
+flowchart LR
+    U([User]) --> DNS["DNS"] --> LB["Load balancer"] --> A["App server"] --> DB[("Database")]
+    A --> C[("Cache")]
+    A --> Q[["Queue"]]
+```
+
+In this sketch every box is a single point of failure. Each fix below adds redundancy:
+
+| Component | Typical single point | Remove it by |
+|-----------|---------------------|--------------|
+| App servers | one server | several instances behind a load balancer, spread across availability zones |
+| Load balancer | one balancer | an active-passive pair with a shared virtual IP, or a managed, multi-zone load balancer |
+| Database | one primary | replication with automatic failover, backups, and a standby in another zone |
+| Cache and queue | one node | a replicated or clustered cache; a clustered broker with mirrored queues |
+| DNS | one provider or name server | several name servers, ideally from more than one provider |
+| Data center | one site or region | a second site or region (see Failing Over Between Data Centers) |
+
+**Hidden single points** are easy to miss: a single expired TLS certificate, one shared configuration or secrets service, one deployment pipeline, one third-party API, one person who knows how a system works, or one cloud region.
+
+**Trade-off:** every redundant part costs money and adds complexity (replication lag, failover logic, more to monitor). Spend redundancy where an outage costs more than the redundancy does, and rehearse the failover so you know it works.
+
+*(From AI Library chapter 9.)*
+
+The diagram, worked example, exercises, mini-project, design prompt, open-source reading, interview questions and checklist below are this chapter's practice layer.
 
 ---
 

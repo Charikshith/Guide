@@ -30,10 +30,10 @@ After reading this chapter, you'll be able to:
 - [6.9 Cloud Building Blocks: An AWS Service Map](#69-cloud-building-blocks-an-aws-service-map)
 - [6.10 Monitoring & Proactive Scaling](#610-monitoring--proactive-scaling)
 - [6.11 Cost Optimization Strategies](#611-cost-optimization-strategies)
-- [6.16 Combined Tips & Tricks](#616-combined-tips--tricks)
-- [6.17 Sample Interview Questions](#617-sample-interview-questions)
-- [6.18 Key Takeaways](#618-key-takeaways)
-- [6.19 Further Reading](#619-further-reading)
+- [6.17 Combined Tips & Tricks](#617-combined-tips--tricks)
+- [6.18 Sample Interview Questions](#618-sample-interview-questions)
+- [6.19 Key Takeaways](#619-key-takeaways)
+- [6.20 Further Reading](#620-further-reading)
 
 ---
 
@@ -530,7 +530,30 @@ http {
 }
 ```
 
-### 6.7.7 From Nothing to a Running Server: SSH, a Runtime and a Process Manager
+### 6.7.7 Choosing a Load-Balancing Algorithm for the Workload
+
+| Workload | Algorithm | Why |
+|----------|-----------|-----|
+| Short, uniform requests; identical servers | round robin or weighted round robin | simple and even |
+| Long or variable requests (uploads, reports, streaming) | **least connections** or least outstanding requests | adapts to the real load |
+| Latency-sensitive services, large fleets | **power of two choices (P2C)**: pick two backends at random and send the request to the one with lower load or latency | near-optimal results with no global state |
+| **Cache or state affinity** (sharded caches, per-user state, WebSocket rooms) | **consistent hashing** (hash ring, Maglev, rendezvous) | the same key reaches the same backend, with minimal remapping when backends change |
+| Hot keys under consistent hashing | consistent hashing **with bounded loads** | caps any one backend at, say, 1.25× the average |
+| Canary releases and A/B tests | weighted routing by percentage or header | controlled exposure |
+
+**Why consistent hashing?** With `hash(key) % N`, adding one server remaps almost every key, which empties every cache at once. On a hash ring, adding one server to N moves only about 1/(N+1) of the keys.
+
+### 6.7.8 Health Checks in Depth
+
+| Type | How it works | What it catches |
+|------|--------------|-----------------|
+| **Active** | the balancer probes a `/readyz` endpoint every few seconds, with rise and fall thresholds | dead or not-yet-ready nodes |
+| **Passive** (outlier detection) | eject backends that return 5xx errors or time out on real traffic | "gray failures" that active checks miss |
+| **Shallow vs. deep** | deep checks also test dependencies such as the database | deep checks can **cascade**: one database blip ejects every node at once, so keep readiness about the node itself |
+
+**Connection draining.** When a backend is removed or deployed, stop sending it new requests but let in-flight ones finish before shutting it down, so users do not see errors during rollouts.
+
+### 6.7.9 From Nothing to a Running Server: SSH, a Runtime and a Process Manager
 
 Before you can put anything behind a load balancer, you need one working server. This walk-through shows the manual steps on any cloud provider (the first-server experience on DigitalOcean, AWS, Google Cloud and others is nearly identical). A server like this is called a **virtual private server (VPS)**; DigitalOcean calls it a *droplet*, AWS an *EC2 instance*.
 
@@ -574,7 +597,7 @@ pm2 logs users                             # read the app's output
 
 **6. Clone it.** Once one server works, take a **snapshot** (a saved copy of the whole disk) and launch a second server from it. This is the fastest way to get an identical machine for the load-balancer lab below, and it is why scalable systems treat servers as **disposable and reproducible** (see the containers primer in Chapter 4).
 
-### 6.7.8 Hands-On Lab: Put a Load Balancer in Front of Two Servers
+### 6.7.10 Hands-On Lab: Put a Load Balancer in Front of Two Servers
 
 Seeing a load balancer work makes the theory stick. This lab needs only Docker and runs on your own machine.
 
@@ -630,7 +653,7 @@ docker start app1                                    # it rejoins automatically
 
 **The same idea in a cloud console** (any provider): create a server and install your app; take a **snapshot** and launch a **clone** from it; create a **load balancer** in the same network and region; add both servers as targets; define a **forwarding rule** (for example port 80 to port 80) and a **health check**; then open the load balancer's address, refresh repeatedly and check its metrics. This is the same flow you just did locally.
 
-### 6.7.9 Choosing the Right Load Balancer
+### 6.7.11 Choosing the Right Load Balancer
 
 - **Layer 4:** Choose for raw speed and lower-level TCP/UDP traffic.
 - **Layer 7:** Choose for intelligent routing (APIs, microservices).
@@ -644,7 +667,7 @@ docker start app1                                    # it rejoins automatically
 - **DDoS Protection:** Many cloud/hardware LBs provide built-in attack mitigation.
 - **Session Persistence:** Use IP hashing or sticky sessions if needed.
 
-### 6.7.10 Load Balancing — Tips & Best Practices
+### 6.7.12 Load Balancing — Tips & Best Practices
 
 - **Always set up health checks** for your backend servers.
 - **Prefer stateless backend design** for easier load balancing.
@@ -952,7 +975,49 @@ When you can't keep up, **tell upstream to slow down** rather than silently drop
 
 ---
 
-## 6.15 Capacity Planning — Back-of-the-Envelope
+## 6.15 Rate Limiting, Throttling and Backpressure
+
+Token bucket, leaky bucket, sliding window; distributed limits; backpressure upstream.
+
+**In one sentence:** rate limiting caps how fast any one caller can use a resource, throttling slows callers down instead of failing them, and backpressure is the downstream system telling upstream "slow down, I'm full" — together they keep one noisy client or one traffic spike from taking everyone down.
+
+**Mental model — a nightclub door.** The token bucket is a bouncer with a stack of wristbands that refills at a steady rate: a group can rush in if wristbands are saved up (a burst), but once they're gone, people wait. The leaky bucket is a turnstile that lets exactly one person through every few seconds no matter how many are queued. Backpressure is the bar inside telling the door "we're at capacity — stop letting people in."
+
+**Algorithms**
+
+| Algorithm | How | Bursts | Memory per key | Accuracy |
+|-----------|-----|--------|----------------|----------|
+| Fixed window counter | count per clock minute; reset at :00 | up to 2× at window edges | 1 counter | edge spikes |
+| Sliding window log | store every timestamp; count those in the last 60 s | exact | O(requests) | exact |
+| Sliding window counter | weighted mix of current and previous window counts | smooth | 2 counters | ~approximate, very good |
+| **Token bucket** | tokens refill at rate r up to capacity b; each request takes one | **allows bursts up to b** | 2 numbers (tokens, last time) | exact for its model |
+| Leaky bucket (as a queue) | requests enter a queue drained at a fixed rate | smooths bursts into a steady flow | queue | exact |
+| Concurrency limit | at most N requests in flight | — | 1 counter | protects slow backends |
+
+**Where to limit**
+
+| Layer | Example | Protects against |
+|-------|---------|------------------|
+| Edge / API gateway | 100 req/min per API key | abuse, scraping, credential stuffing |
+| Per tenant / plan | free: 10 rps, pro: 100 rps | noisy neighbors (Ch 15) |
+| Per endpoint | login: 5/min per account+IP | brute force |
+| Service to service | client-side limits, retry budgets | cascading retries |
+| Around a dependency | max 50 concurrent DB queries | overload of shared resources |
+
+**Distributed rate limiting** — with 20 gateway nodes, a limit of 100/min must be shared.
+
+| Approach | How | Trade-off |
+|----------|-----|-----------|
+| Central store (Redis) | atomic `INCR` + `EXPIRE`, or a Lua script for a token bucket | accurate; adds ~1 ms and a dependency (fail open or closed?) |
+| Local limits = global ÷ N | each node enforces its share | no coordination; inaccurate when traffic is uneven |
+| Local + periodic sync | nodes gossip or report counts every second | approximate, fast |
+| Dedicated limit service | Envoy's global rate-limit service | central policy, a gRPC hop |
+
+**Good 429s** — return `429 Too Many Requests` with `Retry-After`, plus headers like `RateLimit-Limit`, `RateLimit-Remaining`, `RateLimit-Reset`. Clients must back off with jitter; retrying immediately makes it worse.
+
+**Backpressure** — every buffer between producer and consumer must be **bounded**. When a queue fills: block the producer (TCP flow control, bounded channels), reject new work early (load shedding with 503), drop low-priority work, or scale consumers. An unbounded queue just converts overload into latency, then into out-of-memory crashes.
+
+## 6.16 Capacity Planning — Back-of-the-Envelope
 
 Given:
 - p99 latency budget: **100 ms**
@@ -967,11 +1032,40 @@ Given:
 
 ---
 
-## 6.16 Combined Tips & Tricks
+### 6.16.1 Capacity Estimation Cheat Sheet
+
+Turn product numbers ("10 million daily users") into engineering numbers with quick, explicit math. Size for the **peak**, not the average, and be right within about 2×.
+
+| Quantity | Formula or rule of thumb |
+|----------|--------------------------|
+| Average QPS | `daily active users × requests per user per day ÷ 86,400` |
+| Peak QPS | `average × peak factor` (2–10×; 5× is a common assumption) |
+| Read : write ratio | often 10:1 to 100:1 for consumer apps |
+| Servers | `peak QPS ÷ QPS per server`, then add headroom (aim for about 60–70% utilization) and N+2 spare capacity for failures |
+| Storage | `items per day × bytes per item × retention days × replication factor` |
+| Bandwidth | `QPS × response size` |
+
+**Numbers worth memorizing**
+
+| Item | Value |
+|------|-------|
+| Seconds per day | 86,400, roughly 10⁵ |
+| 1 million requests per day | about 12 QPS |
+| 1 billion requests per day | about 12,000 QPS |
+| One typical web/API server | about 1,000 QPS (anywhere from 100 to 10,000+) |
+| One PostgreSQL primary, simple queries | about 10,000–50,000 QPS |
+| Round trip inside a data center | about 0.5 ms; across continents about 100–150 ms |
+| Powers of two | 2¹⁰ ≈ 10³ (KB), 2²⁰ ≈ 10⁶ (MB), 2³⁰ ≈ 10⁹ (GB), 2⁴⁰ ≈ 10¹² (TB) |
+
+**The tail dominates when requests fan out.** A page that calls 100 services, each with a 1% chance of being slow, is slow about 63% of the time (`1 − 0.99¹⁰⁰`). So track **p50** (typical), **p99** (what the unlucky users feel) and **p99.9** for high-volume services, not just the average.
+
+**State your assumptions.** Every estimate is only as good as its inputs. Write them down so others can challenge the right number.
+
+## 6.17 Combined Tips & Tricks
 
 A consolidated master list drawn from all sections.
 
-### 6.16.1 General Scaling
+### 6.17.1 General Scaling
 
 - **Start simple:** Use vertical scaling for MVPs; switch to horizontal as needs grow. Don't over-engineer.
 - **Design stateless services:** Easier to distribute and scale horizontally. Use shared databases or distributed caches for state.
@@ -979,7 +1073,7 @@ A consolidated master list drawn from all sections.
 - **Know when to switch:** Monitor system metrics; switch when approaching hardware limits or needing high availability.
 - **Document scaling decisions:** Record why/when you chose vertical, horizontal, or diagonal scaling to aid future maintenance.
 
-### 6.16.2 Automation & Monitoring
+### 6.17.2 Automation & Monitoring
 
 - **Automate monitoring:** Track key metrics and set up alerts.
 - **Monitor everything:** Use dashboards and alerts (CloudWatch, Prometheus, Grafana).
@@ -987,7 +1081,7 @@ A consolidated master list drawn from all sections.
 - **Plan for failure:** Implement health checks and graceful failover in load balancers.
 - **Test under load:** Use chaos engineering and load testing to surface bottlenecks early.
 
-### 6.16.3 Load Balancers
+### 6.17.3 Load Balancers
 
 - **Implement load balancers:** Distribute traffic, prevent overload, increase reliability.
 - **Choose the right load balancing strategy:** Match to traffic patterns.
@@ -995,7 +1089,7 @@ A consolidated master list drawn from all sections.
 - **For microservices**, consider using a service mesh (Istio, Linkerd) for advanced L7 routing.
 - **Enable SSL termination** at the load balancer to reduce backend CPU load.
 
-### 6.16.4 Autoscaling
+### 6.17.4 Autoscaling
 
 - **Set conservative thresholds at first, then tune.** Avoid thrashing (rapid scaling in/out).
 - **Test autoscaling in staging with simulated traffic spikes.**
@@ -1005,7 +1099,7 @@ A consolidated master list drawn from all sections.
 - **Always review cloud provider pricing calculators** to forecast cost under peak loads.
 - **Limit autoscaling:** Set quotas to avoid runaway costs.
 
-### 6.16.5 Cost Optimization
+### 6.17.5 Cost Optimization
 
 - **Avoid over-provisioning.** Use auto-pausing and scale-to-zero features in serverless/cloud.
 - **Use spot/preemptible instances** for batch workloads (up to 80% cheaper).
@@ -1014,7 +1108,7 @@ A consolidated master list drawn from all sections.
 
 ---
 
-## 6.17 Sample Interview Questions
+## 6.18 Sample Interview Questions
 
 1. What does scalability mean in system design?
 2. Compare vertical and horizontal scaling. When would you use each?
@@ -1037,7 +1131,7 @@ A consolidated master list drawn from all sections.
 
 ---
 
-## 6.18 Key Takeaways
+## 6.19 Key Takeaways
 
 - **Scalability is essential** for growth, reliability, and performance in modern architectures.
 - **Vertical, horizontal, and diagonal scaling** serve different needs — choose wisely based on workload and growth patterns.
@@ -1049,7 +1143,7 @@ A consolidated master list drawn from all sections.
 
 ---
 
-## 6.19 Further Reading
+## 6.20 Further Reading
 
 **AWS:**
 

@@ -10,12 +10,63 @@ Unit economics, cloud cost drivers, right-sizing, and cost as a design constrain
 
 **In one sentence:** at the design level, cost is a requirement like latency — you estimate the cost of an architecture before building it, express it per unit of business value, find which components dominate as scale grows, and choose designs whose cost grows slower than revenue.
 
-**Read the full explanation in the AI Library** (it is explained there once, so this chapter does not repeat it):
+### Cost and Capacity Economics
 
-* [Chapter 14 — Cost and Capacity Economics](https://charikshith.github.io/AI_Library/notes/system-design/chapters/14%20-%20Cloud%20Architecture%20%26%20Cost.html#143-cost-and-capacity-economics)
-* [Chapter 6 — Cost Optimization Strategies](https://charikshith.github.io/AI_Library/notes/system-design/chapters/6%20-%20Scalability%20in%20System%20Design.html#611-cost-optimization-strategies)
+**Mental model — running a restaurant.** You don't just look at the monthly total. You know the *cost per plate*: ingredients, staff minutes, a share of rent. If a dish costs €9 to make and sells for €8, selling more of it makes things worse. Architecture decisions set your cost per plate.
 
-This chapter is the **practice layer**: the diagram, worked example, exercises, mini-project, design prompt, open-source reading, interview questions and checklist below.
+This chapter is the **design-time** view. For operational cost hygiene (tagging, right-sizing a running cluster, purchase models), see Vol 1 Ch 59.
+
+**Unit economics**
+
+| Metric | Formula | Use |
+|--------|---------|-----|
+| Cost per request | infra cost ÷ requests | API efficiency; compare services |
+| **Cost per active customer / tenant** | infra cost ÷ monthly active customers (or tenants) | pricing, margins, plan design |
+| Cost per transaction / order | infra cost ÷ orders | e-commerce, payments |
+| Cost per GB stored / processed | storage or pipeline cost ÷ GB | data platforms |
+| Infra cost as % of revenue (COGS) | infra ÷ revenue | SaaS gross margin (healthy SaaS: infra ≈ 5–15% of revenue) |
+| Marginal cost | Δcost ÷ Δunits | does the next customer cost less than the average? |
+
+**How costs scale with design choices**
+
+| Design choice | Cost behavior |
+|---------------|---------------|
+| Per-tenant silos | fixed cost per tenant → bad for many small tenants (Ch 15) |
+| Fan-out on write for feeds | writes × followers: celebrities explode cost |
+| Synchronous calls to paid APIs per request | linear in traffic × price; cache or batch |
+| Keeping all logs / traces | linear in traffic × retention; sample and tier |
+| Multi-region active-active | ~2–3× infra + cross-region transfer |
+| Chatty microservices across AZs | transfer charges per GB on every hop |
+| LLM calls per request | often the *largest* cost line; see Vol 5 Ch 18 |
+
+**Right-sizing, continuously** — compare provisioned capacity with p95 usage (CPU, memory, IOPS, connections); keep headroom for SLOs (e.g. target 60–70% CPU at peak); autoscale; review monthly because usage drifts; pick newer, cheaper instance families (ARM).
+
+**Reducing spend without hurting reliability**
+
+1. Measure unit cost and the SLOs *together* on one dashboard.
+2. Remove pure waste first (idle, orphaned, over-retained) — no reliability impact.
+3. Right-size with load tests, one change at a time; watch p99 and errors.
+4. Buy commitments only for the proven steady baseline.
+5. Architectural changes (caching, batching, tiered storage, fewer cross-zone hops) — with ADRs.
+6. Never cut redundancy that the SLO depends on (multi-AZ, backups) without an explicit decision.
+
+*(From AI Library chapter 14.)*
+
+### Cost Optimization Strategies
+
+Cloud costs can spiral if autoscaling is not managed carefully. Best practices:
+
+| Strategy                       | Description                                                          |
+|--------------------------------|----------------------------------------------------------------------|
+| **Avoid Over-provisioning**    | Scale just enough for demand; avoid idle resources.                  |
+| **Use Spot/Preemptible VMs**   | For batch/non-critical workloads; up to 80% cheaper.                 |
+| **Set Resource Limits/Quotas** | Prevent runaway scaling, especially in dev/test environments.        |
+| **Rightsize Regularly**        | Analyze actual usage and adjust resource size accordingly.           |
+| **Auto-pausing/Scale-to-zero** | Use features that pause/stop idle services (e.g., Cloud Run, Lambda) |
+
+*(From AI Library chapter 6.)*
+
+The diagram, worked example, exercises, mini-project, design prompt, open-source reading, interview questions and checklist below are this chapter's practice layer.
 
 ---
 
