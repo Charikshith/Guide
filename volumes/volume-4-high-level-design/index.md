@@ -2,7 +2,7 @@
 
 > Goal: Design systems that scale and stay reliable. Requires Volume 1 (Parts 7–9) and Volume 3.
 >
-> **Chapters 1–22.** Each chapter ends by designing one or more real-world systems; by the end you will have designed **30+ systems**.
+> **Chapters 1–51.** Each chapter ends by designing one or more real-world systems; by the end you will have designed **30+ systems**.
 
 # Contents
 
@@ -41,6 +41,37 @@
 20. [Cloud Architecture](ch20-cloud-architecture.md)
 21. [Cost & Capacity Economics](ch21-cost-and-capacity-economics.md)
 22. [The 30-System Design Portfolio](ch22-the-30-system-design-portfolio.md)
+
+**Part 8 — The AI Library Course, in Full**
+23. [Library Ch 1 — Introduction](ch23-library-01-introduction.md)
+24. [Library Ch 2 — Networking & Communication](ch24-library-02-networking-communication.md)
+25. [Library Ch 3 — Protocols](ch25-library-03-protocols.md)
+26. [Library Ch 4 — Architectural Patterns](ch26-library-04-architectural-patterns.md)
+27. [Library Ch 5 — Web Concepts](ch27-library-05-web-concepts.md)
+28. [Library Ch 6 — Scalability](ch28-library-06-scalability.md)
+29. [Library Ch 7 — Storage](ch29-library-07-storage.md)
+30. [Library Ch 8 — Performance](ch30-library-08-performance.md)
+31. [Library Ch 9 — Reliability & DR](ch31-library-09-reliability-dr.md)
+32. [Library Ch 10 — Security](ch32-library-10-security.md)
+33. [Library Ch 11 — Distributed Systems Fundamentals](ch33-library-11-distributed-systems-fundamentals.md)
+34. [Library Ch 12 — Cloud Design Patterns](ch34-library-12-cloud-design-patterns.md)
+35. [Library Ch 13 — Multi-Tenancy](ch35-library-13-multi-tenancy.md)
+36. [Library Ch 14 — Cloud Architecture & Cost](ch36-library-14-cloud-architecture-cost.md)
+37. [Library Ch 15 — The System Design Blueprint](ch37-library-15-the-system-design-blueprint.md)
+38. [Library Ch 16 — URL Shortener](ch38-library-16-url-shortener.md)
+39. [Library Ch 17 — Chat & Messaging](ch39-library-17-chat-messaging.md)
+40. [Library Ch 18 — News Feed](ch40-library-18-news-feed.md)
+41. [Library Ch 19 — Key-Value Store & Cache](ch41-library-19-key-value-store-cache.md)
+42. [Library Ch 20 — Payment System](ch42-library-20-payment-system.md)
+43. [Library Ch 21 — Auction Platform (eBay)](ch43-library-21-auction-platform-ebay.md)
+44. [Library Ch 22 — Ticket Booking](ch44-library-22-ticket-booking.md)
+45. [Library Ch 23 — Cloud Storage (Drive)](ch45-library-23-cloud-storage-drive.md)
+46. [Library Ch 24 — Video Sharing (YouTube)](ch46-library-24-video-sharing-youtube.md)
+47. [Library Ch 25 — Search Engine (Google)](ch47-library-25-search-engine-google.md)
+48. [Library Ch 26 — E-Commerce (Amazon)](ch48-library-26-e-commerce-amazon.md)
+49. [Library Ch 27 — Taxi App (Uber)](ch49-library-27-taxi-app-uber.md)
+50. [Library Ch 28 — Collaborative Docs](ch50-library-28-collaborative-docs.md)
+51. [Library Ch 29 — Final Prep & Mindset](ch51-library-29-final-prep-mindset.md)
 
 ---
 
@@ -523,3 +554,179 @@
 ---
 
 **Exit criteria:** Design **30+ real-world systems** (chapter 21 portfolio).
+
+## Part 8 — The AI Library Course, in Full
+
+### Chapter 23 — Library Ch 1 — Introduction
+
+**Concept:** What system design is, why it matters, the 4-step framework, latency numbers every programmer should know, and common anti-patterns.
+
+---
+
+### Chapter 24 — Library Ch 2 — Networking & Communication
+
+**Concept:** IP, DNS, proxies, load balancers, API gateways, CDNs, and the canonical "what happens when you type google.com" trace.
+
+---
+
+### Chapter 25 — Library Ch 3 — Protocols
+
+**Concept:** UDP, TCP, HTTP/1.1 vs HTTP/2 vs HTTP/3, REST, GraphQL, gRPC, WebSockets, Server-Sent Events — how clients and servers actually talk.
+
+---
+
+### Chapter 26 — Library Ch 4 — Architectural Patterns
+
+**Concept:** Monolith, modular monolith, microservices, event-driven, BFF, CQRS, Event Sourcing, Saga — and when NOT to use microservices.
+
+---
+
+### Chapter 27 — Library Ch 5 — Web Concepts
+
+**Concept:** Sessions, cookies, JWT, CORS, security headers, OAuth flows, the modern BFF + HttpOnly cookie pattern, and XSS/CSRF defense.
+
+---
+
+### Chapter 28 — Library Ch 6 — Scalability
+
+**Concept:** Horizontal vs vertical, Amdahl's Law, USL, stateless design, circuit breakers, bulkheads, rate limiting, backpressure, capacity planning.
+
+---
+
+### Chapter 29 — Library Ch 7 — Storage
+
+**Concept:** SQL vs NoSQL, CAP theorem, sharding, replication, B-Tree vs LSM-Tree, consistency spectrum, specialized DBs (time-series, vector, graph).
+
+---
+
+### Chapter 30 — Library Ch 8 — Performance
+
+**Concept:** Caching patterns (5 of them), cache stampede, N+1 query, message queues, indexing, query optimization, concurrency vs parallelism.
+
+---
+
+### Chapter 31 — Library Ch 9 — Reliability & DR
+
+**Concept:** 9s of availability, retry-with-backoff, idempotency keys, active-active vs active-passive, RTO/RPO, chaos engineering.
+
+---
+
+### Chapter 32 — Library Ch 10 — Security
+
+**Concept:** CIA triad, STRIDE, OAuth 2.0 flows, JWT pitfalls, defense-in-depth, encryption, secrets management, Zero Trust.
+
+---
+
+### Chapter 33 — Library Ch 11 — Distributed Systems Fundamentals
+
+**Concept:** Replication, quorums, consistency trade-offs, failure modes and event-driven systems in practice.
+
+---
+
+### Chapter 34 — Library Ch 12 — Cloud Design Patterns
+
+**Concept:** A catalog of named patterns for messaging, data, design, reliability and security, and which to learn first.
+
+---
+
+### Chapter 35 — Library Ch 13 — Multi-Tenancy
+
+**Concept:** Isolation models, tenant-aware routing, noisy neighbours and cross-tenant safety for SaaS.
+
+---
+
+### Chapter 36 — Library Ch 14 — Cloud Architecture & Cost
+
+**Concept:** Choosing managed services, serverless vs containers vs VMs, and designing with unit economics in mind.
+
+---
+
+### Chapter 37 — Library Ch 15 — The System Design Blueprint
+
+**Concept:** The 4-step methodology, interview frameworks (RADIO, REACTO), managing 45 minutes, reading the interviewer.
+
+---
+
+### Chapter 38 — Library Ch 16 — URL Shortener
+
+**Concept:** bit.ly clone — base62 encoding, key generation, caching, custom aliases, abuse prevention, click analytics.
+
+---
+
+### Chapter 39 — Library Ch 17 — Chat & Messaging
+
+**Concept:** Persistent connections, per-conversation ordering, delivery receipts, group fan-out, offline sync and end-to-end encryption.
+
+---
+
+### Chapter 40 — Library Ch 18 — News Feed
+
+**Concept:** Fan-out on write vs read, the celebrity problem, timeline caches, cursor pagination and ranking.
+
+---
+
+### Chapter 41 — Library Ch 19 — Key-Value Store & Cache
+
+**Concept:** Consistent hashing, N/R/W quorums, hinted handoff, vector clocks, LSM trees, and the cache variant.
+
+---
+
+### Chapter 42 — Library Ch 20 — Payment System
+
+**Concept:** Idempotency, double-entry ledgers, payment state machines, unknown outcomes, outbox, reconciliation and PCI.
+
+---
+
+### Chapter 43 — Library Ch 21 — Auction Platform (eBay)
+
+**Concept:** Concurrent bidding, anti-sniping extension, search/discovery, reviews, dispute resolution, multi-warehouse inventory.
+
+---
+
+### Chapter 44 — Library Ch 22 — Ticket Booking
+
+**Concept:** Preventing double booking, seat holds with expiry, flash-sale waiting rooms and payment races.
+
+---
+
+### Chapter 45 — Library Ch 23 — Cloud Storage (Drive)
+
+**Concept:** Chunking, block-level dedup, sync, sharing graph (Zanzibar), offline editing, conflict resolution (LWW vs three-way merge).
+
+---
+
+### Chapter 46 — Library Ch 24 — Video Sharing (YouTube)
+
+**Concept:** Transcoding pipeline, HLS/DASH adaptive streaming, view counter at scale, recommendations, Content ID, VOD vs Live.
+
+---
+
+### Chapter 47 — Library Ch 25 — Search Engine (Google)
+
+**Concept:** Crawling, inverted index, TF-IDF, PageRank, query understanding, autocomplete, lexical vs semantic search.
+
+---
+
+### Chapter 48 — Library Ch 26 — E-Commerce (Amazon)
+
+**Concept:** Catalog, cart, checkout Saga, multi-warehouse inventory, faceted search, recommendations, returns workflow, fraud detection.
+
+---
+
+### Chapter 49 — Library Ch 27 — Taxi App (Uber)
+
+**Concept:** Geohash/S2/H3 spatial indexing, driver matching, surge pricing, ETA prediction, real-time location, fraud detection.
+
+---
+
+### Chapter 50 — Library Ch 28 — Collaborative Docs
+
+**Concept:** Operational Transformation vs CRDTs, real-time presence, offline editing, comments anchoring, WebSocket fan-out.
+
+---
+
+### Chapter 51 — Library Ch 29 — Final Prep & Mindset
+
+**Concept:** Interview formats at top companies, what L4/L5/L6/L7 candidates do differently, when you get stuck, mock interview resources.
+
+---

@@ -1,6 +1,6 @@
 # Chapter 22 — The 30-System Design Portfolio
 
-> **Volume 4 — High-Level Design** · [Contents](index.md) · ← [Chapter 21 — Cost & Capacity Economics](ch21-cost-and-capacity-economics.md)
+> **Volume 4 — High-Level Design** · [Contents](index.md) · ← [Chapter 21 — Cost & Capacity Economics](ch21-cost-and-capacity-economics.md) · Next → [Chapter 23 — Library Ch 1 — Introduction](ch23-library-01-introduction.md)
 
 ---
 
