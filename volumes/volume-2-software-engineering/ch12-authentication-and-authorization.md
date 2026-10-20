@@ -221,11 +221,14 @@ flowchart TD
 
 **Sessions vs tokens**
 
-```text
- session   browser ── cookie: sid=abc ──▶ server ── lookup ──▶ session store
- JWT       client ── Bearer eyJ... ─────▶ API ── verify signature locally (no lookup)
- refresh   client ── refresh token ─────▶ auth server ──▶ new access token + new refresh token
+```mermaid
+flowchart LR
+    b1["browser"] -- "cookie: sid=abc" --> sv["server"] -- lookup --> ss["session store"]
+    c1["client"] -- "Bearer eyJ..." --> api["API<br/>verify signature locally (no lookup)"]
+    c2["client"] -- "refresh token" --> as["auth server"] --> out["new access token<br/>+ new refresh token"]
 ```
+
+**Session** (cookie and a server-side lookup) · **JWT** (verified locally, no lookup) · **Refresh** (a refresh token buys a new access token and a new refresh token).
 
 ---
 

@@ -2,7 +2,7 @@
 
 > Goal: Design systems that scale and stay reliable. Requires Volume 1 (Parts 7–9) and Volume 3.
 >
-> **Chapters 1–51.** Each chapter ends by designing one or more real-world systems; by the end you will have designed **30+ systems**.
+> **Chapters 1–52.** Each chapter ends by designing one or more real-world systems; by the end you will have designed **30+ systems**.
 
 # Contents
 
@@ -72,6 +72,9 @@
 49. [Library Ch 27 — Taxi App (Uber)](ch49-library-27-taxi-app-uber.md)
 50. [Library Ch 28 — Collaborative Docs](ch50-library-28-collaborative-docs.md)
 51. [Library Ch 29 — Final Prep & Mindset](ch51-library-29-final-prep-mindset.md)
+
+**Part 9 — Reference Map**
+52. [System Design Components Map](ch52-system-design-components-map.md)
 
 ---
 
@@ -728,5 +731,13 @@
 ### Chapter 51 — Library Ch 29 — Final Prep & Mindset
 
 **Concept:** Interview formats at top companies, what L4/L5/L6/L7 candidates do differently, when you get stuck, mock interview resources.
+
+---
+
+## Part 9 — Reference Map
+
+### Chapter 52 — System Design Components Map
+
+**Concept:** Every component of a real application by layer (clients, edge, backend, data, async, AI, external, cross-cutting, deployment), an example request flow and the key trade-offs.
 
 ---

@@ -122,19 +122,20 @@ flowchart TD
 
 **2. Estimates**
 
-```
- writes:  100M / month ÷ 2.6M s/month ≈ 38/s average,  ~200/s peak (×5)
- reads:   10× → ≈ 386/s average,  ~2,000/s peak;  viral links → hot keys
- storage: 100M × 12 months × 5 years = 6B URLs × ~500 B ≈ 3 TB (+ replicas)
- code length: base62 (a–z, A–Z, 0–9): 62^7 ≈ 3.5 trillion codes ≫ 6B → 7 characters is plenty
-```
+| Estimate | Working |
+|---|---|
+| **writes** | 100M / month ÷ 2.6M s/month ≈ **38/s average**, ~**200/s peak** (×5) |
+| **reads** | 10× → ≈ **386/s average**, ~**2,000/s peak**; viral links → hot keys |
+| **storage** | 100M × 12 months × 5 years = 6B URLs × ~500 B ≈ **3 TB** (+ replicas) |
+| **code length** | base62 (a–z, A–Z, 0–9): 62⁷ ≈ 3.5 trillion codes ≫ 6B → 7 characters is plenty |
 
 **3. API**
 
-```
- POST /v1/urls        {"long_url": "...", "alias": "spring-sale", "expires_at": "..."}  → 201 {"code": "aZ3k9Qx"}
- GET  /{code}         → 301/302 Location: long_url      (404 if unknown, 410 if expired)
- GET  /v1/urls/{code}/stats → {"clicks": 1234, "by_day": [...]}
+```http
+POST /v1/urls        {"long_url": "...", "alias": "spring-sale", "expires_at": "..."}
+                     → 201 {"code": "aZ3k9Qx"}
+GET  /{code}         → 301/302 Location: long_url      (404 if unknown, 410 if expired)
+GET  /v1/urls/{code}/stats → {"clicks": 1234, "by_day": [...]}
 ```
 
 **4. Data model** — `urls(code PK, long_url, created_at, expires_at, owner)`; access is always by `code`, so a key-value store (DynamoDB, Cassandra) or Postgres sharded by `code` both work. Clicks go to an append-only analytics stream, not to the URL row.

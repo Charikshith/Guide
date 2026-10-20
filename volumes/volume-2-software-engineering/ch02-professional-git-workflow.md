@@ -92,17 +92,33 @@ gitGraph
 
 **GitFlow, for comparison**
 
+```mermaid
+gitGraph
+    commit id: "1.3" tag: "1.3"
+    branch develop
+    commit id: "d1"
+    branch feature
+    commit id: "f1"
+    commit id: "f2"
+    checkout develop
+    commit id: "d2"
+    merge feature
+    branch release
+    commit id: "r1"
+    checkout main
+    merge release tag: "1.4"
+    checkout develop
+    merge release
+    checkout main
+    branch hotfix
+    commit id: "h1"
+    checkout main
+    merge hotfix tag: "1.4.1"
+    checkout develop
+    merge hotfix
 ```
- main     ●───────────────────────●──────────────●─────   (tags: releases only)
-           \                     / \            /
- hotfix     \                   /   ●──────────●          hotfix/1.4.1
-             \                 /                \
- release      \          ●───●  release/1.4      \
-               \        /                         \
- develop  ●─────●──●───●──────●──────●─────────────●──
-               /    \        /
- feature   ●──●      ●──●──●   (long-lived feature branches)
-```
+
+Branches: `main` (tags: releases only), `develop`, long-lived `feature` branches, `release/1.4`, and `hotfix/1.4.1`.
 
 **Choosing an undo**
 

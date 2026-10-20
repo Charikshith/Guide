@@ -84,12 +84,14 @@ flowchart LR
 
 **Fixed-window edge spike vs sliding window**
 
-```
- limit 100/min, fixed window
- 12:00:59 → 100 requests ✓   12:01:00 → 100 requests ✓   = 200 in 2 seconds ✗
- sliding window counter at 12:01:15:
-   estimate = current_count + previous_count × (45/60)   → blocks the second burst
-```
+Limit 100/min, fixed window:
+
+| Time | Requests | |
+|---|---|---|
+| 12:00:59 | 100 ✓ | |
+| 12:01:00 | 100 ✓ | = **200 in 2 seconds** ✗ |
+
+**Sliding window counter** at 12:01:15: `estimate = current_count + previous_count × (45/60)`, which blocks the second burst.
 
 **Backpressure signal flowing upstream**
 

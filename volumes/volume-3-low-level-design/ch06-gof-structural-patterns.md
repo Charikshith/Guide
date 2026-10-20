@@ -73,23 +73,18 @@ classDiagram
     CachingPriceService o-- PriceService : wraps
 ```
 
-```
- FACADE: one call hides many subsystems
-            InvoiceFacade.send_invoice(order_id)
-                       │
-     ┌─────────┬───────┴────┬──────────┬──────────┐
-     ▼         ▼            ▼          ▼          ▼
-  Pricing   PdfRenderer   S3Store   EmailApi   AuditLog
- (the client knows ONE method; the subsystems stay available for power users)
-```
+<div class="fig">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 780 250" role="img" aria-label="A facade: one InvoiceFacade.send_invoice call hides five subsystems: pricing, PDF rendering, S3 storage, email and audit log" style="width:100%;max-width:780px;height:auto;font-family:inherit"><defs><marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="context-stroke"/></marker></defs><text x="390" y="22" font-size="13.5" text-anchor="middle" fill="var(--text)" font-weight="700">FACADE: one call hides many subsystems</text><rect x="250" y="36" width="280" height="44" rx="8" fill="var(--primary)" fill-opacity=".14" stroke="var(--primary)" stroke-width="1.6"/><text x="390.0" y="62.55" font-size="13" text-anchor="middle" fill="var(--text)" font-weight="600">InvoiceFacade.send_invoice(order_id)</text><line x1="390" y1="80" x2="95" y2="140" stroke="var(--text-muted)" stroke-width="1.6" marker-end="url(#ar)"/><rect x="40" y="140" width="110" height="44" rx="8" fill="var(--success)" fill-opacity=".14" stroke="var(--success)" stroke-width="1.6"/><text x="95.0" y="166.55" font-size="13" text-anchor="middle" fill="var(--text)" font-weight="600">Pricing</text><line x1="390" y1="80" x2="239" y2="140" stroke="var(--text-muted)" stroke-width="1.6" marker-end="url(#ar)"/><rect x="184" y="140" width="110" height="44" rx="8" fill="var(--success)" fill-opacity=".14" stroke="var(--success)" stroke-width="1.6"/><text x="239.0" y="166.55" font-size="13" text-anchor="middle" fill="var(--text)" font-weight="600">PdfRenderer</text><line x1="390" y1="80" x2="383" y2="140" stroke="var(--text-muted)" stroke-width="1.6" marker-end="url(#ar)"/><rect x="328" y="140" width="110" height="44" rx="8" fill="var(--success)" fill-opacity=".14" stroke="var(--success)" stroke-width="1.6"/><text x="383.0" y="166.55" font-size="13" text-anchor="middle" fill="var(--text)" font-weight="600">S3Store</text><line x1="390" y1="80" x2="527" y2="140" stroke="var(--text-muted)" stroke-width="1.6" marker-end="url(#ar)"/><rect x="472" y="140" width="110" height="44" rx="8" fill="var(--success)" fill-opacity=".14" stroke="var(--success)" stroke-width="1.6"/><text x="527.0" y="166.55" font-size="13" text-anchor="middle" fill="var(--text)" font-weight="600">EmailApi</text><line x1="390" y1="80" x2="671" y2="140" stroke="var(--text-muted)" stroke-width="1.6" marker-end="url(#ar)"/><rect x="616" y="140" width="110" height="44" rx="8" fill="var(--success)" fill-opacity=".14" stroke="var(--success)" stroke-width="1.6"/><text x="671.0" y="166.55" font-size="13" text-anchor="middle" fill="var(--text)" font-weight="600">AuditLog</text><text x="390" y="224" font-size="12.5" text-anchor="middle" fill="var(--text-muted)">the client knows ONE method; the subsystems stay available for power users</text></svg>
+</div>
 
 **Stacking decorators**
 
+```mermaid
+flowchart LR
+    client --> Retry --> Logging --> Cache --> DbPriceService
 ```
- client ──► Retry ──► Logging ──► Cache ──► DbPriceService
-            (same PriceService interface at every layer; order is a choice:
-             Cache outside Retry = cached failures skip retries; inside = each retry checks the cache)
-```
+
+The same `PriceService` interface is used at every layer. The order is a choice: **Cache outside Retry** means cached failures skip retries; **inside**, each retry checks the cache.
 
 **Composite: a tree treated as one**
 

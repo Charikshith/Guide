@@ -77,13 +77,14 @@ flowchart LR
 
 **Why CSV parsing is hard** — one logical row, three physical lines:
 
+```csv
+id,comment
+1,"She said ""hi"", then left
+early"
+2,plain
 ```
- id,comment
- 1,"She said ""hi"", then left
- early"
- 2,plain
-     ▲ quoted field containing: a comma, escaped quotes, and a newline
-```
+
+Row 1's comment is a single quoted field containing a comma, escaped quotes (`""`), and a newline.
 
 ---
 

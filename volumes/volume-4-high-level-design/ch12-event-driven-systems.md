@@ -135,11 +135,9 @@ sequenceDiagram
 
 ASCII view:
 
-```
-+-------------+        +-------------+
-| Producer(s) |----->  | Event Broker|-----> [Consumer(s)]
-+-------------+        +-------------+
-(e.g., Kafka, RabbitMQ)
+```mermaid
+flowchart LR
+    p["Producer(s)"] --> b["Event Broker<br/>(e.g., Kafka, RabbitMQ)"] --> c["Consumer(s)"]
 ```
 
 #### Example Code: Event Publishing
@@ -267,14 +265,24 @@ flowchart LR
 
 **Why the outbox exists: the dual-write problem**
 
+**WITHOUT outbox**
+
+```sql
+BEGIN; INSERT order; COMMIT;   -- ✓
+publish("OrderPlaced")         -- ✗ crash here
 ```
- WITHOUT outbox                                  WITH outbox
- BEGIN; INSERT order; COMMIT;  ✓                 BEGIN;
- publish("OrderPlaced")        ✗ crash here        INSERT order;
- → the order exists, but nobody ever hears        INSERT outbox(event);
-   about it (or: publish first, DB fails →      COMMIT;             ← atomic
-   a ghost event for an order that doesn't exist) relay: read outbox → publish → mark sent
-                                                 (at-least-once → consumers dedup)
+
+The order exists, but nobody ever hears about it (or, publishing first: the DB fails, leaving a ghost event for an order that doesn't exist).
+
+**WITH outbox**
+
+```sql
+BEGIN;
+  INSERT order;
+  INSERT outbox(event);
+COMMIT;                        -- atomic
+-- relay: read outbox → publish → mark sent
+-- (at-least-once → consumers dedup)
 ```
 
 **Ordering: per key, not global**

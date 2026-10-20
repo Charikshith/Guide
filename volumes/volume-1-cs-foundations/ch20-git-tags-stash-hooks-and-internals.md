@@ -76,14 +76,12 @@ flowchart TD
 
 **How a change ripples up**
 
+```mermaid
+flowchart TD
+    e["edit src/parser.py"] --> b["new blob<br/>(content changed)"] --> t["new tree src/<br/>(its entry's hash changed)"] --> r["new root tree<br/>(src/'s hash changed)"] --> c["new commit<br/>(its tree hash changed)"]
 ```
- edit src/parser.py
-   → new blob          (content changed)
-   → new tree src/     (its entry's hash changed)
-   → new root tree     (src/'s hash changed)
-   → new commit        (its tree hash changed)
- Unchanged files and folders are reused as-is.
-```
+
+Unchanged files and folders are reused as-is.
 
 **Hook timeline for one commit and push**
 

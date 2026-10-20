@@ -211,24 +211,17 @@ graph LR
 
 ASCII view:
 
-```
-+------------------+
-|   Monolith App   |
-+------------------+
-| UI | Logic | DB  |
-+------------------+
+```mermaid
+flowchart TD
+    subgraph app["Monolith App"]
+        direction LR
+        ui["UI"] --- logic["Logic"] --- db["DB"]
+    end
 ```
 
-```
-+-------------------------------+
-|   User Interface              |
-+-------------------------------+
-|   Business Logic              |
-+-------------------------------+
-|   Data Access                 |
-+-------------------------------+
-|   Single Database             |
-+-------------------------------+
+```mermaid
+flowchart TD
+    ui["User Interface"] --> bl["Business Logic"] --> da["Data Access"] --> db[("Single Database")]
 ```
 
 ##### Example Code: Flask Monolith
@@ -409,13 +402,12 @@ graph TD
 
 ASCII view:
 
-```
-+--------+   +--------+   +--------+
-| User   |   | Order  |   | Payment|
-|Service |<->|Service |<->|Service |
-+--------+   +--------+   +--------+
-         |         |         |
-         +---API Gateway-----+
+```mermaid
+flowchart LR
+    gw["API Gateway"] --- us["User Service"]
+    gw --- os["Order Service"]
+    gw --- ps["Payment Service"]
+    us <--> os <--> ps
 ```
 
 ##### Example Code

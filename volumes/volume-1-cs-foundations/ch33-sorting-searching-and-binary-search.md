@@ -52,17 +52,17 @@ Search-on-the-answer examples: minimum eating speed to finish in h hours, minimu
 
 **One quicksort partition step (Lomuto, pivot = last)**
 
-```
- array: [7, 2, 9, 4, 3, 8, 5]   pivot = 5
- i marks the end of the "< pivot" zone
-  j=0: 7 ≥ 5  skip                 [7, 2, 9, 4, 3, 8, 5]
-  j=1: 2 < 5  swap into zone       [2, 7, 9, 4, 3, 8, 5]
-  j=3: 4 < 5  swap                 [2, 4, 9, 7, 3, 8, 5]
-  j=4: 3 < 5  swap                 [2, 4, 3, 7, 9, 8, 5]
- finally swap the pivot into place [2, 4, 3, 5, 9, 8, 7]
-                                    └ < 5 ┘ ▲ └ ≥ 5 ┘
- recurse on the left and right parts
-```
+Array `[7, 2, 9, 4, 3, 8, 5]`, pivot = 5. `i` marks the end of the "< pivot" zone.
+
+| Step | Action | Array |
+|---|---|---|
+| j=0 | 7 ≥ 5, skip | `[7, 2, 9, 4, 3, 8, 5]` |
+| j=1 | 2 < 5, swap into zone | `[2, 7, 9, 4, 3, 8, 5]` |
+| j=3 | 4 < 5, swap | `[2, 4, 9, 7, 3, 8, 5]` |
+| j=4 | 3 < 5, swap | `[2, 4, 3, 7, 9, 8, 5]` |
+| finally | swap the pivot into place | `[2, 4, 3, 5, 9, 8, 7]`: left part < 5, pivot, right part ≥ 5 |
+
+Then recurse on the left and right parts.
 
 **Merge sort: split, then merge**
 
@@ -78,24 +78,24 @@ graph TD
 
 **Binary search halving**
 
-```
- find 23 in [2, 5, 8, 12, 16, 23, 38, 56, 72, 91]
- lo=0 hi=10  mid=5 → 23 == 23 ✓ (found in 1 step here; ≤ ⌈log₂ 11⌉ = 4 in general)
+**Find 23** in `[2, 5, 8, 12, 16, 23, 38, 56, 72, 91]`: `lo=0 hi=10 mid=5`, so `23 == 23` ✓ (found in 1 step here; at most ⌈log₂ 11⌉ = 4 in general).
 
- find 60:
- [2 5 8 12 16 | 23 38 56 72 91]   mid=5 (23) < 60 → go right
-                [23 38 | 56 72 91]  mid=7 (56) < 60 → go right
-                         [72 | 91]  mid=8 (72) ≥ 60 → go left
-                         lo=hi=8 → insertion point 8, not found
-```
+**Find 60:**
+
+| Search window | Step |
+|---|---|
+| `[2 5 8 12 16 \| 23 38 56 72 91]` | mid=5 (23) < 60 → go right |
+| `[23 38 \| 56 72 91]` | mid=7 (56) < 60 → go right |
+| `[72 \| 91]` | mid=8 (72) ≥ 60 → go left |
+| `lo = hi = 8` | insertion point 8, not found |
 
 **Search on a monotonic predicate**
 
-```
- speed:  1   2   3   4   5   6   7   8
- ok?     ✗   ✗   ✗   ✓   ✓   ✓   ✓   ✓      ← flips exactly once
-                     ▲ answer = first ✓, found in O(log range) checks
-```
+| speed | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 |
+|---|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|
+| ok? | ✗ | ✗ | ✗ | **✓** | ✓ | ✓ | ✓ | ✓ |
+
+The answer flips exactly once: the answer is the first ✓ (speed 4), found in **O(log range)** checks.
 
 ---
 

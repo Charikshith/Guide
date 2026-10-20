@@ -308,18 +308,14 @@ sequenceDiagram
 
 ASCII view:
 
-```
-+---------+         +---------+
-| Browser |         | Server  |
-+---------+         +---------+
-     |                  |
-     |---(1) Request--->|
-     |                  |
-     |<--(2) Process----|
-     |                  |
-     |<--(3) Response---|
-     |                  |
-     |---(4) Render---->|
+```mermaid
+sequenceDiagram
+    participant B as Browser
+    participant S as Server
+    B->>S: (1) Request
+    S-->>B: (2) Process
+    S-->>B: (3) Response
+    B->>S: (4) Render
 ```
 
 #### Anatomy of an HTTP Request
@@ -663,11 +659,12 @@ graph TD
 
 Or, in simple ASCII:
 
-```
-  +--------+        HTTP Request        +--------+
-  | Client |  ---------------------->   | Server |
-  +--------+  <----------------------   +--------+
-                 HTTP Response
+```mermaid
+sequenceDiagram
+    participant C as Client
+    participant S as Server
+    C->>S: HTTP Request
+    S-->>C: HTTP Response
 ```
 
 #### Four Principles of a Good API

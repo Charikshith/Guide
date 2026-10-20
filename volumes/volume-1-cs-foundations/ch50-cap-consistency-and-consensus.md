@@ -57,17 +57,9 @@ Networks *do* partition, so P isn't optional. CAP really says: **during a partit
 
 **The CAP triangle with a partition**
 
-```
-                     Consistency (linearizable)
-                              ▲
-                             ╱ ╲
-                   CP       ╱   ╲      CA — only without partitions
-             etcd, ZK,     ╱     ╲         (a single-node database)
-             Spanner      ╱       ╲
-                         ╱         ╲
-      Partition ◄───────────────────► Availability
-      tolerance          AP: Cassandra, DynamoDB (default), DNS
-```
+<div class="fig">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 360" role="img" aria-label="CAP triangle: consistency at the top, partition tolerance and availability at the bottom; CP, AP and CA sit on its edges" style="width:100%;max-width:760px;height:auto;font-family:inherit"><defs><marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="context-stroke"/></marker></defs><polygon points="380,40 120,300 640,300" fill="var(--primary)" fill-opacity=".08" stroke="var(--primary)" stroke-width="2"/><text x="380" y="28" font-size="14" text-anchor="middle" fill="var(--text)" font-weight="700">Consistency (linearizable)</text><text x="120" y="322" font-size="14" text-anchor="middle" fill="var(--text)" font-weight="700">Partition tolerance</text><text x="640" y="322" font-size="14" text-anchor="middle" fill="var(--text)" font-weight="700">Availability</text><text x="190" y="160" font-size="16" text-anchor="middle" fill="var(--success)" font-weight="700">CP</text><text x="190" y="180.0" font-size="12.5" text-anchor="middle" fill="var(--text)">etcd, ZooKeeper,</text><text x="190" y="196.5" font-size="12.5" text-anchor="middle" fill="var(--text)">Spanner</text><text x="590" y="160" font-size="16" text-anchor="middle" fill="var(--accent)" font-weight="700">CA</text><text x="590" y="180.0" font-size="12.5" text-anchor="middle" fill="var(--text)">only without partitions</text><text x="590" y="196.5" font-size="12.5" text-anchor="middle" fill="var(--text)">(a single-node database)</text><text x="380" y="275" font-size="16" text-anchor="middle" fill="var(--danger)" font-weight="700">AP</text><text x="380" y="292" font-size="12.5" text-anchor="middle" fill="var(--text)">Cassandra, DynamoDB (default), DNS</text></svg>
+</div>
 
 **What happens during a partition**
 
@@ -90,21 +82,15 @@ sequenceDiagram
 
 **Majority quorums always overlap**
 
-```
- 5 replicas, write quorum W = 3, read quorum R = 3  (R + W > N)
- write lands on:  [A] [B] [C]  D   E
- read asks:        A   B  [C] [D] [E]
-                          ▲ at least one replica saw the latest write
- a partition {A, B} | {C, D, E}: only the 3-node side can form a quorum and accept writes
-```
+<div class="fig">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 250" role="img" aria-label="Five replicas with write and read quorums of 3 overlap in at least one replica, so a read sees the latest write" style="width:100%;max-width:760px;height:auto;font-family:inherit"><defs><marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="context-stroke"/></marker></defs><text x="20" y="22" font-size="13.5" text-anchor="start" fill="var(--text)" font-weight="700">5 replicas, write quorum W = 3, read quorum R = 3   (R + W &gt; N)</text><text x="180" y="62" font-size="14" text-anchor="middle" fill="var(--text-muted)" font-weight="700">A</text><rect x="150" y="70" width="60" height="34" rx="8" fill="var(--success)" fill-opacity=".3" stroke="var(--success)" stroke-width="1.6"/><text x="180.0" y="91.2" font-size="12" text-anchor="middle" fill="var(--text)" font-weight="600">write</text><rect x="150" y="112" width="60" height="34" rx="8" fill="var(--border)" fill-opacity=".05" stroke="var(--border)" stroke-width="1.6"/><text x="180.0" y="133.2" font-size="12" text-anchor="middle" fill="var(--text)" font-weight="600"></text><text x="270" y="62" font-size="14" text-anchor="middle" fill="var(--text-muted)" font-weight="700">B</text><rect x="240" y="70" width="60" height="34" rx="8" fill="var(--success)" fill-opacity=".3" stroke="var(--success)" stroke-width="1.6"/><text x="270.0" y="91.2" font-size="12" text-anchor="middle" fill="var(--text)" font-weight="600">write</text><rect x="240" y="112" width="60" height="34" rx="8" fill="var(--border)" fill-opacity=".05" stroke="var(--border)" stroke-width="1.6"/><text x="270.0" y="133.2" font-size="12" text-anchor="middle" fill="var(--text)" font-weight="600"></text><text x="360" y="62" font-size="14" text-anchor="middle" fill="var(--text-muted)" font-weight="700">C</text><rect x="330" y="70" width="60" height="34" rx="8" fill="var(--success)" fill-opacity=".3" stroke="var(--success)" stroke-width="1.6"/><text x="360.0" y="91.2" font-size="12" text-anchor="middle" fill="var(--text)" font-weight="600">write</text><rect x="330" y="112" width="60" height="34" rx="8" fill="var(--primary)" fill-opacity=".3" stroke="var(--primary)" stroke-width="1.6"/><text x="360.0" y="133.2" font-size="12" text-anchor="middle" fill="var(--text)" font-weight="600">read</text><text x="450" y="62" font-size="14" text-anchor="middle" fill="var(--text-muted)" font-weight="700">D</text><rect x="420" y="70" width="60" height="34" rx="8" fill="var(--border)" fill-opacity=".05" stroke="var(--border)" stroke-width="1.6"/><text x="450.0" y="91.2" font-size="12" text-anchor="middle" fill="var(--text)" font-weight="600"></text><rect x="420" y="112" width="60" height="34" rx="8" fill="var(--primary)" fill-opacity=".3" stroke="var(--primary)" stroke-width="1.6"/><text x="450.0" y="133.2" font-size="12" text-anchor="middle" fill="var(--text)" font-weight="600">read</text><text x="540" y="62" font-size="14" text-anchor="middle" fill="var(--text-muted)" font-weight="700">E</text><rect x="510" y="70" width="60" height="34" rx="8" fill="var(--border)" fill-opacity=".05" stroke="var(--border)" stroke-width="1.6"/><text x="540.0" y="91.2" font-size="12" text-anchor="middle" fill="var(--text)" font-weight="600"></text><rect x="510" y="112" width="60" height="34" rx="8" fill="var(--primary)" fill-opacity=".3" stroke="var(--primary)" stroke-width="1.6"/><text x="540.0" y="133.2" font-size="12" text-anchor="middle" fill="var(--text)" font-weight="600">read</text><text x="130" y="92" font-size="12.5" text-anchor="end" fill="var(--text)">write lands on</text><text x="130" y="134" font-size="12.5" text-anchor="end" fill="var(--text)">read asks</text><rect x="325" y="64" width="70" height="88" rx="8" fill="none" stroke="var(--accent)" stroke-width="2.4"/><text x="360" y="176" font-size="12.5" text-anchor="start" fill="var(--accent)" font-weight="600">▲ at least one replica saw the latest write</text><text x="20" y="222" font-size="12.5" text-anchor="start" fill="var(--text)">a partition {A, B} | {C, D, E}: only the 3-node side can form a quorum and accept writes</text></svg>
+</div>
 
 **The consistency spectrum**
 
-```
- strong ◄──────────────────────────────────────────────────────► weak
- linearizable → sequential → causal → read-your-writes → eventual
- slower, less available under partitions        faster, always answers
-```
+<div class="fig">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 160" role="img" aria-label="Consistency spectrum from strong to weak: linearizable, sequential, causal, read-your-writes, eventual" style="width:100%;max-width:800px;height:auto;font-family:inherit"><defs><marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="context-stroke"/></marker></defs><line x1="40" y1="56" x2="760" y2="56" stroke="var(--text-muted)" stroke-width="1.6" marker-end="url(#ar)" marker-start="url(#ar)"/><text x="40" y="34" font-size="13" text-anchor="start" fill="var(--success)" font-weight="700">strong</text><text x="760" y="34" font-size="13" text-anchor="end" fill="var(--danger)" font-weight="700">weak</text><circle cx="100" cy="56" r="7" fill="var(--success)" fill-opacity="1" stroke="var(--success)" stroke-width="1.6"/><text x="100" y="86" font-size="13" text-anchor="middle" fill="var(--text)" font-weight="600">linearizable</text><circle cx="250" cy="56" r="7" fill="var(--success)" fill-opacity="1" stroke="var(--success)" stroke-width="1.6"/><text x="250" y="86" font-size="13" text-anchor="middle" fill="var(--text)" font-weight="600">sequential</text><circle cx="400" cy="56" r="7" fill="var(--accent)" fill-opacity="1" stroke="var(--accent)" stroke-width="1.6"/><text x="400" y="86" font-size="13" text-anchor="middle" fill="var(--text)" font-weight="600">causal</text><circle cx="550" cy="56" r="7" fill="var(--accent)" fill-opacity="1" stroke="var(--accent)" stroke-width="1.6"/><text x="550" y="86" font-size="13" text-anchor="middle" fill="var(--text)" font-weight="600">read-your-writes</text><circle cx="700" cy="56" r="7" fill="var(--danger)" fill-opacity="1" stroke="var(--danger)" stroke-width="1.6"/><text x="700" y="86" font-size="13" text-anchor="middle" fill="var(--text)" font-weight="600">eventual</text><text x="40" y="130" font-size="12.5" text-anchor="start" fill="var(--text-muted)">slower, less available under partitions</text><text x="760" y="130" font-size="12.5" text-anchor="end" fill="var(--text-muted)">faster, always answers</text></svg>
+</div>
 
 ---
 

@@ -1,6 +1,6 @@
 # Chapter 51 — Library Ch 29 — Final Prep & Mindset
 
-> **Volume 4 — High-Level Design** · [Contents](index.md) · ← [Chapter 50 — Library Ch 28 — Collaborative Docs](ch50-library-28-collaborative-docs.md)
+> **Volume 4 — High-Level Design** · [Contents](index.md) · ← [Chapter 50 — Library Ch 28 — Collaborative Docs](ch50-library-28-collaborative-docs.md) · Next → [Chapter 52 — System Design Components Map](ch52-system-design-components-map.md)
 
 ---
 

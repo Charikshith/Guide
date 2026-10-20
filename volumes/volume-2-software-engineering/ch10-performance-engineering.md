@@ -63,18 +63,9 @@ Profiling-driven optimization, benchmarking, caching strategies, and avoiding pr
 
 **A flame graph pointing at the hot path**
 
-```
- ┌─────────────────────────────────────────────────────────────────────────┐
- │ handle_search (100%)                                                    │
- ├───────────────────────────────────────────────────────┬─────────────────┤
- │ rank_results (72%)                                    │ fetch_docs (24%)│
- ├──────────────────────────────────────────┬────────────┼─────────────────┤
- │ score (61%)                              │ sort (9%)  │ db.query (22%)  │
- ├──────────────────────────────────────────┤            └─────────────────┘
- │ tokenize (48%)  ← re-tokenizes every doc │
- │   re.findall — compiled on every call    │   fix: pre-tokenize at index time
- └──────────────────────────────────────────┘        + compile the regex once
-```
+<div class="fig">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 780 260" role="img" aria-label="Flame graph of handle_search: tokenize takes 48 percent because it re-tokenizes every document and compiles a regex on each call" style="width:100%;max-width:780px;height:auto;font-family:inherit"><defs><marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="context-stroke"/></marker></defs><rect x="20" y="20" width="700" height="40" rx="3" fill="var(--primary)" fill-opacity=".25" stroke="var(--primary)" stroke-width="1.6"/><text x="370.0" y="45" font-size="12.5" text-anchor="middle" fill="var(--text)" font-weight="600">handle_search (100%)</text><rect x="20" y="66" width="504.0" height="40" rx="3" fill="var(--primary)" fill-opacity=".25" stroke="var(--primary)" stroke-width="1.6"/><text x="272.0" y="91" font-size="12.5" text-anchor="middle" fill="var(--text)" font-weight="600">rank_results (72%)</text><rect x="524.0" y="66" width="168.0" height="40" rx="3" fill="var(--success)" fill-opacity=".25" stroke="var(--success)" stroke-width="1.6"/><text x="608.0" y="91" font-size="12.5" text-anchor="middle" fill="var(--text)" font-weight="600">fetch_docs (24%)</text><rect x="20" y="112" width="427.0" height="40" rx="3" fill="var(--primary)" fill-opacity=".25" stroke="var(--primary)" stroke-width="1.6"/><text x="233.5" y="137" font-size="12.5" text-anchor="middle" fill="var(--text)" font-weight="600">score (61%)</text><rect x="447.0" y="112" width="62.99999999999998" height="40" rx="3" fill="var(--primary)" fill-opacity=".25" stroke="var(--primary)" stroke-width="1.6"/><text x="478.5" y="137" font-size="12.5" text-anchor="middle" fill="var(--text)" font-weight="600">sort (9%)</text><rect x="524.0" y="112" width="153.99999999999997" height="40" rx="3" fill="var(--success)" fill-opacity=".25" stroke="var(--success)" stroke-width="1.6"/><text x="601.0" y="137" font-size="12.5" text-anchor="middle" fill="var(--text)" font-weight="600">db.query (22%)</text><rect x="20" y="158" width="336.0" height="40" rx="3" fill="var(--danger)" fill-opacity=".45" stroke="var(--danger)" stroke-width="1.6"/><text x="188.0" y="183" font-size="12.5" text-anchor="middle" fill="var(--text)" font-weight="600">tokenize (48%)</text><text x="368.0" y="176" font-size="12.5" text-anchor="start" fill="var(--danger)" font-weight="600">← re-tokenizes every doc</text><text x="368.0" y="192" font-size="12.5" text-anchor="start" fill="var(--text-muted)">re.findall: compiled on every call</text><text x="405.00000000000006" y="235" font-size="13" text-anchor="start" fill="var(--success)" font-weight="700">fix: pre-tokenize at index time + compile the regex once</text></svg>
+</div>
 
 **A benchmark comparison chart**
 
@@ -88,18 +79,9 @@ xychart-beta
 
 **Latency vs utilization (why headroom matters)**
 
-```
- latency
-   ▲                                          │
-   │                                          │
-   │                                        ╱
-   │                                     ╱
-   │                                ╱
-   │                      ____----
-   │__________-------‾‾‾‾
-   └──────────────────────────────────────────► utilization
-   0%          50%         70%        90%  100%
-```
+<div class="fig">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 700 310" role="img" aria-label="Latency stays flat at low utilization, bends upward near 70 percent and shoots up past 90 percent" style="width:100%;max-width:700px;height:auto;font-family:inherit"><defs><marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="context-stroke"/></marker></defs><line x1="70" y1="250" x2="70" y2="24" stroke="var(--text-muted)" stroke-width="1.6" marker-end="url(#ar)"/><line x1="70" y1="250" x2="670" y2="250" stroke="var(--text-muted)" stroke-width="1.6" marker-end="url(#ar)"/><text x="62" y="34" font-size="12.5" text-anchor="end" fill="var(--text-muted)">latency</text><text x="660" y="290" font-size="12.5" text-anchor="end" fill="var(--text-muted)">utilization</text><path d="M70.0,238.0 L75.9,237.9 L81.8,237.8 L87.7,237.7 L93.6,237.6 L99.5,237.5 L105.4,237.4 L111.3,237.3 L117.2,237.2 L123.1,237.1 L129.0,237.0 L134.9,236.9 L140.8,236.8 L146.7,236.7 L152.6,236.6 L158.5,236.5 L164.4,236.3 L170.3,236.2 L176.2,236.1 L182.1,236.0 L188.0,235.8 L193.9,235.7 L199.8,235.6 L205.7,235.4 L211.6,235.3 L217.5,235.1 L223.4,235.0 L229.3,234.8 L235.2,234.6 L241.1,234.5 L247.0,234.3 L252.9,234.1 L258.8,233.9 L264.7,233.8 L270.6,233.6 L276.5,233.4 L282.4,233.2 L288.3,233.0 L294.2,232.7 L300.1,232.5 L306.0,232.3 L311.9,232.1 L317.8,231.8 L323.7,231.6 L329.6,231.3 L335.5,231.0 L341.4,230.7 L347.3,230.5 L353.2,230.2 L359.1,229.8 L365.0,229.5 L370.9,229.2 L376.8,228.8 L382.7,228.5 L388.6,228.1 L394.5,227.7 L400.4,227.3 L406.3,226.9 L412.2,226.4 L418.1,226.0 L424.0,225.5 L429.9,225.0 L435.8,224.4 L441.7,223.9 L447.6,223.3 L453.5,222.6 L459.4,222.0 L465.3,221.3 L471.2,220.6 L477.1,219.8 L483.0,219.0 L488.9,218.1 L494.8,217.2 L500.7,216.2 L506.6,215.1 L512.5,214.0 L518.4,212.8 L524.3,211.4 L530.2,210.0 L536.1,208.5 L542.0,206.8 L547.9,205.0 L553.8,203.0 L559.7,200.8 L565.6,198.4 L571.5,195.7 L577.4,192.7 L583.3,189.3 L589.2,185.5 L595.1,181.2 L601.0,176.1 L606.9,170.3 L612.8,163.4 L618.7,155.1 L624.6,145.0 L630.5,132.4 L636.4,116.2 L642.3,94.7 L648.2,64.8 L654.1,30.0 L660.0,30.0" stroke="var(--danger)" stroke-width="2.6" fill="none"/><line x1="70.0" y1="250" x2="70.0" y2="255" stroke="var(--text-muted)" stroke-width="1"/><text x="70.0" y="270" font-size="12.5" text-anchor="middle" fill="var(--text)">0%</text><line x1="365.0" y1="250" x2="365.0" y2="255" stroke="var(--text-muted)" stroke-width="1"/><text x="365.0" y="270" font-size="12.5" text-anchor="middle" fill="var(--text)">50%</text><line x1="483.0" y1="250" x2="483.0" y2="255" stroke="var(--text-muted)" stroke-width="1"/><text x="483.0" y="270" font-size="12.5" text-anchor="middle" fill="var(--text)">70%</text><line x1="601.0" y1="250" x2="601.0" y2="255" stroke="var(--text-muted)" stroke-width="1"/><text x="601.0" y="270" font-size="12.5" text-anchor="middle" fill="var(--text)">90%</text><line x1="660.0" y1="250" x2="660.0" y2="255" stroke="var(--text-muted)" stroke-width="1"/><text x="660.0" y="270" font-size="12.5" text-anchor="middle" fill="var(--text)">100%</text><line x1="483.0" y1="250" x2="483.0" y2="120" stroke="var(--accent)" stroke-width="1.6" stroke-dasharray="4 4"/></svg>
+</div>
 
 ---
 

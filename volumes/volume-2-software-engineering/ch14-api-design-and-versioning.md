@@ -70,15 +70,14 @@ Whatever you choose: publish a **deprecation policy** (announce → `Deprecation
 
 **An API evolution timeline showing additive vs breaking changes**
 
-```
- 2024-01  v1 launch        GET /v1/orders → {id, total, status}
- 2024-03  additive ✓       + response field "currency"           (v1 clients ignore it)
- 2024-05  additive ✓       + optional param ?status=             (old calls unchanged)
- 2024-08  BREAKING ✗       total: "12.50" (string) → total_cents: 1250 (int)
-            └─► ship as v2 (or a new dated version); v1 keeps the old shape
- 2024-09  v1 deprecated    responses carry  Deprecation: true  Sunset: Sat, 01 Mar 2025
- 2025-03  v1 removed       only after usage metrics show ~0 calls; 410 Gone after that
-```
+| Date | Change | What it looks like |
+|---|---|---|
+| 2024-01 | **v1 launch** | `GET /v1/orders` → `{id, total, status}` |
+| 2024-03 | additive ✓ | + response field `"currency"` (v1 clients ignore it) |
+| 2024-05 | additive ✓ | + optional param `?status=` (old calls unchanged) |
+| 2024-08 | **BREAKING ✗** | `total: "12.50"` (string) → `total_cents: 1250` (int). Ship as **v2** (or a new dated version); v1 keeps the old shape |
+| 2024-09 | v1 deprecated | responses carry `Deprecation: true` and `Sunset: Sat, 01 Mar 2025` |
+| 2025-03 | v1 removed | only after usage metrics show ~0 calls; `410 Gone` after that |
 
 ```mermaid
 flowchart LR
@@ -106,11 +105,15 @@ sequenceDiagram
 
 **Cursor pagination**
 
-```
- page 1: GET /v1/invoices?limit=3            → [inv_9, inv_8, inv_7]  next_cursor = "inv_7"
- page 2: GET /v1/invoices?limit=3&after=inv_7 → [inv_6, inv_5, inv_4]
- SQL:    WHERE (created_at, id) < (:c_created, :c_id) ORDER BY created_at DESC, id DESC LIMIT 4
-                                                                  (fetch limit+1 → has_more)
+| Page | Request | Result |
+|---|---|---|
+| 1 | `GET /v1/invoices?limit=3` | `[inv_9, inv_8, inv_7]`, `next_cursor = "inv_7"` |
+| 2 | `GET /v1/invoices?limit=3&after=inv_7` | `[inv_6, inv_5, inv_4]` |
+
+```sql
+WHERE (created_at, id) < (:c_created, :c_id)
+ORDER BY created_at DESC, id DESC
+LIMIT 4        -- fetch limit+1 → has_more
 ```
 
 ---

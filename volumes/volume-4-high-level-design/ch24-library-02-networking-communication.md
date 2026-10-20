@@ -107,11 +107,9 @@ An **IP address (Internet Protocol address)** is a unique numerical label assign
 
 **IPv4 Address Format (octets):**
 
-```
-+----+----+----+----+
-|192 |168 | 1  | 15 |
-+----+----+----+----+
-```
+<div class="fig">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 120" role="img" aria-label="An IPv4 address 192.168.1.15 is four 8-bit octets" style="width:100%;max-width:520px;height:auto;font-family:inherit"><defs><marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="context-stroke"/></marker></defs><rect x="20" y="30" width="100" height="48" rx="8" fill="var(--primary)" fill-opacity=".14" stroke="var(--primary)" stroke-width="1.6"/><text x="70.0" y="60.3" font-size="18" text-anchor="middle" fill="var(--text)" font-weight="600">192</text><text x="130" y="62" font-size="22" text-anchor="middle" fill="var(--text-muted)" font-weight="700">.</text><rect x="140" y="30" width="100" height="48" rx="8" fill="var(--primary)" fill-opacity=".14" stroke="var(--primary)" stroke-width="1.6"/><text x="190.0" y="60.3" font-size="18" text-anchor="middle" fill="var(--text)" font-weight="600">168</text><text x="250" y="62" font-size="22" text-anchor="middle" fill="var(--text-muted)" font-weight="700">.</text><rect x="260" y="30" width="100" height="48" rx="8" fill="var(--primary)" fill-opacity=".14" stroke="var(--primary)" stroke-width="1.6"/><text x="310.0" y="60.3" font-size="18" text-anchor="middle" fill="var(--text)" font-weight="600">1</text><text x="370" y="62" font-size="22" text-anchor="middle" fill="var(--text-muted)" font-weight="700">.</text><rect x="380" y="30" width="100" height="48" rx="8" fill="var(--primary)" fill-opacity=".14" stroke="var(--primary)" stroke-width="1.6"/><text x="430.0" y="60.3" font-size="18" text-anchor="middle" fill="var(--text)" font-weight="600">15</text><text x="260" y="104" font-size="12.5" text-anchor="middle" fill="var(--text-muted)">four 8-bit octets</text></svg>
+</div>
 
 Each group is called an **octet** (8 bits), separated by dots.
 
@@ -1020,48 +1018,17 @@ This layered approach gives you the best of both worlds: low-latency static deli
 
 This is the most asked networking interview question — and the best way to confirm you've absorbed everything in this chapter. Here's the journey, with approximate latencies from Chapter 1's reference table.
 
-```
-1. Browser checks its own cache for google.com           [~0 ms]
-   - Browser cache → OS cache → /etc/hosts → resolver
-
-2. DNS lookup (recursive resolver → root → TLD → auth)   [~20-120 ms]
-   - Cached at every layer; only the first user pays full cost
-   - Returns: 142.250.190.78 (an A record)
-   - With Anycast + Geo-DNS, you usually hit a regional answer
-
-3. TCP three-way handshake to that IP on port 443        [~1 RTT, ~50-150 ms cross-continent]
-   - Client: SYN
-   - Server: SYN-ACK
-   - Client: ACK
-   - Connection established
-
-4. TLS handshake (HTTPS)                                  [~1-2 more RTTs]
-   - Client Hello with supported ciphers
-   - Server presents certificate (verified via PKI)
-   - Symmetric session key negotiated
-   - Modern TLS 1.3 + session resumption: as little as 0-RTT
-
-5. HTTP request                                           [1 RTT for round trip]
-   - GET / HTTP/2
-   - Host: google.com
-   - Cookie: ...
-   - May actually hit a CDN / Anycast edge, not the origin
-
-6. Server processes the request                           [variable]
-   - Load balancer routes to an app server
-   - App server queries DB / cache / other services
-   - Composes response
-
-7. HTTP response streams back                              [bandwidth-bound]
-   - 200 OK, Content-Type: text/html
-   - HTML body (usually compressed: gzip / brotli)
-
-8. Browser parses HTML, discovers subresources             [~10-50 ms]
-   - CSS, JS, images, fonts → each may trigger more DNS + TCP + TLS + HTTP
-   - But HTTP/2 multiplexes them over the same connection
-
-9. Browser renders the page                                [~50-500 ms depending on JS]
-```
+| # | Step | Time | Details |
+|---|---|---|---|
+| 1 | Browser checks its own cache for `google.com` | ~0 ms | Browser cache → OS cache → `/etc/hosts` → resolver |
+| 2 | DNS lookup (recursive resolver → root → TLD → auth) | ~20–120 ms | Cached at every layer; only the first user pays full cost<br>Returns `142.250.190.78` (an A record)<br>With Anycast + Geo-DNS, you usually hit a regional answer |
+| 3 | TCP three-way handshake to that IP on port 443 | ~1 RTT, ~50–150 ms cross-continent | Client: SYN<br>Server: SYN-ACK<br>Client: ACK<br>Connection established |
+| 4 | TLS handshake (HTTPS) | ~1–2 more RTTs | Client Hello with supported ciphers<br>Server presents certificate (verified via PKI)<br>Symmetric session key negotiated<br>Modern TLS 1.3 + session resumption: as little as 0-RTT |
+| 5 | HTTP request | 1 RTT for round trip | `GET / HTTP/2`<br>`Host: google.com`<br>`Cookie: ...`<br>May actually hit a CDN / Anycast edge, not the origin |
+| 6 | Server processes the request | variable | Load balancer routes to an app server<br>App server queries DB / cache / other services<br>Composes response |
+| 7 | HTTP response streams back | bandwidth-bound | `200 OK`, `Content-Type: text/html`<br>HTML body (usually compressed: gzip / brotli) |
+| 8 | Browser parses HTML, discovers subresources | ~10–50 ms | CSS, JS, images, fonts → each may trigger more DNS + TCP + TLS + HTTP<br>But HTTP/2 multiplexes them over the same connection |
+| 9 | Browser renders the page | ~50–500 ms depending on JS | |
 
 **Where the latency budget goes** (typical 200 ms page load):
 

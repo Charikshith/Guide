@@ -62,18 +62,17 @@ In small teams, one person may hold several roles — but the IC role is always 
 
 **An incident timeline (detect → mitigate → resolve → learn)**
 
-```
- 14:02  deploy v1.42 (new payment retries)
- 14:09  ● impact starts: checkout errors 0.2% → 9%
- 14:14  🔔 SLO fast-burn alert pages on-call                 ← time to detect: 5 min
- 14:16  SEV-2 declared · IC: Ana · comms: Raj · #inc-0412 opened
- 14:21  hypothesis: the new deploy (only change in the last 30 min)
- 14:23  ✂ mitigation: rollback to v1.41                       ← time to mitigate: 14 min
- 14:27  errors back to 0.2% · monitoring
- 14:55  resolved · status page closed
- +3 days  postmortem review → 5 action items with owners
- ├─ TTD ─┤├──── TTM ─────┤├── TTR ─────────────────────────┤
-```
+| Time | Event | |
+|---|---|---|
+| 14:02 | deploy v1.42 (new payment retries) | |
+| 14:09 | ● **impact starts**: checkout errors 0.2% → 9% | |
+| 14:14 | 🔔 SLO fast-burn alert pages on-call | **TTD**: time to detect = 5 min |
+| 14:16 | SEV-2 declared · IC: Ana · comms: Raj · `#inc-0412` opened | |
+| 14:21 | hypothesis: the new deploy (the only change in the last 30 min) | |
+| 14:23 | ✂ **mitigation**: rollback to v1.41 | **TTM**: time to mitigate = 14 min |
+| 14:27 | errors back to 0.2% · monitoring | |
+| 14:55 | resolved · status page closed | **TTR**: time to resolve |
+| +3 days | postmortem review → 5 action items with owners | |
 
 **Response flow**
 

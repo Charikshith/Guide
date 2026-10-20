@@ -16,12 +16,9 @@ Propositional logic, truth tables, De Morgan's laws; how boolean algebra maps to
 * **OR** — two switches in *parallel*: the bulb lights if either is ON.
 * **NOT** — an inverter: flips ON to OFF.
 
-```
-AND (series)                OR (parallel)
-                              ┌──[A]──┐
- ─[A]──[B]──(💡)            ──┤       ├──(💡)
-                              └──[B]──┘
-```
+<div class="fig">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 170" role="img" aria-label="AND is two switches in series, OR is two switches in parallel; the light is on when current can flow" style="width:100%;max-width:760px;height:auto;font-family:inherit"><defs><marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="context-stroke"/></marker></defs><text x="20" y="24" font-size="15" text-anchor="start" fill="var(--text)" font-weight="700">AND (series)</text><line x1="30" y1="100" x2="70" y2="100" stroke="var(--text-muted)" stroke-width="1.6"/><rect x="70" y="80" width="50" height="40" rx="8" fill="var(--primary)" fill-opacity=".14" stroke="var(--primary)" stroke-width="1.6"/><text x="95.0" y="104.55" font-size="13" text-anchor="middle" fill="var(--text)" font-weight="600">A</text><line x1="120" y1="100" x2="160" y2="100" stroke="var(--text-muted)" stroke-width="1.6"/><rect x="160" y="80" width="50" height="40" rx="8" fill="var(--primary)" fill-opacity=".14" stroke="var(--primary)" stroke-width="1.6"/><text x="185.0" y="104.55" font-size="13" text-anchor="middle" fill="var(--text)" font-weight="600">B</text><line x1="210" y1="100" x2="270" y2="100" stroke="var(--text-muted)" stroke-width="1.6"/><circle cx="290" cy="100" r="20" fill="1" fill-opacity="0.2" stroke="var(--accent)" stroke-width="1.6"/><text x="290" y="107" font-size="20" text-anchor="middle" fill="var(--text)">💡</text><text x="20" y="150" font-size="12" text-anchor="start" fill="var(--text-muted)">Both switches must be closed</text><text x="400" y="24" font-size="15" text-anchor="start" fill="var(--text)" font-weight="700">OR (parallel)</text><line x1="400" y1="100" x2="450" y2="100" stroke="var(--text-muted)" stroke-width="1.6"/><line x1="450" y1="60" x2="450" y2="140" stroke="var(--text-muted)" stroke-width="1.6"/><line x1="450" y1="60" x2="490" y2="60" stroke="var(--text-muted)" stroke-width="1.6"/><rect x="490" y="40" width="50" height="40" rx="8" fill="var(--primary)" fill-opacity=".14" stroke="var(--primary)" stroke-width="1.6"/><text x="515.0" y="64.55" font-size="13" text-anchor="middle" fill="var(--text)" font-weight="600">A</text><line x1="540" y1="60" x2="580" y2="60" stroke="var(--text-muted)" stroke-width="1.6"/><line x1="450" y1="140" x2="490" y2="140" stroke="var(--text-muted)" stroke-width="1.6"/><rect x="490" y="120" width="50" height="40" rx="8" fill="var(--primary)" fill-opacity=".14" stroke="var(--primary)" stroke-width="1.6"/><text x="515.0" y="144.55" font-size="13" text-anchor="middle" fill="var(--text)" font-weight="600">B</text><line x1="540" y1="140" x2="580" y2="140" stroke="var(--text-muted)" stroke-width="1.6"/><line x1="580" y1="60" x2="580" y2="140" stroke="var(--text-muted)" stroke-width="1.6"/><line x1="580" y1="100" x2="640" y2="100" stroke="var(--text-muted)" stroke-width="1.6"/><circle cx="660" cy="100" r="20" fill="1" fill-opacity="0.2" stroke="var(--accent)" stroke-width="1.6"/><text x="660" y="107" font-size="20" text-anchor="middle" fill="var(--text)">💡</text><text x="400" y="165" font-size="12" text-anchor="start" fill="var(--text-muted)">Either switch closed is enough</text></svg>
+</div>
 
 **Key terms**
 
@@ -131,15 +128,11 @@ print(bin(a & b), bin(a | b), bin(a ^ b))   # 0b1000 0b1110 0b110
 
 The power-of-two trick — `x & (x - 1)` clears the lowest set bit:
 
-```
-x       = 0b0100_0000   (64)
-x - 1   = 0b0011_1111   (63)
-x & x-1 = 0b0000_0000   → 0, so 64 is a power of two
-
-x       = 0b0100_1000   (72)
-x - 1   = 0b0100_0111
-x & x-1 = 0b0100_0000   → not 0, so 72 is not
-```
+| | Case 1 | Case 2 |
+|---|---|---|
+| x | `0b0100_0000` (64) | `0b0100_1000` (72) |
+| x − 1 | `0b0011_1111` (63) | `0b0100_0111` |
+| x & (x − 1) | `0b0000_0000` → 0, so 64 **is** a power of two | `0b0100_0000` → not 0, so 72 is **not** |
 
 ```python
 def is_power_of_two(x: int) -> bool:

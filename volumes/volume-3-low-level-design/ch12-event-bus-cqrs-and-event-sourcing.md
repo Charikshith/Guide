@@ -107,14 +107,16 @@ flowchart LR
 
 **State = fold over events**
 
-```
- stream cart-7
- #1 CartCreated(customer=c1)        → {items: {}, total: 0}
- #2 ItemAdded(pen, 2, 150)          → {pen: 2}          total 300
- #3 ItemAdded(pad, 1, 400)          → {pen: 2, pad: 1}  total 700
- #4 ItemRemoved(pen)                → {pad: 1}          total 400
- state(cart-7) = reduce(apply, events, initial)   — replay any prefix to time-travel
-```
+Stream `cart-7`:
+
+| # | Event | State after |
+|---|---|---|
+| 1 | `CartCreated(customer=c1)` | `{items: {}, total: 0}` |
+| 2 | `ItemAdded(pen, 2, 150)` | `{pen: 2}`, total 300 |
+| 3 | `ItemAdded(pad, 1, 400)` | `{pen: 2, pad: 1}`, total 700 |
+| 4 | `ItemRemoved(pen)` | `{pad: 1}`, total 400 |
+
+`state(cart-7) = reduce(apply, events, initial)`: replay any prefix to time-travel.
 
 **An in-process event bus**
 

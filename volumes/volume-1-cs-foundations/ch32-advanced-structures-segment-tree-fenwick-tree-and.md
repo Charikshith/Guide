@@ -76,32 +76,39 @@ graph TD
 
 **Fenwick tree: what each index covers (lowest set bit)**
 
-```
- i (binary)   covers           tree[i] =
- 1  (0001)    a[1]             a1
- 2  (0010)    a[1..2]          a1+a2
- 3  (0011)    a[3]             a3
- 4  (0100)    a[1..4]          a1..a4
- 5  (0101)    a[5]
- 6  (0110)    a[5..6]
- 7  (0111)    a[7]
- 8  (1000)    a[1..8]
- prefix(7) = tree[7] + tree[6] + tree[4]    (i -= i & -i:  7 → 6 → 4 → 0)
- update(3) touches tree[3], tree[4], tree[8] (i += i & -i:  3 → 4 → 8)
-```
+| i (binary) | covers | tree[i] = |
+|---|---|---|
+| 1 (0001) | a[1] | a1 |
+| 2 (0010) | a[1..2] | a1+a2 |
+| 3 (0011) | a[3] | a3 |
+| 4 (0100) | a[1..4] | a1..a4 |
+| 5 (0101) | a[5] | |
+| 6 (0110) | a[5..6] | |
+| 7 (0111) | a[7] | |
+| 8 (1000) | a[1..8] | |
+
+- `prefix(7) = tree[7] + tree[6] + tree[4]` (`i -= i & -i`: 7 → 6 → 4 → 0)
+- `update(3)` touches `tree[3]`, `tree[4]`, `tree[8]` (`i += i & -i`: 3 → 4 → 8)
 
 **Union-find forest with rank, before and after path compression**
 
+```mermaid
+flowchart LR
+    subgraph before["before find(6)"]
+        b0["0 (rank 2)"] --> b1["1"]
+        b0 --> b2["2"]
+        b2 --> b5["5"]
+        b5 --> b6["6"]
+    end
+    subgraph after["after find(6)"]
+        a0["0"] --> a1["1"]
+        a0 --> a2["2"]
+        a0 --> a5["5"]
+        a0 --> a6["6"]
+    end
 ```
- before find(6):             after find(6):
-        0 (rank 2)                 0
-       ╱ ╲                    ╱ ╱ ╲ ╲
-      1   2                  1 2   5  6      ← 5 and 6 now point straight at the root
-          │                      │
-          5                      (2 keeps its other children)
-          │
-          6
-```
+
+After `find(6)`, 5 and 6 point straight at the root (2 keeps its other children).
 
 ---
 

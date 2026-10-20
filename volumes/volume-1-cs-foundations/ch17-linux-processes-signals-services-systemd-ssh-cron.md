@@ -38,17 +38,11 @@ Process lifecycle, signals (SIGTERM/SIGKILL/SIGINT), systemd units, remote acces
 
 **Cron syntax**
 
-```
- ┌───────── minute (0–59)
- │ ┌─────── hour (0–23)
- │ │ ┌───── day of month (1–31)
- │ │ │ ┌─── month (1–12)
- │ │ │ │ ┌─ day of week (0–6, Sun = 0)
- │ │ │ │ │
- 0 3 * * *   /usr/local/bin/backup.sh        → 03:00 every day
- */15 * * * * /usr/local/bin/poll.sh         → every 15 minutes
- 0 9 * * 1-5 /usr/local/bin/report.sh        → 09:00 on weekdays
-```
+| minute (0–59) | hour (0–23) | day of month (1–31) | month (1–12) | day of week (0–6, Sun = 0) | command | runs |
+|---|---|---|---|---|---|---|
+| `0` | `3` | `*` | `*` | `*` | `/usr/local/bin/backup.sh` | 03:00 every day |
+| `*/15` | `*` | `*` | `*` | `*` | `/usr/local/bin/poll.sh` | every 15 minutes |
+| `0` | `9` | `*` | `*` | `1-5` | `/usr/local/bin/report.sh` | 09:00 on weekdays |
 
 **Networking commands**
 
@@ -103,14 +97,16 @@ sequenceDiagram
 
 **SSH key authentication**
 
-```
- your laptop                                   server
- ~/.ssh/id_ed25519      (private — never leaves)
- ~/.ssh/id_ed25519.pub ──── copied once ────►  ~/.ssh/authorized_keys
- ssh alice@server
-   1. server sends a challenge
-   2. laptop signs it with the private key
-   3. server checks the signature with the public key → logged in, no password sent
+```mermaid
+sequenceDiagram
+    participant L as your laptop
+    participant S as server
+    Note over L: ~/.ssh/id_ed25519 (private, never leaves)
+    L->>S: ~/.ssh/id_ed25519.pub copied once to authorized_keys
+    Note over L,S: ssh alice@server
+    S->>L: 1. server sends a challenge
+    L->>S: 2. laptop signs it with the private key
+    Note over S: 3. checks the signature with the public key, logged in, no password sent
 ```
 
 ---

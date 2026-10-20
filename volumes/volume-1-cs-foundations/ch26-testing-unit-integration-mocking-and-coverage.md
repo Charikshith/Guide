@@ -50,18 +50,9 @@ The testing pyramid; unit vs integration; mocks/stubs/fakes; coverage as a signa
 
 **The testing pyramid**
 
-```
-                    ▲  slower, costlier, more realistic
-                   ╱ ╲
-                  ╱E2E╲            ~5%   a few critical user journeys
-                 ╱─────╲
-                ╱ Integ-╲          ~20%  real DB / queue / HTTP in containers
-               ╱ ration  ╲
-              ╱───────────╲
-             ╱    Unit     ╲       ~75%  pure logic, milliseconds each
-            ╱───────────────╲
-           ▼  faster, cheaper, more precise failure messages
-```
+<div class="fig">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 330" role="img" aria-label="Test pyramid: many fast unit tests at the base, fewer integration tests, a few end-to-end tests at the top" style="width:100%;max-width:760px;height:auto;font-family:inherit"><defs><marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="context-stroke"/></marker></defs><polygon points="225,40 275,40 320,110 180,110" fill="var(--danger)" fill-opacity=".25" stroke="var(--danger)" stroke-width="1.8"/><text x="250" y="80.0" font-size="15" text-anchor="middle" fill="var(--text)" font-weight="700">E2E</text><polygon points="179,112 321,112 370,190 130,190" fill="var(--accent)" fill-opacity=".25" stroke="var(--accent)" stroke-width="1.8"/><text x="250" y="156.0" font-size="15" text-anchor="middle" fill="var(--text)" font-weight="700">Integration</text><polygon points="129,192 371,192 420,278 80,278" fill="var(--success)" fill-opacity=".25" stroke="var(--success)" stroke-width="1.8"/><text x="250" y="240.0" font-size="15" text-anchor="middle" fill="var(--text)" font-weight="700">Unit</text><text x="450" y="75" font-size="15" text-anchor="start" fill="var(--text)" font-weight="700">~5%</text><text x="500" y="75" font-size="13" text-anchor="start" fill="var(--text)">a few critical user journeys</text><text x="450" y="151" font-size="15" text-anchor="start" fill="var(--text)" font-weight="700">~20%</text><text x="500" y="151" font-size="13" text-anchor="start" fill="var(--text)">real DB / queue / HTTP in containers</text><text x="450" y="235" font-size="15" text-anchor="start" fill="var(--text)" font-weight="700">~75%</text><text x="500" y="235" font-size="13" text-anchor="start" fill="var(--text)">pure logic, milliseconds each</text><text x="250" y="24" font-size="12.5" text-anchor="middle" fill="var(--text-muted)" font-weight="600">▲ slower, costlier, more realistic</text><text x="250" y="304" font-size="12.5" text-anchor="middle" fill="var(--text-muted)" font-weight="600">▼ faster, cheaper, more precise failure messages</text></svg>
+</div>
 
 **Where doubles plug in**
 
@@ -79,11 +70,11 @@ flowchart LR
 
 **A test that fails for the right reason**
 
-```
- 1. write the test          →  run  →  🔴 fails: "expected 450, got 500"
- 2. implement the discount  →  run  →  🟢 passes
- 3. break the code on purpose → run →  🔴 fails again   ← proves the test can catch it
-```
+| Step | Do | Run |
+|---|---|---|
+| 1 | write the test | 🔴 fails: "expected 450, got 500" |
+| 2 | implement the discount | 🟢 passes |
+| 3 | break the code on purpose | 🔴 fails again, which proves the test can catch it |
 
 ---
 

@@ -57,37 +57,23 @@ Arrays, lists, tuples, dictionaries/hashmaps, sets, queues, stacks — operation
 
 **A hashmap with buckets and chaining**
 
-```
- key "apple" ──► hash("apple") = 9_817_223 ──► 9_817_223 % 8 = 7
- key "grape" ──► hash("grape") = 4_441_017 ──► 4_441_017 % 8 = 1
- key "melon" ──► hash("melon") = 2_003_191 ──► 2_003_191 % 8 = 7   ← collision
+| Key | hash(key) | hash % 8 | |
+|---|---|---|---|
+| `"apple"` | 9_817_223 | 7 | |
+| `"grape"` | 4_441_017 | 1 | |
+| `"melon"` | 2_003_191 | 7 | **collision** with "apple" |
 
-  buckets
-  [0] ∅
-  [1] ─► ("grape", 3)
-  [2] ∅
-  [3] ∅
-  [4] ∅
-  [5] ∅
-  [6] ∅
-  [7] ─► ("apple", 5) ─► ("melon", 2)     chain: compare keys one by one
-```
+<div class="fig">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 700 290" role="img" aria-label="A hash table with eight buckets: grape in bucket 1, apple and melon chained in bucket 7" style="width:100%;max-width:700px;height:auto;font-family:inherit"><defs><marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="context-stroke"/></marker></defs><text x="60" y="24" font-size="13" text-anchor="start" fill="var(--text-muted)" font-weight="600">buckets</text><rect x="60" y="36" width="50" height="26" rx="3" fill="var(--border)" fill-opacity=".3" stroke="var(--border)" stroke-width="1.6"/><text x="85" y="54" font-size="12.5" text-anchor="middle" fill="var(--text)">[0]</text><rect x="60" y="66" width="50" height="26" rx="3" fill="var(--border)" fill-opacity=".3" stroke="var(--border)" stroke-width="1.6"/><text x="85" y="84" font-size="12.5" text-anchor="middle" fill="var(--text)">[1]</text><rect x="60" y="96" width="50" height="26" rx="3" fill="var(--border)" fill-opacity=".3" stroke="var(--border)" stroke-width="1.6"/><text x="85" y="114" font-size="12.5" text-anchor="middle" fill="var(--text)">[2]</text><rect x="60" y="126" width="50" height="26" rx="3" fill="var(--border)" fill-opacity=".3" stroke="var(--border)" stroke-width="1.6"/><text x="85" y="144" font-size="12.5" text-anchor="middle" fill="var(--text)">[3]</text><rect x="60" y="156" width="50" height="26" rx="3" fill="var(--border)" fill-opacity=".3" stroke="var(--border)" stroke-width="1.6"/><text x="85" y="174" font-size="12.5" text-anchor="middle" fill="var(--text)">[4]</text><rect x="60" y="186" width="50" height="26" rx="3" fill="var(--border)" fill-opacity=".3" stroke="var(--border)" stroke-width="1.6"/><text x="85" y="204" font-size="12.5" text-anchor="middle" fill="var(--text)">[5]</text><rect x="60" y="216" width="50" height="26" rx="3" fill="var(--border)" fill-opacity=".3" stroke="var(--border)" stroke-width="1.6"/><text x="85" y="234" font-size="12.5" text-anchor="middle" fill="var(--text)">[6]</text><rect x="60" y="246" width="50" height="26" rx="3" fill="var(--border)" fill-opacity=".3" stroke="var(--border)" stroke-width="1.6"/><text x="85" y="264" font-size="12.5" text-anchor="middle" fill="var(--text)">[7]</text><text x="130" y="54" font-size="14" text-anchor="start" fill="var(--text-muted)">∅</text><text x="130" y="114" font-size="14" text-anchor="start" fill="var(--text-muted)">∅</text><text x="130" y="144" font-size="14" text-anchor="start" fill="var(--text-muted)">∅</text><text x="130" y="174" font-size="14" text-anchor="start" fill="var(--text-muted)">∅</text><text x="130" y="204" font-size="14" text-anchor="start" fill="var(--text-muted)">∅</text><text x="130" y="234" font-size="14" text-anchor="start" fill="var(--text-muted)">∅</text><line x1="110" y1="79" x2="140" y2="79" stroke="var(--text-muted)" stroke-width="1.6" marker-end="url(#ar)"/><rect x="142" y="66" width="130" height="26" rx="4" fill="var(--success)" fill-opacity=".2" stroke="var(--success)" stroke-width="1.6"/><text x="207" y="84" font-size="12.5" text-anchor="middle" fill="var(--text)">("grape", 3)</text><line x1="110" y1="259" x2="140" y2="259" stroke="var(--text-muted)" stroke-width="1.6" marker-end="url(#ar)"/><rect x="142" y="246" width="130" height="26" rx="4" fill="var(--primary)" fill-opacity=".2" stroke="var(--primary)" stroke-width="1.6"/><text x="207" y="264" font-size="12.5" text-anchor="middle" fill="var(--text)">("apple", 5)</text><line x1="272" y1="259" x2="300" y2="259" stroke="var(--text-muted)" stroke-width="1.6" marker-end="url(#ar)"/><rect x="302" y="246" width="130" height="26" rx="4" fill="var(--danger)" fill-opacity=".2" stroke="var(--danger)" stroke-width="1.6"/><text x="367" y="264" font-size="12.5" text-anchor="middle" fill="var(--text)">("melon", 2)</text><text x="448" y="264" font-size="12.5" text-anchor="start" fill="var(--text-muted)">chain: compare keys one by one</text></svg>
+</div>
 
 When the table gets too full (load factor above ~⅔), it doubles and every key is re-placed. Python actually uses *open addressing* (probe the next slot) rather than chains, but the idea is the same.
 
 **Stack (LIFO) vs queue (FIFO)**
 
-```
- STACK                                 QUEUE
- push 1, push 2, push 3                enqueue 1, 2, 3
-      ┌───┐ ◄── push / pop                   out ◄──┌───┬───┬───┐◄── in
-      │ 3 │     pop → 3                 dequeue → 1 │ 1 │ 2 │ 3 │
-      ├───┤                                         └───┴───┴───┘
-      │ 2 │
-      ├───┤
-      │ 1 │
-      └───┘
-```
+<div class="fig">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 700 280" role="img" aria-label="A stack pushes and pops at the top; a queue enqueues at the back and dequeues from the front" style="width:100%;max-width:700px;height:auto;font-family:inherit"><defs><marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="context-stroke"/></marker></defs><text x="120" y="26" font-size="15" text-anchor="middle" fill="var(--text)" font-weight="700">STACK</text><text x="120" y="46" font-size="12.5" text-anchor="middle" fill="var(--text-muted)">push 1, push 2, push 3</text><rect x="80" y="64" width="80" height="44" rx="4" fill="var(--primary)" fill-opacity=".18" stroke="var(--primary)" stroke-width="1.6"/><text x="120" y="92" font-size="15" text-anchor="middle" fill="var(--text)" font-weight="700">3</text><rect x="80" y="108" width="80" height="44" rx="4" fill="var(--primary)" fill-opacity=".18" stroke="var(--primary)" stroke-width="1.6"/><text x="120" y="136" font-size="15" text-anchor="middle" fill="var(--text)" font-weight="700">2</text><rect x="80" y="152" width="80" height="44" rx="4" fill="var(--primary)" fill-opacity=".18" stroke="var(--primary)" stroke-width="1.6"/><text x="120" y="180" font-size="15" text-anchor="middle" fill="var(--text)" font-weight="700">1</text><line x1="170" y1="76" x2="170" y2="94" stroke="var(--accent)" stroke-width="1.6" marker-end="url(#ar)" marker-start="url(#ar)"/><text x="184" y="90" font-size="12.5" text-anchor="start" fill="var(--accent)" font-weight="600">push / pop</text><text x="184" y="108" font-size="12.5" text-anchor="start" fill="var(--text-muted)">pop → 3</text><text x="480" y="26" font-size="15" text-anchor="middle" fill="var(--text)" font-weight="700">QUEUE</text><text x="480" y="46" font-size="12.5" text-anchor="middle" fill="var(--text-muted)">enqueue 1, 2, 3</text><rect x="400" y="96" width="60" height="44" rx="4" fill="var(--success)" fill-opacity=".18" stroke="var(--success)" stroke-width="1.6"/><text x="430" y="124" font-size="15" text-anchor="middle" fill="var(--text)" font-weight="700">1</text><rect x="460" y="96" width="60" height="44" rx="4" fill="var(--success)" fill-opacity=".18" stroke="var(--success)" stroke-width="1.6"/><text x="490" y="124" font-size="15" text-anchor="middle" fill="var(--text)" font-weight="700">2</text><rect x="520" y="96" width="60" height="44" rx="4" fill="var(--success)" fill-opacity=".18" stroke="var(--success)" stroke-width="1.6"/><text x="550" y="124" font-size="15" text-anchor="middle" fill="var(--text)" font-weight="700">3</text><line x1="340" y1="118" x2="396" y2="118" stroke="var(--accent)" stroke-width="1.6" marker-end="url(#ar)"/><text x="368" y="92" font-size="12.5" text-anchor="middle" fill="var(--accent)" font-weight="600">out</text><text x="368" y="156" font-size="12.5" text-anchor="middle" fill="var(--text-muted)">dequeue → 1</text><line x1="584" y1="118" x2="640" y2="118" stroke="var(--accent)" stroke-width="1.6" marker-start="url(#ar)"/><text x="612" y="92" font-size="12.5" text-anchor="middle" fill="var(--accent)" font-weight="600">in</text></svg>
+</div>
 
 **Why inserting at the front of a list is O(n)**
 

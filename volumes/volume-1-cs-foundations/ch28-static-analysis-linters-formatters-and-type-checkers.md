@@ -66,19 +66,20 @@ flowchart LR
 
 **Shift left: the same checks at every stage**
 
+```mermaid
+flowchart LR
+    a["editor (on save)<br/>instant"] --> b["pre-commit hook<br/>seconds"] --> c["CI<br/>minutes"] --> d["code review<br/>humans review logic, not commas"]
 ```
- editor (on save) ──► pre-commit hook ──► CI ──► code review
-   instant             seconds             minutes   humans review logic, not commas
- the earlier a bug is caught, the cheaper it is to fix
-```
+
+The earlier a bug is caught, the cheaper it is to fix.
 
 **How a type checker narrows types**
 
-```
- def greet(name: str | None) -> str:
-     if name is None:            ← inside: name is None
-         return "hi, stranger"
-     return "hi, " + name.upper()  ← after the check: name is str
+```python
+def greet(name: str | None) -> str:
+    if name is None:            # inside: name is None
+        return "hi, stranger"
+    return "hi, " + name.upper()  # after the check: name is str
 ```
 
 ---

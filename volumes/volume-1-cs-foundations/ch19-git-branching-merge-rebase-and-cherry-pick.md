@@ -81,21 +81,29 @@ No merge commit is needed: `main` can now fast-forward its label from E to D′.
 
 **3-way merge: how Git decides**
 
-```
- base (merge base):  greeting = "hello"      timeout = 30
- ours (main):        greeting = "hello"      timeout = 60     ← only ours changed timeout
- theirs (feature):   greeting = "hi"         timeout = 30     ← only theirs changed greeting
- result:             greeting = "hi"         timeout = 60     ✓ automatic
- if both changed the same line differently → CONFLICT, you choose
-```
+| | greeting | timeout | |
+|---|---|---|---|
+| **base** (merge base) | `"hello"` | `30` | |
+| **ours** (main) | `"hello"` | `60` | only ours changed `timeout` |
+| **theirs** (feature) | `"hi"` | `30` | only theirs changed `greeting` |
+| **result** | `"hi"` | `60` | ✓ automatic |
+
+If both sides changed the same line differently, it is a **conflict** and you choose.
 
 **Cherry-pick**
 
+```mermaid
+flowchart LR
+    subgraph main
+        A((A)) --> B((B)) --> E((E)) --> Fp(("F′"))
+    end
+    subgraph release
+        C((C)) --> F((F))
+    end
+    B --> C
 ```
- main:     A ── B ── E ── F′      ← F′ = the same change as F, new ID
-                 \
- release:         C ── F          (a hotfix on release, also needed on main)
-```
+
+`F′` is the same change as `F` with a new commit ID: a hotfix made on `release` that is also needed on `main`.
 
 ---
 

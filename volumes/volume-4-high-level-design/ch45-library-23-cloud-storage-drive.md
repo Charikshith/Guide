@@ -160,30 +160,14 @@ flowchart LR
 
 ASCII view:
 
-```
-+------------------+     +-----------------+     +-------------------+
-|  Client Devices  +<--->+  API Gateway    +<--->+  Auth Service     |
-| (Web/Mobile/Desktop)   +-----------------+     +-------------------+
-        |                         |
-        |                         v
-        |                 +--------------------+
-        |                 |  Upload Service    |
-        |                 +--------------------+
-        |                         |
-        |                         v
-        |                 +--------------------+
-        |                 |  Metadata Service  |<----+
-        |                 +--------------------+     |
-        |                         |                  |
-        v                         v                  |
-+-------------------+     +-------------------+      |
-|  Sync Service     |<--->+  Storage Service  +<-----+
-+-------------------+     +-------------------+
-        |
-        v
-+-------------------+
-| Notification/Push |
-+-------------------+
+```mermaid
+flowchart TD
+    cd["Client Devices<br/>(Web/Mobile/Desktop)"] <--> gw["API Gateway"] <--> au["Auth Service"]
+    gw --> up["Upload Service"] --> md["Metadata Service"] --> st["Storage Service"]
+    st --> md
+    cd --> sy["Sync Service"]
+    sy <--> st
+    sy --> nt["Notification / Push"]
 ```
 
 

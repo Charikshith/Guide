@@ -141,12 +141,12 @@ flowchart LR
 
 **Choosing the altitude**
 
-```
- zoom out ▲  Context     "our system, its users, the external systems it talks to"  → execs, new joiners
-          │  Container   "the deployable parts: web app, API, DB, queue"             → the whole team
-          │  Component   "the modules inside one container"                           → that service's devs
- zoom in  ▼  Code        "classes and methods"                                        → usually generate, don't draw
-```
+| Zoom | C4 level | What it shows | Audience |
+|---|---|---|---|
+| zoom out ▲ | **Context** | "our system, its users, the external systems it talks to" | execs, new joiners |
+| | **Container** | "the deployable parts: web app, API, DB, queue" | the whole team |
+| | **Component** | "the modules inside one container" | that service's devs |
+| zoom in ▼ | **Code** | "classes and methods" | usually generate, don't draw |
 
 ---
 

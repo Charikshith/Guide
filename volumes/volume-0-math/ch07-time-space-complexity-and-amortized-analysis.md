@@ -51,16 +51,16 @@ Counting operations; space complexity incl. recursion stack; amortized cost via 
 
 **Doubling dynamic array: the copy staircase**
 
-```
- capacity  1   2   4       8               16
- append#   1   2   3   4   5   6   7   8   9  ...
- copies    0   1   2   0   4   0   0   0   8   0 ...
-               ▲   ▲       ▲               ▲
-               └───┴───────┴───────────────┴── resize: copy everything
+| append # | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | … |
+|---|---|---|---|---|---|---|---|---|---|---|
+| capacity | 1 | 2 | 4 | 4 | 8 | 8 | 8 | 8 | 16 | … |
+| copies made | 0 | 1 | 2 | 0 | 4 | 0 | 0 | 0 | 8 | 0 … |
+| resize? | | ▲ | ▲ | | ▲ | | | | ▲ | |
 
- Total copies after n appends: 1 + 2 + 4 + … + n/2 < n
- Total work = n (writes) + n (copies) = O(n)  →  O(1) amortized per append
-```
+Each ▲ is a **resize: copy everything**.
+
+- Total copies after *n* appends: 1 + 2 + 4 + … + n/2 < n
+- Total work = n (writes) + n (copies) = O(n) → **O(1) amortized per append**
 
 ```mermaid
 xychart-beta
@@ -72,12 +72,12 @@ xychart-beta
 
 **Accounting method: each append pays 3 coins**
 
-```
- 1 coin  → write the new element now
- 2 coins → saved on the element: 1 to copy itself later,
-                                 1 to copy an "old" element that already spent its coins
- At resize from k to 2k, the k/2 new elements hold k coins → exactly pays for k copies.
-```
+| Coins | What they pay for |
+|---|---|
+| **1 coin** | write the new element now |
+| **2 coins** | saved on the element: 1 to copy itself later, 1 to copy an "old" element that already spent its coins |
+
+At a resize from *k* to *2k*, the k/2 new elements hold k coins, which exactly pays for k copies.
 
 **Recursion depth = stack space**
 

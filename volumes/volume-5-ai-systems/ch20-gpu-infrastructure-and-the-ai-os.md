@@ -23,20 +23,16 @@ GPU serving infrastructure, model deployment, and integrating every prior chapte
 
 **Sizing a serving workload (worked example — estimates; validate with a real benchmark)**
 
-```
- workload: peak 20 requests/s, avg 1,500 input + 300 output tokens
- model: 70B, FP8 weights, on 2 × H100 80 GB per replica (tensor parallel = 2)
+**Workload:** peak 20 requests/s, average 1,500 input + 300 output tokens.
+**Model:** 70B, FP8 weights, on 2 × H100 80 GB per replica (tensor parallel = 2).
 
- memory per replica:  160 GB × 0.9 usable = 144 GB − 70 GB weights = ~74 GB for KV cache
- KV per sequence:     0.3125 MiB × 1,800 tokens ≈ 0.59 GB → ~125 concurrent sequences per replica
-
- concurrency needed (Little's law): arrival rate × time in system
-   decode ~30 tok/s per sequence → 300 tokens ≈ 10 s, + ~0.5 s prefill → ~10.5 s
-   20 req/s × 10.5 s ≈ 210 concurrent sequences
-
- replicas: 210 ÷ (125 × 0.7 target utilization) ≈ 2.4 → 3 replicas, + 1 for failover/rollouts = 4
- GPUs: 4 replicas × 2 = 8 × H100
-```
+| Step | Working |
+|---|---|
+| memory per replica | 160 GB × 0.9 usable = 144 GB − 70 GB weights = **~74 GB for KV cache** |
+| KV per sequence | 0.3125 MiB × 1,800 tokens ≈ 0.59 GB → **~125 concurrent sequences** per replica |
+| concurrency needed (Little's law: arrival rate × time in system) | decode ~30 tok/s per sequence → 300 tokens ≈ 10 s, + ~0.5 s prefill → ~10.5 s; 20 req/s × 10.5 s ≈ **210 concurrent sequences** |
+| replicas | 210 ÷ (125 × 0.7 target utilization) ≈ 2.4 → 3 replicas, + 1 for failover / rollouts = **4** |
+| GPUs | 4 replicas × 2 = **8 × H100** |
 
 (Throughput per sequence and batch limits depend on the model, GPU, and engine — measure tokens/s at your target latency with a load test before buying.)
 
@@ -118,12 +114,9 @@ flowchart LR
 
 **Where GPU memory goes (one replica, 2 × 80 GB)**
 
-```
- ┌──────────────────── 160 GB ─────────────────────────────────────────────┐
- │ weights FP8 70 GB          │ KV cache ~74 GB (≈125 × 1.8k-token seqs) │▒│
- └────────────────────────────┴──────────────────────────────────────────┴─┘
-                                                           reserve ~10% ─┘
-```
+<div class="fig">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 160" role="img" aria-label="GPU memory per replica: 70 GB of FP8 weights, about 74 GB of KV cache for roughly 125 sequences of 1.8k tokens, and about 10 percent reserve" style="width:100%;max-width:800px;height:auto;font-family:inherit"><defs><marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="context-stroke"/></marker></defs><text x="400" y="22" font-size="13.5" text-anchor="middle" fill="var(--text)" font-weight="700">160 GB</text><rect x="20" y="36" width="332.5" height="50" rx="4" fill="var(--primary)" fill-opacity=".35" stroke="var(--primary)" stroke-width="1.6"/><text x="186.25" y="66" font-size="13" text-anchor="middle" fill="var(--text)" font-weight="600">weights FP8 70 GB</text><rect x="352.5" y="36" width="351.5" height="50" rx="4" fill="var(--success)" fill-opacity=".35" stroke="var(--success)" stroke-width="1.6"/><text x="528.25" y="66" font-size="13" text-anchor="middle" fill="var(--text)" font-weight="600">KV cache ~74 GB (≈125 × 1.8k-token seqs)</text><rect x="704.0" y="36" width="76.0" height="50" rx="4" fill="var(--accent)" fill-opacity=".35" stroke="var(--accent)" stroke-width="1.6"/><line x1="742.0" y1="90" x2="742.0" y2="118" stroke="var(--accent)" stroke-width="1.6"/><text x="780" y="134" font-size="12.5" text-anchor="end" fill="var(--accent)" font-weight="700">reserve ~10%</text></svg>
+</div>
 
 ---
 

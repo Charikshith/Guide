@@ -101,20 +101,16 @@ graph LR
 
 **ASCII view:**
 
-```plaintext
-           +-----------------+
-           | Origin Server   |
-           +-----------------+
-                |
-        +-------+---------+
-        |                 |
-+----------------+  +----------------+
-| Edge Server 1  |  | Edge Server 2  | ... More PoPs
-+----------------+  +----------------+
-      |                   |
-   User 1              User 2
-(Requests routed to nearest edge server)
+```mermaid
+flowchart TD
+    o["Origin Server"] --> e1["Edge Server 1"]
+    o --> e2["Edge Server 2"]
+    o -.-> more["... More PoPs"]
+    e1 --> u1["User 1"]
+    e2 --> u2["User 2"]
 ```
+
+Requests are routed to the nearest edge server.
 
 #### How a CDN Handles Requests
 
@@ -396,13 +392,15 @@ flowchart TD
 
 **Geo-partitioned users (home region)**
 
+```mermaid
+flowchart TD
+    dir["global directory (small, replicated everywhere)<br/>user_id → home_region<br/>u-1 → eu · u-2 → us · u-3 → in"]
+    dir --> eu["eu-west (EU PII stays here)<br/>users, orders for eu users"]
+    dir --> us["us-east<br/>… us users"]
+    dir --> ap["ap-south (India PII)<br/>… in users"]
 ```
- global directory (small, replicated everywhere):   user_id → home_region
-   u-1 → eu    u-2 → us    u-3 → in
- eu-west (EU PII stays here)   us-east              ap-south (India PII)
- [users, orders for eu users]  [… us users]         [… in users]
- a request for u-1 arriving in us-east → proxied to eu-west (or the client is redirected)
-```
+
+A request for `u-1` arriving in `us-east` is proxied to `eu-west` (or the client is redirected).
 
 ---
 
@@ -440,13 +438,15 @@ export default {
 };
 ```
 
-```text
-Geo-DNS (Route 53 style)
-  api.example.com  latency record → eu-west-1 ALB    health check /healthz
-  api.example.com  latency record → us-east-1 ALB    health check /healthz
-  api.example.com  latency record → ap-south-1 ALB   health check /healthz
-  TTL 60 s  → a failed region stops receiving new resolutions within ~1–2 minutes
-```
+**Geo-DNS (Route 53 style)**
+
+| Name | Record | Target | Health check |
+|---|---|---|---|
+| `api.example.com` | latency | `eu-west-1` ALB | `/healthz` |
+| `api.example.com` | latency | `us-east-1` ALB | `/healthz` |
+| `api.example.com` | latency | `ap-south-1` ALB | `/healthz` |
+
+TTL 60 s → a failed region stops receiving new resolutions within about 1–2 minutes.
 
 ---
 

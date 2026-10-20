@@ -57,21 +57,9 @@ Cohesion vs coupling; YAGNI/DRY/KISS as heuristics, and when they conflict.
 
 **A cohesion/coupling matrix with the target zone**
 
-```
-                      COUPLING  →
-                 low                          high
-            ┌──────────────────────┬──────────────────────┐
-     high   │  ✅ TARGET            │  "distributed        │
-            │  focused modules,     │   monolith": each     │
- COHESION   │  small interfaces     │   part is neat but    │
-            │                       │   everything calls    │
-            │                       │   everything          │
-            ├──────────────────────┼──────────────────────┤
-     low    │  "junk drawers":      │  ❌ BIG BALL OF MUD    │
-            │  utils.py, misc/,     │  change anything,     │
-            │  isolated but random  │  break everything     │
-            └──────────────────────┴──────────────────────┘
-```
+<div class="fig">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 780 400" role="img" aria-label="Cohesion against coupling: high cohesion and low coupling is the target; low cohesion and high coupling is a big ball of mud" style="width:100%;max-width:780px;height:auto;font-family:inherit"><defs><marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="context-stroke"/></marker></defs><text x="430" y="24" font-size="13" text-anchor="middle" fill="var(--text-muted)" font-weight="700">COUPLING  →</text><text x="280" y="50" font-size="13" text-anchor="middle" fill="var(--text-muted)" font-weight="600">low</text><text x="580" y="50" font-size="13" text-anchor="middle" fill="var(--text-muted)" font-weight="600">high</text><text x="50" y="200" font-size="13" text-anchor="middle" fill="var(--text-muted)" font-weight="700" transform="rotate(-90 50 200)">COHESION</text><text x="110" y="120" font-size="13" text-anchor="end" fill="var(--text-muted)" font-weight="600">high</text><text x="110" y="290" font-size="13" text-anchor="end" fill="var(--text-muted)" font-weight="600">low</text><rect x="130" y="60" width="300" height="160" rx="10" fill="var(--success)" fill-opacity=".14" stroke="var(--success)" stroke-width="1.6"/><text x="280" y="116" font-size="15" text-anchor="middle" fill="var(--text)" font-weight="700">✅ TARGET</text><text x="280" y="150" font-size="13" text-anchor="middle" fill="var(--text)">focused modules,</text><text x="280" y="167" font-size="13" text-anchor="middle" fill="var(--text)">small interfaces</text><rect x="440" y="60" width="300" height="160" rx="10" fill="var(--accent)" fill-opacity=".14" stroke="var(--accent)" stroke-width="1.6"/><text x="590" y="116" font-size="15" text-anchor="middle" fill="var(--text)" font-weight="700">"distributed monolith"</text><text x="590" y="150" font-size="13" text-anchor="middle" fill="var(--text)">each part is neat but</text><text x="590" y="167" font-size="13" text-anchor="middle" fill="var(--text)">everything calls everything</text><rect x="130" y="230" width="300" height="160" rx="10" fill="var(--accent)" fill-opacity=".14" stroke="var(--accent)" stroke-width="1.6"/><text x="280" y="286" font-size="15" text-anchor="middle" fill="var(--text)" font-weight="700">"junk drawers"</text><text x="280" y="320" font-size="13" text-anchor="middle" fill="var(--text)">utils.py, misc/,</text><text x="280" y="337" font-size="13" text-anchor="middle" fill="var(--text)">isolated but random</text><rect x="440" y="230" width="300" height="160" rx="10" fill="var(--danger)" fill-opacity=".14" stroke="var(--danger)" stroke-width="1.6"/><text x="590" y="286" font-size="15" text-anchor="middle" fill="var(--text)" font-weight="700">❌ BIG BALL OF MUD</text><text x="590" y="320" font-size="13" text-anchor="middle" fill="var(--text)">change anything,</text><text x="590" y="337" font-size="13" text-anchor="middle" fill="var(--text)">break everything</text></svg>
+</div>
 
 **A tangled module graph vs a clean one**
 
@@ -96,13 +84,9 @@ flowchart LR
 
 **DRY that increased coupling**
 
-```
- before: two similar functions            "DRY" merge                          undone
- format_user_name(u)     ─┐               format_name(x, kind, legal=False,     format_user_name(u)
- format_invoice_name(i)  ─┴─► merged ─►     uppercase=False, strip_suffix=…)   format_invoice_name(i)
-                                            └ every change for invoices          each changes for its
-                                              risks breaking user profiles       own reason again
-```
+| before: two similar functions | the "DRY" merge | undone |
+|---|---|---|
+| `format_user_name(u)`<br>`format_invoice_name(i)` | `format_name(x, kind, legal=False, uppercase=False, strip_suffix=…)`: every change for invoices risks breaking user profiles | `format_user_name(u)`<br>`format_invoice_name(i)`: each changes for its own reason again |
 
 ---
 

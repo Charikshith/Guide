@@ -54,22 +54,9 @@ Reflection, metaprogramming, decorators, context managers, closures, lambdas, it
 
 **A decorator wrapping a function**
 
-```
- @timed
- def fetch(url): ...          is the same as:   fetch = timed(fetch)
-
-           call fetch("x")
-                │
-     ┌──────────▼───────────────────────────┐
-     │ wrapper (from timed)                 │
-     │   start = now()                      │   ← extra behavior before
-     │   ┌──────────────────────────────┐   │
-     │   │ original fetch("x")          │   │
-     │   └──────────────────────────────┘   │
-     │   print(now() - start)               │   ← extra behavior after
-     │   return result                      │
-     └──────────────────────────────────────┘
-```
+<div class="fig">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 270" role="img" aria-label="A decorator wraps the original function: extra behaviour before and after the original call" style="width:100%;max-width:720px;height:auto;font-family:inherit"><defs><marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="context-stroke"/></marker></defs><text x="20" y="24" font-size="13" text-anchor="start" fill="#8b5cf6" font-weight="700">@timed</text><text x="20" y="44" font-size="13" text-anchor="start" fill="var(--text)">def fetch(url): ...</text><text x="250" y="34" font-size="13" text-anchor="start" fill="var(--text-muted)">is the same as:   fetch = timed(fetch)</text><text x="130" y="84" font-size="13" text-anchor="middle" fill="var(--text)" font-weight="600">call fetch("x")</text><line x1="130" y1="90" x2="130" y2="108" stroke="var(--text-muted)" stroke-width="1.6" marker-end="url(#ar)"/><rect x="20" y="108" width="440" height="148" rx="10" fill="#8b5cf6" fill-opacity=".10" stroke="#8b5cf6" stroke-width="1.6"/><text x="36" y="130" font-size="13" text-anchor="start" fill="#8b5cf6" font-weight="700">wrapper (from timed)</text><text x="36" y="152" font-size="13" text-anchor="start" fill="var(--text)">start = now()</text><text x="480" y="152" font-size="12.5" text-anchor="start" fill="var(--text-muted)">← extra behavior before</text><rect x="36" y="164" width="400" height="36" rx="6" fill="var(--primary)" fill-opacity=".18" stroke="var(--primary)" stroke-width="1.6"/><text x="236" y="187" font-size="13" text-anchor="middle" fill="var(--text)" font-weight="600">original fetch("x")</text><text x="36" y="224" font-size="13" text-anchor="start" fill="var(--text)">print(now() - start)</text><text x="480" y="224" font-size="12.5" text-anchor="start" fill="var(--text-muted)">← extra behavior after</text><text x="36" y="244" font-size="13" text-anchor="start" fill="var(--text)">return result</text></svg>
+</div>
 
 **A generator's yield / pause / resume cycle**
 

@@ -81,16 +81,18 @@ Red nodes are repeats. With a memo, each `fib(k)` is computed once: O(n) instead
 
 **A sliding window shrinking and expanding** — longest substring without repeats in `"abcabcbb"`
 
-```
- a b c a b c b b
- [a b c]                 expand right: window "abc", best = 3
-   [b c a]               'a' repeats → shrink left past the old 'a'
-     [c a b]
-       [a b c]
-           [c b]         'b' repeats → jump left past it
-               [b]       best stays 3
- each index enters and leaves the window at most once → O(n)
-```
+String `a b c a b c b b`:
+
+| Window | What happens |
+|---|---|
+| `[a b c]` | expand right: window "abc", best = 3 |
+| `[b c a]` | 'a' repeats → shrink left past the old 'a' |
+| `[c a b]` | |
+| `[a b c]` | |
+| `[c b]` | 'b' repeats → jump left past it |
+| `[b]` | best stays 3 |
+
+Each index enters and leaves the window at most once → **O(n)**.
 
 **Two pointers on a sorted array** — find a pair summing to 10 in `[1, 2, 4, 6, 8, 9]`
 

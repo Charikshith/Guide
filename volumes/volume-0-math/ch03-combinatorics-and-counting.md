@@ -56,11 +56,11 @@ flowchart LR
 
 **Why combinations divide by k!** — each unordered team appears `k!` times among ordered picks.
 
-```
- Ordered picks of 2 from {A,B,C}:  AB BA AC CA BC CB   → P(3,2) = 6
- Group the same team:              {AB,BA} {AC,CA} {BC,CB}
- Each team counted 2! = 2 times    → C(3,2) = 6 / 2 = 3
-```
+| Step | Result |
+|---|---|
+| Ordered picks of 2 from {A, B, C} | AB, BA, AC, CA, BC, CB → P(3,2) = 6 |
+| Group the same team | {AB, BA} · {AC, CA} · {BC, CB} |
+| Each team is counted 2! = 2 times | → C(3,2) = 6 / 2 = 3 |
 
 **Pascal's triangle** — each number is the sum of the two above it.
 

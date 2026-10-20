@@ -63,17 +63,28 @@ The diagram, worked example, exercises, mini-project, design prompt, open-source
 
 **Shared table vs schema-per-tenant vs DB-per-tenant**
 
-```
- POOL: shared tables                BRIDGE: schema per tenant         SILO: DB (or stack) per tenant
- ┌────────────────────────────┐     ┌──────────── db ───────────┐     ┌─ db_acme ─┐ ┌─ db_globex ─┐
- │ invoices                   │     │ acme.invoices             │     │ invoices  │ │ invoices    │
- │ tenant_id │ id │ amount    │     │ globex.invoices           │     └───────────┘ └─────────────┘
- │ acme      │ 1  │ 500       │     │ initech.invoices          │      (own compute, backups, keys,
- │ globex    │ 2  │ 900       │     └───────────────────────────┘       maybe own region)
- │ acme      │ 3  │ 120       │      search_path = acme
- └────────────────────────────┘
-  RLS: tenant_id = current tenant
-```
+**POOL: shared tables**
+
+`invoices` (RLS: `tenant_id = current tenant`)
+
+| tenant_id | id | amount |
+|---|---|---|
+| acme | 1 | 500 |
+| globex | 2 | 900 |
+| acme | 3 | 120 |
+
+**BRIDGE: schema per tenant** (one db; `search_path = acme`)
+
+- `acme.invoices`
+- `globex.invoices`
+- `initech.invoices`
+
+**SILO: DB (or stack) per tenant**
+
+- `db_acme` → `invoices`
+- `db_globex` → `invoices`
+
+Each with its own compute, backups, keys, and maybe its own region.
 
 **Tenant-aware request path**
 

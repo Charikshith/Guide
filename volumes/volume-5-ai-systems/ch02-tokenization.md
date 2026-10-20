@@ -57,21 +57,20 @@ Turning text into tokens — BPE/WordPiece/SentencePiece; token limits and the b
 
 **A BPE merge table turning "low lower lowest" into subword tokens** — corpus word counts: low ×5, lower ×2, lowest ×3, newest ×6 (`</w>` marks the end of a word)
 
-```
- start:  l o w </w>  ·  l o w e r </w>  ·  l o w e s t </w>  ·  n e w e s t </w>
+Start: `l o w </w>` · `l o w e r </w>` · `l o w e s t </w>` · `n e w e s t </w>`
 
- step  merge            count   corpus after the merge
-  1    w + e   → we      11     l o w </w> · l o we r </w> · l o we s t </w> · n e we s t </w>
-  2    l + o   → lo      10     lo w </w>  · lo we r </w>  · lo we s t </w>  · n e we s t </w>
-  3    we + s  → wes      9     …          · lo wes t </w> · n e wes t </w>
-  4    wes + t → west     9     …          · lo west </w>  · n e west </w>
-  5    west + </w>        9     lo west</w>   ·   n e west</w>
-  6    n + e   → ne       6     ne west</w>
+| Step | Merge | Count | Corpus after the merge |
+|---|---|---|---|
+| 1 | `w + e → we` | 11 | `l o w </w>` · `l o we r </w>` · `l o we s t </w>` · `n e we s t </w>` |
+| 2 | `l + o → lo` | 10 | `lo w </w>` · `lo we r </w>` · `lo we s t </w>` · `n e we s t </w>` |
+| 3 | `we + s → wes` | 9 | … · `lo wes t </w>` · `n e wes t </w>` |
+| 4 | `wes + t → west` | 9 | … · `lo west </w>` · `n e west </w>` |
+| 5 | `west + </w>` | 9 | `lo west</w>` · `n e west</w>` |
+| 6 | `n + e → ne` | 6 | `ne west</w>` |
 
- final tokens:  "low" → [lo, w, </w>]   "lower" → [lo, we, r, </w>]
-                "lowest" → [lo, west</w>]   "newest" → [ne, west</w>]
- a new word "slowest" → [s, lo, west</w>] — never seen, still encodable
-```
+**Final tokens:** `"low"` → `[lo, w, </w>]` · `"lower"` → `[lo, we, r, </w>]` · `"lowest"` → `[lo, west</w>]` · `"newest"` → `[ne, west</w>]`
+
+A new word `"slowest"` → `[s, lo, west</w>]`: never seen, still encodable.
 
 **Encode → model → decode**
 

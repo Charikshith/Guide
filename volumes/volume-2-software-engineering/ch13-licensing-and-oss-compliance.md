@@ -61,18 +61,9 @@ Licenses (MIT/Apache/GPL/AGPL), attribution, and scanning dependencies for licen
 
 **The permissive → copyleft spectrum**
 
-```
- fewer obligations ◄──────────────────────────────────────────────────► more obligations
-
-  Public domain / CC0 · Unlicense
-      MIT · BSD · ISC
-            Apache-2.0 (+ patent grant, NOTICE)
-                  MPL-2.0 (file-level copyleft)
-                        LGPL (library copyleft)
-                              GPL-2.0 / GPL-3.0 (whole combined work, on distribution)
-                                    AGPL-3.0 (also over the network)
-  ────────────── usually OK in proprietary products ──────────┤├── needs review / policy ──
-```
+<div class="fig">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 820 360" role="img" aria-label="License spectrum from public domain with fewest obligations to AGPL with the most; the first group is usually fine in proprietary products" style="width:100%;max-width:820px;height:auto;font-family:inherit"><defs><marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="context-stroke"/></marker></defs><text x="20" y="24" font-size="12.5" text-anchor="start" fill="var(--success)" font-weight="700">fewer obligations</text><text x="800" y="24" font-size="12.5" text-anchor="end" fill="var(--danger)" font-weight="700">more obligations</text><line x1="20" y1="36" x2="800" y2="36" stroke="var(--text-muted)" stroke-width="1.6" marker-end="url(#ar)" marker-start="url(#ar)"/><rect x="30" y="56" width="752" height="30" rx="6" fill="var(--success)" fill-opacity=".22" stroke="var(--success)" stroke-width="1.4"/><text x="42" y="76" font-size="12.5" text-anchor="start" fill="var(--text)" font-weight="600">Public domain / CC0 · Unlicense</text><rect x="92" y="94" width="690" height="30" rx="6" fill="var(--success)" fill-opacity=".22" stroke="var(--success)" stroke-width="1.4"/><text x="104" y="114" font-size="12.5" text-anchor="start" fill="var(--text)" font-weight="600">MIT · BSD · ISC</text><rect x="154" y="132" width="628" height="30" rx="6" fill="var(--success)" fill-opacity=".22" stroke="var(--success)" stroke-width="1.4"/><text x="166" y="152" font-size="12.5" text-anchor="start" fill="var(--text)" font-weight="600">Apache-2.0  (+ patent grant, NOTICE)</text><rect x="216" y="170" width="566" height="30" rx="6" fill="var(--accent)" fill-opacity=".22" stroke="var(--accent)" stroke-width="1.4"/><text x="228" y="190" font-size="12.5" text-anchor="start" fill="var(--text)" font-weight="600">MPL-2.0  (file-level copyleft)</text><rect x="278" y="208" width="504" height="30" rx="6" fill="var(--accent)" fill-opacity=".22" stroke="var(--accent)" stroke-width="1.4"/><text x="290" y="228" font-size="12.5" text-anchor="start" fill="var(--text)" font-weight="600">LGPL  (library copyleft)</text><rect x="340" y="246" width="442" height="30" rx="6" fill="var(--danger)" fill-opacity=".22" stroke="var(--danger)" stroke-width="1.4"/><text x="352" y="266" font-size="12.5" text-anchor="start" fill="var(--text)" font-weight="600">GPL-2.0 / GPL-3.0  (whole combined work, on distribution)</text><rect x="402" y="284" width="380" height="30" rx="6" fill="var(--danger)" fill-opacity=".22" stroke="var(--danger)" stroke-width="1.4"/><text x="414" y="304" font-size="12.5" text-anchor="start" fill="var(--text)" font-weight="600">AGPL-3.0  (also over the network)</text><text x="20" y="336" font-size="12.5" text-anchor="start" fill="var(--success)" font-weight="700">usually OK in proprietary products</text><text x="800" y="336" font-size="12.5" text-anchor="end" fill="var(--danger)" font-weight="700">needs review / policy</text><line x1="380" y1="326" x2="380" y2="346" stroke="var(--text-muted)" stroke-width="1.4" stroke-dasharray="3 3"/></svg>
+</div>
 
 **Does GPL apply to my product?**
 

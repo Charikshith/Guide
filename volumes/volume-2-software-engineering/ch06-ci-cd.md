@@ -79,19 +79,21 @@ flowchart LR
 
 **Build once, promote everywhere**
 
+```mermaid
+flowchart LR
+    c["commit 7a1c"] -- build --> img["image@sha256:3f9a…"]
+    img --> st["staging<br/>config: staging.env"]
+    img --> pr["production<br/>config: prod.env"]
 ```
-                      ┌──────────► staging    (config: staging.env)
- commit 7a1c ─build─► image@sha256:3f9a…
-                      └──────────► production (config: prod.env)
- ✗ never rebuild for prod — a rebuild may pull different dependencies or base images
-```
+
+✗ **Never rebuild for prod**: a rebuild may pull different dependencies or base images.
 
 **Feedback time is the key metric**
 
-```
- PR opened ─┬─ lint 20 s ─┬─ unit 90 s ─┬─ integration 4 min ─┬─ verdict at ~5 min ✅
-            │             │             │
-            └─ fail here → the dev hears in 20 s, not after 25 min
+```mermaid
+flowchart LR
+    pr["PR opened"] --> lint["lint<br/>20 s"] --> unit["unit<br/>90 s"] --> integ["integration<br/>4 min"] --> ok["verdict at ~5 min ✅"]
+    lint -. "fail here" .-> fast["the dev hears in 20 s,<br/>not after 25 min"]
 ```
 
 ---

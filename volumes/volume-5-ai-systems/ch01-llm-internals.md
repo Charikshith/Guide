@@ -69,16 +69,17 @@ flowchart TB
 
 **Tracing one token through the model**
 
-```
- position 5 ("the")                                    shape
- token id 262 ─► embedding row 262          ─►  [4096]           a vector
-             ─► + position info (RoPE)       ─►  [4096]
- layer 1:    attention mixes in "cat", "sat", "on"   [4096]  "a location after 'sat on'"
- …           FFN refines                             [4096]
- layer 32:   final vector                            [4096]
- LM head:    vector · W_out (4096 × 100k)       ─►  [100k] logits
- softmax:    ' mat' 0.31  ' floor' 0.18  ' sofa' 0.09  ' bed' 0.07  …
-```
+Predicting the token after "…the cat sat on", at position 5 (`"the"`):
+
+| Stage | What happens | Shape |
+|---|---|---|
+| token id 262 | → embedding row 262 | `[4096]`, a vector |
+| position info | + RoPE | `[4096]` |
+| layer 1 | attention mixes in "cat", "sat", "on" | `[4096]`: "a location after 'sat on'" |
+| … | FFN refines | `[4096]` |
+| layer 32 | final vector | `[4096]` |
+| LM head | vector · `W_out` (4096 × 100k) | `[100k]` logits |
+| softmax | `' mat'` 0.31 · `' floor'` 0.18 · `' sofa'` 0.09 · `' bed'` 0.07 · … | probabilities |
 
 **Logits → probabilities (softmax)**
 

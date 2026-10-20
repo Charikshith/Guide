@@ -105,21 +105,34 @@ erDiagram
 
 **INNER vs LEFT JOIN on sample data**
 
-```
- users              orders
- id │ name          id │ user_id
- ───┼──────         ───┼────────
-  1 │ Ada           10 │ 1
-  2 │ Bob           11 │ 1
-  3 │ Cy            12 │ 2
+| users.id | users.name |
+|---|---|
+| 1 | Ada |
+| 2 | Bob |
+| 3 | Cy |
 
- INNER JOIN (u.id = o.user_id)       LEFT JOIN
- name │ order                        name │ order
- Ada  │ 10                           Ada  │ 10
- Ada  │ 11                           Ada  │ 11
- Bob  │ 12                           Bob  │ 12
-                                     Cy   │ NULL    ← kept, with no match
-```
+| orders.id | orders.user_id |
+|---|---|
+| 10 | 1 |
+| 11 | 1 |
+| 12 | 2 |
+
+**INNER JOIN** (`u.id = o.user_id`)
+
+| name | order |
+|---|---|
+| Ada | 10 |
+| Ada | 11 |
+| Bob | 12 |
+
+**LEFT JOIN**
+
+| name | order |
+|---|---|
+| Ada | 10 |
+| Ada | 11 |
+| Bob | 12 |
+| Cy | NULL ← kept, with no match |
 
 ```venn
 title: INNER JOIN

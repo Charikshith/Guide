@@ -74,18 +74,9 @@ graph TD
 
 ASCII view:
 
-```
-+--------------------+
-| Presentation Layer |
-+--------------------+
-         |
-+--------------------+
-| Business Logic     |
-+--------------------+
-         |
-+--------------------+
-| Data Access Layer  |
-+--------------------+
+```mermaid
+flowchart TD
+    p["Presentation Layer"] --> b["Business Logic"] --> d["Data Access Layer"]
 ```
 
 #### Code Structure
@@ -293,13 +284,9 @@ module.exports = { getUserById };
 
 **Project structure:**
 
-```
-project/
-│
-├── frontend/      # Presentation Layer (React, Angular, etc.)
-├── server/        # Business Logic Layer (Node.js/Express)
-├── database/      # Data Layer (PostgreSQL, MongoDB)
-```
+<div class="fig">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 124" role="img" aria-label="Project folders mapped to presentation, business logic and data layers" style="width:100%;max-width:760px;height:auto;font-family:inherit"><defs><marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="context-stroke"/></marker></defs><text x="14" y="20" font-size="13" font-family="ui-monospace,Menlo,Consolas,monospace" fill="var(--primary)" font-weight="600">📁 project/</text><line x1="24" y1="32" x2="24" y2="44" stroke="var(--border)" stroke-width="1.4"/><line x1="24" y1="44" x2="34" y2="44" stroke="var(--border)" stroke-width="1.4"/><text x="38" y="46" font-size="13" font-family="ui-monospace,Menlo,Consolas,monospace" fill="var(--primary)" font-weight="600">📁 frontend/</text><text x="220" y="46" font-size="12.5" text-anchor="start" fill="var(--text-muted)">← Presentation Layer (React, Angular, etc.)</text><line x1="24" y1="58" x2="24" y2="70" stroke="var(--border)" stroke-width="1.4"/><line x1="24" y1="70" x2="34" y2="70" stroke="var(--border)" stroke-width="1.4"/><text x="38" y="72" font-size="13" font-family="ui-monospace,Menlo,Consolas,monospace" fill="var(--primary)" font-weight="600">📁 server/</text><text x="220" y="72" font-size="12.5" text-anchor="start" fill="var(--text-muted)">← Business Logic Layer (Node.js/Express)</text><line x1="24" y1="84" x2="24" y2="96" stroke="var(--border)" stroke-width="1.4"/><line x1="24" y1="96" x2="34" y2="96" stroke="var(--border)" stroke-width="1.4"/><text x="38" y="98" font-size="13" font-family="ui-monospace,Menlo,Consolas,monospace" fill="var(--primary)" font-weight="600">📁 database/</text><text x="220" y="98" font-size="12.5" text-anchor="start" fill="var(--text-muted)">← Data Layer (PostgreSQL, MongoDB)</text></svg>
+</div>
 
 **Pros & Cons:**
 
@@ -448,21 +435,9 @@ def get_product(product_id):
 
 **The concentric circles, with dependencies pointing inward only**
 
-```
- ┌──────────────────────────────────────────────────────────────────┐
- │ Frameworks & drivers: FastAPI · SQLAlchemy · Postgres · Kafka     │
- │   ┌──────────────────────────────────────────────────────────┐   │
- │   │ Interface adapters: controllers · presenters · repos      │   │
- │   │   ┌──────────────────────────────────────────────────┐   │   │
- │   │   │ Use cases: PlaceOrder · RefundOrder  (+ ports)    │   │   │
- │   │   │   ┌──────────────────────────────────────────┐   │   │   │
- │   │   │   │ Entities: Order · Money · rules           │   │   │   │
- │   │   │   └──────────────────────────────────────────┘   │   │   │
- │   │   └──────────────────────────────────────────────────┘   │   │
- │   └──────────────────────────────────────────────────────────┘   │
- └──────────────────────────────────────────────────────────────────┘
-        every import arrow points toward the center ──► ● 
-```
+<div class="fig">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 780 380" role="img" aria-label="Clean architecture rings: frameworks and drivers outside, then interface adapters, use cases, and entities at the center; dependencies point inward" style="width:100%;max-width:780px;height:auto;font-family:inherit"><defs><marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="context-stroke"/></marker></defs><rect x="10" y="10" width="760" height="330" rx="14" fill="var(--danger)" fill-opacity=".10" stroke="var(--danger)" stroke-width="1.6"/><text x="28" y="34" font-size="13" text-anchor="start" fill="var(--danger)" font-weight="700">Frameworks &amp; drivers: FastAPI · SQLAlchemy · Postgres · Kafka</text><rect x="50" y="50" width="680" height="250" rx="14" fill="var(--accent)" fill-opacity=".10" stroke="var(--accent)" stroke-width="1.6"/><text x="68" y="74" font-size="13" text-anchor="start" fill="var(--accent)" font-weight="700">Interface adapters: controllers · presenters · repos</text><rect x="90" y="90" width="600" height="170" rx="14" fill="var(--primary)" fill-opacity=".10" stroke="var(--primary)" stroke-width="1.6"/><text x="108" y="114" font-size="13" text-anchor="start" fill="var(--primary)" font-weight="700">Use cases: PlaceOrder · RefundOrder  (+ ports)</text><rect x="130" y="130" width="520" height="90" rx="14" fill="var(--success)" fill-opacity=".10" stroke="var(--success)" stroke-width="1.6"/><text x="148" y="154" font-size="13" text-anchor="start" fill="var(--success)" font-weight="700">Entities: Order · Money · rules</text><text x="390" y="368" font-size="13" text-anchor="middle" fill="var(--text)" font-weight="600">every import arrow points toward the center  ──►  ●</text></svg>
+</div>
 
 **Control flow vs dependency direction**
 

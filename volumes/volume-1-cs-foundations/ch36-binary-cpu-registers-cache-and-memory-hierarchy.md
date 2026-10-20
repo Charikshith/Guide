@@ -65,22 +65,9 @@ Binary and number representation (two's complement, floats); CPU registers; cach
 
 **The memory-hierarchy pyramid**
 
-```
-                    ╱╲
-                   ╱  ╲         registers      < 1 ns      bytes
-                  ╱────╲
-                 ╱  L1  ╲       ~1 ns          64 KB
-                ╱────────╲
-               ╱    L2    ╲     ~4 ns          1 MB
-              ╱────────────╲
-             ╱      L3      ╲   ~12 ns         32 MB
-            ╱────────────────╲
-           ╱       RAM        ╲  ~100 ns       64 GB
-          ╱────────────────────╲
-         ╱     SSD / network    ╲  ~50 µs+     TBs
-        ╱────────────────────────╲
-     faster, smaller, costlier ▲ │ ▼ slower, bigger, cheaper
-```
+<div class="fig">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 780 400" role="img" aria-label="Memory hierarchy pyramid from registers at the top to SSD and network at the bottom, with latency and size" style="width:100%;max-width:780px;height:auto;font-family:inherit"><defs><marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="context-stroke"/></marker></defs><polygon points="240,30 280,30 318,80 202,80" fill="var(--danger)" fill-opacity=".28" stroke="var(--danger)" stroke-width="1.8"/><text x="260" y="60" font-size="14" text-anchor="middle" fill="var(--text)" font-weight="700">registers</text><text x="500" y="60" font-size="13.5" text-anchor="start" fill="var(--text)" font-weight="700">&lt; 1 ns</text><text x="620" y="60" font-size="13.5" text-anchor="start" fill="var(--text-muted)">bytes</text><polygon points="202,84 318,84 356,134 164,134" fill="var(--accent)" fill-opacity=".28" stroke="var(--accent)" stroke-width="1.8"/><text x="260" y="114" font-size="14" text-anchor="middle" fill="var(--text)" font-weight="700">L1</text><text x="500" y="114" font-size="13.5" text-anchor="start" fill="var(--text)" font-weight="700">~1 ns</text><text x="620" y="114" font-size="13.5" text-anchor="start" fill="var(--text-muted)">64 KB</text><polygon points="164,138 356,138 394,188 126,188" fill="var(--success)" fill-opacity=".28" stroke="var(--success)" stroke-width="1.8"/><text x="260" y="168" font-size="14" text-anchor="middle" fill="var(--text)" font-weight="700">L2</text><text x="500" y="168" font-size="13.5" text-anchor="start" fill="var(--text)" font-weight="700">~4 ns</text><text x="620" y="168" font-size="13.5" text-anchor="start" fill="var(--text-muted)">1 MB</text><polygon points="126,192 394,192 432,242 88,242" fill="var(--primary)" fill-opacity=".28" stroke="var(--primary)" stroke-width="1.8"/><text x="260" y="222" font-size="14" text-anchor="middle" fill="var(--text)" font-weight="700">L3</text><text x="500" y="222" font-size="13.5" text-anchor="start" fill="var(--text)" font-weight="700">~12 ns</text><text x="620" y="222" font-size="13.5" text-anchor="start" fill="var(--text-muted)">32 MB</text><polygon points="88,246 432,246 470,296 50,296" fill="#8b5cf6" fill-opacity=".28" stroke="#8b5cf6" stroke-width="1.8"/><text x="260" y="276" font-size="14" text-anchor="middle" fill="var(--text)" font-weight="700">RAM</text><text x="500" y="276" font-size="13.5" text-anchor="start" fill="var(--text)" font-weight="700">~100 ns</text><text x="620" y="276" font-size="13.5" text-anchor="start" fill="var(--text-muted)">64 GB</text><polygon points="50,300 470,300 508,350 12,350" fill="#64748b" fill-opacity=".28" stroke="#64748b" stroke-width="1.8"/><text x="260" y="330" font-size="14" text-anchor="middle" fill="var(--text)" font-weight="700">SSD / network</text><text x="500" y="330" font-size="13.5" text-anchor="start" fill="var(--text)" font-weight="700">~50 µs+</text><text x="620" y="330" font-size="13.5" text-anchor="start" fill="var(--text-muted)">TBs</text><text x="500" y="22" font-size="12" text-anchor="start" fill="var(--text-muted)" font-weight="600">latency</text><text x="620" y="22" font-size="12" text-anchor="start" fill="var(--text-muted)" font-weight="600">size</text><text x="260" y="376" font-size="13" text-anchor="middle" fill="var(--text-muted)" font-weight="600">▲ faster, smaller, costlier        ▼ slower, bigger, cheaper</text></svg>
+</div>
 
 **A cache hit vs a miss**
 
@@ -103,12 +90,12 @@ sequenceDiagram
 
 **Row-major vs column-major traversal of a 2D array**
 
-```
- memory layout (row-major, as in C and NumPy):  [r0c0 r0c1 r0c2 r0c3 | r1c0 r1c1 …]
+Memory layout is **row-major** (as in C and NumPy): `[r0c0 r0c1 r0c2 r0c3 | r1c0 r1c1 …]`
 
- row by row  →→→→  sequential: 1 miss per 16 ints   ✅ fast
- col by col  ↓↓↓↓  jumps a full row each step: a miss almost every access   ❌ slow
-```
+| Traversal | Access pattern | Cache behaviour |
+|---|---|---|
+| row by row →→→→ | sequential | 1 miss per 16 ints ✅ fast |
+| column by column ↓↓↓↓ | jumps a full row each step | a miss almost every access ❌ slow |
 
 **Two's complement on an 8-bit wheel**
 

@@ -319,6 +319,7 @@ def chapter_page(vol, i, vols):
         f'<script src="{MARKED_JS}"></script><script src="{MERMAID_JS}"></script>',
         f'<script>const MD={embed_md(prep_md(c["text"]))};{COURSE_RENDER_JS}</script>',
         f'<script src="{root}assets/venn.js"></script>',
+        f'<script src="{root}assets/figs.js"></script>',
         PRISM_JS, PRISM_AUTOLOADER, scripts(root, guide),
     ])
 
@@ -338,6 +339,7 @@ def simple_page(title, label, md_text, root=""):
         f'<script src="{MARKED_JS}"></script><script src="{MERMAID_JS}"></script>',
         f'<script>const MD={embed_md(text)};{COURSE_RENDER_JS}</script>',
         f'<script src="{root}assets/venn.js"></script>',
+        f'<script src="{root}assets/figs.js"></script>',
         PRISM_JS, PRISM_AUTOLOADER, scripts(root, guide),
     ])
 

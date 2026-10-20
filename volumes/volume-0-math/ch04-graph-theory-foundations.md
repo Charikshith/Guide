@@ -54,16 +54,17 @@ Vertices, edges, directed vs undirected, degree, paths/cycles, connectivity, tre
 
 **A small graph, labeled**
 
+```mermaid
+graph LR
+    A["A · degree 2"] --- B["B · degree 3"]
+    A --- C["C · degree 3"]
+    B --- C
+    B --- D["D · degree 3"]
+    C --- D
+    D --- E["E · degree 1"]
 ```
-        deg=2        deg=3
-         (A)─────────(B)
-          │         ╱ │
-          │       ╱   │        Path:  A → B → D → E
-          │     ╱     │        Cycle: B → C → D → B
-          │   ╱       │        Degrees: A2 + B3 + C3 + D3 + E1 = 12
-         (C)─────────(D)───(E)          = 2 × 6 edges ✓
-        deg=3        deg=3  deg=1
-```
+
+**Path:** A → B → D → E · **Cycle:** B → C → D → B · **Degrees:** A 2 + B 3 + C 3 + D 3 + E 1 = 12 = 2 × 6 edges ✓
 
 ```mermaid
 graph LR

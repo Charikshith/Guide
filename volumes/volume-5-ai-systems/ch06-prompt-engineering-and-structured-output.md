@@ -59,22 +59,11 @@ Even with guarantees, validate semantically (with Pydantic): ranges, enums, cros
 
 **A prompt template with system/user/assistant roles and a few-shot block**
 
-```
- ┌─ SYSTEM ────────────────────────────────────────────────────────────────┐
- │ You are a support-ticket triage assistant for Acme (B2B invoicing SaaS). │
- │ Goal: route each ticket to the right team and set its priority.          │
- │ Teams: billing | auth | integrations | other.                            │
- │ Priority: P1 = outage or money at risk; P2 = blocked user; P3 = the rest.│
- │ Output ONLY JSON matching: {"team": …, "priority": …, "reason": …}       │
- ├─ FEW-SHOT (as prior user/assistant turns) ──────────────────────────────┤
- │ USER:      <ticket>Invoices charged twice for all customers today</ticket>│
- │ ASSISTANT: {"team":"billing","priority":"P1","reason":"duplicate charges"}│
- │ USER:      <ticket>How do I export to CSV?</ticket>                       │
- │ ASSISTANT: {"team":"other","priority":"P3","reason":"how-to question"}    │
- ├─ USER (the real input — untrusted) ─────────────────────────────────────┤
- │ <ticket>{{ticket_text}}</ticket>                                          │
- └──────────────────────────────────────────────────────────────────────────┘
-```
+| Part | Content |
+|---|---|
+| **SYSTEM** | You are a support-ticket triage assistant for Acme (B2B invoicing SaaS).<br>Goal: route each ticket to the right team and set its priority.<br>Teams: billing \| auth \| integrations \| other.<br>Priority: P1 = outage or money at risk; P2 = blocked user; P3 = the rest.<br>Output ONLY JSON matching: `{"team": …, "priority": …, "reason": …}` |
+| **FEW-SHOT** (as prior user/assistant turns) | USER: `<ticket>Invoices charged twice for all customers today</ticket>`<br>ASSISTANT: `{"team":"billing","priority":"P1","reason":"duplicate charges"}`<br>USER: `<ticket>How do I export to CSV?</ticket>`<br>ASSISTANT: `{"team":"other","priority":"P3","reason":"how-to question"}` |
+| **USER** (the real input, untrusted) | `<ticket>{{ticket_text}}</ticket>` |
 
 **Constrained decoding: invalid tokens are masked at each step**
 

@@ -69,18 +69,9 @@ flowchart LR
 
 **PR size vs review quality**
 
-```
- defects found per 100 lines reviewed
-   ▲
-   │██
-   │██ ██
-   │██ ██ ██
-   │██ ██ ██ ▅▅
-   │██ ██ ██ ██ ▃▃ ▂▂ ▁▁
-   └──────────────────────────► lines changed in the PR
-    100 200 300 400 600 800 1000+
-   "looks good to me" usually means "too big to read"
-```
+<div class="fig">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 700 300" role="img" aria-label="Defects found per 100 lines reviewed fall sharply as a pull request grows from 100 to 1000 or more lines changed" style="width:100%;max-width:700px;height:auto;font-family:inherit"><defs><marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="context-stroke"/></marker></defs><line x1="70" y1="240" x2="70" y2="24" stroke="var(--text-muted)" stroke-width="1.6" marker-end="url(#ar)"/><line x1="70" y1="240" x2="660" y2="240" stroke="var(--text-muted)" stroke-width="1.6" marker-end="url(#ar)"/><text x="76" y="20" font-size="12.5" text-anchor="start" fill="var(--text-muted)">defects found per 100 lines reviewed</text><rect x="100" y="50" width="46" height="190" rx="3" fill="var(--success)" fill-opacity=".5" stroke="var(--success)" stroke-width="1.6"/><text x="123" y="258" font-size="12.5" text-anchor="middle" fill="var(--text)">100</text><rect x="180" y="90" width="46" height="150" rx="3" fill="var(--success)" fill-opacity=".5" stroke="var(--success)" stroke-width="1.6"/><text x="203" y="258" font-size="12.5" text-anchor="middle" fill="var(--text)">200</text><rect x="260" y="130" width="46" height="110" rx="3" fill="var(--success)" fill-opacity=".5" stroke="var(--success)" stroke-width="1.6"/><text x="283" y="258" font-size="12.5" text-anchor="middle" fill="var(--text)">300</text><rect x="340" y="170" width="46" height="70" rx="3" fill="var(--accent)" fill-opacity=".5" stroke="var(--accent)" stroke-width="1.6"/><text x="363" y="258" font-size="12.5" text-anchor="middle" fill="var(--text)">400</text><rect x="420" y="200" width="46" height="40" rx="3" fill="var(--accent)" fill-opacity=".5" stroke="var(--accent)" stroke-width="1.6"/><text x="443" y="258" font-size="12.5" text-anchor="middle" fill="var(--text)">600</text><rect x="500" y="214" width="46" height="26" rx="3" fill="var(--danger)" fill-opacity=".5" stroke="var(--danger)" stroke-width="1.6"/><text x="523" y="258" font-size="12.5" text-anchor="middle" fill="var(--text)">800</text><rect x="580" y="228" width="46" height="12" rx="3" fill="var(--danger)" fill-opacity=".5" stroke="var(--danger)" stroke-width="1.6"/><text x="603" y="258" font-size="12.5" text-anchor="middle" fill="var(--text)">1000+</text><text x="660" y="278" font-size="12" text-anchor="end" fill="var(--text-muted)">lines changed in the PR</text><text x="350" y="286" font-size="13" text-anchor="middle" fill="var(--text)" font-weight="600">"looks good to me" usually means "too big to read"</text></svg>
+</div>
 
 **The feedback lifecycle**
 

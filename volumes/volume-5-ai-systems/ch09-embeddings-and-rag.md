@@ -87,12 +87,11 @@ flowchart LR
 
 **Chunk size trade-off**
 
-```
- too small (1 sentence)       "It rose 20% after the change."        → what rose? which change?
- good (a section, ~500 tok)   "## Q3 pricing change                    → self-contained, specific
-                               Enterprise renewals rose 20% after …"
- too big (whole doc)          20 topics averaged into one vector     → matches everything weakly
-```
+| Chunk size | Example | Problem |
+|---|---|---|
+| **too small** (1 sentence) | "It rose 20% after the change." | what rose? which change? |
+| **good** (a section, ~500 tokens) | "## Q3 pricing change: Enterprise renewals rose 20% after …" | ✓ self-contained, specific |
+| **too big** (whole doc) | 20 topics averaged into one vector | matches everything weakly |
 
 **Retrieve broadly, then rerank precisely**
 

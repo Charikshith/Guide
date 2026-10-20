@@ -180,25 +180,14 @@ flowchart LR
 
 ASCII view:
 
-```
-+-------------------+
-|    API Gateway    |
-+--------+----------+
-         |
-         v
-+---------------+      +-------------+      +-----------------+
-| User Service  |----->| Listing Svc |----->| Auction Service |
-+---------------+      +-------------+      +-----------------+
-                                  |                  |
-                                  v                  v
-                        +----------------+   +-------------+
-                        |   Bid Service  |<->| Scheduler   |
-                        +----------------+   +-------------+
-                                  |                  |
-                                  v                  v
-                        +----------------+   +--------------+
-                        | Payment Svc    |   | Notification |
-                        +----------------+   +--------------+
+```mermaid
+flowchart TD
+    gw["API Gateway"] --> us["User Service"] --> ls["Listing Svc"] --> as["Auction Service"]
+    ls --> bs["Bid Service"]
+    as --> sc["Scheduler"]
+    bs <--> sc
+    bs --> pay["Payment Svc"]
+    sc --> nt["Notification"]
 ```
 
 #### Key Components

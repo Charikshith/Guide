@@ -81,15 +81,18 @@ graph TD
 
 **Composite index `(user_id, created_at)` — how entries are sorted**
 
-```
- (5, 2024-01-02)
- (5, 2024-03-09)
- (7, 2023-12-30)   ┐
- (7, 2024-02-14)   │ WHERE user_id = 7 ORDER BY created_at: one contiguous slice, already sorted
- (7, 2024-05-01)   ┘
- (9, 2024-01-15)
- created_at alone is scattered across every user_id → the index doesn't help
-```
+Index on `(user_id, created_at)`, in sorted order:
+
+| user_id | created_at | |
+|---|---|---|
+| 5 | 2024-01-02 | |
+| 5 | 2024-03-09 | |
+| **7** | **2023-12-30** | ┐ |
+| **7** | **2024-02-14** | │ `WHERE user_id = 7 ORDER BY created_at`: one contiguous slice, already sorted |
+| **7** | **2024-05-01** | ┘ |
+| 9 | 2024-01-15 | |
+
+`created_at` alone is scattered across every `user_id`, so the index doesn't help.
 
 **A query plan tree from EXPLAIN**
 

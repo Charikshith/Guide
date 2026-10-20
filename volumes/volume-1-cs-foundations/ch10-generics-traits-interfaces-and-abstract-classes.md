@@ -53,17 +53,15 @@ Writing code over types; bounded polymorphism (traits/interfaces) and shared con
 
 **`Box<T>` / `List<T>` — one blueprint, many concrete types**
 
+```mermaid
+flowchart TD
+    bp["List#lt;T#gt; (the blueprint)<br/>items: [T]<br/>push(x: T)<br/>get(i) -> T"]
+    bp --> a["List#lt;int#gt;"]
+    bp --> b["List#lt;String#gt;"]
+    bp --> c["List#lt;User#gt;"]
 ```
-          List<T>  (the blueprint)
-         ┌──────────────────────┐
-         │ items: [T]           │
-         │ push(x: T)           │
-         │ get(i) -> T          │
-         └──────────┬───────────┘
-        ┌───────────┼────────────┐
-        ▼           ▼            ▼
-   List<int>   List<String>   List<User>     ← the compiler checks each use
-```
+
+The compiler checks each use of the blueprint.
 
 **A `Shape` interface implemented by `Circle` and `Square`**
 
@@ -88,13 +86,9 @@ classDiagram
 
 **Dispatch: monomorphized copies vs one vtable**
 
-```
- static (generics)                        dynamic (dyn Shape)
- print_area::<Circle>  ──► Circle::area    &dyn Shape = (data ptr, vtable ptr)
- print_area::<Square>  ──► Square::area                         │
-   two compiled copies, direct calls                  vtable: [area → Circle::area,
-                                                               name → Circle::name]
-```
+<div class="fig">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 230" role="img" aria-label="Static dispatch compiles one copy per type with direct calls; dynamic dispatch goes through a vtable pointer" style="width:100%;max-width:760px;height:auto;font-family:inherit"><defs><marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="context-stroke"/></marker></defs><text x="180" y="26" font-size="14" text-anchor="middle" fill="var(--text)" font-weight="700">static (generics)</text><text x="560" y="26" font-size="14" text-anchor="middle" fill="var(--text)" font-weight="700">dynamic (dyn Shape)</text><rect x="20" y="50" width="170" height="38" rx="8" fill="var(--primary)" fill-opacity=".14" stroke="var(--primary)" stroke-width="1.6"/><text x="105.0" y="73.2" font-size="12" text-anchor="middle" fill="var(--text)" font-weight="600">print_area::&lt;Circle&gt;</text><line x1="190" y1="69" x2="250" y2="69" stroke="var(--text-muted)" stroke-width="1.6" marker-end="url(#ar)"/><rect x="250" y="50" width="130" height="38" rx="8" fill="var(--success)" fill-opacity=".14" stroke="var(--success)" stroke-width="1.6"/><text x="315.0" y="73.2" font-size="12" text-anchor="middle" fill="var(--text)" font-weight="600">Circle::area</text><rect x="20" y="104" width="170" height="38" rx="8" fill="var(--primary)" fill-opacity=".14" stroke="var(--primary)" stroke-width="1.6"/><text x="105.0" y="127.2" font-size="12" text-anchor="middle" fill="var(--text)" font-weight="600">print_area::&lt;Square&gt;</text><line x1="190" y1="123" x2="250" y2="123" stroke="var(--text-muted)" stroke-width="1.6" marker-end="url(#ar)"/><rect x="250" y="104" width="130" height="38" rx="8" fill="var(--success)" fill-opacity=".14" stroke="var(--success)" stroke-width="1.6"/><text x="315.0" y="127.2" font-size="12" text-anchor="middle" fill="var(--text)" font-weight="600">Square::area</text><text x="200" y="178" font-size="12.5" text-anchor="middle" fill="var(--text-muted)">two compiled copies, direct calls</text><rect x="420" y="50" width="320" height="38" rx="8" fill="var(--primary)" fill-opacity=".14" stroke="var(--primary)" stroke-width="1.6"/><text x="580.0" y="73.375" font-size="12.5" text-anchor="middle" fill="var(--text)" font-weight="600">&amp;dyn Shape = (data ptr, vtable ptr)</text><line x1="660" y1="88" x2="660" y2="120" stroke="var(--text-muted)" stroke-width="1.6" marker-end="url(#ar)"/><rect x="480" y="120" width="260" height="70" rx="8" fill="var(--accent)" fill-opacity=".16" stroke="var(--accent)" stroke-width="1.6"/><text x="610" y="142" font-size="12.5" text-anchor="middle" fill="var(--accent)" font-weight="700">vtable</text><text x="494" y="162" font-size="12.5" text-anchor="start" fill="var(--text)">area → Circle::area</text><text x="494" y="180" font-size="12.5" text-anchor="start" fill="var(--text)">name → Circle::name</text></svg>
+</div>
 
 ---
 

@@ -98,11 +98,12 @@ def get_price(sku): return session.get(f"https://prices.internal/{sku}", timeout
 * **Detect:** request rate to a dependency exceeds user request rate; synchronized retry waves right after errors begin.
 * **Fix:** timeouts, exponential backoff with jitter, retry budgets, retry at one layer, circuit breakers, idempotency (Vol 3 Ch 14).
 
+```mermaid
+flowchart LR
+    client -- "×3" --> gateway -- "×3" --> service -- "×3" --> db["database<br/>(already failing)"]
 ```
- retry amplification: 3 layers, each makes up to 3 attempts
- client ──×3──► gateway ──×3──► service ──×3──► database (already failing)
- one user request can become 3 × 3 × 3 = 27 database attempts
-```
+
+**Retry amplification:** 3 layers, each making up to 3 attempts. One user request can become 3 × 3 × 3 = **27 database attempts**.
 
 **10. Synchronous I/O**
 

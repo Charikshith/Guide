@@ -33,10 +33,10 @@ flowchart LR
     WebServer-->|HTTP Response| User
 ```
 
-```
-[User] --> [App Server] --> [Cache (Redis)] --> [DB]
-                  ^             |
-                  |<-- cache hit|
+```mermaid
+flowchart LR
+    U["User"] --> App["App Server"] --> C["Cache (Redis)"] --> DB[("DB")]
+    C -- "cache hit" --> App
 ```
 
 #### Types of Caching
@@ -314,26 +314,19 @@ sequenceDiagram
 
 **Where each write strategy sends data**
 
-```
- Cache-aside            Write-through          Write-around           Write-back
- ───────────            ─────────────          ────────────           ──────────
-   App                     App                    App                    App
-   │  write               │  write               │  write               │  write
-   ▼                      ▼                      │                      ▼
-   DB ──► DEL cache      Cache ──sync──► DB      ▼                     Cache
-                                                 DB   (cache untouched)  │ async, batched
-                                                                         ▼
-                                                                         DB (later)
-```
+| Strategy | Write path |
+|---|---|
+| **Cache-aside** | App → DB → `DEL` cache |
+| **Write-through** | App → Cache → (sync) → DB |
+| **Write-around** | App → DB (cache untouched) |
+| **Write-back** | App → Cache → (async, batched) → DB (later) |
 
 **The stampede, and three ways to stop it**
 
-```
-  t = 0          hot key "feed:home" expires
-  t = 0 + 1 ms   ┌──────────────────────────────────────────────┐
-                 │ 5,000 requests ── miss ── miss ── miss ──►   │ DB 💥
-                 └──────────────────────────────────────────────┘
-```
+| Time | What happens |
+|---|---|
+| t = 0 | hot key `"feed:home"` expires |
+| t = 0 + 1 ms | 5,000 requests → miss → miss → miss → **DB 💥** |
 
 ```mermaid
 flowchart TD

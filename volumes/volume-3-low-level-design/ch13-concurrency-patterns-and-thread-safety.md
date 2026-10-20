@@ -107,14 +107,9 @@ if __name__ == '__main__':
 
 **Concurrency vs. Parallelism ASCII:**
 
-```
-Concurrency (Task Management)        Parallelism (Task Execution)
-+------------------------------+     +--------------------------+
-| Task A  | Task B | Task C    |     | Task A | Task B | Task C |
-|========>|========|=========> |     |========|========|========|
-|    (Interleaved, Overlapping)|     |(Executed Simultaneously)|
-+------------------------------+     +--------------------------+
-```
+<div class="fig">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 820 260" role="img" aria-label="Concurrency interleaves tasks A, B and C on one worker; parallelism runs them simultaneously on separate workers" style="width:100%;max-width:820px;height:auto;font-family:inherit"><defs><marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="context-stroke"/></marker></defs><text x="200" y="24" font-size="13.5" text-anchor="middle" fill="var(--text)" font-weight="700">Concurrency (task management)</text><text x="620" y="24" font-size="13.5" text-anchor="middle" fill="var(--text)" font-weight="700">Parallelism (task execution)</text><rect x="20" y="50" width="124" height="36" rx="8" fill="var(--primary)" fill-opacity=".14" stroke="var(--primary)" stroke-width="1.6"/><text x="82.0" y="72.55" font-size="13" text-anchor="middle" fill="var(--text)" font-weight="600">Task A</text><rect x="148" y="50" width="124" height="36" rx="8" fill="var(--success)" fill-opacity=".14" stroke="var(--success)" stroke-width="1.6"/><text x="210.0" y="72.55" font-size="13" text-anchor="middle" fill="var(--text)" font-weight="600">Task B</text><rect x="276" y="50" width="124" height="36" rx="8" fill="var(--accent)" fill-opacity=".14" stroke="var(--accent)" stroke-width="1.6"/><text x="338.0" y="72.55" font-size="13" text-anchor="middle" fill="var(--text)" font-weight="600">Task C</text><text x="200" y="112" font-size="12.5" text-anchor="middle" fill="var(--text-muted)">interleaved, overlapping</text><line x1="20" y1="130" x2="400" y2="130" stroke="var(--text-muted)" stroke-width="1.6" marker-end="url(#ar)"/><rect x="20" y="140" width="60" height="30" rx="8" fill="var(--primary)" fill-opacity=".14" stroke="var(--primary)" stroke-width="1.6"/><text x="50.0" y="159.2" font-size="12" text-anchor="middle" fill="var(--text)" font-weight="600">A</text><rect x="83" y="140" width="60" height="30" rx="8" fill="var(--success)" fill-opacity=".14" stroke="var(--success)" stroke-width="1.6"/><text x="113.0" y="159.2" font-size="12" text-anchor="middle" fill="var(--text)" font-weight="600">B</text><rect x="146" y="140" width="60" height="30" rx="8" fill="var(--accent)" fill-opacity=".14" stroke="var(--accent)" stroke-width="1.6"/><text x="176.0" y="159.2" font-size="12" text-anchor="middle" fill="var(--text)" font-weight="600">C</text><rect x="209" y="140" width="60" height="30" rx="8" fill="var(--primary)" fill-opacity=".14" stroke="var(--primary)" stroke-width="1.6"/><text x="239.0" y="159.2" font-size="12" text-anchor="middle" fill="var(--text)" font-weight="600">A</text><rect x="272" y="140" width="60" height="30" rx="8" fill="var(--success)" fill-opacity=".14" stroke="var(--success)" stroke-width="1.6"/><text x="302.0" y="159.2" font-size="12" text-anchor="middle" fill="var(--text)" font-weight="600">B</text><rect x="335" y="140" width="60" height="30" rx="8" fill="var(--accent)" fill-opacity=".14" stroke="var(--accent)" stroke-width="1.6"/><text x="365.0" y="159.2" font-size="12" text-anchor="middle" fill="var(--text)" font-weight="600">C</text><text x="200" y="200" font-size="12.5" text-anchor="middle" fill="var(--text-muted)">one worker, switching between tasks</text><text x="450" y="82" font-size="12.5" text-anchor="end" fill="var(--text)" font-weight="600">Task A</text><rect x="460" y="60" width="330" height="32" rx="6" fill="var(--primary)" fill-opacity=".3" stroke="var(--primary)" stroke-width="1.6"/><text x="450" y="126" font-size="12.5" text-anchor="end" fill="var(--text)" font-weight="600">Task B</text><rect x="460" y="104" width="330" height="32" rx="6" fill="var(--success)" fill-opacity=".3" stroke="var(--success)" stroke-width="1.6"/><text x="450" y="170" font-size="12.5" text-anchor="end" fill="var(--text)" font-weight="600">Task C</text><rect x="460" y="148" width="330" height="32" rx="6" fill="var(--accent)" fill-opacity=".3" stroke="var(--accent)" stroke-width="1.6"/><text x="625" y="228" font-size="12.5" text-anchor="middle" fill="var(--text-muted)">executed simultaneously (separate workers)</text></svg>
+</div>
 
 #### Processes vs. Threads
 
@@ -323,13 +318,22 @@ flowchart LR
 
 **Shared state vs message passing**
 
+```mermaid
+flowchart LR
+    subgraph shared["SHARED STATE + LOCK"]
+        a1["T1"] --> lk["lock ▸ data<br/>everyone waits here"]
+        a2["T2"] --> lk
+        a3["T3"] --> lk
+    end
+    subgraph msg["MESSAGE PASSING"]
+        b1["T1"] -- msg --> q["queue"]
+        b2["T2"] -- msg --> q
+        b3["T3"] -- msg --> q
+        q --> own["owner thread<br/>(only it touches data)"] --> dt["data"]
+    end
 ```
- SHARED STATE + LOCK                         MESSAGE PASSING
- T1 ─┐   ┌────────────┐                      T1 ──msg──►┐
- T2 ─┼─► │ lock ▸ data│ ◄─ everyone waits    T2 ──msg──►├─► [queue] ─► owner thread ─► data
- T3 ─┘   └────────────┘    here               T3 ──msg──►┘                 (only it touches data)
- races possible if anyone forgets the lock   no races by construction
-```
+
+**Shared state:** races are possible if anyone forgets the lock. **Message passing:** no races by construction.
 
 ---
 

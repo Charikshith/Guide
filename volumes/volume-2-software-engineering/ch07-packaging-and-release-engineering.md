@@ -68,17 +68,9 @@ Flag hygiene: an owner and expiry per flag, default to the safe value when the f
 
 **A canary ramp: 1% → 10% → 100% with a rollback trigger**
 
-```
- traffic to v2
- 100% ┤                                   ██████████  promote
-  50% ┤                        ███████████
-  10% ┤             ███████████
-   1% ┤  ███████████
-   0% ┼──────────────────────────────────────────────► time
-      │  each step: hold 10 min, compare v2 vs v1:
-      │    error rate ≤ baseline + 0.5 pp?   p99 ≤ baseline × 1.1?
-      │  any check fails ──► ROLLBACK: 0% to v2 in seconds
-```
+<div class="fig">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 780 340" role="img" aria-label="Canary rollout: traffic to v2 steps from 1 to 10 to 50 to 100 percent, each step held 10 minutes and checked against v1, with instant rollback on failure" style="width:100%;max-width:780px;height:auto;font-family:inherit"><defs><marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="context-stroke"/></marker></defs><line x1="90" y1="50" x2="90" y2="250" stroke="var(--text-muted)" stroke-width="1.6"/><line x1="90" y1="250" x2="740" y2="250" stroke="var(--text-muted)" stroke-width="1.6" marker-end="url(#ar)"/><text x="82" y="46" font-size="12" text-anchor="end" fill="var(--text-muted)">traffic to v2</text><text x="82" y="254.0" font-size="12" text-anchor="end" fill="var(--text-muted)">0%</text><line x1="86" y1="250.0" x2="90" y2="250.0" stroke="var(--text-muted)" stroke-width="1"/><text x="82" y="235.95" font-size="12" text-anchor="end" fill="var(--text-muted)">1%</text><line x1="86" y1="231.95" x2="90" y2="231.95" stroke="var(--text-muted)" stroke-width="1"/><text x="82" y="196.92088823396074" font-size="12" text-anchor="end" fill="var(--text-muted)">10%</text><line x1="86" y1="192.92088823396074" x2="90" y2="192.92088823396074" stroke="var(--text-muted)" stroke-width="1"/><text x="82" y="126.36722599582818" font-size="12" text-anchor="end" fill="var(--text-muted)">50%</text><line x1="86" y1="122.36722599582818" x2="90" y2="122.36722599582818" stroke="var(--text-muted)" stroke-width="1"/><text x="82" y="64.0" font-size="12" text-anchor="end" fill="var(--text-muted)">100%</text><line x1="86" y1="60.0" x2="90" y2="60.0" stroke="var(--text-muted)" stroke-width="1"/><rect x="100" y="231.95" width="124" height="18.05" rx="2" fill="var(--success)" fill-opacity=".4" stroke="var(--success)" stroke-width="1.6"/><rect x="230" y="192.92088823396074" width="124" height="57.07911176603925" rx="2" fill="var(--success)" fill-opacity=".4" stroke="var(--success)" stroke-width="1.6"/><rect x="360" y="122.36722599582818" width="124" height="127.63277400417182" rx="2" fill="var(--success)" fill-opacity=".4" stroke="var(--success)" stroke-width="1.6"/><rect x="490" y="60" width="124" height="190" rx="2" fill="var(--primary)" fill-opacity=".4" stroke="var(--primary)" stroke-width="1.6"/><text x="555.0" y="52" font-size="13" text-anchor="middle" fill="var(--primary)" font-weight="700">promote</text><text x="740" y="272" font-size="12" text-anchor="end" fill="var(--text-muted)">time</text><text x="20" y="288" font-size="12.5" text-anchor="start" fill="var(--text)" font-weight="600">each step: hold 10 min, compare v2 vs v1:</text><text x="20" y="306" font-size="12.5" text-anchor="start" fill="var(--text-muted)">error rate ≤ baseline + 0.5 pp?   p99 ≤ baseline × 1.1?</text><text x="20" y="326" font-size="12.5" text-anchor="start" fill="var(--danger)" font-weight="700">any check fails → ROLLBACK: 0% to v2 in seconds</text></svg>
+</div>
 
 ```mermaid
 stateDiagram-v2
@@ -105,13 +97,14 @@ flowchart LR
 
 **Expand → migrate → contract (a safe schema change for renaming a column)**
 
-```
- release 1 (expand):   add new column full_name; write to both; read old
- backfill:             copy name → full_name for existing rows
- release 2 (migrate):  read full_name; still write both
- release 3 (contract): stop writing name; later drop it
- at every step, the previous release still works → rollback is always safe
-```
+| Release | Phase | What happens |
+|---|---|---|
+| 1 | **expand** | add new column `full_name`; write to both; read old |
+| | backfill | copy `name` → `full_name` for existing rows |
+| 2 | **migrate** | read `full_name`; still write both |
+| 3 | **contract** | stop writing `name`; later drop it |
+
+At every step the previous release still works, so **rollback is always safe**.
 
 ---
 

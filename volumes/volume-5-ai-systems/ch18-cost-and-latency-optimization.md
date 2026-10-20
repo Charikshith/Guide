@@ -82,12 +82,13 @@ flowchart TD
 
 **Semantic cache danger zone**
 
-```
- cached query: "cancel order 1234"          similarity to new query
- new: "please cancel order #1234"           0.97 → hit ✓ (same intent, same entity)
- new: "cancel order 1235"                   0.96 → WRONG hit ✗ — must key on entities too
- new: "how do I cancel an order?"           0.88 → miss ✓
-```
+Cached query: `"cancel order 1234"`
+
+| New query | Similarity | Result |
+|---|---|---|
+| "please cancel order #1234" | 0.97 | **hit ✓** (same intent, same entity) |
+| "cancel order 1235" | 0.96 | **WRONG hit ✗**: must key on entities too |
+| "how do I cancel an order?" | 0.88 | **miss ✓** |
 
 ---
 

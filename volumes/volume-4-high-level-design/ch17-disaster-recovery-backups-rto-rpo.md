@@ -285,12 +285,12 @@ Geo-distribution increases resilience but also complexity:
 
 Deploy services across multiple physical locations/regions.
 
-```
-+----------+       +----------+       +----------+
-|  RegionA |<----->|  RegionB |<----->|  RegionC |
-+----------+       +----------+       +----------+
-      |                 |                  |
-  [Users]           [Users]            [Users]
+```mermaid
+flowchart LR
+    A["RegionA"] <--> B["RegionB"] <--> C["RegionC"]
+    A --> ua["Users"]
+    B --> ub["Users"]
+    C --> uc["Users"]
 ```
 
 If one region fails, others continue serving requests.
@@ -376,17 +376,9 @@ The diagram, worked example, exercises, mini-project, design prompt, open-source
 
 **A backup/recovery timeline showing RPO (data loss) and RTO (downtime)**
 
-```
- time ──────────────────────────────────────────────────────────────────────────────►
-      last good                                                  service
-      backup / WAL point      💥 disaster                        restored
-            │                    │                                  │
-            ├──── RPO ───────────┤                                  │
-            │  data written here │                                  │
-            │  is LOST           ├──────────── RTO ─────────────────┤
-                                 │ detect → decide → restore/        │
-                                 │ promote → verify → reroute        │
-```
+<div class="fig">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 820 270" role="img" aria-label="RPO is the data-loss window from the last good backup to the disaster; RTO is the time from the disaster to service restored" style="width:100%;max-width:820px;height:auto;font-family:inherit"><defs><marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="context-stroke"/></marker></defs><line x1="20" y1="40" x2="800" y2="40" stroke="var(--text-muted)" stroke-width="1.6" marker-end="url(#ar)"/><text x="800" y="28" font-size="12" text-anchor="end" fill="var(--text-muted)">time</text><line x1="120" y1="90" x2="120" y2="200" stroke="var(--success)" stroke-width="1.8" stroke-dasharray="4 3"/><circle cx="120" cy="40" r="6" fill="var(--success)" fill-opacity="1" stroke="var(--success)" stroke-width="1.6"/><text x="120" y="64" font-size="12.5" text-anchor="middle" fill="var(--text)" font-weight="700">last good</text><text x="120" y="80" font-size="12" text-anchor="middle" fill="var(--text-muted)">backup / WAL point</text><line x1="360" y1="90" x2="360" y2="200" stroke="var(--danger)" stroke-width="1.8" stroke-dasharray="4 3"/><circle cx="360" cy="40" r="6" fill="var(--danger)" fill-opacity="1" stroke="var(--danger)" stroke-width="1.6"/><text x="360" y="64" font-size="12.5" text-anchor="middle" fill="var(--text)" font-weight="700">💥 disaster</text><line x1="700" y1="90" x2="700" y2="200" stroke="var(--success)" stroke-width="1.8" stroke-dasharray="4 3"/><circle cx="700" cy="40" r="6" fill="var(--success)" fill-opacity="1" stroke="var(--success)" stroke-width="1.6"/><text x="700" y="64" font-size="12.5" text-anchor="middle" fill="var(--text)" font-weight="700">service</text><text x="700" y="80" font-size="12" text-anchor="middle" fill="var(--text-muted)">restored</text><rect x="120" y="104" width="240" height="34" rx="6" fill="var(--accent)" fill-opacity=".3" stroke="var(--accent)" stroke-width="1.6"/><text x="240" y="126" font-size="14" text-anchor="middle" fill="var(--text)" font-weight="700">RPO</text><text x="240" y="156" font-size="12.5" text-anchor="middle" fill="var(--accent)" font-weight="600">data written here is LOST</text><rect x="360" y="104" width="340" height="34" rx="6" fill="var(--primary)" fill-opacity=".3" stroke="var(--primary)" stroke-width="1.6"/><text x="530" y="126" font-size="14" text-anchor="middle" fill="var(--text)" font-weight="700">RTO</text><text x="530" y="156" font-size="12.5" text-anchor="middle" fill="var(--primary)" font-weight="600">detect → decide → restore / promote → verify → reroute</text></svg>
+</div>
 
 **Nightly snapshots + WAL streaming → point-in-time recovery**
 

@@ -61,16 +61,9 @@ Famous failures: the Ariane 5 rocket (a 64-bit float converted to a 16-bit int o
 
 **IEEE-754 double: 64 bits**
 
-```
-  1 bit   11 bits           52 bits
- ┌─┬───────────┬────────────────────────────────────────────────────┐
- │S│ exponent  │ mantissa (fraction)                                │
- └─┴───────────┴────────────────────────────────────────────────────┘
- value = (−1)^S × 1.mantissa × 2^(exponent − 1023)
-
- 0.1 = 0 01111111011 1001100110011001100110011001100110011001100110011010
-                     └── 1001 repeats forever, so it is cut off and rounded
-```
+<div class="fig">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 820 250" role="img" aria-label="IEEE 754 double: 1 sign bit, 11 exponent bits, 52 mantissa bits; 0.1 repeats forever in binary and is rounded" style="width:100%;max-width:820px;height:auto;font-family:inherit"><defs><marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="context-stroke"/></marker></defs><rect x="20" y="50" width="40" height="40" rx="2" fill="var(--danger)" fill-opacity=".25" stroke="var(--danger)" stroke-width="1.6"/><text x="40.0" y="76" font-size="14" text-anchor="middle" fill="var(--text)" font-weight="700">S</text><rect x="60" y="50" width="220" height="40" rx="2" fill="var(--accent)" fill-opacity=".25" stroke="var(--accent)" stroke-width="1.6"/><text x="170.0" y="76" font-size="14" text-anchor="middle" fill="var(--text)" font-weight="700">exponent</text><rect x="280" y="50" width="520" height="40" rx="2" fill="var(--primary)" fill-opacity=".2" stroke="var(--primary)" stroke-width="1.6"/><text x="540.0" y="76" font-size="14" text-anchor="middle" fill="var(--text)" font-weight="700">mantissa (fraction)</text><text x="40.0" y="40" font-size="12" text-anchor="middle" fill="var(--text-muted)">1 bit</text><text x="170.0" y="40" font-size="12" text-anchor="middle" fill="var(--text-muted)">11 bits</text><text x="540.0" y="40" font-size="12" text-anchor="middle" fill="var(--text-muted)">52 bits</text><text x="20" y="124" font-size="14" text-anchor="start" fill="var(--text)" font-weight="600">value = (−1)^S × 1.mantissa × 2^(exponent − 1023)</text><text x="20" y="168" font-size="12.5" font-family="ui-monospace,Menlo,Consolas,monospace" fill="var(--text)">0.1 = 0  01111111011  1001100110011001100110011001100110011001100110011010</text><text x="40" y="196" font-size="12.5" text-anchor="start" fill="var(--danger)">└── 1001 repeats forever, so it is cut off and rounded</text></svg>
+</div>
 
 **Float precision gets coarser as numbers grow**
 
@@ -82,15 +75,9 @@ Famous failures: the Ariane 5 rocket (a 64-bit float converted to a 16-bit int o
 
 **Two's-complement wrap-around (8-bit)**
 
-```
-        0111 1111  = 127   (i8::MAX)
-      +         1
-      ───────────
-        1000 0000  = −128  (i8::MIN)   the sign bit flipped
-
-   number circle:   … 125 126 127 │ −128 −127 −126 …
-                                  └ wraps here
-```
+<div class="fig">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 230" role="img" aria-label="Adding 1 to the largest signed 8-bit value flips the sign bit and wraps to the smallest" style="width:100%;max-width:760px;height:auto;font-family:inherit"><defs><marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="context-stroke"/></marker></defs><text x="30" y="40" font-size="14" font-family="ui-monospace,Menlo,Consolas,monospace" fill="var(--text)" xml:space="preserve">  0111 1111  = 127   (i8::MAX)</text><text x="30" y="64" font-size="14" font-family="ui-monospace,Menlo,Consolas,monospace" fill="var(--text)" xml:space="preserve">+         1</text><text x="30" y="90" font-size="14" font-family="ui-monospace,Menlo,Consolas,monospace" fill="var(--danger)" xml:space="preserve">  1000 0000  = −128  (i8::MIN)   the sign bit flipped</text><line x1="30" y1="74" x2="220" y2="74" stroke="var(--text-muted)" stroke-width="1.2"/><text x="30" y="140" font-size="13" text-anchor="start" fill="var(--text-muted)" font-weight="600">number circle:</text><rect x="60" y="156" width="60" height="32" rx="8" fill="var(--success)" fill-opacity=".14" stroke="var(--success)" stroke-width="1.6"/><text x="90.0" y="176.55" font-size="13" text-anchor="middle" fill="var(--text)" font-weight="600">125</text><rect x="140" y="156" width="60" height="32" rx="8" fill="var(--success)" fill-opacity=".14" stroke="var(--success)" stroke-width="1.6"/><text x="170.0" y="176.55" font-size="13" text-anchor="middle" fill="var(--text)" font-weight="600">126</text><rect x="220" y="156" width="60" height="32" rx="8" fill="var(--success)" fill-opacity=".14" stroke="var(--success)" stroke-width="1.6"/><text x="250.0" y="176.55" font-size="13" text-anchor="middle" fill="var(--text)" font-weight="600">127</text><rect x="330" y="156" width="60" height="32" rx="8" fill="var(--accent)" fill-opacity=".14" stroke="var(--accent)" stroke-width="1.6"/><text x="360.0" y="176.55" font-size="13" text-anchor="middle" fill="var(--text)" font-weight="600">−128</text><rect x="410" y="156" width="60" height="32" rx="8" fill="var(--accent)" fill-opacity=".14" stroke="var(--accent)" stroke-width="1.6"/><text x="440.0" y="176.55" font-size="13" text-anchor="middle" fill="var(--text)" font-weight="600">−127</text><rect x="490" y="156" width="60" height="32" rx="8" fill="var(--accent)" fill-opacity=".14" stroke="var(--accent)" stroke-width="1.6"/><text x="520.0" y="176.55" font-size="13" text-anchor="middle" fill="var(--text)" font-weight="600">−126</text><text x="42" y="176" font-size="14" text-anchor="middle" fill="var(--text-muted)">…</text><text x="568" y="176" font-size="14" text-anchor="middle" fill="var(--text-muted)">…</text><line x1="315" y1="150" x2="315" y2="198" stroke="var(--danger)" stroke-width="1.6" stroke-dasharray="4 3"/><text x="315" y="216" font-size="12.5" text-anchor="middle" fill="var(--danger)" font-weight="600">wraps here</text></svg>
+</div>
 
 **A DST boundary (US, second Sunday of March)**
 

@@ -92,25 +92,17 @@ graph TD
     Clients -->|Reads| F2
 ```
 
-```
-           +------------+
-           |  Leader    |
-           +-----+------+
-                 |
-         +-------+--------+
-         |                |
-     +---+----+      +----+---+
-     |Follower|      |Follower|
-     +--------+      +--------+
+```mermaid
+flowchart TD
+    L["Leader"] --> F1["Follower"]
+    L --> F2["Follower"]
 ```
 
 A wider topology view:
 
-```
-      +-------+         +--------+      +--------+
-      |Leader |  --->   |Follower| ...  |Follower|
-      +-------+         +--------+      +--------+
-        (writes)           (reads)         (reads)
+```mermaid
+flowchart LR
+    L["Leader<br/>(writes)"] --> F1["Follower<br/>(reads)"] -.-> F2["Follower<br/>(reads)"]
 ```
 
 ##### Read Replicas
@@ -651,12 +643,12 @@ flowchart LR
 
 **Replication lag and read-your-writes**
 
-```
- t=0 ms   user saves name "Ada"  → primary (LSN 1000)
- t=5 ms   user reloads            → replica at LSN 990 → shows the OLD name ✗
- fix: after a write, remember LSN 1000 in the session; route reads to a replica only
-      once it has replayed ≥ 1000 (or read from the primary for ~2 s)
-```
+| Time | What happens |
+|---|---|
+| t = 0 ms | user saves name "Ada" → primary (LSN 1000) |
+| t = 5 ms | user reloads → replica at LSN 990 → shows the **OLD** name ✗ |
+
+**Fix:** after a write, remember LSN 1000 in the session; route reads to a replica only once it has replayed ≥ 1000 (or read from the primary for about 2 s).
 
 **A sharded database with a routing layer**
 

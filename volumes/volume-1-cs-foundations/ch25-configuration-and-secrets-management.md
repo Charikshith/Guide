@@ -71,14 +71,13 @@ flowchart LR
 
 **Precedence as layers**
 
-```
-  CLI flags        --port 9001            ▲ wins
-  env vars         APP_PORT=9000          │
-  config file      port = 8081            │
-  defaults         port = 8080            │ loses
-  ───────────────────────────────────────
-  effective:       port = 9001
-```
+| Priority | Source | Example |
+|---|---|---|
+| 1 (**wins**) | CLI flags | `--port 9001` |
+| 2 | environment variables | `APP_PORT=9000` |
+| 3 | config file | `port = 8081` |
+| 4 (**loses**) | defaults | `port = 8080` |
+| | **effective** | **`port = 9001`** |
 
 **Secret rotation**
 

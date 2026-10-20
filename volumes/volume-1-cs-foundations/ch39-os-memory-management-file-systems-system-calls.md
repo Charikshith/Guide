@@ -70,22 +70,9 @@ Address spaces and paging; file systems (inodes, journals); the syscall boundary
 
 **Process address-space layout**
 
-```
- 0xFFFF_FFFF_FFFF_FFFF ┌──────────────────────────┐
-                       │ kernel space             │  (no access from user mode)
- 0x7FFF_FFFF_FFFF      ├──────────────────────────┤
-                       │ stack            ↓       │  main → f → g frames
-                       │                          │
-                       │ mmap: libc.so, files ... │
-                       │                          │
-                       │ heap             ↑       │  malloc'd objects
-                       ├──────────────────────────┤
-                       │ BSS  (zeroed globals)    │
-                       │ data (initialized)       │
-                       │ text (code, r-x)         │
- 0x0000_0040_0000      └──────────────────────────┘
- 0x0 — unmapped, so a NULL dereference segfaults
-```
+<div class="fig">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 420" role="img" aria-label="Virtual address space from kernel space at the top, through the stack, mmap, heap, BSS, data and text, down to unmapped address zero" style="width:100%;max-width:760px;height:auto;font-family:inherit"><defs><marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="context-stroke"/></marker></defs><text x="236" y="38" font-size="12" text-anchor="end" fill="var(--text-muted)">0xFFFF_FFFF_FFFF_FFFF</text><rect x="250" y="30" width="330" height="40" rx="0" fill="var(--danger)" fill-opacity=".2" stroke="var(--danger)" stroke-width="1.6"/><text x="415.0" y="55.0" font-size="13.5" text-anchor="middle" fill="var(--text)" font-weight="600">kernel space</text><text x="594" y="55.0" font-size="12.5" text-anchor="start" fill="var(--text-muted)">(no access from user mode)</text><text x="236" y="74" font-size="12" text-anchor="end" fill="var(--text-muted)">0x7FFF_FFFF_FFFF</text><rect x="250" y="70" width="330" height="60" rx="0" fill="var(--primary)" fill-opacity=".2" stroke="var(--primary)" stroke-width="1.6"/><text x="415.0" y="105.0" font-size="13.5" text-anchor="middle" fill="var(--text)" font-weight="600">stack  ↓</text><text x="594" y="105.0" font-size="12.5" text-anchor="start" fill="var(--text-muted)">main → f → g frames</text><rect x="250" y="130" width="330" height="50" rx="0" fill="#8b5cf6" fill-opacity=".2" stroke="#8b5cf6" stroke-width="1.6"/><text x="415.0" y="160.0" font-size="13.5" text-anchor="middle" fill="var(--text)" font-weight="600">mmap: libc.so, files …</text><rect x="250" y="180" width="330" height="60" rx="0" fill="var(--success)" fill-opacity=".2" stroke="var(--success)" stroke-width="1.6"/><text x="415.0" y="215.0" font-size="13.5" text-anchor="middle" fill="var(--text)" font-weight="600">heap  ↑</text><text x="594" y="215.0" font-size="12.5" text-anchor="start" fill="var(--text-muted)">malloc'd objects</text><rect x="250" y="240" width="330" height="30" rx="0" fill="var(--accent)" fill-opacity=".2" stroke="var(--accent)" stroke-width="1.6"/><text x="415.0" y="260.0" font-size="13.5" text-anchor="middle" fill="var(--text)" font-weight="600">BSS (zeroed globals)</text><rect x="250" y="270" width="330" height="30" rx="0" fill="var(--accent)" fill-opacity=".2" stroke="var(--accent)" stroke-width="1.6"/><text x="415.0" y="290.0" font-size="13.5" text-anchor="middle" fill="var(--text)" font-weight="600">data (initialized)</text><rect x="250" y="300" width="330" height="30" rx="0" fill="var(--accent)" fill-opacity=".2" stroke="var(--accent)" stroke-width="1.6"/><text x="415.0" y="320.0" font-size="13.5" text-anchor="middle" fill="var(--text)" font-weight="600">text (code, r-x)</text><text x="236" y="334" font-size="12" text-anchor="end" fill="var(--text-muted)">0x0000_0040_0000</text><text x="236" y="364" font-size="12" text-anchor="end" fill="var(--text-muted)">0x0</text><text x="250" y="364" font-size="12.5" text-anchor="start" fill="var(--danger)" font-weight="600">unmapped, so a NULL dereference segfaults</text></svg>
+</div>
 
 **Inode → blocks mapping**
 
@@ -118,14 +105,12 @@ sequenceDiagram
 
 **A pipe between two processes: `ls | wc -l`**
 
+```mermaid
+flowchart LR
+    ls["ls"] -- "stdout = fd 4" --> buf["kernel buffer<br/>(64 KB)"] -- "stdin = fd 3" --> wc["wc -l"]
 ```
-  shell: pipe() → fds [r=3, w=4]; fork twice
-  ┌──────────┐  stdout = fd 4   ┌───────────────┐   stdin = fd 3   ┌──────────┐
-  │   ls     │ ───────────────► │ kernel buffer │ ───────────────► │  wc -l   │
-  └──────────┘                  │   (64 KB)     │                  └──────────┘
-                                └───────────────┘
-  writer blocks when full; reader blocks when empty; EOF when all write ends close
-```
+
+The shell calls `pipe()` to get fds `[r=3, w=4]`, then forks twice. The writer blocks when the buffer is full, the reader blocks when it is empty, and the reader sees EOF when all write ends close.
 
 ---
 

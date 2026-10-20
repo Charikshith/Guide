@@ -99,11 +99,14 @@ graph LR
     T2 -.->|"waits for"| LA
 ```
 
-```
- T1: lock(A) … lock(B)        T2: lock(B) … lock(A)
-       ✓           ⏳               ✓           ⏳     ← forever
- fix: both threads lock A before B (a global order) → no cycle is possible
-```
+| | T1 | T2 |
+|---|---|---|
+| first | `lock(A)` ✓ | `lock(B)` ✓ |
+| then | `lock(B)` ⏳ | `lock(A)` ⏳ |
+
+Each thread waits for the other: **forever**.
+
+**Fix:** both threads lock A before B (a global order), so no cycle is possible.
 
 **Dining philosophers**
 

@@ -67,13 +67,23 @@ flowchart LR
 
 **O — replace a switch with strategies**
 
+**BEFORE**: edit this function for every new shipping method.
+
+```python
+def cost(order, method):
+    if method == "standard": return 499
+    elif method == "express": return 1299
+    elif method == "drone": …          # ← edit, retest everything
 ```
- BEFORE (edit this function for every new shipping method)   AFTER (add a class; don't touch the old ones)
- def cost(order, method):                                    class Shipping(Protocol): def cost(self, o) -> int
-     if method == "standard": return 499                     class Standard:  cost = lambda s, o: 499
-     elif method == "express": return 1299                   class Express:   cost = lambda s, o: 1299
-     elif method == "drone": …  ← edit, retest everything     class Drone:     … ← new file, new test
-                                                             SHIPPING = {"standard": Standard(), …}
+
+**AFTER**: add a class; don't touch the old ones.
+
+```python
+class Shipping(Protocol): def cost(self, o) -> int
+class Standard:  cost = lambda s, o: 499
+class Express:   cost = lambda s, o: 1299
+class Drone:     …                     # ← new file, new test
+SHIPPING = {"standard": Standard(), …}
 ```
 
 **L — the classic `Square(Rectangle)` violation**

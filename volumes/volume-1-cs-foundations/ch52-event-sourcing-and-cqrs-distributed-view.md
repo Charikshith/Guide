@@ -66,14 +66,16 @@ flowchart LR
 
 **Folding events into state**
 
-```
- order-123 stream
- #1 OrderPlaced      {items: 2, total: 5000}   → status=placed   total=5000
- #2 ItemRemoved      {sku: X, price: 1500}     → status=placed   total=3500
- #3 PaymentCaptured  {amount: 3500}            → status=paid
- #4 OrderShipped     {carrier: DHL}            → status=shipped
- state = fold(apply, events, initial={})
-```
+Stream `order-123`:
+
+| # | Event | Data | State after |
+|---|---|---|---|
+| 1 | `OrderPlaced` | `{items: 2, total: 5000}` | status=placed, total=5000 |
+| 2 | `ItemRemoved` | `{sku: X, price: 1500}` | status=placed, total=3500 |
+| 3 | `PaymentCaptured` | `{amount: 3500}` | status=paid |
+| 4 | `OrderShipped` | `{carrier: DHL}` | status=shipped |
+
+**state = fold(apply, events, initial={})**
 
 **Rebuilding a projection by replay**
 

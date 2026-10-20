@@ -59,25 +59,36 @@ Document, wide-column, and key-value/Dynamo-style stores; consistency models; wh
 
 **Document vs wide-column vs key-value layout**
 
-```
- DOCUMENT (MongoDB)                    WIDE-COLUMN (Cassandra)
- {                                     partition key: user_id
-   "_id": "u42",                       ┌─ partition u42 ───────────────────────────┐
-   "name": "Ada",                      │ posted_at ↓ (clustering, sorted DESC)      │
-   "addresses": [                      │ 2024-05-03 09:12 │ post_id p9 │ "hello"   │
-     {"city": "London"}                │ 2024-05-01 18:40 │ post_id p7 │ "hi"      │
-   ],                                  │ 2024-04-28 07:05 │ post_id p3 │ "first!"  │
-   "orders": [{"id": 1, "total": 30}]  └───────────────────────────────────────────┘
- }                                     one partition = one node set, read as a sorted slice
- whole aggregate in one read
+**Document (MongoDB):** the whole aggregate in one read.
 
- KEY-VALUE / DYNAMODB (single table)
- PK            SK                   attributes
- USER#42       PROFILE              name=Ada, email=…
- USER#42       ORDER#2024-05-01#7   total=30, status=paid
- USER#42       ORDER#2024-05-03#9   total=12, status=pending
- Query PK = USER#42 AND SK begins_with "ORDER#" → the user's orders, sorted by date
+```json
+{
+  "_id": "u42",
+  "name": "Ada",
+  "addresses": [
+    {"city": "London"}
+  ],
+  "orders": [{"id": 1, "total": 30}]
+}
 ```
+
+**Wide-column (Cassandra):** partition key `user_id`; `posted_at` is the clustering key, sorted DESC. One partition = one node set, read as a sorted slice.
+
+| partition | posted_at ↓ | post_id | text |
+|---|---|---|---|
+| u42 | 2024-05-03 09:12 | p9 | "hello" |
+| u42 | 2024-05-01 18:40 | p7 | "hi" |
+| u42 | 2024-04-28 07:05 | p3 | "first!" |
+
+**Key-value / DynamoDB (single table):**
+
+| PK | SK | attributes |
+|---|---|---|
+| `USER#42` | `PROFILE` | name=Ada, email=… |
+| `USER#42` | `ORDER#2024-05-01#7` | total=30, status=paid |
+| `USER#42` | `ORDER#2024-05-03#9` | total=12, status=pending |
+
+Query `PK = USER#42 AND SK begins_with "ORDER#"` → the user's orders, sorted by date.
 
 **Cassandra's ring: partitions and replicas (RF = 3)**
 

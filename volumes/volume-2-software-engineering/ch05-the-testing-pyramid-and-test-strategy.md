@@ -61,19 +61,9 @@ Policy: **quarantine** a flaky test immediately (don't let it train people to ig
 
 **The testing pyramid with effort/count annotations**
 
-```
-                      ▲ cost to write & maintain, run time, flakiness
-                     ╱ ╲
-                    ╱E2E╲          ~15 tests · 6 min · Playwright
-                   ╱─────╲         critical journeys: sign up, checkout, refund
-                  ╱Contract╲       ~10 · 20 s · Pact
-                 ╱──────────╲
-                ╱ Integration╲     ~150 · 90 s · Postgres + Redis in containers
-               ╱──────────────╲
-              ╱  Unit + property╲  ~1,500 · 20 s · pure logic, fakes
-             ╱────────────────────╲
-             ▼ count, speed, precision of failure messages
-```
+<div class="fig">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 338" role="img" aria-label="Test pyramid with counts, run times and tools for end-to-end, contract, integration and unit-plus-property tests" style="width:100%;max-width:800px;height:auto;font-family:inherit"><defs><marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="context-stroke"/></marker></defs><polygon points="210.0,40 250.0,40 287.5,98 172.5,98" fill="var(--danger)" fill-opacity=".28" stroke="var(--danger)" stroke-width="1.8"/><text x="230" y="74" font-size="14" text-anchor="middle" fill="var(--text)" font-weight="700">E2E</text><text x="440" y="66" font-size="13.5" text-anchor="start" fill="var(--text)" font-weight="700">~15 tests · 6 min · Playwright</text><text x="440" y="84" font-size="12.5" text-anchor="start" fill="var(--text-muted)">critical journeys: sign up, checkout, refund</text><polygon points="172.5,102 287.5,102 325.0,160 135.0,160" fill="var(--accent)" fill-opacity=".28" stroke="var(--accent)" stroke-width="1.8"/><text x="230" y="136" font-size="14" text-anchor="middle" fill="var(--text)" font-weight="700">Contract</text><text x="440" y="128" font-size="13.5" text-anchor="start" fill="var(--text)" font-weight="700">~10 · 20 s · Pact</text><polygon points="135.0,164 325.0,164 362.5,222 97.5,222" fill="var(--primary)" fill-opacity=".28" stroke="var(--primary)" stroke-width="1.8"/><text x="230" y="198" font-size="14" text-anchor="middle" fill="var(--text)" font-weight="700">Integration</text><text x="440" y="190" font-size="13.5" text-anchor="start" fill="var(--text)" font-weight="700">~150 · 90 s · Postgres + Redis in containers</text><polygon points="97.5,226 362.5,226 400.0,284 60.0,284" fill="var(--success)" fill-opacity=".28" stroke="var(--success)" stroke-width="1.8"/><text x="230" y="260" font-size="14" text-anchor="middle" fill="var(--text)" font-weight="700">Unit + property</text><text x="440" y="252" font-size="13.5" text-anchor="start" fill="var(--text)" font-weight="700">~1,500 · 20 s · pure logic, fakes</text><text x="230" y="22" font-size="12.5" text-anchor="middle" fill="var(--text-muted)" font-weight="600">▲ cost to write &amp; maintain, run time, flakiness</text><text x="230" y="310" font-size="12.5" text-anchor="middle" fill="var(--text-muted)" font-weight="600">▼ count, speed, precision of failure messages</text></svg>
+</div>
 
 **Pick the cheapest level that can catch the bug**
 

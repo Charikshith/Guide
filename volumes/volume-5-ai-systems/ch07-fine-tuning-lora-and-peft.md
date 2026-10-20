@@ -38,12 +38,12 @@ Other PEFT methods: prefix/prompt tuning (learn virtual tokens), IA³ (learned s
 
 **How LoRA works** — for a frozen weight matrix `W` (d × k), learn two small matrices `A` (r × k) and `B` (d × r) with rank r ≪ d, and use
 
-```
- h = W·x + (α / r) · B·A·x          B starts at zero, so training starts from the unchanged model
- params per matrix: d·k (full) vs r·(d + k) (LoRA)
- d = k = 4096, r = 8:  16.8 M → 65.5 K  (0.39%)
- after training you can merge: W' = W + (α/r)·B·A  → zero extra inference cost
-```
+| | |
+|---|---|
+| Forward pass | `h = W·x + (α / r) · B·A·x`: B starts at zero, so training starts from the unchanged model |
+| Params per matrix | `d·k` (full) vs `r·(d + k)` (LoRA) |
+| Example: d = k = 4096, r = 8 | 16.8 M → 65.5 K (**0.39%**) |
+| After training you can merge | `W' = W + (α/r)·B·A` → zero extra inference cost |
 
 **Key hyperparameters**
 

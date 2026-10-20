@@ -150,19 +150,16 @@ flowchart TD
 
 **Mapping a monolith to cloud services (lift → reshape)**
 
-```
- on-prem monolith box                     cloud
- ┌────────────────────────┐
- │ nginx                  │  ──►  ALB / API gateway + CDN
- │ app (Django)           │  ──►  containers (Fargate / Cloud Run), 3 AZs
- │ cron jobs              │  ──►  EventBridge Scheduler / Cloud Scheduler → a job
- │ Celery + RabbitMQ      │  ──►  SQS / Pub/Sub + workers
- │ Postgres on the box    │  ──►  RDS / Cloud SQL (Multi-AZ, PITR)
- │ Redis                  │  ──►  ElastiCache / Memorystore
- │ /var/uploads           │  ──►  S3 / GCS (+ presigned URLs)
- │ logs in files          │  ──►  CloudWatch / Cloud Logging + OTel
- └────────────────────────┘
-```
+| On-prem monolith box | → | Cloud |
+|---|---|---|
+| nginx | → | ALB / API gateway + CDN |
+| app (Django) | → | containers (Fargate / Cloud Run), 3 AZs |
+| cron jobs | → | EventBridge Scheduler / Cloud Scheduler → a job |
+| Celery + RabbitMQ | → | SQS / Pub/Sub + workers |
+| Postgres on the box | → | RDS / Cloud SQL (Multi-AZ, PITR) |
+| Redis | → | ElastiCache / Memorystore |
+| `/var/uploads` | → | S3 / GCS (+ presigned URLs) |
+| logs in files | → | CloudWatch / Cloud Logging + OTel |
 
 ---
 

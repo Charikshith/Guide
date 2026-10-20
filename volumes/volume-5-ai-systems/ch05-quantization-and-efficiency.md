@@ -64,26 +64,16 @@ FP16/INT8/INT4, GPTQ/AWQ, KV-cache quantization, and the accuracy/speed/memory t
 
 **A weight-matrix quantization diagram (float → int with scale/zero-point)**
 
-```
- FP32 weights (one group)        8-bit affine quantization          dequantized
-  0.12  −1.50  0.80  2.30 −0.40   min = −1.50, max = 2.30            0.119 −1.505 0.805 2.295 −0.402
-                                  scale = 3.80 / 255 = 0.0149
-                                  zero_point = round(1.50 / 0.0149) = 101
-                                  q = round(x / scale) + 101
-                                  → 109    0   155   255   74        max error ≈ 0.005
-
- value line:  −1.50 ────────── 0 ─────────────────────── 2.30
- int8 codes:     0 ───────── 101 ─────────────────────── 255
-```
+<div class="fig">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 820 270" role="img" aria-label="8-bit affine quantization maps FP32 values from minus 1.50 to 2.30 onto int8 codes 0 to 255, with zero mapped to code 101" style="width:100%;max-width:820px;height:auto;font-family:inherit"><defs><marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="context-stroke"/></marker></defs><text x="20" y="24" font-size="13" text-anchor="start" fill="var(--text)" font-weight="700">FP32 weights (one group):   0.12   −1.50   0.80   2.30   −0.40</text><text x="20" y="48" font-size="12.5" text-anchor="start" fill="var(--text-muted)">min = −1.50, max = 2.30 · scale = 3.80 / 255 = 0.0149 · zero_point = round(1.50 / 0.0149) = 101</text><text x="20" y="70" font-size="13" text-anchor="start" fill="var(--accent)" font-weight="700">q = round(x / scale) + 101   →   109    0    155    255    74</text><text x="20" y="92" font-size="12.5" text-anchor="start" fill="var(--success)" font-weight="700">dequantized:   0.119   −1.505   0.805   2.295   −0.402     (max error ≈ 0.005)</text><text x="20" y="150" font-size="12.5" text-anchor="start" fill="var(--text-muted)" font-weight="600">value line</text><line x1="120" y1="146" x2="780" y2="146" stroke="var(--primary)" stroke-width="2.4"/><text x="20" y="220" font-size="12.5" text-anchor="start" fill="var(--text-muted)" font-weight="600">int8 codes</text><line x1="120" y1="216" x2="780" y2="216" stroke="var(--accent)" stroke-width="2.4"/><circle cx="120" cy="146" r="6" fill="var(--primary)" fill-opacity="1" stroke="var(--primary)" stroke-width="1.6"/><text x="120" y="130" font-size="12.5" text-anchor="middle" fill="var(--text)" font-weight="700">−1.50</text><circle cx="120" cy="216" r="6" fill="var(--accent)" fill-opacity="1" stroke="var(--accent)" stroke-width="1.6"/><text x="120" y="242" font-size="12.5" text-anchor="middle" fill="var(--text)" font-weight="700">0</text><line x1="120" y1="152" x2="120" y2="210" stroke="var(--text-muted)" stroke-width="1.6" stroke-dasharray="4 4"/><circle cx="380.5263157894737" cy="146" r="6" fill="var(--primary)" fill-opacity="1" stroke="var(--primary)" stroke-width="1.6"/><text x="380.5263157894737" y="130" font-size="12.5" text-anchor="middle" fill="var(--text)" font-weight="700">0</text><circle cx="381.4117647058824" cy="216" r="6" fill="var(--accent)" fill-opacity="1" stroke="var(--accent)" stroke-width="1.6"/><text x="381.4117647058824" y="242" font-size="12.5" text-anchor="middle" fill="var(--text)" font-weight="700">101</text><line x1="380.5263157894737" y1="152" x2="381.4117647058824" y2="210" stroke="var(--text-muted)" stroke-width="1.6" stroke-dasharray="4 4"/><circle cx="780" cy="146" r="6" fill="var(--primary)" fill-opacity="1" stroke="var(--primary)" stroke-width="1.6"/><text x="780" y="130" font-size="12.5" text-anchor="middle" fill="var(--text)" font-weight="700">2.30</text><circle cx="780" cy="216" r="6" fill="var(--accent)" fill-opacity="1" stroke="var(--accent)" stroke-width="1.6"/><text x="780" y="242" font-size="12.5" text-anchor="middle" fill="var(--text)" font-weight="700">255</text><line x1="780" y1="152" x2="780" y2="210" stroke="var(--text-muted)" stroke-width="1.6" stroke-dasharray="4 4"/></svg>
+</div>
 
 **Per-tensor vs per-group scales**
 
-```
- per-tensor: one scale for everything
-   [0.01 0.02 −0.03 … 0.02 | 9.7 (outlier!) | 0.01 …]  → scale set by 9.7; small weights all round to 0 ✗
- per-group (128): each group gets its own scale
-   group 1: scale from max 0.03 → fine resolution ✓   group 7: scale from 9.7 → the outlier is contained
-```
+| Scheme | Weights | Result |
+|---|---|---|
+| **per-tensor** (one scale for everything) | `[0.01 0.02 −0.03 … 0.02 \| 9.7 (outlier!) \| 0.01 …]` | scale set by 9.7; small weights all round to 0 ✗ |
+| **per-group (128)** (each group gets its own scale) | group 1: scale from max 0.03 · group 7: scale from 9.7 | group 1 keeps fine resolution ✓; the outlier is contained in group 7 |
 
 **Where the memory goes: a 7B model on a 24 GB GPU**
 

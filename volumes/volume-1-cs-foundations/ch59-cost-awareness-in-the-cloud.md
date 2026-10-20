@@ -72,15 +72,9 @@ pie showData
 
 **Matching purchase models to the load curve**
 
-```
- instances
-   │            ╭╮          ╭─╮
-   │     ╭──╮  ╭╯╰╮   ╭──╮ ╭╯ ╰╮          ░ spot (interruptible batch)
-   │ ░░░╭╯  ╰──╯  ╰───╯  ╰─╯   ╰╮░░░      ▒ on-demand (the peaks)
-   │▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒      █ savings plan / reserved (the steady floor)
-   │████████████████████████████████
-   └──────────────────────────────────── time (a week)
-```
+<div class="fig">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 300" role="img" aria-label="Instance demand over a week: a savings plan covers the steady floor, on-demand covers the peaks, spot runs interruptible batch work" style="width:100%;max-width:780px;height:auto;font-family:inherit"><defs><marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="context-stroke"/></marker></defs><line x1="60" y1="20" x2="60" y2="250" stroke="var(--text-muted)" stroke-width="1.6"/><line x1="60" y1="250" x2="570" y2="250" stroke="var(--text-muted)" stroke-width="1.6" marker-end="url(#ar)"/><text x="54" y="30" font-size="12" text-anchor="end" fill="var(--text-muted)">instances</text><text x="560" y="272" font-size="12" text-anchor="end" fill="var(--text-muted)">time (a week)</text><rect x="60" y="190" width="500" height="60" rx="0" fill="var(--primary)" fill-opacity=".55" stroke="var(--primary)" stroke-width="0.5"/><rect x="60" y="130" width="500" height="60" rx="0" fill="var(--accent)" fill-opacity=".4" stroke="var(--accent)" stroke-width="0.5"/><path d="M60,130 L96,95 L131,95 L167,102 L203,89 L239,102 L274,109 L310,82 L346,95 L381,115 L417,82 L453,89 L489,122 L524,89 L560,82 L560,130 Z" stroke="var(--success)" stroke-width="1.8" fill="var(--success)" fill-opacity="0.3"/><text x="580" y="94" font-size="12.5" text-anchor="start" fill="var(--success)" font-weight="600">░ spot (interruptible batch)</text><text x="580" y="190" font-size="12.5" text-anchor="start" fill="var(--accent)" font-weight="600">▒ on-demand (the peaks)</text><text x="580" y="232" font-size="12.5" text-anchor="start" fill="var(--primary)" font-weight="600">█ savings plan / reserved (the steady floor)</text></svg>
+</div>
 
 **Where data-transfer charges hide**
 

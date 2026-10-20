@@ -350,13 +350,12 @@ flowchart LR
 
 **Push vs pull CDN**
 
-```
- PULL                                         PUSH
- client -> edge (miss) -> origin               you -> upload to CDN / its storage
- origin -> edge caches for TTL                 client -> edge (already there)
- next client -> edge (hit)                     you must delete or replace old files
- expiry: TTL, purge, or new file name          cost: storage for everything pushed
-```
+| | PULL | PUSH |
+|---|---|---|
+| 1 | client → edge (miss) → origin | you → upload to CDN / its storage |
+| 2 | origin → edge caches for TTL | client → edge (already there) |
+| 3 | next client → edge (hit) | you must delete or replace old files |
+| Expiry / cost | expiry: TTL, purge, or new file name | cost: storage for everything pushed |
 
 ---
 

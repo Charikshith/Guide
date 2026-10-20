@@ -73,24 +73,21 @@ stateDiagram-v2
 
 **Where bytes travel**
 
-```
-  your code          process              kernel               device
- ┌─────────┐  write  ┌──────────┐  flush  ┌────────────┐ fsync ┌──────┐
- │ "hello" │ ──────► │ buffer   │ ──────► │ page cache │ ────► │ disk │
- └─────────┘         │ (8 KB)   │         │            │       └──────┘
-                     └──────────┘         └────────────┘
-   crash here ↑ loses the buffer    ↑ survives app crash    ↑ survives power loss
+```mermaid
+flowchart LR
+    code["your code<br/>'hello'"] -- write --> buf["process<br/>buffer (8 KB)"] -- flush --> pc["kernel<br/>page cache"] -- fsync --> disk[("device<br/>disk")]
+    buf -.-> n1["crash here loses the buffer"]
+    pc -.-> n2["survives an app crash"]
+    disk -.-> n3["survives power loss"]
 ```
 
 **Atomic replace**
 
-```
- 1. write   config.json.tmp   (full new content)
- 2. fsync   config.json.tmp
- 3. rename  config.json.tmp → config.json     ← one atomic step
- Readers see:   old ────────────────────────┤ new
-                (never a half-written file)
-```
+1. **write** `config.json.tmp` (the full new content)
+2. **fsync** `config.json.tmp`
+3. **rename** `config.json.tmp` → `config.json`: one atomic step
+
+Readers see the old file until the rename and the new file after it, never a half-written file.
 
 ---
 

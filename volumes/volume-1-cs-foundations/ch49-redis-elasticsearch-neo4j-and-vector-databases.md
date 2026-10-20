@@ -66,16 +66,24 @@ Caching (Redis), full-text search (Elasticsearch), graphs (Neo4j), and vector si
 
 **An inverted index**
 
-```
- doc 1: "Red running shoes"          term      → postings (doc: positions)
- doc 2: "Blue trail running shoe"    blue      → 2:[0]
- doc 3: "Red dress"                  dress     → 3:[1]
-                                     red       → 1:[0]  3:[0]
- query "red shoe"                    run       → 1:[1]  2:[2]      (stemmed)
-   red  → {1, 3}                     shoe      → 1:[2]  2:[3]      (stemmed)
-   shoe → {1, 2}                     trail     → 2:[1]
-   BM25 ranks doc 1 first (matches both terms), then 2 and 3
-```
+| doc | text |
+|---|---|
+| 1 | "Red running shoes" |
+| 2 | "Blue trail running shoe" |
+| 3 | "Red dress" |
+
+**Inverted index** (term → postings, doc:positions)
+
+| term | postings |
+|---|---|
+| blue | 2:[0] |
+| dress | 3:[1] |
+| red | 1:[0] 3:[0] |
+| run | 1:[1] 2:[2] (stemmed) |
+| shoe | 1:[2] 2:[3] (stemmed) |
+| trail | 2:[1] |
+
+**Query** `"red shoe"`: red → {1, 3}, shoe → {1, 2}. BM25 ranks doc 1 first (it matches both terms), then 2 and 3.
 
 **A graph of nodes and edges: friends-of-friends**
 
@@ -95,15 +103,9 @@ Ada's friends-of-friends who aren't already friends: Dee (via Bob and Cy) and Ev
 
 **Vector nearest neighbors and an HNSW graph**
 
-```
- 2-D projection of embeddings                    HNSW layers (search from the top down)
-        "kayak" ●                                layer 2:  ●───────────●            (few long links)
-   "canoe" ●   ● "paddle"                        layer 1:  ●───●───●───●───●
-            ✚ query: "boat for rivers"           layer 0:  ●─●─●─●─●─●─●─●─●─●─●    (all points)
-                                                 greedy: jump far on top, refine below
-        ● "invoice"   ● "tax"
- nearest 3 by cosine: canoe, kayak, paddle
-```
+<div class="fig">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 820 300" role="img" aria-label="Embeddings projected to 2-D with a query near canoe, kayak and paddle; HNSW searches layers from the sparse top down to all points" style="width:100%;max-width:820px;height:auto;font-family:inherit"><defs><marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="context-stroke"/></marker></defs><text x="190" y="24" font-size="13.5" text-anchor="middle" fill="var(--text)" font-weight="700">2-D projection of embeddings</text><text x="620" y="24" font-size="13.5" text-anchor="middle" fill="var(--text)" font-weight="700">HNSW layers (search from the top down)</text><circle cx="190" cy="70" r="7" fill="var(--primary)" fill-opacity="1" stroke="var(--primary)" stroke-width="1.6"/><text x="202" y="74" font-size="12.5" text-anchor="start" fill="var(--text)">"kayak"</text><circle cx="140" cy="100" r="7" fill="var(--primary)" fill-opacity="1" stroke="var(--primary)" stroke-width="1.6"/><text x="152" y="104" font-size="12.5" text-anchor="start" fill="var(--text)">"canoe"</text><circle cx="250" cy="100" r="7" fill="var(--primary)" fill-opacity="1" stroke="var(--primary)" stroke-width="1.6"/><text x="262" y="104" font-size="12.5" text-anchor="start" fill="var(--text)">"paddle"</text><circle cx="160" cy="215" r="7" fill="var(--danger)" fill-opacity="1" stroke="var(--danger)" stroke-width="1.6"/><text x="172" y="219" font-size="12.5" text-anchor="start" fill="var(--text)">"invoice"</text><circle cx="270" cy="235" r="7" fill="var(--danger)" fill-opacity="1" stroke="var(--danger)" stroke-width="1.6"/><text x="282" y="239" font-size="12.5" text-anchor="start" fill="var(--text)">"tax"</text><text x="200" y="150" font-size="18" text-anchor="middle" fill="var(--accent)" font-weight="700">✚</text><text x="222" y="152" font-size="12.5" text-anchor="start" fill="var(--accent)" font-weight="600">query: "boat for rivers"</text><ellipse cx="190" cy="90" rx="90" ry="38" fill="var(--accent)" fill-opacity=".06" stroke="var(--accent)" stroke-width="1.6" stroke-dasharray="4 3"/><text x="190" y="280" font-size="12.5" text-anchor="middle" fill="var(--text-muted)" font-weight="600">nearest 3 by cosine: canoe, kayak, paddle</text><line x1="440.0" y1="70" x2="610.0" y2="70" stroke="var(--text-muted)" stroke-width="1.6"/><line x1="610.0" y1="70" x2="780.0" y2="70" stroke="var(--text-muted)" stroke-width="1.6"/><circle cx="440.0" cy="70" r="6" fill="#8b5cf6" fill-opacity="1" stroke="#8b5cf6" stroke-width="1.6"/><circle cx="610.0" cy="70" r="6" fill="#8b5cf6" fill-opacity="1" stroke="#8b5cf6" stroke-width="1.6"/><circle cx="780.0" cy="70" r="6" fill="#8b5cf6" fill-opacity="1" stroke="#8b5cf6" stroke-width="1.6"/><text x="440" y="54" font-size="12" text-anchor="start" fill="var(--text-muted)">layer 2: few long links</text><line x1="440.0" y1="140" x2="508.0" y2="140" stroke="var(--text-muted)" stroke-width="1.6"/><line x1="508.0" y1="140" x2="576.0" y2="140" stroke="var(--text-muted)" stroke-width="1.6"/><line x1="576.0" y1="140" x2="644.0" y2="140" stroke="var(--text-muted)" stroke-width="1.6"/><line x1="644.0" y1="140" x2="712.0" y2="140" stroke="var(--text-muted)" stroke-width="1.6"/><line x1="712.0" y1="140" x2="780.0" y2="140" stroke="var(--text-muted)" stroke-width="1.6"/><circle cx="440.0" cy="140" r="6" fill="var(--primary)" fill-opacity="1" stroke="var(--primary)" stroke-width="1.6"/><circle cx="508.0" cy="140" r="6" fill="var(--primary)" fill-opacity="1" stroke="var(--primary)" stroke-width="1.6"/><circle cx="576.0" cy="140" r="6" fill="var(--primary)" fill-opacity="1" stroke="var(--primary)" stroke-width="1.6"/><circle cx="644.0" cy="140" r="6" fill="var(--primary)" fill-opacity="1" stroke="var(--primary)" stroke-width="1.6"/><circle cx="712.0" cy="140" r="6" fill="var(--primary)" fill-opacity="1" stroke="var(--primary)" stroke-width="1.6"/><circle cx="780.0" cy="140" r="6" fill="var(--primary)" fill-opacity="1" stroke="var(--primary)" stroke-width="1.6"/><text x="440" y="124" font-size="12" text-anchor="start" fill="var(--text-muted)">layer 1</text><line x1="440.0" y1="210" x2="474.0" y2="210" stroke="var(--text-muted)" stroke-width="1.6"/><line x1="474.0" y1="210" x2="508.0" y2="210" stroke="var(--text-muted)" stroke-width="1.6"/><line x1="508.0" y1="210" x2="542.0" y2="210" stroke="var(--text-muted)" stroke-width="1.6"/><line x1="542.0" y1="210" x2="576.0" y2="210" stroke="var(--text-muted)" stroke-width="1.6"/><line x1="576.0" y1="210" x2="610.0" y2="210" stroke="var(--text-muted)" stroke-width="1.6"/><line x1="610.0" y1="210" x2="644.0" y2="210" stroke="var(--text-muted)" stroke-width="1.6"/><line x1="644.0" y1="210" x2="678.0" y2="210" stroke="var(--text-muted)" stroke-width="1.6"/><line x1="678.0" y1="210" x2="712.0" y2="210" stroke="var(--text-muted)" stroke-width="1.6"/><line x1="712.0" y1="210" x2="746.0" y2="210" stroke="var(--text-muted)" stroke-width="1.6"/><line x1="746.0" y1="210" x2="780.0" y2="210" stroke="var(--text-muted)" stroke-width="1.6"/><circle cx="440.0" cy="210" r="6" fill="var(--success)" fill-opacity="1" stroke="var(--success)" stroke-width="1.6"/><circle cx="474.0" cy="210" r="6" fill="var(--success)" fill-opacity="1" stroke="var(--success)" stroke-width="1.6"/><circle cx="508.0" cy="210" r="6" fill="var(--success)" fill-opacity="1" stroke="var(--success)" stroke-width="1.6"/><circle cx="542.0" cy="210" r="6" fill="var(--success)" fill-opacity="1" stroke="var(--success)" stroke-width="1.6"/><circle cx="576.0" cy="210" r="6" fill="var(--success)" fill-opacity="1" stroke="var(--success)" stroke-width="1.6"/><circle cx="610.0" cy="210" r="6" fill="var(--success)" fill-opacity="1" stroke="var(--success)" stroke-width="1.6"/><circle cx="644.0" cy="210" r="6" fill="var(--success)" fill-opacity="1" stroke="var(--success)" stroke-width="1.6"/><circle cx="678.0" cy="210" r="6" fill="var(--success)" fill-opacity="1" stroke="var(--success)" stroke-width="1.6"/><circle cx="712.0" cy="210" r="6" fill="var(--success)" fill-opacity="1" stroke="var(--success)" stroke-width="1.6"/><circle cx="746.0" cy="210" r="6" fill="var(--success)" fill-opacity="1" stroke="var(--success)" stroke-width="1.6"/><circle cx="780.0" cy="210" r="6" fill="var(--success)" fill-opacity="1" stroke="var(--success)" stroke-width="1.6"/><text x="440" y="194" font-size="12" text-anchor="start" fill="var(--text-muted)">layer 0: all points</text><text x="610" y="262" font-size="12.5" text-anchor="middle" fill="var(--text)" font-weight="600">greedy: jump far on top, refine below</text></svg>
+</div>
 
 ---
 

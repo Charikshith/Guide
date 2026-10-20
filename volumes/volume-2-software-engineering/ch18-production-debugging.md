@@ -89,15 +89,14 @@ stateDiagram-v2
 
 **Graceful degradation on a product page**
 
-```
- ┌───────────────────────────── product page ───────────────────────────────┐
- │ title, price, buy button      ← critical: must work (strict timeouts)    │
- │ reviews                       ← degrade: cached copy, 10 min old          │
- │ "customers also bought"       ← degrade: static bestsellers (breaker open)│
- │ personalized banner           ← degrade: hidden (kill switch recs=off)    │
- └──────────────────────────────────────────────────────────────────────────┘
-   the recommendations service is down, but customers can still buy
-```
+| Page element | When things fail |
+|---|---|
+| title, price, buy button | **critical**: must work (strict timeouts) |
+| reviews | **degrade**: cached copy, 10 min old |
+| "customers also bought" | **degrade**: static bestsellers (circuit breaker open) |
+| personalized banner | **degrade**: hidden (kill switch `recs=off`) |
+
+The recommendations service is down, but customers can still buy.
 
 ---
 

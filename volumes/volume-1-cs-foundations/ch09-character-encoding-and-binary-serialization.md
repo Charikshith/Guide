@@ -56,15 +56,15 @@ The leading bits say how long a sequence is, and continuation bytes always start
 
 **UTF-8 multibyte encoding of `é` (U+00E9)**
 
-```
- code point  U+00E9 = 0000 0000 1110 1001  (binary)
- needs 2 bytes (range U+0080–U+07FF): 110xxxxx 10xxxxxx
- split the 11 payload bits:          00011   101001
-                                    ┌──┴──┐ ┌──┴───┐
- byte 1:   110 00011  = 0xC3        │00011│ │101001│
- byte 2:   10  101001 = 0xA9        └─────┘ └──────┘
- "é".encode("utf-8") == b"\xc3\xa9"
-```
+| Step | Value |
+|---|---|
+| code point | U+00E9 = `0000 0000 1110 1001` (binary) |
+| needs | 2 bytes (range U+0080–U+07FF): pattern `110xxxxx 10xxxxxx` |
+| split the 11 payload bits | `00011` and `101001` |
+| byte 1 | `110` + `00011` = `110 00011` = **0xC3** |
+| byte 2 | `10` + `101001` = `10 101001` = **0xA9** |
+
+So `"é".encode("utf-8") == b"\xc3\xa9"`.
 
 **Same text, three encodings**
 
@@ -77,16 +77,17 @@ The leading bits say how long a sequence is, and continuation bytes always start
 
 **Protobuf varint for field `id = 300`**
 
-```
- 300 decimal = 1 0010 1100 (binary)
- split into 7-bit groups, least-significant first:  0101100   0000010
- set the high "more" bit on every byte except the last:
-     1 0101100 = 0xAC      0 0000010 = 0x02
- field tag: (field_number 1 << 3) | wire_type 0 (varint) = 0x08
+| Step | Value |
+|---|---|
+| 300 in decimal | `1 0010 1100` (binary) |
+| split into 7-bit groups, least significant first | `0101100` and `0000010` |
+| set the high "more" bit on every byte except the last | `1 0101100` = 0xAC and `0 0000010` = 0x02 |
+| field tag | `(field_number 1 << 3) \| wire_type 0 (varint)` = 0x08 |
 
- bytes on the wire:  08  AC  02          ← 3 bytes
- JSON equivalent:    {"id":300}          ← 10 bytes
-```
+| Encoding | Bytes |
+|---|---|
+| On the wire (protobuf) | `08 AC 02` (**3 bytes**) |
+| JSON equivalent | `{"id":300}` (**10 bytes**) |
 
 ```mermaid
 flowchart LR

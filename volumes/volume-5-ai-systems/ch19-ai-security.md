@@ -86,12 +86,14 @@ sequenceDiagram
 
 **Defense in depth**
 
+```mermaid
+flowchart LR
+    u["untrusted input"] --> m["mark as data"] --> ic["injection classifier"] --> llm["LLM"] --> ta["tool allow-list<br/>+ arg validation"]
+    ta --> ha["human approval<br/>for risky tools"]
+    ha --> sb["sandbox"] --> dlp["output DLP<br/>+ URL filter"] --> user["user"]
 ```
- untrusted input ─► [mark as data] ─► [injection classifier] ─► LLM ─► [tool allow-list + arg validation]
-                                                                      ─► [human approval for risky tools]
-                                                                      ─► [sandbox] ─► [output DLP + URL filter] ─► user
- each layer is imperfect; together they make a successful attack much harder and much less damaging
-```
+
+Each layer is imperfect; together they make a successful attack much harder and much less damaging.
 
 ---
 

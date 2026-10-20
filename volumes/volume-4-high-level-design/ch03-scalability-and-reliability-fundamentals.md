@@ -297,12 +297,14 @@ LB --> S3[Active Node 3]
 
 ASCII view:
 
+```mermaid
+flowchart LR
+    U["User"] --> LB["LB"] --> A["Node A (active)"]
+    LB --> B["Node B (active)"]
+    LB --> C["Node C (active)"]
 ```
-Active-Active:
-User --> [LB] --> Node A (active)
-                    |--> Node B (active)
-                    |--> Node C (active)
-```
+
+**Active-Active:** every node serves traffic.
 
 ##### Active-Passive
 
@@ -321,11 +323,13 @@ A --failure--> P1
 
 ASCII view:
 
+```mermaid
+flowchart LR
+    U["User"] --> LB["LB"] --> A["Node A (active)"]
+    LB -.-> B["Node B (standby)"]
 ```
-Active-Passive:
-User --> [LB] --> Node A (active)
-                    |--> Node B (standby)
-```
+
+**Active-Passive:** the standby takes over only on failure.
 
 ---
 
@@ -378,16 +382,9 @@ The diagram, worked example, exercises, mini-project, design prompt, open-source
 
 **Scale-up vs scale-out**
 
-```
- SCALE UP                                SCALE OUT
- ┌──────────────┐                        ┌────┐ ┌────┐ ┌────┐ ┌────┐
- │              │                        │ 4c │ │ 4c │ │ 4c │ │ 4c │  … add more
- │   64 cores   │                        └────┘ └────┘ └────┘ └────┘
- │   512 GB     │                             ▲      ▲      ▲
- │              │                        ┌────┴──────┴──────┴────┐
- └──────────────┘                        │     load balancer     │
- one box, one failure = outage           └───────────────────────┘
-```
+<div class="fig">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 780 300" role="img" aria-label="Scaling up gives one big 64-core machine with a single point of failure; scaling out adds many small machines behind a load balancer" style="width:100%;max-width:780px;height:auto;font-family:inherit"><defs><marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="context-stroke"/></marker></defs><text x="130" y="24" font-size="14" text-anchor="middle" fill="var(--text)" font-weight="700">SCALE UP</text><text x="540" y="24" font-size="14" text-anchor="middle" fill="var(--text)" font-weight="700">SCALE OUT</text><rect x="50" y="44" width="160" height="150" rx="6" fill="var(--primary)" fill-opacity=".16" stroke="var(--primary)" stroke-width="1.6"/><text x="130" y="112" font-size="15" text-anchor="middle" fill="var(--text)" font-weight="700">64 cores</text><text x="130" y="136" font-size="13" text-anchor="middle" fill="var(--text-muted)">512 GB</text><text x="130" y="224" font-size="12.5" text-anchor="middle" fill="var(--danger)" font-weight="600">one box, one failure = outage</text><rect x="340" y="44" width="70" height="44" rx="8" fill="var(--success)" fill-opacity=".14" stroke="var(--success)" stroke-width="1.6"/><text x="375.0" y="70.55" font-size="13" text-anchor="middle" fill="var(--text)" font-weight="600">4c</text><line x1="375" y1="138" x2="375" y2="90" stroke="var(--text-muted)" stroke-width="1.6" marker-end="url(#ar)"/><rect x="420" y="44" width="70" height="44" rx="8" fill="var(--success)" fill-opacity=".14" stroke="var(--success)" stroke-width="1.6"/><text x="455.0" y="70.55" font-size="13" text-anchor="middle" fill="var(--text)" font-weight="600">4c</text><line x1="455" y1="138" x2="455" y2="90" stroke="var(--text-muted)" stroke-width="1.6" marker-end="url(#ar)"/><rect x="500" y="44" width="70" height="44" rx="8" fill="var(--success)" fill-opacity=".14" stroke="var(--success)" stroke-width="1.6"/><text x="535.0" y="70.55" font-size="13" text-anchor="middle" fill="var(--text)" font-weight="600">4c</text><line x1="535" y1="138" x2="535" y2="90" stroke="var(--text-muted)" stroke-width="1.6" marker-end="url(#ar)"/><rect x="580" y="44" width="70" height="44" rx="8" fill="var(--success)" fill-opacity=".14" stroke="var(--success)" stroke-width="1.6"/><text x="615.0" y="70.55" font-size="13" text-anchor="middle" fill="var(--text)" font-weight="600">4c</text><line x1="615" y1="138" x2="615" y2="90" stroke="var(--text-muted)" stroke-width="1.6" marker-end="url(#ar)"/><text x="700" y="70" font-size="12.5" text-anchor="start" fill="var(--text-muted)">… add more</text><rect x="340" y="138" width="310" height="44" rx="6" fill="var(--accent)" fill-opacity=".18" stroke="var(--accent)" stroke-width="1.6"/><text x="495" y="166" font-size="13.5" text-anchor="middle" fill="var(--text)" font-weight="600">load balancer</text></svg>
+</div>
 
 **Redundancy across failure domains, with the availability formula**
 
@@ -414,11 +411,9 @@ flowchart TB
 
 **Series vs parallel**
 
-```
- SERIES    [A 99.9%]──[B 99.9%]           = 0.999 × 0.999        = 99.80%
- PARALLEL  ┌─[A 99.9%]─┐
-           └─[B 99.9%]─┘                  = 1 − 0.001 × 0.001    = 99.9999%
-```
+<div class="fig">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 780 220" role="img" aria-label="Two 99.9 percent components in series give 99.80 percent; in parallel they give 99.9999 percent" style="width:100%;max-width:780px;height:auto;font-family:inherit"><defs><marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="context-stroke"/></marker></defs><text x="20" y="44" font-size="13.5" text-anchor="start" fill="var(--primary)" font-weight="700">SERIES</text><rect x="120" y="22" width="120" height="40" rx="8" fill="var(--primary)" fill-opacity=".14" stroke="var(--primary)" stroke-width="1.6"/><text x="180.0" y="46.55" font-size="13" text-anchor="middle" fill="var(--text)" font-weight="600">A 99.9%</text><line x1="240" y1="42" x2="280" y2="42" stroke="var(--text-muted)" stroke-width="1.6"/><rect x="280" y="22" width="120" height="40" rx="8" fill="var(--primary)" fill-opacity=".14" stroke="var(--primary)" stroke-width="1.6"/><text x="340.0" y="46.55" font-size="13" text-anchor="middle" fill="var(--text)" font-weight="600">B 99.9%</text><text x="430" y="48" font-size="14" text-anchor="start" fill="var(--text)" font-weight="700">= 0.999 × 0.999  =  99.80%</text><text x="20" y="140" font-size="13.5" text-anchor="start" fill="var(--success)" font-weight="700">PARALLEL</text><rect x="160" y="100" width="120" height="40" rx="8" fill="var(--success)" fill-opacity=".14" stroke="var(--success)" stroke-width="1.6"/><text x="220.0" y="124.55" font-size="13" text-anchor="middle" fill="var(--text)" font-weight="600">A 99.9%</text><rect x="160" y="150" width="120" height="40" rx="8" fill="var(--success)" fill-opacity=".14" stroke="var(--success)" stroke-width="1.6"/><text x="220.0" y="174.55" font-size="13" text-anchor="middle" fill="var(--text)" font-weight="600">B 99.9%</text><line x1="120" y1="145" x2="160" y2="120" stroke="var(--text-muted)" stroke-width="1.6"/><line x1="120" y1="145" x2="160" y2="170" stroke="var(--text-muted)" stroke-width="1.6"/><line x1="280" y1="120" x2="320" y2="145" stroke="var(--text-muted)" stroke-width="1.6"/><line x1="280" y1="170" x2="320" y2="145" stroke="var(--text-muted)" stroke-width="1.6"/><text x="430" y="152" font-size="14" text-anchor="start" fill="var(--text)" font-weight="700">= 1 − 0.001 × 0.001  =  99.9999%</text></svg>
+</div>
 
 ---
 
@@ -442,12 +437,11 @@ for a in (0.99, 0.999, 0.9999, 0.99999):
 
 **Making a stateful service horizontally scalable**
 
-```
- BEFORE: sessions in process memory      AFTER: sessions in Redis
- user → LB → api-2 (has the session)     user → LB → any api node → Redis session:abc
- api-2 dies → the user is logged out     node dies → the next request goes elsewhere, still logged in
- sticky sessions needed                  no stickiness needed; autoscale freely
-```
+| | BEFORE: sessions in process memory | AFTER: sessions in Redis |
+|---|---|---|
+| Request path | user → LB → `api-2` (has the session) | user → LB → any api node → Redis `session:abc` |
+| When a node dies | `api-2` dies → the user is logged out | the next request goes elsewhere, still logged in |
+| Consequence | sticky sessions needed | no stickiness needed; autoscale freely |
 
 ---
 

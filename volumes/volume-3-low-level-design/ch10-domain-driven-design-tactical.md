@@ -84,11 +84,12 @@ classDiagram
     OrderLine *-- Money
 ```
 
-```
- outside code ──► order.add_line(...)          ✓ through the root
- outside code ──► order.lines[0].quantity = 0  ✗ bypasses the invariants
- Order holds customer_id (an ID), NOT a Customer object → separate aggregate
-```
+| Outside code | |
+|---|---|
+| `order.add_line(...)` | ✓ through the root |
+| `order.lines[0].quantity = 0` | ✗ bypasses the invariants |
+
+`Order` holds `customer_id` (an ID), **not** a `Customer` object, so `Customer` is a separate aggregate.
 
 **A bounded-context map**
 

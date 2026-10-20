@@ -56,25 +56,24 @@ A graph with 1M nodes and 5M edges: matrix = 10¹² cells (impossible); list ≈
 
 **A hash table with chaining, and a resize**
 
-```
- capacity 4, α = 5/4 → too full        after resize to 8 (every key rehashed)
- [0] → ("dog",1) → ("ant",7)            [0] → ("ant",7)
- [1] → ("cat",3)                        [1] → ("cat",3)
- [2] ∅                                  [2] ∅
- [3] → ("eel",2) → ("fox",9)            [3] → ("eel",2)
-                                        [4] → ("dog",1)
-                                        [5] ∅   [6] ∅
-                                        [7] → ("fox",9)      chains shrink
-```
+| Bucket | Capacity 4, α = 5/4 → too full | After resize to 8 (every key rehashed) |
+|:-:|---|---|
+| [0] | ("dog",1) → ("ant",7) | ("ant",7) |
+| [1] | ("cat",3) | ("cat",3) |
+| [2] | ∅ | ∅ |
+| [3] | ("eel",2) → ("fox",9) | ("eel",2) |
+| [4] | | ("dog",1) |
+| [5] | | ∅ |
+| [6] | | ∅ |
+| [7] | | ("fox",9) |
+
+Chains shrink after the resize.
 
 **Linear probing**
 
-```
- insert "fox": hash % 8 = 3, but slot 3 is taken → try 4 → try 5 (free)
- [0][1][2][eel][dog][fox][6][7]
-             ▲    ▲    ▲
-             3    4    5   ← probe sequence
-```
+<div class="fig">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 220" role="img" aria-label="Linear probing: inserting fox hashes to slot 3, which is taken, so it tries 4, then 5, which is free" style="width:100%;max-width:760px;height:auto;font-family:inherit"><defs><marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="context-stroke"/></marker></defs><text x="20" y="24" font-size="13.5" text-anchor="start" fill="var(--text)" font-weight="600">insert "fox": hash % 8 = 3, but slot 3 is taken → try 4 → try 5 (free)</text><text x="60" y="62" font-size="12" text-anchor="middle" fill="var(--text-muted)">[0]</text><rect x="20" y="70" width="80" height="44" rx="8" fill="var(--border)" fill-opacity=".05" stroke="var(--border)" stroke-width="1.6"/><text x="60.0" y="96.9" font-size="14" text-anchor="middle" fill="var(--text)" font-weight="600"></text><text x="148" y="62" font-size="12" text-anchor="middle" fill="var(--text-muted)">[1]</text><rect x="108" y="70" width="80" height="44" rx="8" fill="var(--border)" fill-opacity=".05" stroke="var(--border)" stroke-width="1.6"/><text x="148.0" y="96.9" font-size="14" text-anchor="middle" fill="var(--text)" font-weight="600"></text><text x="236" y="62" font-size="12" text-anchor="middle" fill="var(--text-muted)">[2]</text><rect x="196" y="70" width="80" height="44" rx="8" fill="var(--border)" fill-opacity=".05" stroke="var(--border)" stroke-width="1.6"/><text x="236.0" y="96.9" font-size="14" text-anchor="middle" fill="var(--text)" font-weight="600"></text><text x="324" y="62" font-size="12" text-anchor="middle" fill="var(--text-muted)">[3]</text><rect x="284" y="70" width="80" height="44" rx="8" fill="var(--primary)" fill-opacity=".25" stroke="var(--primary)" stroke-width="1.6"/><text x="324.0" y="96.9" font-size="14" text-anchor="middle" fill="var(--text)" font-weight="600">eel</text><text x="412" y="62" font-size="12" text-anchor="middle" fill="var(--text-muted)">[4]</text><rect x="372" y="70" width="80" height="44" rx="8" fill="var(--primary)" fill-opacity=".25" stroke="var(--primary)" stroke-width="1.6"/><text x="412.0" y="96.9" font-size="14" text-anchor="middle" fill="var(--text)" font-weight="600">dog</text><text x="500" y="62" font-size="12" text-anchor="middle" fill="var(--text-muted)">[5]</text><rect x="460" y="70" width="80" height="44" rx="8" fill="var(--accent)" fill-opacity=".25" stroke="var(--accent)" stroke-width="1.6"/><text x="500.0" y="96.9" font-size="14" text-anchor="middle" fill="var(--text)" font-weight="600">fox</text><text x="588" y="62" font-size="12" text-anchor="middle" fill="var(--text-muted)">[6]</text><rect x="548" y="70" width="80" height="44" rx="8" fill="var(--border)" fill-opacity=".05" stroke="var(--border)" stroke-width="1.6"/><text x="588.0" y="96.9" font-size="14" text-anchor="middle" fill="var(--text)" font-weight="600"></text><text x="676" y="62" font-size="12" text-anchor="middle" fill="var(--text-muted)">[7]</text><rect x="636" y="70" width="80" height="44" rx="8" fill="var(--border)" fill-opacity=".05" stroke="var(--border)" stroke-width="1.6"/><text x="676.0" y="96.9" font-size="14" text-anchor="middle" fill="var(--text)" font-weight="600"></text><text x="324" y="144" font-size="13" text-anchor="middle" fill="var(--text)" font-weight="700">3</text><text x="412" y="144" font-size="13" text-anchor="middle" fill="var(--text)" font-weight="700">4</text><text x="500" y="144" font-size="13" text-anchor="middle" fill="var(--text)" font-weight="700">5</text><line x1="324" y1="128" x2="412" y2="128" stroke="var(--danger)" stroke-width="1.6" marker-end="url(#ar)"/><line x1="412" y1="128" x2="500" y2="128" stroke="var(--success)" stroke-width="1.6" marker-end="url(#ar)"/><text x="550" y="148" font-size="12.5" text-anchor="start" fill="var(--text-muted)">← probe sequence</text></svg>
+</div>
 
 **The same weighted, directed graph three ways**
 

@@ -63,15 +63,15 @@ Images and containers, Kubernetes orchestration (pods, deployments, services), a
 
 **Docker image → container**
 
-```
- Dockerfile                     image layers (cached, shared)          container
- FROM python:3.12-slim   ───►   [ base OS + python      ] 45 MB   ┐
- COPY pyproject.toml, lock ─►   [ dependency manifest   ] 4 KB    │   read-only
- RUN pip install …        ───►  [ installed packages    ] 80 MB   │
- COPY src/ /app           ───►  [ your code             ] 2 MB    ┘
-                                [ writable layer        ]  ◄── per container, discarded on removal
- change only src/ → only the last layer rebuilds (seconds, not minutes)
-```
+| Dockerfile instruction | Image layer (cached, shared) | Size | |
+|---|---|---|---|
+| `FROM python:3.12-slim` | base OS + python | 45 MB | read-only |
+| `COPY pyproject.toml, lock` | dependency manifest | 4 KB | read-only |
+| `RUN pip install …` | installed packages | 80 MB | read-only |
+| `COPY src/ /app` | your code | 2 MB | read-only |
+| (at run time) | writable layer | | per container, discarded on removal |
+
+Change only `src/` and only the last layer rebuilds (seconds, not minutes).
 
 **A K8s cluster with pods behind a service**
 

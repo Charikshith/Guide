@@ -76,15 +76,16 @@ flowchart LR
 
 **State file vs live infra diff (drift)**
 
-```
- code (main.tf)             state (last apply)            live AWS (someone used the console)
- ingress 443 from 0.0.0.0   ingress 443 from 0.0.0.0      ingress 443 from 0.0.0.0
-                                                          ingress 22  from 0.0.0.0   ← drift!
- instance_type = t3.small   instance_type = t3.small      instance_type = t3.large  ← drift!
+| | code (`main.tf`) | state (last apply) | live AWS (someone used the console) |
+|---|---|---|---|
+| ingress | 443 from 0.0.0.0 | 443 from 0.0.0.0 | 443 from 0.0.0.0 |
+| ingress | | | 22 from 0.0.0.0 ← **drift!** |
+| instance_type | `t3.small` | `t3.small` | `t3.large` ← **drift!** |
 
- terraform plan:
-   ~ aws_security_group.web   − ingress 22 from 0.0.0.0/0      (would remove the manual rule)
-   ~ aws_instance.web         instance_type: t3.large → t3.small
+```diff
+terraform plan:
+  ~ aws_security_group.web   - ingress 22 from 0.0.0.0/0      (would remove the manual rule)
+  ~ aws_instance.web         instance_type: t3.large → t3.small
 ```
 
 **Module composition**

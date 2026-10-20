@@ -103,12 +103,12 @@ In-order traversal: 1, 3, 4, 6, 7, 8, 9, 10, 14 — sorted.
 
 **Heap push: sift up**
 
-```
- push 0 at index 7 (child of 7):  [1,3,2,7,4,5,6,0]
- 0 < 7 → swap                    [1,3,2,0,4,5,6,7]
- 0 < 3 → swap                    [1,0,2,3,4,5,6,7]
- 0 < 1 → swap                    [0,1,2,3,4,5,6,7]   done: O(log n) swaps
-```
+| Step | Array |
+|---|---|
+| push `0` at index 7 (child of 7) | `[1,3,2,7,4,5,6,0]` |
+| 0 < 7 → swap | `[1,3,2,0,4,5,6,7]` |
+| 0 < 3 → swap | `[1,0,2,3,4,5,6,7]` |
+| 0 < 1 → swap | `[0,1,2,3,4,5,6,7]` (done: **O(log n)** swaps) |
 
 **A trie of: car, cart, cat, dog**
 

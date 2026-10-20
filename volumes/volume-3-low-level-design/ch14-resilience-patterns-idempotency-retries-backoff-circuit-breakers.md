@@ -171,16 +171,17 @@ stateDiagram-v2
 
 **Exponential backoff with and without jitter**
 
-```
- base 100 ms, cap 5 s
- attempt:        1       2       3       4        5
- no jitter:    100 ms  200 ms  400 ms  800 ms  1600 ms   ← 1,000 clients retry at the SAME instants
- full jitter:  0–100   0–200   0–400   0–800   0–1600    ← retries spread out evenly
+Base 100 ms, cap 5 s.
 
- load on the recovering service
- no jitter    █        █        █        █        spikes that knock it down again
- full jitter  ▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃   smooth
-```
+| Attempt | 1 | 2 | 3 | 4 | 5 | |
+|---|---|---|---|---|---|---|
+| no jitter | 100 ms | 200 ms | 400 ms | 800 ms | 1600 ms | 1,000 clients retry at the **same** instants |
+| full jitter | 0–100 | 0–200 | 0–400 | 0–800 | 0–1600 | retries spread out evenly |
+
+| Load on the recovering service | Shape |
+|---|---|
+| no jitter | spikes at each attempt that knock it down again |
+| full jitter | smooth |
 
 **Idempotency key flow**
 

@@ -453,29 +453,20 @@ flowchart LR
 
 **Blast radius: separate accounts and cells**
 
-```
- organization
- ├── account: security (logs, audit, backups — write-only from others)
- ├── account: prod-payments      ← PCI scope, the smallest possible
- ├── account: prod-core
- │     ├── cell-1 (users 0–24%)
- │     ├── cell-2 (users 25–49%)  a bad deploy or a compromise hits one cell, not everyone
- │     └── …
- ├── account: staging            no network path to prod; no prod data
- └── account: sandbox
-```
+<div class="fig">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 254" role="img" aria-label="Cloud account hierarchy: security, prod-payments, prod-core with cells, staging and sandbox" style="width:100%;max-width:960px;height:auto;font-family:inherit"><defs><marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="context-stroke"/></marker></defs><text x="14" y="20" font-size="13" font-family="ui-monospace,Menlo,Consolas,monospace" fill="var(--primary)" font-weight="600">📁 organization</text><line x1="24" y1="32" x2="24" y2="44" stroke="var(--border)" stroke-width="1.4"/><line x1="24" y1="44" x2="34" y2="44" stroke="var(--border)" stroke-width="1.4"/><text x="38" y="46" font-size="13" font-family="ui-monospace,Menlo,Consolas,monospace" fill="var(--primary)" font-weight="600">📁 account: security</text><text x="290" y="46" font-size="12.5" text-anchor="start" fill="var(--text-muted)">← logs, audit, backups: write-only from others</text><line x1="24" y1="58" x2="24" y2="70" stroke="var(--border)" stroke-width="1.4"/><line x1="24" y1="70" x2="34" y2="70" stroke="var(--border)" stroke-width="1.4"/><text x="38" y="72" font-size="13" font-family="ui-monospace,Menlo,Consolas,monospace" fill="var(--primary)" font-weight="600">📁 account: prod-payments</text><text x="290" y="72" font-size="12.5" text-anchor="start" fill="var(--text-muted)">← PCI scope, the smallest possible</text><line x1="24" y1="84" x2="24" y2="96" stroke="var(--border)" stroke-width="1.4"/><line x1="24" y1="96" x2="34" y2="96" stroke="var(--border)" stroke-width="1.4"/><text x="38" y="98" font-size="13" font-family="ui-monospace,Menlo,Consolas,monospace" fill="var(--primary)" font-weight="600">📁 account: prod-core</text><line x1="48" y1="110" x2="48" y2="122" stroke="var(--border)" stroke-width="1.4"/><line x1="48" y1="122" x2="58" y2="122" stroke="var(--border)" stroke-width="1.4"/><text x="62" y="124" font-size="13" font-family="ui-monospace,Menlo,Consolas,monospace" fill="var(--primary)" font-weight="600">📁 cell-1</text><text x="290" y="124" font-size="12.5" text-anchor="start" fill="var(--text-muted)">← users 0–24%</text><line x1="48" y1="136" x2="48" y2="148" stroke="var(--border)" stroke-width="1.4"/><line x1="48" y1="148" x2="58" y2="148" stroke="var(--border)" stroke-width="1.4"/><text x="62" y="150" font-size="13" font-family="ui-monospace,Menlo,Consolas,monospace" fill="var(--primary)" font-weight="600">📁 cell-2</text><text x="290" y="150" font-size="12.5" text-anchor="start" fill="var(--text-muted)">← users 25–49%: a bad deploy or a compromise hits one cell, not everyone</text><line x1="48" y1="162" x2="48" y2="174" stroke="var(--border)" stroke-width="1.4"/><line x1="48" y1="174" x2="58" y2="174" stroke="var(--border)" stroke-width="1.4"/><text x="62" y="176" font-size="13" font-family="ui-monospace,Menlo,Consolas,monospace" fill="var(--primary)" font-weight="600">📁 …</text><line x1="24" y1="188" x2="24" y2="200" stroke="var(--border)" stroke-width="1.4"/><line x1="24" y1="200" x2="34" y2="200" stroke="var(--border)" stroke-width="1.4"/><text x="38" y="202" font-size="13" font-family="ui-monospace,Menlo,Consolas,monospace" fill="var(--primary)" font-weight="600">📁 account: staging</text><text x="290" y="202" font-size="12.5" text-anchor="start" fill="var(--text-muted)">← no network path to prod; no prod data</text><line x1="24" y1="214" x2="24" y2="226" stroke="var(--border)" stroke-width="1.4"/><line x1="24" y1="226" x2="34" y2="226" stroke="var(--border)" stroke-width="1.4"/><text x="38" y="228" font-size="13" font-family="ui-monospace,Menlo,Consolas,monospace" fill="var(--primary)" font-weight="600">📁 account: sandbox</text></svg>
+</div>
 
 **Envelope encryption**
 
+```mermaid
+flowchart TD
+    kms["KMS master key<br/>never leaves the KMS / HSM"] -- encrypts --> dk["data key<br/>random per object / per tenant"] -- encrypts --> data["data"]
+    dk -.-> st["stored together:<br/>[encrypted data key][ciphertext]"]
 ```
- KMS master key (never leaves the KMS/HSM)
-      │ encrypts
-      ▼
- data key (random per object / per tenant) ──encrypts──► data
- stored together:  [encrypted data key][ciphertext]
- read: ask KMS to decrypt the data key (logged, IAM-checked) → decrypt the data in memory
- delete a tenant's key → all their data becomes unreadable (crypto-shredding)
-```
+
+- **Read:** ask KMS to decrypt the data key (logged, IAM-checked), then decrypt the data in memory.
+- **Delete a tenant's key** → all their data becomes unreadable (**crypto-shredding**).
 
 ---
 

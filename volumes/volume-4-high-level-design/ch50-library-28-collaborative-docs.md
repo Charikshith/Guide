@@ -167,23 +167,16 @@ graph TD
 
 ASCII view:
 
-```
-+--------+       +-------------+       +------------------+
-| Client | <---> | API Gateway | <---> | Microservices    |
-|        |       | (REST/Auth) |       | (Doc, Sync, etc) |
-+--------+       +-------------+       +------------------+
-     |                |                          |
-     | <--- WebSocket |                          |
-     |      (Sync)    |                          |
-     v                v                          v
-+--------------------------------------------------------------+
-|                Messaging Layer (Kafka)                       |
-+--------------------------------------------------------------+
-     |                |                          |
-     v                v                          v
-+-----------------+   +----------------+   +------------------+
-| Storage (S3/GCS)|   | PostgreSQL     |   | MongoDB          |
-+-----------------+   +----------------+   +------------------+
+```mermaid
+flowchart TD
+    cl["Client"] <--> gw["API Gateway<br/>(REST/Auth)"] <--> ms["Microservices<br/>(Doc, Sync, etc)"]
+    cl -- "WebSocket (Sync)" --> gw
+    cl --> k["Messaging Layer (Kafka)"]
+    gw --> k
+    ms --> k
+    k --> s3[("Storage (S3/GCS)")]
+    k --> pg[("PostgreSQL")]
+    k --> mg[("MongoDB")]
 ```
 
 #### Component Breakdown

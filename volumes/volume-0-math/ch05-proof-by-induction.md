@@ -47,14 +47,12 @@ Base case + inductive step; strong induction; using induction to prove loop inva
 
 **The domino chain**
 
+```mermaid
+flowchart LR
+    push(["push"]) --> d1["1<br/>base case"] --> d2["2"] --> d3["3"] --> d4["4"] --> d5["5"] --> dots["…"] --> dk["k"] --> dk1["k+1"] --> more["…"]
 ```
-  push
-   │
-   ▼
-  ┃1┃ → ┃2┃ → ┃3┃ → ┃4┃ → ┃5┃ → … → ┃k┃ → ┃k+1┃ → …
-  base   └────────── each falling domino topples the next ──────────┘
-  case                       (inductive step: P(k) ⇒ P(k+1))
-```
+
+Each falling domino topples the next: that is the **inductive step**, P(k) ⇒ P(k+1).
 
 **Induction as a proof pipeline**
 

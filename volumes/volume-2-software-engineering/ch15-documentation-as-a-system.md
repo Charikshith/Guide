@@ -61,21 +61,9 @@ Every alert should link to its runbook section.
 
 **A documentation site architecture (Diátaxis)**
 
-```
-                        PRACTICAL (doing)
-                              ▲
-          ┌───────────────────┼───────────────────┐
-          │   TUTORIALS       │   HOW-TO GUIDES   │
-          │   learning-       │   task-           │
- STUDY    │   oriented        │   oriented        │   WORK
- (acquire)├───────────────────┼───────────────────┤   (apply)
-          │   EXPLANATION     │   REFERENCE       │
-          │   understanding-  │   information-    │
-          │   oriented (ADRs) │   oriented (gen.) │
-          └───────────────────┼───────────────────┘
-                              ▼
-                       THEORETICAL (knowing)
-```
+<div class="fig">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 740 420" role="img" aria-label="The four kinds of documentation: tutorials, how-to guides, explanation and reference, arranged by study vs work and practical vs theoretical" style="width:100%;max-width:740px;height:auto;font-family:inherit"><defs><marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="context-stroke"/></marker></defs><text x="370" y="24" font-size="13.5" text-anchor="middle" fill="var(--text)" font-weight="700">PRACTICAL (doing)</text><text x="370" y="410" font-size="13.5" text-anchor="middle" fill="var(--text)" font-weight="700">THEORETICAL (knowing)</text><text x="60" y="214" font-size="13" text-anchor="middle" fill="var(--text)" font-weight="700">STUDY</text><text x="60" y="232" font-size="12" text-anchor="middle" fill="var(--text-muted)">(acquire)</text><text x="680" y="214" font-size="13" text-anchor="middle" fill="var(--text)" font-weight="700">WORK</text><text x="680" y="232" font-size="12" text-anchor="middle" fill="var(--text-muted)">(apply)</text><rect x="120" y="40" width="240" height="170" rx="10" fill="var(--success)" fill-opacity=".14" stroke="var(--success)" stroke-width="1.6"/><text x="240" y="110" font-size="16" text-anchor="middle" fill="var(--text)" font-weight="700">TUTORIALS</text><text x="240" y="140" font-size="13" text-anchor="middle" fill="var(--text-muted)">learning-</text><text x="240" y="158" font-size="13" text-anchor="middle" fill="var(--text-muted)">oriented</text><rect x="380" y="40" width="240" height="170" rx="10" fill="var(--primary)" fill-opacity=".14" stroke="var(--primary)" stroke-width="1.6"/><text x="500" y="110" font-size="16" text-anchor="middle" fill="var(--text)" font-weight="700">HOW-TO GUIDES</text><text x="500" y="140" font-size="13" text-anchor="middle" fill="var(--text-muted)">task-</text><text x="500" y="158" font-size="13" text-anchor="middle" fill="var(--text-muted)">oriented</text><rect x="120" y="220" width="240" height="170" rx="10" fill="#8b5cf6" fill-opacity=".14" stroke="#8b5cf6" stroke-width="1.6"/><text x="240" y="290" font-size="16" text-anchor="middle" fill="var(--text)" font-weight="700">EXPLANATION</text><text x="240" y="320" font-size="13" text-anchor="middle" fill="var(--text-muted)">understanding-</text><text x="240" y="338" font-size="13" text-anchor="middle" fill="var(--text-muted)">oriented (ADRs)</text><rect x="380" y="220" width="240" height="170" rx="10" fill="var(--accent)" fill-opacity=".14" stroke="var(--accent)" stroke-width="1.6"/><text x="500" y="290" font-size="16" text-anchor="middle" fill="var(--text)" font-weight="700">REFERENCE</text><text x="500" y="320" font-size="13" text-anchor="middle" fill="var(--text-muted)">information-</text><text x="500" y="338" font-size="13" text-anchor="middle" fill="var(--text-muted)">oriented (generated)</text></svg>
+</div>
 
 **The docs pipeline**
 

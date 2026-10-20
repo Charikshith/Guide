@@ -60,20 +60,30 @@ flowchart LR
 
 **Mapping one aggregate to two tables**
 
+**Domain object**
+
+```python
+Order(id="o-1", customer="c-7", status="placed",
+      lines=[OrderLine(pen, 2, €1.50),
+             OrderLine(pad, 1, €4.00)])
 ```
- domain object                               tables
- Order(id="o-1", customer="c-7",             orders
-       status="placed",                      ┌──────┬──────────┬────────┐
-       lines=[OrderLine(pen, 2, €1.50),      │ id   │ customer │ status │
-              OrderLine(pad, 1, €4.00)])     │ o-1  │ c-7      │ placed │
-                                             └──────┴──────────┴────────┘
-               ⇅ mapper                      order_lines
-                                             ┌───────┬─────┬─────┬────────────┐
-                                             │ order │ sku │ qty │ price_cents│
-                                             │ o-1   │ pen │ 2   │ 150        │
-                                             │ o-1   │ pad │ 1   │ 400        │
-                                             └───────┴─────┴─────┴────────────┘
-```
+
+**⇅ mapper**
+
+**Tables**
+
+`orders`
+
+| id | customer | status |
+|---|---|---|
+| o-1 | c-7 | placed |
+
+`order_lines`
+
+| order | sku | qty | price_cents |
+|---|---|---|---|
+| o-1 | pen | 2 | 150 |
+| o-1 | pad | 1 | 400 |
 
 **Unit of work: all or nothing**
 

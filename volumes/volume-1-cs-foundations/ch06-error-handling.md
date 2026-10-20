@@ -63,14 +63,15 @@ flowchart TD
 
 **Rust `Result<T, E>` propagation with `?`**
 
+```mermaid
+flowchart TD
+    main["main()"] --> lc["load_config('app.toml')?<br/>Err bubbles up to main"]
+    lc --> rf["read_file(path)?<br/>Ok(text) continues"]
+    lc --> pt["parse_toml(&text)?<br/>Err(ParseError line 12)"]
+    pt -. "the Err travels back up" .-> main
 ```
- main()
-  └─ load_config("app.toml")?          ← Err bubbles up to main
-       └─ read_file(path)?              ← Ok(text) continues
-       └─ parse_toml(&text)?            ← Err(ParseError{line: 12})
-                                            │
-     each ? means: "if Err, return it now (converted with From); if Ok, unwrap"
-```
+
+Each `?` means: if it is `Err`, return it now (converted with `From`); if it is `Ok`, unwrap the value.
 
 ```mermaid
 flowchart LR

@@ -56,21 +56,9 @@ Defining and calling functions; parameters vs arguments; pass-by-value vs pass-b
 
 **The call stack for `main() → total(xs) → add(a, b)`**
 
-```
-                     ┌───────────────────────────┐  ← top (running now)
-                     │ add                       │
-                     │   a = 3, b = 4            │
-                     │   return address → total  │
-                     ├───────────────────────────┤
-                     │ total                     │
-                     │   xs = [3, 4], acc = 3    │
-                     │   return address → main   │
-                     ├───────────────────────────┤
-                     │ main                      │
-                     │   result = ?              │
-                     └───────────────────────────┘  ← bottom
-   add returns 7 → its frame is popped → total resumes with acc = 7
-```
+<div class="fig">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 300" role="img" aria-label="Call stack with three frames: add on top, total below it, main at the bottom" style="width:100%;max-width:640px;height:auto;font-family:inherit"><defs><marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="context-stroke"/></marker></defs><rect x="120" y="30" width="330" height="78" rx="6" fill="var(--accent)" fill-opacity=".16" stroke="var(--accent)" stroke-width="1.6"/><text x="136" y="52" font-size="14" text-anchor="start" fill="var(--text)" font-weight="700">add</text><text x="150" y="72" font-size="12.5" text-anchor="start" fill="var(--text-muted)">a = 3, b = 4</text><text x="150" y="90" font-size="12.5" text-anchor="start" fill="var(--text-muted)">return address → total</text><rect x="120" y="108" width="330" height="78" rx="6" fill="var(--primary)" fill-opacity=".16" stroke="var(--primary)" stroke-width="1.6"/><text x="136" y="130" font-size="14" text-anchor="start" fill="var(--text)" font-weight="700">total</text><text x="150" y="150" font-size="12.5" text-anchor="start" fill="var(--text-muted)">xs = [3, 4], acc = 3</text><text x="150" y="168" font-size="12.5" text-anchor="start" fill="var(--text-muted)">return address → main</text><rect x="120" y="186" width="330" height="52" rx="6" fill="var(--success)" fill-opacity=".16" stroke="var(--success)" stroke-width="1.6"/><text x="136" y="208" font-size="14" text-anchor="start" fill="var(--text)" font-weight="700">main</text><text x="150" y="228" font-size="12.5" text-anchor="start" fill="var(--text-muted)">result = ?</text><text x="466" y="52" font-size="12.5" text-anchor="start" fill="var(--accent)" font-weight="600">← top (running now)</text><text x="466" y="218" font-size="12.5" text-anchor="start" fill="var(--text-muted)">← bottom</text><text x="120" y="268" font-size="13" text-anchor="start" fill="var(--text)" font-weight="600">add returns 7 → its frame is popped → total resumes with acc = 7</text></svg>
+</div>
 
 ```mermaid
 sequenceDiagram
@@ -85,13 +73,9 @@ sequenceDiagram
 
 **A closure keeps its enclosing variable alive**
 
-```
- make_counter() returns ──► ┌────────────────────┐
-                            │ function increment │
-                            │  __closure__ ──────┼──► cell: count = 2
-                            └────────────────────┘
- make_counter's frame is gone, but `count` lives on in the cell.
-```
+<div class="fig">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 700 150" role="img" aria-label="A closure keeps its captured variable alive in a cell after the outer function has returned" style="width:100%;max-width:700px;height:auto;font-family:inherit"><defs><marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="context-stroke"/></marker></defs><text x="20" y="62" font-size="13" text-anchor="start" fill="var(--text)" font-weight="600">make_counter() returns</text><line x1="190" y1="58" x2="250" y2="58" stroke="var(--text-muted)" stroke-width="1.6" marker-end="url(#ar)"/><rect x="250" y="28" width="230" height="62" rx="8" fill="var(--primary)" fill-opacity=".16" stroke="var(--primary)" stroke-width="1.6"/><text x="365" y="52" font-size="13" text-anchor="middle" fill="var(--text)" font-weight="700">function increment</text><text x="268" y="76" font-size="12.5" text-anchor="start" fill="var(--text-muted)" font-style="italic">__closure__</text><line x1="340" y1="72" x2="500" y2="72" stroke="var(--text-muted)" stroke-width="1.6" marker-end="url(#ar)"/><rect x="500" y="52" width="170" height="40" rx="8" fill="var(--accent)" fill-opacity=".18" stroke="var(--accent)" stroke-width="1.6"/><text x="585" y="77" font-size="13" text-anchor="middle" fill="var(--text)" font-weight="600">cell: count = 2</text><text x="20" y="130" font-size="13" text-anchor="start" fill="var(--text)">make_counter's frame is gone, but count lives on in the cell.</text></svg>
+</div>
 
 ---
 

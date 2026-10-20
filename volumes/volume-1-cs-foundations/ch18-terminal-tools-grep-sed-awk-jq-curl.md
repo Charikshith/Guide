@@ -48,24 +48,19 @@ flowchart LR
     F["access.log<br/>1M lines"] --> G["grep ' 500 '<br/>keep errors"] --> S["sed -E 's/\?.*//'<br/>strip query strings"] --> A["awk '{print $7}'<br/>take the path column"] --> SO["sort"] --> U["uniq -c<br/>count repeats"] --> SR["sort -rn"] --> H["head -5"]
 ```
 
-```
- stage          sample output
- ─────────────  ───────────────────────────────────────────────────────────
- grep           10.0.0.7 - - [..] "GET /api/cart?id=9 HTTP/1.1" 500 ...
- sed            10.0.0.7 - - [..] "GET /api/cart HTTP/1.1" 500 ...
- awk            /api/cart
- sort|uniq -c      412 /api/cart
-                    97 /api/pay
- sort -rn|head  412 /api/cart  ← the answer
-```
+| Stage | Sample output |
+|---|---|
+| `grep` | `10.0.0.7 - - [..] "GET /api/cart?id=9 HTTP/1.1" 500 ...` |
+| `sed` | `10.0.0.7 - - [..] "GET /api/cart HTTP/1.1" 500 ...` |
+| `awk` | `/api/cart` |
+| `sort \| uniq -c` | `412 /api/cart` and `97 /api/pay` |
+| `sort -rn \| head` | `412 /api/cart` ← the answer |
 
 **Streams: stdin, stdout, stderr**
 
-```
-            ┌──────────┐ stdout (1) ──► next command in the pipe
- stdin (0) ─►  command  │
-            └──────────┘ stderr (2) ──► terminal (not piped unless 2>&1)
-```
+<div class="fig">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 190" role="img" aria-label="A command reads stdin, writes stdout to the next command in the pipe and stderr to the terminal" style="width:100%;max-width:640px;height:auto;font-family:inherit"><defs><marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="context-stroke"/></marker></defs><rect x="230" y="50" width="160" height="80" rx="8" fill="var(--primary)" fill-opacity=".14" stroke="var(--primary)" stroke-width="1.6"/><text x="310.0" y="95.25" font-size="15" text-anchor="middle" fill="var(--text)" font-weight="600">command</text><text x="60" y="94" font-size="13" text-anchor="start" fill="var(--text)" font-weight="600">stdin (0)</text><line x1="130" y1="90" x2="230" y2="90" stroke="var(--text-muted)" stroke-width="1.6" marker-end="url(#ar)"/><text x="410" y="76" font-size="13" text-anchor="start" fill="var(--success)" font-weight="600">stdout (1)</text><line x1="390" y1="80" x2="470" y2="80" stroke="var(--success)" stroke-width="1.6" marker-end="url(#ar)"/><text x="480" y="84" font-size="13" text-anchor="start" fill="var(--text)">next command in the pipe</text><text x="410" y="124" font-size="13" text-anchor="start" fill="var(--danger)" font-weight="600">stderr (2)</text><line x1="390" y1="116" x2="470" y2="116" stroke="var(--danger)" stroke-width="1.6" marker-end="url(#ar)"/><text x="480" y="120" font-size="13" text-anchor="start" fill="var(--text)">terminal</text><text x="480" y="138" font-size="12" text-anchor="start" fill="var(--text-muted)">(not piped unless 2&gt;&amp;1)</text></svg>
+</div>
 
 ---
 

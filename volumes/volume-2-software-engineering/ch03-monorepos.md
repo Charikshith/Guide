@@ -50,21 +50,9 @@ One repo, many projects — benefits (atomic changes, shared code) and costs (sc
 
 **A monorepo tree with shared packages**
 
-```
- acme/
- ├── Cargo.toml / package.json / pyproject.toml   ← workspace root, ONE lockfile
- ├── libs/
- │   ├── core/          shared domain types, validation
- │   ├── db/            database access (depends on core)
- │   └── ui-kit/        shared React components
- ├── services/
- │   ├── api/           depends on core, db
- │   └── worker/        depends on core, db
- ├── apps/
- │   └── web/           depends on ui-kit (+ core types)
- ├── tools/             scripts, codegen
- └── .github/CODEOWNERS
-```
+<div class="fig">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 358" role="img" aria-label="Monorepo layout: libs, services and apps with their dependencies and one workspace root" style="width:100%;max-width:900px;height:auto;font-family:inherit"><defs><marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="context-stroke"/></marker></defs><text x="14" y="20" font-size="13" font-family="ui-monospace,Menlo,Consolas,monospace" fill="var(--primary)" font-weight="600">📁 acme/</text><line x1="24" y1="32" x2="24" y2="44" stroke="var(--border)" stroke-width="1.4"/><line x1="24" y1="44" x2="34" y2="44" stroke="var(--border)" stroke-width="1.4"/><text x="38" y="46" font-size="13" font-family="ui-monospace,Menlo,Consolas,monospace" fill="var(--text)" font-weight="400">📄 Cargo.toml / package.json / pyproject.toml</text><text x="360" y="46" font-size="12.5" text-anchor="start" fill="var(--text-muted)">← workspace root, ONE lockfile</text><line x1="24" y1="58" x2="24" y2="70" stroke="var(--border)" stroke-width="1.4"/><line x1="24" y1="70" x2="34" y2="70" stroke="var(--border)" stroke-width="1.4"/><text x="38" y="72" font-size="13" font-family="ui-monospace,Menlo,Consolas,monospace" fill="var(--primary)" font-weight="600">📁 libs/</text><line x1="48" y1="84" x2="48" y2="96" stroke="var(--border)" stroke-width="1.4"/><line x1="48" y1="96" x2="58" y2="96" stroke="var(--border)" stroke-width="1.4"/><text x="62" y="98" font-size="13" font-family="ui-monospace,Menlo,Consolas,monospace" fill="var(--primary)" font-weight="600">📁 core/</text><text x="360" y="98" font-size="12.5" text-anchor="start" fill="var(--text-muted)">← shared domain types, validation</text><line x1="48" y1="110" x2="48" y2="122" stroke="var(--border)" stroke-width="1.4"/><line x1="48" y1="122" x2="58" y2="122" stroke="var(--border)" stroke-width="1.4"/><text x="62" y="124" font-size="13" font-family="ui-monospace,Menlo,Consolas,monospace" fill="var(--primary)" font-weight="600">📁 db/</text><text x="360" y="124" font-size="12.5" text-anchor="start" fill="var(--text-muted)">← database access (depends on core)</text><line x1="48" y1="136" x2="48" y2="148" stroke="var(--border)" stroke-width="1.4"/><line x1="48" y1="148" x2="58" y2="148" stroke="var(--border)" stroke-width="1.4"/><text x="62" y="150" font-size="13" font-family="ui-monospace,Menlo,Consolas,monospace" fill="var(--primary)" font-weight="600">📁 ui-kit/</text><text x="360" y="150" font-size="12.5" text-anchor="start" fill="var(--text-muted)">← shared React components</text><line x1="24" y1="162" x2="24" y2="174" stroke="var(--border)" stroke-width="1.4"/><line x1="24" y1="174" x2="34" y2="174" stroke="var(--border)" stroke-width="1.4"/><text x="38" y="176" font-size="13" font-family="ui-monospace,Menlo,Consolas,monospace" fill="var(--primary)" font-weight="600">📁 services/</text><line x1="48" y1="188" x2="48" y2="200" stroke="var(--border)" stroke-width="1.4"/><line x1="48" y1="200" x2="58" y2="200" stroke="var(--border)" stroke-width="1.4"/><text x="62" y="202" font-size="13" font-family="ui-monospace,Menlo,Consolas,monospace" fill="var(--primary)" font-weight="600">📁 api/</text><text x="360" y="202" font-size="12.5" text-anchor="start" fill="var(--text-muted)">← depends on core, db</text><line x1="48" y1="214" x2="48" y2="226" stroke="var(--border)" stroke-width="1.4"/><line x1="48" y1="226" x2="58" y2="226" stroke="var(--border)" stroke-width="1.4"/><text x="62" y="228" font-size="13" font-family="ui-monospace,Menlo,Consolas,monospace" fill="var(--primary)" font-weight="600">📁 worker/</text><text x="360" y="228" font-size="12.5" text-anchor="start" fill="var(--text-muted)">← depends on core, db</text><line x1="24" y1="240" x2="24" y2="252" stroke="var(--border)" stroke-width="1.4"/><line x1="24" y1="252" x2="34" y2="252" stroke="var(--border)" stroke-width="1.4"/><text x="38" y="254" font-size="13" font-family="ui-monospace,Menlo,Consolas,monospace" fill="var(--primary)" font-weight="600">📁 apps/</text><line x1="48" y1="266" x2="48" y2="278" stroke="var(--border)" stroke-width="1.4"/><line x1="48" y1="278" x2="58" y2="278" stroke="var(--border)" stroke-width="1.4"/><text x="62" y="280" font-size="13" font-family="ui-monospace,Menlo,Consolas,monospace" fill="var(--primary)" font-weight="600">📁 web/</text><text x="360" y="280" font-size="12.5" text-anchor="start" fill="var(--text-muted)">← depends on ui-kit (+ core types)</text><line x1="24" y1="292" x2="24" y2="304" stroke="var(--border)" stroke-width="1.4"/><line x1="24" y1="304" x2="34" y2="304" stroke="var(--border)" stroke-width="1.4"/><text x="38" y="306" font-size="13" font-family="ui-monospace,Menlo,Consolas,monospace" fill="var(--primary)" font-weight="600">📁 tools/</text><text x="360" y="306" font-size="12.5" text-anchor="start" fill="var(--text-muted)">← scripts, codegen</text><line x1="24" y1="318" x2="24" y2="330" stroke="var(--border)" stroke-width="1.4"/><line x1="24" y1="330" x2="34" y2="330" stroke="var(--border)" stroke-width="1.4"/><text x="38" y="332" font-size="13" font-family="ui-monospace,Menlo,Consolas,monospace" fill="var(--text)" font-weight="400">📄 .github/CODEOWNERS</text></svg>
+</div>
 
 **The dependency graph across packages, and "affected" by a change**
 
@@ -85,12 +73,12 @@ Change `libs/db` → affected: `db`, `api`, `worker`. `core`, `ui-kit`, and `web
 
 **Task caching**
 
-```
- task: test services/api
- inputs hash = hash(source files, deps' outputs, lockfile, env, command)
-   = 9f3e…  → found in the remote cache → restore logs + outputs in 0.4 s (no run)
-   = a71c…  → miss → run the tests (2 min) → upload the result under a71c…
-```
+Task: `test services/api`. The inputs hash is `hash(source files, deps' outputs, lockfile, env, command)`.
+
+| Inputs hash | Result |
+|---|---|
+| `9f3e…` | found in the remote cache → restore logs and outputs in 0.4 s (**no run**) |
+| `a71c…` | miss → run the tests (2 min) → upload the result under `a71c…` |
 
 ---
 

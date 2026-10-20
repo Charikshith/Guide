@@ -54,19 +54,55 @@ Other MQTT features: *retained* messages (new subscribers get the last value), *
 
 **Connection models compared**
 
-```
- REQUEST/RESPONSE (HTTP)     PERSISTENT (WebSocket)        PUBLISH/SUBSCRIBE (MQTT)
- C ──req──► S                C ══════════════ S            sensor ─pub temp─►┌────────┐
- C ◄──res── S                  ◄─msg─  ─msg─►               phone ◄─sub temp──│ broker │
- C ──req──► S                  ◄─msg─  ─msg─►              dashboard ◄───────│        │
- C ◄──res── S                one long-lived connection      senders and receivers
- new request per update      both sides send any time       never know each other
+**Request / response (HTTP):** a new request per update.
 
- SSE (server push)           gRPC bidi stream
- C ──GET──► S                C ═══HTTP/2 stream═══ S
- C ◄─event─ S                  ─Req─► ─Req─►
- C ◄─event─ S                  ◄─Resp─ ◄─Resp─
- C ◄─event─ S                typed messages, many streams on one connection
+```mermaid
+sequenceDiagram
+    C->>S: req
+    S-->>C: res
+    C->>S: req
+    S-->>C: res
+```
+
+**Persistent (WebSocket):** one long-lived connection, both sides send any time.
+
+```mermaid
+sequenceDiagram
+    C->>S: open one long-lived connection
+    S-->>C: msg
+    C->>S: msg
+    S-->>C: msg
+    C->>S: msg
+```
+
+**Publish / subscribe (MQTT):** senders and receivers never know each other.
+
+```mermaid
+sequenceDiagram
+    sensor->>broker: pub temp
+    broker-->>phone: sub temp
+    broker-->>dashboard: sub temp
+```
+
+**SSE (server push):**
+
+```mermaid
+sequenceDiagram
+    C->>S: GET
+    S-->>C: event
+    S-->>C: event
+    S-->>C: event
+```
+
+**gRPC bidirectional stream:** typed messages, many streams on one HTTP/2 connection.
+
+```mermaid
+sequenceDiagram
+    C->>S: open HTTP/2 stream
+    C->>S: Req
+    S-->>C: Resp
+    C->>S: Req
+    S-->>C: Resp
 ```
 
 **The WebSocket upgrade**

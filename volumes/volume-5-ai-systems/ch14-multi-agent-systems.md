@@ -73,15 +73,26 @@ flowchart TD
 
 **Orchestration vs choreography**
 
+**ORCHESTRATION**
+
+```mermaid
+flowchart TD
+    lead["lead"] --> a["agent A"]
+    lead --> b["agent B"]
+    lead --> c["agent C"]
 ```
- ORCHESTRATION                         CHOREOGRAPHY
-        ┌──────────┐                   researcher ──"findings.ready"──► [event bus]
-        │  lead    │                                                      │
-        └┬───┬───┬─┘                   writer ◄──── subscribes ─────────┤
-   ┌─────┘   │   └─────┐               writer ──"draft.ready"──────────►│
-   ▼         ▼         ▼               critic ◄──── subscribes ─────────┘
- agent A  agent B   agent C            no one sees the whole flow unless you trace it
+
+**CHOREOGRAPHY**
+
+```mermaid
+flowchart LR
+    r["researcher"] -- "findings.ready" --> bus["event bus"]
+    bus -- "subscribes" --> w["writer"]
+    w -- "draft.ready" --> bus
+    bus -- "subscribes" --> cr["critic"]
 ```
+
+In choreography, no one sees the whole flow unless you trace it.
 
 **Why errors compound**
 

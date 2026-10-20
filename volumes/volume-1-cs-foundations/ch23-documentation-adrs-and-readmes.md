@@ -49,24 +49,14 @@ Markdown, API docs, docstrings, Architecture Decision Records, and READMEs that 
 
 **ADR template layout**
 
-```
- ┌─────────────────────────────────────────────────────────────┐
- │ ADR 0007: Use PostgreSQL as the primary datastore           │
- │ Status: Accepted  ·  Date: 2024-05-02  ·  Supersedes: —      │
- ├─────────────────────────────────────────────────────────────┤
- │ CONTEXT       What forces are at play? Constraints, needs.  │
- │               "We need transactions across orders and       │
- │                payments; the team knows SQL; ~5k writes/s." │
- ├─────────────────────────────────────────────────────────────┤
- │ OPTIONS       PostgreSQL · MongoDB · DynamoDB                │
- ├─────────────────────────────────────────────────────────────┤
- │ DECISION      "We will use PostgreSQL 16 on managed RDS."   │
- ├─────────────────────────────────────────────────────────────┤
- │ CONSEQUENCES  + ACID, joins, mature tooling                 │
- │               − vertical scaling limits; sharding is manual │
- │               → revisit if writes exceed 20k/s              │
- └─────────────────────────────────────────────────────────────┘
-```
+**ADR 0007: Use PostgreSQL as the primary datastore** · Status: Accepted · Date: 2024-05-02 · Supersedes: —
+
+| Section | Content |
+|---|---|
+| **CONTEXT** | What forces are at play? Constraints, needs. "We need transactions across orders and payments; the team knows SQL; ~5k writes/s." |
+| **OPTIONS** | PostgreSQL · MongoDB · DynamoDB |
+| **DECISION** | "We will use PostgreSQL 16 on managed RDS." |
+| **CONSEQUENCES** | + ACID, joins, mature tooling<br>− vertical scaling limits; sharding is manual<br>→ revisit if writes exceed 20k/s |
 
 **ADR lifecycle**
 

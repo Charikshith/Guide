@@ -79,24 +79,27 @@ classDiagram
 
 **Encapsulation guarding an invariant**
 
-```
-                 ┌──────────── BankAccount ────────────┐
- withdraw(500) ─►│ if amount > balance: raise ✗         │
-                 │ balance -= amount                    │   invariant: balance ≥ 0
- deposit(-20) ──►│ if amount <= 0: raise ✗              │   holds after EVERY method
-                 │ _balance  (private)                  │
- acct._balance = -1  ✗ not part of the public interface  │
-                 └──────────────────────────────────────┘
-```
+<div class="fig">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 260" role="img" aria-label="BankAccount keeps its balance private and enforces the invariant balance at least zero in every method" style="width:100%;max-width:760px;height:auto;font-family:inherit"><defs><marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="context-stroke"/></marker></defs><rect x="240" y="24" width="340" height="200" rx="12" fill="var(--primary)" fill-opacity=".10" stroke="var(--primary)" stroke-width="1.6"/><text x="410" y="50" font-size="14" text-anchor="middle" fill="var(--primary)" font-weight="700">BankAccount</text><text x="258" y="86" font-size="13" font-family="ui-monospace,Menlo,Consolas,monospace" fill="var(--text)">if amount &gt; balance: raise ✗</text><text x="258" y="108" font-size="13" font-family="ui-monospace,Menlo,Consolas,monospace" fill="var(--text)">balance -= amount</text><text x="258" y="146" font-size="13" font-family="ui-monospace,Menlo,Consolas,monospace" fill="var(--text)">if amount &lt;= 0: raise ✗</text><text x="258" y="186" font-size="13" font-family="ui-monospace,Menlo,Consolas,monospace" fill="var(--accent)">_balance  (private)</text><text x="20" y="96" font-size="13" font-family="ui-monospace,Menlo,Consolas,monospace" fill="var(--text)">withdraw(500)</text><line x1="150" y1="92" x2="240" y2="92" stroke="var(--text-muted)" stroke-width="1.6" marker-end="url(#ar)"/><text x="20" y="146" font-size="13" font-family="ui-monospace,Menlo,Consolas,monospace" fill="var(--text)">deposit(-20)</text><line x1="150" y1="142" x2="240" y2="142" stroke="var(--text-muted)" stroke-width="1.6" marker-end="url(#ar)"/><text x="20" y="206" font-size="13" font-family="ui-monospace,Menlo,Consolas,monospace" fill="var(--danger)">acct._balance = -1</text><text x="190" y="240" font-size="12.5" text-anchor="start" fill="var(--danger)" font-weight="600">✗ not part of the public interface</text><text x="600" y="100" font-size="13" text-anchor="start" fill="var(--success)" font-weight="700">invariant: balance ≥ 0</text><text x="600" y="120" font-size="12.5" text-anchor="start" fill="var(--text-muted)">holds after EVERY method</text></svg>
+</div>
 
 **Inheritance explosion vs composition**
 
+**Inheritance:** one class per combination.
+
+```mermaid
+flowchart LR
+    Bird --> FlyingBird --> FlyingSwimmingBird
+    Bird --> SwimmingBird --> SwimmingDivingBird
+    Bird --> more["… one class per combination"]
 ```
- INHERITANCE                                  COMPOSITION
- Bird ── FlyingBird ── FlyingSwimmingBird      Bird
-      └─ SwimmingBird ── SwimmingDivingBird    ├── movement: [Fly(), Swim()]
-      └─ … one class per combination           └── sound: Quack()
-                                               any combination, swappable at runtime
+
+**Composition:** any combination, swappable at runtime.
+
+```mermaid
+flowchart LR
+    B["Bird"] --> mv["movement: [Fly(), Swim()]"]
+    B --> sd["sound: Quack()"]
 ```
 
 ---

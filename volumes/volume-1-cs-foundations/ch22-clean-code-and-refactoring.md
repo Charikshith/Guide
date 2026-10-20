@@ -57,17 +57,9 @@ To refactor untested legacy code, first write *characterization tests* that reco
 
 **Before and after: one long function becomes named steps**
 
-```
- BEFORE: handle(r)  — 60 lines                AFTER: handle_order(request)
- ┌──────────────────────────────────┐        ┌───────────────────────────────┐
- │ parse JSON, check 6 fields       │        │ order = parse_order(request)  │
- │ if/else for discount rules …     │  ───►  │ validate(order)               │
- │ loop to compute tax …            │        │ total = price(order)          │
- │ build SQL string, execute …      │        │ save(order, total)            │
- │ format email, send …             │        │ notify_customer(order)        │
- └──────────────────────────────────┘        └───────────────────────────────┘
-                                               each step: small, named, testable
-```
+<div class="fig">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 270" role="img" aria-label="Refactoring a 60-line handler into a small function that calls named, testable steps" style="width:100%;max-width:800px;height:auto;font-family:inherit"><defs><marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="context-stroke"/></marker></defs><text x="190" y="24" font-size="13.5" text-anchor="middle" fill="var(--text)" font-weight="700">BEFORE: handle(r) — 60 lines</text><text x="610" y="24" font-size="13.5" text-anchor="middle" fill="var(--text)" font-weight="700">AFTER: handle_order(request)</text><rect x="20" y="38" width="340" height="170" rx="8" fill="var(--danger)" fill-opacity=".10" stroke="var(--danger)" stroke-width="1.6"/><text x="36" y="66" font-size="13" text-anchor="start" fill="var(--text)">parse JSON, check 6 fields</text><text x="36" y="96" font-size="13" text-anchor="start" fill="var(--text)">if/else for discount rules …</text><text x="36" y="126" font-size="13" text-anchor="start" fill="var(--text)">loop to compute tax …</text><text x="36" y="156" font-size="13" text-anchor="start" fill="var(--text)">build SQL string, execute …</text><text x="36" y="186" font-size="13" text-anchor="start" fill="var(--text)">format email, send …</text><line x1="372" y1="123" x2="428" y2="123" stroke="var(--text-muted)" stroke-width="1.6" marker-end="url(#ar)"/><rect x="440" y="38" width="340" height="170" rx="8" fill="var(--success)" fill-opacity=".10" stroke="var(--success)" stroke-width="1.6"/><text x="456" y="66" font-size="13" font-family="ui-monospace,Menlo,Consolas,monospace" fill="var(--text)">order = parse_order(request)</text><text x="456" y="96" font-size="13" font-family="ui-monospace,Menlo,Consolas,monospace" fill="var(--text)">validate(order)</text><text x="456" y="126" font-size="13" font-family="ui-monospace,Menlo,Consolas,monospace" fill="var(--text)">total = price(order)</text><text x="456" y="156" font-size="13" font-family="ui-monospace,Menlo,Consolas,monospace" fill="var(--text)">save(order, total)</text><text x="456" y="186" font-size="13" font-family="ui-monospace,Menlo,Consolas,monospace" fill="var(--text)">notify_customer(order)</text><text x="610" y="236" font-size="13" text-anchor="middle" fill="var(--success)" font-weight="600">each step: small, named, testable</text></svg>
+</div>
 
 **The refactoring loop**
 
@@ -81,13 +73,24 @@ flowchart LR
 
 **Guard clauses flatten nesting**
 
+**Nested**
+
+```python
+if user:
+    if user.active:
+        if user.has_role("admin"):
+            return allow()
+        else: return deny()
+    …
 ```
- if user:                                  if not user: return deny()
-     if user.active:                       if not user.active: return deny()
-         if user.has_role("admin"):   ─►   if not user.has_role("admin"): return deny()
-             return allow()                return allow()
-         else: return deny()
-     …
+
+**Guard clauses**
+
+```python
+if not user: return deny()
+if not user.active: return deny()
+if not user.has_role("admin"): return deny()
+return allow()
 ```
 
 ---

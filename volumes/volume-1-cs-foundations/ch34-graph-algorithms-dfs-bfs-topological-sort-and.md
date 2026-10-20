@@ -37,14 +37,14 @@ Depth-first and breadth-first traversal, cycle detection, topological order, and
 
 **Backtracking template**
 
-```
+```python
 solve(state):
     if state is complete: record it; return
     for choice in candidates(state):
-        if valid(state, choice):          ← prune early
+        if valid(state, choice):          # prune early
             apply(choice)
             solve(state)
-            undo(choice)                  ← backtrack
+            undo(choice)                  # backtrack
 ```
 
 ---
@@ -80,17 +80,15 @@ graph LR
 
 **The DFS recursion tree for the same graph**
 
+```mermaid
+flowchart TD
+    A["dfs(A)"] --> B["dfs(B)"] --> D["dfs(D)"] --> F["dfs(F)<br/>deepest first"]
+    A --> C["dfs(C)"]
+    C --> D2["D already visited"]
+    C --> E["dfs(E)"] --> F2["F already visited"]
 ```
- dfs(A)
- ├── dfs(B)
- │   └── dfs(D)
- │       └── dfs(F)        ← deepest first
- └── dfs(C)
-     ├── D already visited
-     └── dfs(E)
-         └── F already visited
- visit order: A B D F C E
-```
+
+Visit order: **A B D F C E**
 
 **A DAG and a topological order (Kahn's algorithm)**
 
@@ -111,17 +109,19 @@ graph LR
 
 **Backtracking on 4-queens — pruned branches**
 
-```
- row 0: Q at col 0
-   row 1: col 0 ✗ (same column)  col 1 ✗ (diagonal)  col 2 ✓
-     row 2: all ✗  → backtrack
-   row 1: col 3 ✓
-     row 2: col 1 ✓
-       row 3: all ✗ → backtrack … eventually:  . Q . .
-                                               . . . Q
-                                               Q . . .
-                                               . . Q .
-```
+- **row 0:** Q at col 0
+  - **row 1:** col 0 ✗ (same column) · col 1 ✗ (diagonal) · col 2 ✓
+    - **row 2:** all ✗ → backtrack
+  - **row 1:** col 3 ✓
+    - **row 2:** col 1 ✓
+      - **row 3:** all ✗ → backtrack … eventually the solution:
+
+| | | | |
+|:-:|:-:|:-:|:-:|
+| . | **Q** | . | . |
+| . | . | . | **Q** |
+| **Q** | . | . | . |
+| . | . | **Q** | . |
 
 ---
 

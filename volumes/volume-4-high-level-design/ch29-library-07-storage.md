@@ -809,11 +809,9 @@ flowchart LR
 
 A simpler conceptual view:
 
-```
-Bucket: "user-photos"
-    ├── photo1.jpg (metadata: {uploaded_by: "alice", tags: ["vacation"]})
-    ├── photo2.jpg (metadata: {uploaded_by: "bob", tags: ["profile"]})
-```
+<div class="fig">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 840 98" role="img" aria-label="An object-storage bucket whose objects carry metadata" style="width:100%;max-width:840px;height:auto;font-family:inherit"><defs><marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="context-stroke"/></marker></defs><text x="14" y="20" font-size="13" font-family="ui-monospace,Menlo,Consolas,monospace" fill="var(--primary)" font-weight="600">📁 Bucket: "user-photos"</text><line x1="24" y1="32" x2="24" y2="44" stroke="var(--border)" stroke-width="1.4"/><line x1="24" y1="44" x2="34" y2="44" stroke="var(--border)" stroke-width="1.4"/><text x="38" y="46" font-size="13" font-family="ui-monospace,Menlo,Consolas,monospace" fill="var(--text)" font-weight="400">📄 photo1.jpg</text><text x="190" y="46" font-size="12.5" text-anchor="start" fill="var(--text-muted)">← metadata: {uploaded_by: "alice", tags: ["vacation"]}</text><line x1="24" y1="58" x2="24" y2="70" stroke="var(--border)" stroke-width="1.4"/><line x1="24" y1="70" x2="34" y2="70" stroke="var(--border)" stroke-width="1.4"/><text x="38" y="72" font-size="13" font-family="ui-monospace,Menlo,Consolas,monospace" fill="var(--text)" font-weight="400">📄 photo2.jpg</text><text x="190" y="72" font-size="12.5" text-anchor="start" fill="var(--text-muted)">← metadata: {uploaded_by: "bob", tags: ["profile"]}</text></svg>
+</div>
 
 #### Popular Object Storage Platforms
 
@@ -964,13 +962,9 @@ A **file system** is the foundational layer that defines how data is stored, org
 
 Traditional file systems use a **hierarchical structure** — folders and files arranged in a tree:
 
-```
-/ (root)
-└── home/
-    ├── user/
-    │   ├── docs/
-    │   └── photos/
-```
+<div class="fig">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 150" role="img" aria-label="A file-system hierarchy: root, home, user, docs and photos" style="width:100%;max-width:600px;height:auto;font-family:inherit"><defs><marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="context-stroke"/></marker></defs><text x="14" y="20" font-size="13" font-family="ui-monospace,Menlo,Consolas,monospace" fill="var(--primary)" font-weight="600">📁 / (root)</text><line x1="24" y1="32" x2="24" y2="44" stroke="var(--border)" stroke-width="1.4"/><line x1="24" y1="44" x2="34" y2="44" stroke="var(--border)" stroke-width="1.4"/><text x="38" y="46" font-size="13" font-family="ui-monospace,Menlo,Consolas,monospace" fill="var(--primary)" font-weight="600">📁 home/</text><line x1="48" y1="58" x2="48" y2="70" stroke="var(--border)" stroke-width="1.4"/><line x1="48" y1="70" x2="58" y2="70" stroke="var(--border)" stroke-width="1.4"/><text x="62" y="72" font-size="13" font-family="ui-monospace,Menlo,Consolas,monospace" fill="var(--primary)" font-weight="600">📁 user/</text><line x1="72" y1="84" x2="72" y2="96" stroke="var(--border)" stroke-width="1.4"/><line x1="72" y1="96" x2="82" y2="96" stroke="var(--border)" stroke-width="1.4"/><text x="86" y="98" font-size="13" font-family="ui-monospace,Menlo,Consolas,monospace" fill="var(--primary)" font-weight="600">📁 docs/</text><line x1="72" y1="110" x2="72" y2="122" stroke="var(--border)" stroke-width="1.4"/><line x1="72" y1="122" x2="82" y2="122" stroke="var(--border)" stroke-width="1.4"/><text x="86" y="124" font-size="13" font-family="ui-monospace,Menlo,Consolas,monospace" fill="var(--primary)" font-weight="600">📁 photos/</text></svg>
+</div>
 
 **Key limitations:**
 

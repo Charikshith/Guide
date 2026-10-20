@@ -62,17 +62,9 @@ None.
 
 **A variable bound to a value in memory**
 
-```
- Rust / C: the variable IS the box         Python: the variable POINTS to an object
-
-  stack                                     names          heap objects
- ┌──────────┬────────────┐                ┌─────┐        ┌──────────────────┐
- │ x : i32  │ 0x00000005 │                │  a  │──────► │ list [1, 2, 3]   │
- ├──────────┼────────────┤                ├─────┤   ┌──► │ refcount = 2     │
- │ y : i32  │ 0x0000000A │                │  b  │───┘    └──────────────────┘
- └──────────┴────────────┘                └─────┘
-  y = x * 2 copies the bits                 b = a copies the arrow, not the list
-```
+<div class="fig">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 250" role="img" aria-label="In Rust and C a variable is the box holding the value; in Python a name points to an object on the heap" style="width:100%;max-width:760px;height:auto;font-family:inherit"><defs><marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="context-stroke"/></marker></defs><text x="180" y="26" font-size="14" text-anchor="middle" fill="var(--text)" font-weight="700">Rust / C: the variable IS the box</text><text x="180" y="44" font-size="12" text-anchor="middle" fill="var(--text-muted)">stack</text><rect x="40" y="56" width="110" height="44" rx="0" fill="var(--primary)" fill-opacity=".16" stroke="var(--primary)" stroke-width="1.6"/><rect x="150" y="56" width="130" height="44" rx="0" fill="var(--success)" fill-opacity=".16" stroke="var(--success)" stroke-width="1.6"/><text x="95" y="84" font-size="13" text-anchor="middle" fill="var(--text)" font-weight="600">x : i32</text><text x="215" y="84" font-size="13" text-anchor="middle" fill="var(--text)">0x00000005</text><rect x="40" y="100" width="110" height="44" rx="0" fill="var(--primary)" fill-opacity=".16" stroke="var(--primary)" stroke-width="1.6"/><rect x="150" y="100" width="130" height="44" rx="0" fill="var(--success)" fill-opacity=".16" stroke="var(--success)" stroke-width="1.6"/><text x="95" y="128" font-size="13" text-anchor="middle" fill="var(--text)" font-weight="600">y : i32</text><text x="215" y="128" font-size="13" text-anchor="middle" fill="var(--text)">0x0000000A</text><text x="160" y="170" font-size="13" text-anchor="middle" fill="var(--text)" font-weight="600">y = x * 2 copies the bits</text><text x="570" y="26" font-size="14" text-anchor="middle" fill="var(--text)" font-weight="700">Python: the variable POINTS to an object</text><text x="420" y="44" font-size="12" text-anchor="middle" fill="var(--text-muted)">names</text><text x="610" y="44" font-size="12" text-anchor="middle" fill="var(--text-muted)">heap objects</text><rect x="400" y="56" width="70" height="40" rx="8" fill="var(--primary)" fill-opacity=".16" stroke="var(--primary)" stroke-width="1.6"/><text x="435" y="82" font-size="14" text-anchor="middle" fill="var(--text)" font-weight="700">a</text><rect x="400" y="106" width="70" height="40" rx="8" fill="var(--primary)" fill-opacity=".16" stroke="var(--primary)" stroke-width="1.6"/><text x="435" y="132" font-size="14" text-anchor="middle" fill="var(--text)" font-weight="700">b</text><rect x="580" y="56" width="160" height="90" rx="8" fill="var(--accent)" fill-opacity=".14" stroke="var(--accent)" stroke-width="1.6"/><text x="660" y="90" font-size="13" text-anchor="middle" fill="var(--text)" font-weight="600">list [1, 2, 3]</text><text x="660" y="114" font-size="12.5" text-anchor="middle" fill="var(--text-muted)">refcount = 2</text><line x1="470" y1="76" x2="580" y2="90" stroke="var(--text-muted)" stroke-width="1.6" marker-end="url(#ar)"/><line x1="470" y1="126" x2="580" y2="112" stroke="var(--text-muted)" stroke-width="1.6" marker-end="url(#ar)"/><text x="570" y="190" font-size="13" text-anchor="middle" fill="var(--text)" font-weight="600">b = a copies the arrow, not the list</text></svg>
+</div>
 
 **How `x = 5; y = x * 2; is_even = (y % 2 == 0)` evaluates**
 

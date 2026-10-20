@@ -149,25 +149,12 @@ http {
 
 #### Load Balancers in Action
 
-```text
-                       +--------------+
-                       |    Client    |
-                       +------+-------+
-                              |
-                              v
-                       +------+-------+
-                       |  Load        |
-                       |  Balancer    |
-                       +----+---+-----+
-                            |   |
-                 +----------+   +----------+
-                 |                         |
-          +------+-----+            +------+-----+
-          |   Server 1 |            |   Server 2 |
-          +------+-----+            +------+-----+
-                 \                          /
-                  +------------------------+
-                    (More backend servers)
+```mermaid
+flowchart TD
+    c["Client"] --> lb["Load Balancer"]
+    lb --> s1["Server 1"]
+    lb --> s2["Server 2"]
+    lb -.-> more["(More backend servers)"]
 ```
 
 A Mermaid version of the same idea:

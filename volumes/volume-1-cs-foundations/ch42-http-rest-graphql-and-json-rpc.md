@@ -113,15 +113,29 @@ flowchart TD
 
 **REST vs GraphQL query shape** — "user 1's name and the titles of their 3 latest posts"
 
+**REST: 2 round trips, extra fields**
+
+```http
+GET /users/1
+→ {id, name, email, avatar, bio, …}
+
+GET /users/1/posts?limit=3
+→ [{id, title, body, tags, …}, …]
 ```
- REST: 2 round trips, extra fields          GraphQL: 1 round trip, exact fields
- GET /users/1                               POST /graphql
-   → {id, name, email, avatar, bio, …}      { user(id: 1) {
- GET /users/1/posts?limit=3                     name
-   → [{id, title, body, tags, …}, …]            posts(last: 3) { title }
-                                                } }
-                                            → {"data": {"user": {"name": "Ada",
-                                                 "posts": [{"title": "…"}, …]}}}
+
+**GraphQL: 1 round trip, exact fields**
+
+```graphql
+POST /graphql
+{ user(id: 1) {
+    name
+    posts(last: 3) { title }
+} }
+```
+
+```json
+{"data": {"user": {"name": "Ada",
+  "posts": [{"title": "…"}, …]}}}
 ```
 
 **CORS preflight**

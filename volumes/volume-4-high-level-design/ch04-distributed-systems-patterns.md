@@ -81,11 +81,14 @@ sequenceDiagram
 
 **A quorum read/write (N = 3, W = 2, R = 2)**
 
-```
- write x=5 (v7) → R1 ✓  R2 ✓  R3 ✗ (down)      W = 2 reached → success
- read x         → R2 (v7)  R3 (v6)               R = 2 → overlap on R2 → pick highest version v7
- R + W = 4 > N = 3  → every read quorum contains at least one replica from the write quorum
-```
+N = 3 replicas, W = 2, R = 2:
+
+| Operation | What happens | Result |
+|---|---|---|
+| write `x=5` (v7) | R1 ✓, R2 ✓, R3 ✗ (down) | W = 2 reached → success |
+| read `x` | R2 (v7), R3 (v6) | R = 2 → overlap on R2 → pick the highest version, v7 |
+
+R + W = 4 > N = 3, so every read quorum contains at least one replica from the write quorum.
 
 ```mermaid
 flowchart LR
@@ -102,12 +105,14 @@ flowchart LR
 
 **Split-brain and how a majority prevents it**
 
-```
- 5 nodes split into {A, B} | {C, D, E}
- {A, B}: 2 of 5 — no majority → cannot elect a leader, refuses writes
- {C, D, E}: 3 of 5 — majority → elects a leader, keeps serving
- without the majority rule, both sides accept writes → conflicting data (split-brain)
-```
+5 nodes split into {A, B} | {C, D, E}:
+
+| Side | Nodes | Result |
+|---|---|---|
+| {A, B} | 2 of 5, no majority | cannot elect a leader, **refuses writes** |
+| {C, D, E} | 3 of 5, majority | elects a leader, **keeps serving** |
+
+Without the majority rule, both sides accept writes → conflicting data (**split-brain**).
 
 ---
 

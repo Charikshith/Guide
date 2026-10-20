@@ -67,21 +67,94 @@ None.
 
 **OSI 7 layers next to TCP/IP 4 layers, with encapsulation**
 
-```
-  OSI                 TCP/IP             what gets wrapped (sending side)
- ┌───────────────┐   ┌─────────────┐
- │7 Application  │   │             │    [ HTTP data                         ]
- │6 Presentation │   │ Application │
- │5 Session      │   │             │
- ├───────────────┤   ├─────────────┤
- │4 Transport    │   │ Transport   │    [TCP hdr][ HTTP data               ]
- ├───────────────┤   ├─────────────┤
- │3 Network      │   │ Internet    │    [IP hdr][TCP hdr][ HTTP data       ]
- ├───────────────┤   ├─────────────┤
- │2 Data link    │   │ Link        │    [Eth][IP][TCP][ HTTP data ][Eth FCS]
- │1 Physical     │   │             │    01101001 …
- └───────────────┘   └─────────────┘
-```
+<div class="fig">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 612" role="img" aria-label="OSI seven layers next to the TCP/IP four layers, with the headers each layer adds" style="width:100%;max-width:900px;height:auto;font-family:inherit">
+<defs><marker id="osiar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="var(--text-muted)"/></marker></defs>
+<text x="20" y="40" font-size="15" font-weight="700" fill="var(--text)">OSI model · 7 layers</text>
+<line x1="20" y1="50" x2="270" y2="50" stroke="var(--border)" stroke-width="2"/>
+<text x="290" y="40" font-size="15" font-weight="700" fill="var(--text)">TCP/IP model · 4 layers</text>
+<line x1="290" y1="50" x2="480" y2="50" stroke="var(--border)" stroke-width="2"/>
+<text x="500" y="40" font-size="15" font-weight="700" fill="var(--text)">What each layer adds (sending side)</text>
+<line x1="500" y1="50" x2="860" y2="50" stroke="var(--border)" stroke-width="2"/>
+<rect x="20" y="78" width="250" height="54" rx="10" fill="var(--primary)" fill-opacity=".14" stroke="var(--primary)" stroke-width="1.6"/>
+<text x="36" y="102" font-size="14" font-weight="700" fill="var(--text)">7  Application</text>
+<text x="36" y="120" font-size="12" fill="var(--text-muted)">HTTP, DNS, SMTP, SSH</text>
+<rect x="20" y="136" width="250" height="54" rx="10" fill="var(--primary)" fill-opacity=".14" stroke="var(--primary)" stroke-width="1.6"/>
+<text x="36" y="160" font-size="14" font-weight="700" fill="var(--text)">6  Presentation</text>
+<text x="36" y="178" font-size="12" fill="var(--text-muted)">TLS, encoding, compression</text>
+<rect x="20" y="194" width="250" height="54" rx="10" fill="var(--primary)" fill-opacity=".14" stroke="var(--primary)" stroke-width="1.6"/>
+<text x="36" y="218" font-size="14" font-weight="700" fill="var(--text)">5  Session</text>
+<text x="36" y="236" font-size="12" fill="var(--text-muted)">sessions, sockets, RPC</text>
+<rect x="20" y="252" width="250" height="54" rx="10" fill="var(--success)" fill-opacity=".14" stroke="var(--success)" stroke-width="1.6"/>
+<text x="36" y="276" font-size="14" font-weight="700" fill="var(--text)">4  Transport</text>
+<text x="36" y="294" font-size="12" fill="var(--text-muted)">TCP, UDP, QUIC</text>
+<rect x="20" y="310" width="250" height="54" rx="10" fill="var(--accent)" fill-opacity=".14" stroke="var(--accent)" stroke-width="1.6"/>
+<text x="36" y="334" font-size="14" font-weight="700" fill="var(--text)">3  Network</text>
+<text x="36" y="352" font-size="12" fill="var(--text-muted)">IP, ICMP, routing</text>
+<rect x="20" y="368" width="250" height="54" rx="10" fill="#8b5cf6" fill-opacity=".14" stroke="#8b5cf6" stroke-width="1.6"/>
+<text x="36" y="392" font-size="14" font-weight="700" fill="var(--text)">2  Data link</text>
+<text x="36" y="410" font-size="12" fill="var(--text-muted)">Ethernet, Wi-Fi, ARP</text>
+<rect x="20" y="426" width="250" height="54" rx="10" fill="#8b5cf6" fill-opacity=".14" stroke="#8b5cf6" stroke-width="1.6"/>
+<text x="36" y="450" font-size="14" font-weight="700" fill="var(--text)">1  Physical</text>
+<text x="36" y="468" font-size="12" fill="var(--text-muted)">cable, fibre, radio, bits</text>
+<rect x="290" y="78" width="190" height="170" rx="10" fill="var(--primary)" fill-opacity=".22" stroke="var(--primary)" stroke-width="2"/>
+<text x="385" y="159.0" font-size="15" font-weight="700" text-anchor="middle" fill="var(--text)">Application</text>
+<text x="385" y="177.0" font-size="11.5" text-anchor="middle" fill="var(--text-muted)">data / message</text>
+<line x1="270" y1="163.0" x2="290" y2="163.0" stroke="var(--primary)" stroke-width="2"/>
+<rect x="290" y="252" width="190" height="54" rx="10" fill="var(--success)" fill-opacity=".22" stroke="var(--success)" stroke-width="2"/>
+<text x="385" y="275.0" font-size="15" font-weight="700" text-anchor="middle" fill="var(--text)">Transport</text>
+<text x="385" y="293.0" font-size="11.5" text-anchor="middle" fill="var(--text-muted)">segment (TCP) · datagram (UDP)</text>
+<line x1="270" y1="279.0" x2="290" y2="279.0" stroke="var(--success)" stroke-width="2"/>
+<rect x="290" y="310" width="190" height="54" rx="10" fill="var(--accent)" fill-opacity=".22" stroke="var(--accent)" stroke-width="2"/>
+<text x="385" y="333.0" font-size="15" font-weight="700" text-anchor="middle" fill="var(--text)">Internet</text>
+<text x="385" y="351.0" font-size="11.5" text-anchor="middle" fill="var(--text-muted)">packet</text>
+<line x1="270" y1="337.0" x2="290" y2="337.0" stroke="var(--accent)" stroke-width="2"/>
+<rect x="290" y="368" width="190" height="112" rx="10" fill="#8b5cf6" fill-opacity=".22" stroke="#8b5cf6" stroke-width="2"/>
+<text x="385" y="420.0" font-size="15" font-weight="700" text-anchor="middle" fill="var(--text)">Link</text>
+<text x="385" y="438.0" font-size="11.5" text-anchor="middle" fill="var(--text-muted)">frame → bits</text>
+<line x1="270" y1="424.0" x2="290" y2="424.0" stroke="#8b5cf6" stroke-width="2"/>
+<rect x="500" y="86" width="360" height="154" rx="6" fill="var(--primary)" fill-opacity=".16" stroke="var(--primary)" stroke-width="1.6"/>
+<text x="680.0" y="167.5" font-size="12" font-weight="600" text-anchor="middle" fill="var(--text)">HTTP data (request or response)</text>
+<rect x="500" y="260" width="70" height="38" rx="6" fill="var(--success)" fill-opacity=".55" stroke="var(--success)" stroke-width="1.6"/>
+<text x="535.0" y="283.5" font-size="12" font-weight="600" text-anchor="middle" fill="var(--text)">TCP hdr</text>
+<rect x="570" y="260" width="290" height="38" rx="6" fill="var(--primary)" fill-opacity=".16" stroke="var(--primary)" stroke-width="1.6"/>
+<text x="715.0" y="283.5" font-size="12" font-weight="600" text-anchor="middle" fill="var(--text)">HTTP data</text>
+<rect x="500" y="318" width="62" height="38" rx="6" fill="var(--accent)" fill-opacity=".55" stroke="var(--accent)" stroke-width="1.6"/>
+<text x="531.0" y="341.5" font-size="12" font-weight="600" text-anchor="middle" fill="var(--text)">IP hdr</text>
+<rect x="562" y="318" width="70" height="38" rx="6" fill="var(--success)" fill-opacity=".55" stroke="var(--success)" stroke-width="1.6"/>
+<text x="597.0" y="341.5" font-size="12" font-weight="600" text-anchor="middle" fill="var(--text)">TCP hdr</text>
+<rect x="632" y="318" width="228" height="38" rx="6" fill="var(--primary)" fill-opacity=".16" stroke="var(--primary)" stroke-width="1.6"/>
+<text x="746.0" y="341.5" font-size="12" font-weight="600" text-anchor="middle" fill="var(--text)">HTTP data</text>
+<rect x="500" y="376" width="58" height="96" rx="6" fill="#8b5cf6" fill-opacity=".55" stroke="#8b5cf6" stroke-width="1.6"/>
+<text x="529.0" y="428.5" font-size="12" font-weight="600" text-anchor="middle" fill="var(--text)">Eth hdr</text>
+<rect x="558" y="376" width="52" height="96" rx="6" fill="var(--accent)" fill-opacity=".55" stroke="var(--accent)" stroke-width="1.6"/>
+<text x="584.0" y="428.5" font-size="12" font-weight="600" text-anchor="middle" fill="var(--text)">IP hdr</text>
+<rect x="610" y="376" width="60" height="96" rx="6" fill="var(--success)" fill-opacity=".55" stroke="var(--success)" stroke-width="1.6"/>
+<text x="640.0" y="428.5" font-size="12" font-weight="600" text-anchor="middle" fill="var(--text)">TCP hdr</text>
+<rect x="670" y="376" width="130" height="96" rx="6" fill="var(--primary)" fill-opacity=".16" stroke="var(--primary)" stroke-width="1.6"/>
+<text x="735.0" y="428.5" font-size="12" font-weight="600" text-anchor="middle" fill="var(--text)">HTTP data</text>
+<rect x="800" y="376" width="60" height="96" rx="6" fill="#8b5cf6" fill-opacity=".55" stroke="#8b5cf6" stroke-width="1.6"/>
+<text x="830.0" y="428.5" font-size="12" font-weight="600" text-anchor="middle" fill="var(--text)">FCS</text>
+<text x="500" y="478" font-size="11.5" fill="var(--text-muted)"> </text>
+<line x1="874" y1="78" x2="874" y2="480" stroke="var(--text-muted)" stroke-width="1.6" marker-end="url(#osiar)"/>
+<text transform="translate(892 279.0) rotate(-90)" font-size="11.5" text-anchor="middle" fill="var(--text-muted)">sending: each layer wraps the data below it</text>
+<text x="20" y="514" font-size="13" font-weight="700" fill="var(--text)">How each layer finds its target</text>
+<rect x="20" y="524" width="205" height="44" rx="10" fill="var(--primary)" fill-opacity=".14" stroke="var(--primary)" stroke-width="1.6"/>
+<text x="122.5" y="543" font-size="12.5" font-weight="700" text-anchor="middle" fill="var(--text)">Application</text>
+<text x="122.5" y="559" font-size="12" text-anchor="middle" fill="var(--text-muted)">URL, domain name</text>
+<rect x="238" y="524" width="205" height="44" rx="10" fill="var(--success)" fill-opacity=".14" stroke="var(--success)" stroke-width="1.6"/>
+<text x="340.5" y="543" font-size="12.5" font-weight="700" text-anchor="middle" fill="var(--text)">Transport</text>
+<text x="340.5" y="559" font-size="12" text-anchor="middle" fill="var(--text-muted)">port number</text>
+<rect x="456" y="524" width="205" height="44" rx="10" fill="var(--accent)" fill-opacity=".14" stroke="var(--accent)" stroke-width="1.6"/>
+<text x="558.5" y="543" font-size="12.5" font-weight="700" text-anchor="middle" fill="var(--text)">Internet</text>
+<text x="558.5" y="559" font-size="12" text-anchor="middle" fill="var(--text-muted)">IP address</text>
+<rect x="674" y="524" width="205" height="44" rx="10" fill="#8b5cf6" fill-opacity=".14" stroke="#8b5cf6" stroke-width="1.6"/>
+<text x="776.5" y="543" font-size="12.5" font-weight="700" text-anchor="middle" fill="var(--text)">Link</text>
+<text x="776.5" y="559" font-size="12" text-anchor="middle" fill="var(--text-muted)">MAC address</text>
+</svg>
+</div>
+
+*Reading it left to right: the OSI layers 7–5 collapse into TCP/IP's Application layer and OSI layers 2–1 into its Link layer. On the way down each layer wraps what it receives in its own header (and the link layer adds a trailer); on the way up the receiver strips them in reverse order.*
 
 **A DNS resolution chain for `www.example.com`**
 
@@ -105,16 +178,23 @@ sequenceDiagram
 
 **A NAT table mapping private → public**
 
+```mermaid
+flowchart LR
+    subgraph home["home network 192.168.1.0/24"]
+        l["laptop<br/>192.168.1.10:51000"]
+        p["phone<br/>192.168.1.23:51000"]
+    end
+    l --> nat["NAT<br/>router public IP 203.0.113.7"]
+    p --> nat
+    nat --> net(("internet"))
 ```
- home network 192.168.1.0/24                 router public IP 203.0.113.7
- laptop 192.168.1.10:51000 ──┐
- phone  192.168.1.23:51000 ──┼──► NAT ──► internet
-                             │
-   NAT table:
-   inside                    outside                  remote
-   192.168.1.10:51000   ↔   203.0.113.7:40001   ↔   142.250.1.1:443
-   192.168.1.23:51000   ↔   203.0.113.7:40002   ↔   142.250.1.1:443
-```
+
+**NAT table**
+
+| inside | outside | remote |
+|---|---|---|
+| `192.168.1.10:51000` | `203.0.113.7:40001` | `142.250.1.1:443` |
+| `192.168.1.23:51000` | `203.0.113.7:40002` | `142.250.1.1:443` |
 
 ---
 

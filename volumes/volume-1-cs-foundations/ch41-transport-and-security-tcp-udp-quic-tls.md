@@ -75,13 +75,9 @@ sequenceDiagram
 
 **Round trips before the first byte of data**
 
-```
- TCP + TLS 1.2   ├─TCP─┤├──TLS──┤├──TLS──┤ data      3 RTT
- TCP + TLS 1.3   ├─TCP─┤├──TLS──┤ data               2 RTT
- QUIC            ├─QUIC+TLS─┤ data                   1 RTT
- QUIC 0-RTT      data (on resume)                    0 RTT
- at 100 ms RTT, going from 3 RTT to 1 RTT saves 200 ms on every new connection
-```
+<div class="fig">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 270" role="img" aria-label="Connection setup cost: TCP plus TLS 1.2 takes 3 round trips, TLS 1.3 takes 2, QUIC takes 1 and QUIC 0-RTT takes 0" style="width:100%;max-width:800px;height:auto;font-family:inherit"><defs><marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="context-stroke"/></marker></defs><text x="120" y="53" font-size="13" text-anchor="end" fill="var(--text)" font-weight="600">TCP + TLS 1.2</text><rect x="130" y="30" width="96" height="36" rx="4" fill="var(--primary)" fill-opacity=".3" stroke="var(--primary)" stroke-width="1.6"/><text x="178.0" y="53" font-size="12.5" text-anchor="middle" fill="var(--text)" font-weight="600">TCP</text><rect x="230" y="30" width="96" height="36" rx="4" fill="var(--accent)" fill-opacity=".3" stroke="var(--accent)" stroke-width="1.6"/><text x="278.0" y="53" font-size="12.5" text-anchor="middle" fill="var(--text)" font-weight="600">TLS</text><rect x="330" y="30" width="96" height="36" rx="4" fill="var(--accent)" fill-opacity=".3" stroke="var(--accent)" stroke-width="1.6"/><text x="378.0" y="53" font-size="12.5" text-anchor="middle" fill="var(--text)" font-weight="600">TLS</text><rect x="430" y="30" width="96" height="36" rx="4" fill="var(--success)" fill-opacity=".3" stroke="var(--success)" stroke-width="1.6"/><text x="478.0" y="53" font-size="12.5" text-anchor="middle" fill="var(--text)" font-weight="600">data</text><text x="680" y="53" font-size="14" text-anchor="start" fill="var(--danger)" font-weight="700">3 RTT</text><text x="120" y="105" font-size="13" text-anchor="end" fill="var(--text)" font-weight="600">TCP + TLS 1.3</text><rect x="130" y="82" width="96" height="36" rx="4" fill="var(--primary)" fill-opacity=".3" stroke="var(--primary)" stroke-width="1.6"/><text x="178.0" y="105" font-size="12.5" text-anchor="middle" fill="var(--text)" font-weight="600">TCP</text><rect x="230" y="82" width="96" height="36" rx="4" fill="var(--accent)" fill-opacity=".3" stroke="var(--accent)" stroke-width="1.6"/><text x="278.0" y="105" font-size="12.5" text-anchor="middle" fill="var(--text)" font-weight="600">TLS</text><rect x="330" y="82" width="96" height="36" rx="4" fill="var(--success)" fill-opacity=".3" stroke="var(--success)" stroke-width="1.6"/><text x="378.0" y="105" font-size="12.5" text-anchor="middle" fill="var(--text)" font-weight="600">data</text><text x="680" y="105" font-size="14" text-anchor="start" fill="var(--text)" font-weight="700">2 RTT</text><text x="120" y="157" font-size="13" text-anchor="end" fill="var(--text)" font-weight="600">QUIC</text><rect x="130" y="134" width="146.0" height="36" rx="4" fill="#8b5cf6" fill-opacity=".3" stroke="#8b5cf6" stroke-width="1.6"/><text x="203.0" y="157" font-size="12.5" text-anchor="middle" fill="var(--text)" font-weight="600">QUIC + TLS</text><rect x="280.0" y="134" width="96" height="36" rx="4" fill="var(--success)" fill-opacity=".3" stroke="var(--success)" stroke-width="1.6"/><text x="328.0" y="157" font-size="12.5" text-anchor="middle" fill="var(--text)" font-weight="600">data</text><text x="680" y="157" font-size="14" text-anchor="start" fill="var(--text)" font-weight="700">1 RTT</text><text x="120" y="209" font-size="13" text-anchor="end" fill="var(--text)" font-weight="600">QUIC 0-RTT</text><rect x="130" y="186" width="96" height="36" rx="4" fill="var(--success)" fill-opacity=".3" stroke="var(--success)" stroke-width="1.6"/><text x="178.0" y="209" font-size="12.5" text-anchor="middle" fill="var(--text)" font-weight="600">data (on resume)</text><text x="680" y="209" font-size="14" text-anchor="start" fill="var(--text)" font-weight="700">0 RTT</text><line x1="130" y1="244" x2="530" y2="244" stroke="var(--text-muted)" stroke-width="1.6" marker-end="url(#ar)"/><text x="130" y="262" font-size="12" text-anchor="start" fill="var(--text-muted)">time (1 box width ≈ 1 RTT)</text><text x="790" y="262" font-size="12.5" text-anchor="end" fill="var(--text)" font-weight="600">at 100 ms RTT, 3 RTT → 1 RTT saves 200 ms on every new connection</text></svg>
+</div>
 
 **Head-of-line blocking**
 
@@ -92,14 +88,12 @@ sequenceDiagram
 
 **A certificate chain**
 
+```mermaid
+flowchart TD
+    root["Root CA<br/>in your OS / browser trust store, self-signed"] -- signs --> inter["Intermediate CA<br/>sent by the server"] -- signs --> leaf["example.com leaf cert<br/>SAN: example.com, www.example.com · valid 90 days · public key"]
 ```
- [Root CA]  (in your OS / browser trust store, self-signed)
-     │ signs
- [Intermediate CA]  (sent by the server)
-     │ signs
- [example.com leaf cert]  SAN: example.com, www.example.com · valid 90 days · public key
- client checks: each signature, expiry dates, hostname ∈ SAN, revocation (OCSP stapling)
-```
+
+The client checks each signature, the expiry dates, that the hostname is in the SAN, and revocation (OCSP stapling).
 
 ---
 

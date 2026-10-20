@@ -100,13 +100,15 @@ stateDiagram-v2
     Refunded --> [*]
 ```
 
+```mermaid
+flowchart LR
+    req["request"] --> rid["RequestId"] --> auth["Auth"] --> rl["RateLimit"] --> val["Validate"] --> h["handler"]
+    auth -. "401" .-> stop["any handler can stop the chain and respond"]
+    rl -. "429" .-> stop
+    val -. "422" .-> stop
 ```
- Chain of Responsibility (HTTP middleware)
- request ─► [RequestId] ─► [Auth] ─► [RateLimit] ─► [Validate] ─► handler
-                             │ 401        │ 429          │ 422
-                             ▼            ▼              ▼
-                         any handler can stop the chain and respond
-```
+
+**Chain of Responsibility (HTTP middleware):** any handler can stop the chain and respond.
 
 ---
 

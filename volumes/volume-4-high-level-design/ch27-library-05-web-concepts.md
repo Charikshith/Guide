@@ -41,11 +41,12 @@ Before diving into advanced topics, let's recap the basics.
 
 **Client-Server Model:**
 
-```plaintext
-+------------+         HTTP Request         +------------+
-|  Browser   |  ------------------------->  |   Server   |
-| (Frontend) |  <-------------------------  | (Backend)  |
-+------------+         HTTP Response        +------------+
+```mermaid
+sequenceDiagram
+    participant B as Browser (Frontend)
+    participant S as Server (Backend)
+    B->>S: HTTP Request
+    S-->>B: HTTP Response
 ```
 
 ```mermaid
@@ -82,10 +83,13 @@ HTTP is **stateless** — each request is independent and carries no memory of p
 
 **Stateless HTTP visualized:**
 
-```
-[Browser] --(Request 1)--> [Server]
-[Browser] --(Request 2)--> [Server]
-(No memory of Request 1 when processing Request 2)
+```mermaid
+sequenceDiagram
+    participant B as Browser
+    participant S as Server
+    B->>S: Request 1
+    B->>S: Request 2
+    Note over S: No memory of Request 1 when processing Request 2
 ```
 
 ```mermaid
@@ -120,15 +124,15 @@ Set-Cookie: sessionId=abc123; HttpOnly; Secure; SameSite=Strict
 
 **Sequence diagram (ASCII):**
 
-```
-[Client] --(POST /login)--> [Server]
-                |
-       [Server creates session]
-                |
-[Server] --(Set-Cookie: session_id)--> [Client]
-
-[Client] --(GET /dashboard, Cookie: session_id)--> [Server]
-[Server] --(Retrieve user from session_id)--> [Process]
+```mermaid
+sequenceDiagram
+    participant C as Client
+    participant S as Server
+    C->>S: POST /login
+    Note over S: Server creates session
+    S-->>C: Set-Cookie: session_id
+    C->>S: GET /dashboard, Cookie: session_id
+    Note over S: Retrieve user from session_id, then process
 ```
 
 ```mermaid
@@ -159,13 +163,11 @@ sequenceDiagram
 
 Session workflow with separate session store:
 
-```
-+------------+           +-------------+
-|  Browser   | <-------> |   Server    |
-+------------+           +-------------+
-       ^                      |
-       |                      v
-   [sessionId in cookie]  [Session Store]
+```mermaid
+flowchart TD
+    b["Browser"] <--> s["Server"]
+    b -.- c["sessionId in cookie"]
+    s --> st[("Session Store")]
 ```
 
 **Example: Express.js session setup**
@@ -700,14 +702,10 @@ A use-case-focused table:
 
 ##### Data Flow Diagram
 
-```
-+-----------------+         (serialize)         +----------------+
-|    Web Server   |  ----------------------->   |    Database    |
-|   (Python obj)  |                             | (JSON/BSON)    |
-+-----------------+                             +----------------+
-         ^                                             |
-         |          (deserialize)                      |
-         +-----------------------<---------------------+
+```mermaid
+flowchart LR
+    ws["Web Server<br/>(Python obj)"] -- serialize --> db[("Database<br/>(JSON/BSON)")]
+    db -- deserialize --> ws
 ```
 
 ```mermaid
@@ -891,28 +889,22 @@ sequenceDiagram
 
 ASCII CORS workflow:
 
-```
-+-----------+   Request   +-----------+
-|  Site A   | ----------> |   API B   |
-+-----------+             +-----------+
-      |                       |
-      |   Preflight OPTIONS   |
-      | <-------------------  |
-      |                       |
-      |   CORS Headers        |
-      | <-------------------  |
+```mermaid
+sequenceDiagram
+    participant A as Site A
+    participant B as API B
+    A->>B: Request
+    B-->>A: Preflight OPTIONS
+    B-->>A: CORS Headers
 ```
 
-```plaintext
-Client (Origin A)
-    |
-    |---(HTTP Request with Origin header)--->
-    |
-Server (Origin B)
-    |
-    |---(CORS Headers in Response)--------->
-    |
-Client checks CORS headers before allowing response
+```mermaid
+sequenceDiagram
+    participant C as Client (Origin A)
+    participant S as Server (Origin B)
+    C->>S: HTTP Request with Origin header
+    S-->>C: CORS Headers in Response
+    Note over C: Client checks CORS headers before allowing response
 ```
 
 #### Key CORS Headers

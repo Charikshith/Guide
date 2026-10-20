@@ -342,24 +342,17 @@ flowchart TD
 
 ASCII view:
 
-```
-          ┌──────────────┐
-          │   Clients    │
-          └──────┬───────┘
-                 │
-          ┌──────▼───────┐
-          │ API Gateway  │
-          └─────┬────────┘
-     ┌──────────┼─────────────┬───────────────┐
-     │          │             │               │
-┌────▼───┐ ┌────▼────┐   ┌────▼────┐      ┌──▼─────────┐
-│ Auth   │ │URL      │   │Redirect │      │ Zookeeper  │
-│Service │ │Shortener│   │Service  │      │ (ID Gen)   │
-└────┬───┘ └────┬────┘   └────┬────┘      └────▲───────┘
-     │         │             │                   │
-┌────▼─────────▼─────────────▼───────────────────┴──────┐
-│         Database & Cache (Redis/Memcached)            │
-└───────────────────────────────────────────────────────┘
+```mermaid
+flowchart TD
+    cl["Clients"] --> gw["API Gateway"]
+    gw --> au["Auth Service"]
+    gw --> us["URL Shortener"]
+    gw --> rd["Redirect Service"]
+    gw --> zk["Zookeeper (ID Gen)"]
+    au --> db[("Database & Cache<br/>(Redis/Memcached)")]
+    us --> db
+    rd --> db
+    zk --> db
 ```
 
 #### Component Responsibilities
