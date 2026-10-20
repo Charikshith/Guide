@@ -42,6 +42,24 @@ Applying every prior chapter to a portfolio of canonical designs; pattern recogn
 | Consensus / leader election | coordination | distributed queue, KV store, scheduler |
 | Streaming aggregation | real-time analytics | clickstream, monitoring |
 
+**Worked designs in this volume.** Thirteen of these systems are written out in full, each with requirements, estimates, API, architecture, deep dives and trade-offs:
+
+| System | Chapter | Patterns it shows |
+|--------|---------|-------------------|
+| URL shortener | [Chapter 38](ch38-library-16-url-shortener.md) | unique IDs, cache-aside, read-heavy traffic |
+| Chat and messaging | [Chapter 39](ch39-library-17-chat-messaging.md) | persistent connections, presence, ordering, fan-out |
+| News feed | [Chapter 40](ch40-library-18-news-feed.md) | fan-out on write vs read, timeline caches |
+| Key-value store and cache | [Chapter 41](ch41-library-19-key-value-store-cache.md) | sharding, quorums, consistent hashing, consensus |
+| Payment system | [Chapter 42](ch42-library-20-payment-system.md) | idempotency, ledger, reconciliation |
+| Auction platform | [Chapter 43](ch43-library-21-auction-platform-ebay.md) | concurrent bids, real-time fan-out |
+| Ticket booking | [Chapter 44](ch44-library-22-ticket-booking.md) | reservations with expiry, strong consistency |
+| Cloud storage | [Chapter 45](ch45-library-23-cloud-storage-drive.md) | blob storage plus metadata DB, sync |
+| Video sharing | [Chapter 46](ch46-library-24-video-sharing-youtube.md) | blob storage, queues and workers, CDN |
+| Search engine | [Chapter 47](ch47-library-25-search-engine-google.md) | inverted index, crawling, ranking |
+| E-commerce | [Chapter 48](ch48-library-26-e-commerce-amazon.md) | idempotency, sagas, inventory |
+| Taxi hailing | [Chapter 49](ch49-library-27-taxi-app-uber.md) | geospatial index, dispatch |
+| Collaborative editor | [Chapter 50](ch50-library-28-collaborative-docs.md) | real-time sync, conflict resolution |
+
 ---
 
 ## Prereqs
