@@ -12,7 +12,7 @@ A catalog of the named patterns for building reliable, scalable distributed appl
 
 **Read the full explanation in the AI Library** (it is explained there once, so this chapter does not repeat it):
 
-* [Chapter 4 — Cloud Design Patterns Catalog](https://charikshith.github.io/AI_Library/notes/system-design/chapters/4%20-%20Architectural%20Patterns%20%28System%20Design%20Fundamentals%29.html#411-cloud-design-patterns-catalog)
+* [Chapter 12 — Cloud Design Patterns Catalog](https://charikshith.github.io/AI_Library/notes/system-design/chapters/12%20-%20Cloud%20Design%20Patterns.html#122-cloud-design-patterns-catalog)
 
 This chapter is the **practice layer**: the diagram, worked example, exercises, mini-project, design prompt, open-source reading, interview questions and checklist below.
 

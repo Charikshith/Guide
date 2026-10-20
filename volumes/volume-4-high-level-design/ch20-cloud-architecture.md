@@ -12,7 +12,7 @@ Cloud building blocks (compute, storage, networking, managed services), serverle
 
 **Read the full explanation in the AI Library** (it is explained there once, so this chapter does not repeat it):
 
-* [Chapter 6 — Cloud Architecture Choices](https://charikshith.github.io/AI_Library/notes/system-design/chapters/6%20-%20Scalability%20in%20System%20Design.html#617-cloud-architecture-choices)
+* [Chapter 14 — Cloud Architecture Choices](https://charikshith.github.io/AI_Library/notes/system-design/chapters/14%20-%20Cloud%20Architecture%20%26%20Cost.html#142-cloud-architecture-choices)
 * [Chapter 6 — Cloud Building Blocks: An AWS Service Map](https://charikshith.github.io/AI_Library/notes/system-design/chapters/6%20-%20Scalability%20in%20System%20Design.html#69-cloud-building-blocks-an-aws-service-map)
 
 This chapter is the **practice layer**: the diagram, worked example, exercises, mini-project, design prompt, open-source reading, interview questions and checklist below.

@@ -12,7 +12,7 @@ Tenant isolation models (pool, bridge, silo), data isolation, and tenant-aware r
 
 **Read the full explanation in the AI Library** (it is explained there once, so this chapter does not repeat it):
 
-* [Chapter 7 — Multi-Tenancy](https://charikshith.github.io/AI_Library/notes/system-design/chapters/7%20-%20Storage%20-%20Database%20and%20Storage.html#718-multi-tenancy)
+* [Chapter 13 — Multi-Tenancy](https://charikshith.github.io/AI_Library/notes/system-design/chapters/13%20-%20Multi-Tenancy.html#132-multi-tenancy)
 
 This chapter is the **practice layer**: the diagram, worked example, exercises, mini-project, design prompt, open-source reading, interview questions and checklist below.
 

@@ -12,7 +12,7 @@ Replication, partitioning, leader/follower, quorums, idempotency, and the failur
 
 **Read the full explanation in the AI Library** (it is explained there once, so this chapter does not repeat it):
 
-* [Chapter 9 — Distributed Systems Patterns and Failure Modes](https://charikshith.github.io/AI_Library/notes/system-design/chapters/9%20-%20Reliability%2C%20Availability%20%26%20Disaster%20Recovery.html#914-distributed-systems-patterns-and-failure-modes)
+* [Chapter 11 — Distributed Systems Patterns and Failure Modes](https://charikshith.github.io/AI_Library/notes/system-design/chapters/11%20-%20Distributed%20Systems%20Fundamentals.html#112-distributed-systems-patterns-and-failure-modes)
 
 This chapter is the **practice layer**: the diagram, worked example, exercises, mini-project, design prompt, open-source reading, interview questions and checklist below.
 

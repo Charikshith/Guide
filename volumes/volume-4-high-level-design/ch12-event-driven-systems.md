@@ -12,7 +12,7 @@ Event producers/consumers, event schemas, ordering, idempotency, and eventual co
 
 **Read the full explanation in the AI Library** (it is explained there once, so this chapter does not repeat it):
 
-* [Chapter 4 — Event-Driven Systems in Practice](https://charikshith.github.io/AI_Library/notes/system-design/chapters/4%20-%20Architectural%20Patterns%20%28System%20Design%20Fundamentals%29.html#410-event-driven-systems-in-practice)
+* [Chapter 11 — Event-Driven Systems in Practice](https://charikshith.github.io/AI_Library/notes/system-design/chapters/11%20-%20Distributed%20Systems%20Fundamentals.html#113-event-driven-systems-in-practice)
 * [Chapter 4 — Event-Driven Architecture](https://charikshith.github.io/AI_Library/notes/system-design/chapters/4%20-%20Architectural%20Patterns%20%28System%20Design%20Fundamentals%29.html#465-event-driven-architecture)
 
 This chapter is the **practice layer**: the diagram, worked example, exercises, mini-project, design prompt, open-source reading, interview questions and checklist below.

@@ -12,7 +12,7 @@ Unit economics, cloud cost drivers, right-sizing, and cost as a design constrain
 
 **Read the full explanation in the AI Library** (it is explained there once, so this chapter does not repeat it):
 
-* [Chapter 6 — Cost and Capacity Economics](https://charikshith.github.io/AI_Library/notes/system-design/chapters/6%20-%20Scalability%20in%20System%20Design.html#618-cost-and-capacity-economics)
+* [Chapter 14 — Cost and Capacity Economics](https://charikshith.github.io/AI_Library/notes/system-design/chapters/14%20-%20Cloud%20Architecture%20%26%20Cost.html#143-cost-and-capacity-economics)
 * [Chapter 6 — Cost Optimization Strategies](https://charikshith.github.io/AI_Library/notes/system-design/chapters/6%20-%20Scalability%20in%20System%20Design.html#611-cost-optimization-strategies)
 
 This chapter is the **practice layer**: the diagram, worked example, exercises, mini-project, design prompt, open-source reading, interview questions and checklist below.
