@@ -38,6 +38,254 @@ Mutexes, channels, worker pools, actor model, lock-free patterns, and eliminatin
 
 **Bound concurrency** — always cap it (pool size, semaphore, bounded queue), so overload turns into backpressure instead of a thousand threads or an out-of-memory crash.
 
+### More on this topic, from the AI Library
+
+The sections below come from the AI Library's system-design course and cover the same ground at architecture level.
+
+### Concurrency & Parallelism
+
+Unlocking performance often means handling **many tasks at once** — but how?
+
+#### Concurrency vs. Parallelism
+
+(See `image-17.png` for diagram.)
+
+| Aspect        | Concurrency                                       | Parallelism                            |
+|---------------|---------------------------------------------------|----------------------------------------|
+| Definition    | Multiple tasks start/run/complete in overlapping time | Multiple tasks executed *simultaneously* |
+| Hardware      | Single or multi-core                              | Multi-core required                    |
+| Focus         | Task management (responsiveness)                  | Task execution (throughput)            |
+| Example       | Async web server                                  | Matrix computation on threads          |
+
+**Concurrency** is about *managing* multiple tasks at the same time. These tasks may overlap in their execution, but do not necessarily run simultaneously. It allows a system to handle multiple things at once, improving responsiveness, even on a single CPU core.
+
+- Task management, not simultaneous execution.
+- Can be achieved on a single-core CPU.
+- Gives the *illusion* of doing many things at once by rapidly switching context.
+
+**Example:** A web server handling multiple HTTP requests using asynchronous I/O.
+
+```python
+# Python asyncio concurrent server (single-threaded, concurrent)
+import asyncio
+
+async def handle_request(reader, writer):
+    data = await reader.read(100)
+    message = data.decode()
+    print(f"Received {message}")
+    writer.write(data)
+    await writer.drain()
+    writer.close()
+
+async def main():
+    server = await asyncio.start_server(handle_request, '127.0.0.1', 8888)
+    async with server:
+        await server.serve_forever()
+
+asyncio.run(main())
+```
+
+**Parallelism** is about *executing* multiple tasks at the same time. It requires multiple CPU cores. The goal is to increase *throughput* and speed.
+
+- Actual simultaneous execution.
+- Requires multi-core CPUs.
+- Improves throughput and computational speed.
+
+**Example:** Parallel matrix computation.
+
+```python
+from multiprocessing import Pool
+
+def compute_square(x):
+    return x * x
+
+if __name__ == '__main__':
+    with Pool(4) as p:  # 4 parallel processes
+        results = p.map(compute_square, [1,2,3,4,5,6,7,8])
+    print(results)
+```
+
+**Concurrency vs. Parallelism ASCII:**
+
+```
+Concurrency (Task Management)        Parallelism (Task Execution)
++------------------------------+     +--------------------------+
+| Task A  | Task B | Task C    |     | Task A | Task B | Task C |
+|========>|========|=========> |     |========|========|========|
+|    (Interleaved, Overlapping)|     |(Executed Simultaneously)|
++------------------------------+     +--------------------------+
+```
+
+#### Processes vs. Threads
+
+(See `image-18.png` for diagram.)
+
+|                 | Process                          | Thread                       |
+|-----------------|----------------------------------|------------------------------|
+| **Memory**      | Own memory space                 | Shared memory within process |
+| **Creation**    | Heavy, slow                      | Lightweight, fast            |
+| **Isolation**   | Fully isolated                   | Less isolated, share data    |
+| **Safety**      | Safer, one crash ≠ all crash     | Prone to race conditions     |
+| **Use Case**    | Separate apps (browser, editor)  | Multiple tasks in app        |
+
+**Examples:**
+
+- **Processes:** Chrome and Word, each with its memory.
+- **Threads:** Multiple HTTP request handlers in a web server, sharing cache.
+
+#### Thread Pools & Worker Models
+
+##### Thread Pools
+
+- **What:** Pre-created pool of threads reused for multiple tasks.
+- **Why:** Avoids the overhead of creating/destroying threads per task.
+- **Where:** Web servers (ASP.NET Core, Java, Python), database connection pooling.
+
+```java
+ExecutorService pool = Executors.newFixedThreadPool(8);
+pool.submit(() -> {
+    // handle request
+});
+```
+
+```python
+from concurrent.futures import ThreadPoolExecutor
+
+def process_task(task_id):
+    print(f"Processing {task_id}")
+
+with ThreadPoolExecutor(max_workers=4) as executor:
+    for i in range(10):
+        executor.submit(process_task, i)
+```
+
+A simpler variant for a request handler:
+
+```python
+from concurrent.futures import ThreadPoolExecutor
+
+def process_request(request):
+    # Handle request
+    pass
+
+with ThreadPoolExecutor(max_workers=10) as executor:
+    for req in incoming_requests:
+        executor.submit(process_request, req)
+```
+
+##### Worker Model
+
+- **What:** Tasks are distributed to idle workers from a shared queue.
+- **Why:** Improves scalability and balances CPU utilization.
+- **Where:** Background job processing, e.g., RabbitMQ workers.
+
+```javascript
+const { Worker } = require('worker_threads');
+const tasks = [/* ... */]; // some task list
+
+tasks.forEach(task => {
+  const worker = new Worker('./worker.js', { workerData: task });
+  worker.on('message', result => console.log(result));
+});
+```
+
+#### Asynchronous Processing
+
+**Why Async?**
+
+- Avoids blocking threads on I/O (file, DB, network).
+- Boosts throughput, keeps system responsive.
+
+**Techniques:**
+
+- Async/await (C#, JS, Python).
+- Promises/Futures.
+- Message Queues (RabbitMQ, Kafka).
+
+```javascript
+async function getUserData(id) {
+  const user = await db.findUserById(id); // Non-blocking I/O
+  return user;
+}
+```
+
+#### Concurrency in Web Servers
+
+| Traditional Servers          | Modern Servers                         |
+|------------------------------|----------------------------------------|
+| Spawn thread/process/request | Use async / non-blocking I/O           |
+| High resource usage          | Event loop or thread pool models       |
+| Hard to scale                | Efficient, handles more with less      |
+
+**Modern examples:**
+
+- **Node.js:** Event-loop, non-blocking I/O.
+- **ASP.NET Core / Nginx:** Thread pools + async I/O.
+
+#### Common Pitfalls: Race Conditions & Deadlocks
+
+##### Race Condition
+
+- Occurs when multiple threads access/modify shared data unsafely.
+- Can corrupt data or cause unpredictable bugs.
+- **Fix:** Synchronize access (locks, mutexes).
+
+```python
+import threading
+
+counter = 0
+lock = threading.Lock()
+
+def increment():
+    global counter
+    for _ in range(1000):
+        with lock:
+            counter += 1
+```
+
+##### Deadlock
+
+- Threads stuck waiting for each other's resources.
+- System can freeze.
+- **Fix:** Lock ordering, timeouts, avoiding nested locks.
+
+#### Concurrency — Best Practices
+
+- Prefer async/non-blocking I/O for I/O-bound tasks.
+- Use thread pools for CPU-bound work, not raw threads.
+- Always synchronize access to shared data.
+- Detect & avoid deadlocks (consistent lock ordering).
+- Monitor performance with appropriate metrics.
+
+**Real-world scenarios:**
+
+- Web servers (Node.js/ASP.NET): Thread pool + async I/O.
+- Background jobs (RabbitMQ, Kafka): Worker model.
+- Parallel image rendering: Each frame on different core.
+
+#### Concurrency — Summary Table
+
+| Concept             | Purpose              | Typical Tools/Techniques        | Example                        |
+|---------------------|----------------------|---------------------------------|--------------------------------|
+| Concurrency         | Task management      | Async/await, event loop, coros  | Node.js HTTP server            |
+| Parallelism         | Task execution       | Thread pool, multiprocessing    | Java ThreadPool, Python Pool   |
+| Thread Pool         | Reduce overhead      | Executors, Pool, Task queue     | ASP.NET Core, Java Executors   |
+| Worker Model        | Distribute workload  | Queues + workers                | RabbitMQ, Celery, Sidekiq      |
+| Async Processing    | Non-blocking I/O     | Promises, Futures, async/await  | JS async functions, C# await   |
+| Synchronization     | Prevent race bugs    | Locks, mutexes, semaphores      | threading.Lock (Python)        |
+| Deadlock Avoidance  | System stability     | Lock ordering, timeouts         | Consistent lock strategy       |
+
+#### Event Loop (Simplified)
+
+```mermaid
+flowchart TB
+    R(["Incoming HTTP requests"]) --> EL["Event loop"]
+    EL --> IO["Async I/O and callbacks"]
+    EL --> TP["Thread pool for CPU-heavy tasks"]
+```
+
+*(From AI Library chapter 8.)*
+
 ---
 
 ## Prereqs

@@ -50,6 +50,102 @@ Making components survive failure — idempotency keys, retry with exponential b
 | **Open** | calls fail immediately (`CircuitOpenError`), no network call | after `reset_timeout` → **half-open** |
 | **Half-open** | allow a limited number of probe calls | probes succeed → **closed**; any probe fails → **open** again |
 
+### More on this topic, from the AI Library
+
+The sections below come from the AI Library's system-design course and cover the same ground at architecture level.
+
+### Retry Patterns Done Right
+
+Retries are the #1 way to convert a single transient failure into a system-wide outage. Done wrong, they're an amplifier. Done right, they're a lifesaver.
+
+#### The Five Rules of Retries
+
+1. **Only retry idempotent operations.** Retrying a non-idempotent POST can double-charge a credit card.
+2. **Exponential backoff** — `delay = base × 2^attempt`. Not constant delay.
+3. **Add jitter** — `delay = random(0, base × 2^attempt)`. Without jitter, retries from many clients synchronize and stampede.
+4. **Cap the retries.** Usually 3-5. Past that, give up and report failure.
+5. **Respect `Retry-After` and `429`.** If the server tells you when to retry, listen.
+
+#### Example
+
+```python
+import random, time
+
+def with_retry(fn, max_attempts=4, base=0.1):
+    for attempt in range(max_attempts):
+        try:
+            return fn()
+        except TransientError:
+            if attempt == max_attempts - 1:
+                raise
+            delay = random.uniform(0, base * (2 ** attempt))  # exponential + jitter
+            time.sleep(delay)
+```
+
+*(From AI Library chapter 9.)*
+
+### Idempotency Keys
+
+Even with retries done right, network failures can leave you unsure whether a request succeeded. The fix: **idempotency keys.**
+
+Client generates a unique key (UUID) per logical operation. Server stores `(key → result)`. On retry, server returns the cached result instead of executing again.
+
+```
+POST /payments
+Idempotency-Key: 6f7d3e4a-9b2c-4f1d-8e3a-1c2b3d4e5f60
+{
+  "amount": 100,
+  "user_id": 42
+}
+```
+
+Stripe, PayPal, and modern payment APIs all use this. **You should too** for any non-idempotent operation.
+
+*(From AI Library chapter 9.)*
+
+### Failure Containment Patterns
+
+Scaling isn't only about handling load — it's about preventing one failure from cascading.
+
+#### Circuit Breaker
+
+If a downstream service is failing, **stop calling it for a while** so the failing service can recover and your service doesn't waste resources waiting on timeouts.
+
+```
+States:  CLOSED  →  OPEN  →  HALF-OPEN  →  CLOSED
+         (normal)   (fail fast)  (try one)  (back to normal)
+```
+
+**Implementation:** count failures in a window; trip if >N% fail; after a cooldown, allow one trial request.
+
+#### Bulkhead
+
+Isolate resources so failure in one part of the system can't drown the rest. Just like the watertight compartments on a ship — if one floods, the rest stay dry.
+
+**Example:** dedicate separate thread pools (or connection pools) per downstream service. If the slow payment service eats all 200 threads, your auth calls still have their own pool.
+
+#### Rate Limiting
+
+Cap how many requests any one client (IP, user, API key) can send in a window. Protects against abuse *and* against your own systems thundering when something goes wrong.
+
+**Algorithms (in order of sophistication):**
+
+| Algorithm        | Simplicity | Burst handling | Memory cost |
+|------------------|-----------|-----------------|-------------|
+| Fixed window     | simplest   | bad (allows 2× burst at window edges) | tiny |
+| Sliding window log | precise  | great           | high (stores timestamps) |
+| Sliding window counter | balanced | good       | low |
+| Token bucket     | most flexible | great (allows bursts up to bucket size) | small |
+| Leaky bucket     | smoothes traffic | enforces constant rate | small |
+
+> **Default choice:** token bucket. Easy to reason about, allows reasonable bursts, well-supported in libraries.
+
+#### Backpressure
+
+When you can't keep up, **tell upstream to slow down** rather than silently dropping or queuing forever. Standard mechanisms: HTTP 429, gRPC `RESOURCE_EXHAUSTED`, blocking writes on a bounded queue.
+
+*(From AI Library chapter 6.)*
+
 ---
 
 ## Prereqs

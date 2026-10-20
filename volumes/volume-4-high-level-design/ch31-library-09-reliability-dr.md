@@ -345,50 +345,11 @@ livenessProbe:
 
 ### Retry Patterns Done Right
 
-Retries are the #1 way to convert a single transient failure into a system-wide outage. Done wrong, they're an amplifier. Done right, they're a lifesaver.
-
-#### The Five Rules of Retries
-
-1. **Only retry idempotent operations.** Retrying a non-idempotent POST can double-charge a credit card.
-2. **Exponential backoff** — `delay = base × 2^attempt`. Not constant delay.
-3. **Add jitter** — `delay = random(0, base × 2^attempt)`. Without jitter, retries from many clients synchronize and stampede.
-4. **Cap the retries.** Usually 3-5. Past that, give up and report failure.
-5. **Respect `Retry-After` and `429`.** If the server tells you when to retry, listen.
-
-#### Example
-
-```python
-import random, time
-
-def with_retry(fn, max_attempts=4, base=0.1):
-    for attempt in range(max_attempts):
-        try:
-            return fn()
-        except TransientError:
-            if attempt == max_attempts - 1:
-                raise
-            delay = random.uniform(0, base * (2 ** attempt))  # exponential + jitter
-            time.sleep(delay)
-```
-
+*This section is in [Volume 3, Chapter 14 — Resilience Patterns (Idempotency, Retries, Backoff, Circuit Breakers)](../volume-3-low-level-design/ch14-resilience-patterns-idempotency-retries-backoff-circuit-breakers.md), next to that chapter's practice material, so it is not repeated here.*
 
 ### Idempotency Keys
 
-Even with retries done right, network failures can leave you unsure whether a request succeeded. The fix: **idempotency keys.**
-
-Client generates a unique key (UUID) per logical operation. Server stores `(key → result)`. On retry, server returns the cached result instead of executing again.
-
-```
-POST /payments
-Idempotency-Key: 6f7d3e4a-9b2c-4f1d-8e3a-1c2b3d4e5f60
-{
-  "amount": 100,
-  "user_id": 42
-}
-```
-
-Stripe, PayPal, and modern payment APIs all use this. **You should too** for any non-idempotent operation.
-
+*This section is in [Volume 3, Chapter 14 — Resilience Patterns (Idempotency, Retries, Backoff, Circuit Breakers)](../volume-3-low-level-design/ch14-resilience-patterns-idempotency-retries-backoff-circuit-breakers.md), next to that chapter's practice material, so it is not repeated here.*
 
 ### Active-Active vs Active-Passive
 

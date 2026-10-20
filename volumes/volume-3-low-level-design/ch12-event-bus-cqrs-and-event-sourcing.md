@@ -44,6 +44,43 @@ This chapter is the **in-process, code-level** view. For the distributed version
 
 **Event bus rules** — handlers must not depend on each other's order; one failing handler shouldn't break others (or should fail the whole command, as a deliberate choice); publish *after* the state change is committed (or use an outbox); keep handlers idempotent if events can be redelivered.
 
+### More on this topic, from the AI Library
+
+The sections below come from the AI Library's system-design course and cover the same ground at architecture level.
+
+### CQRS (Command Query Responsibility Segregation)
+
+**Separate the model used for writes from the model used for reads.** Writes go through a "command" model (often *normalized*, meaning split into separate related tables to avoid duplicated data, see Chapter 8; and transactional); reads go through a "query" model (often denormalized, materialized views).
+
+**Why:** read and write patterns are wildly different at scale. Reads vastly outnumber writes; denormalized views serve them in O(1). Writes can use a clean normalized model without performance pressure.
+
+**Trade-off:** complexity. Don't reach for CQRS unless your read/write asymmetry is extreme.
+
+*(From AI Library chapter 4.)*
+
+### Saga Pattern (Distributed Transactions Without 2PC)
+
+In a monolith, you wrap multi-step operations in a database transaction. In microservices, **you can't** — each service has its own DB. The **Saga pattern** is the answer.
+
+**The idea:** break the transaction into a sequence of *local* transactions, each in its own service. If step N fails, run **compensating transactions** to undo steps 1..N-1.
+
+**Example: book a trip (flight + hotel + car)**
+
+```mermaid
+flowchart TB
+    F["1. Book flight: success"] --> H["2. Book hotel: success"] --> Car["3. Book car: FAILED"]
+    Car -. compensate .-> CH["4. Cancel hotel"]
+    CH -. compensate .-> CF["5. Cancel flight"]
+    style Car fill:#fee2e2,stroke:#ef4444,color:#7f1d1d
+```
+
+
+Two implementation styles:
+- **Choreography:** each service listens for events and decides what to do. No central coordinator. Simple but hard to reason about at scale.
+- **Orchestration:** a central "saga orchestrator" service tells each step what to do. Easier to debug; one more service to operate.
+
+*(From AI Library chapter 4.)*
+
 ---
 
 ## Prereqs

@@ -36,6 +36,406 @@ Entities → use cases → interface adapters → frameworks; the dependency rul
 
 **Cost** — more files and mapping code. For a simple CRUD app it may be overkill; apply it where business rules are rich and long-lived.
 
+### More on this topic, from the AI Library
+
+The sections below come from the AI Library's system-design course and cover the same ground at architecture level.
+
+### Layered (N-Tier) Architecture
+
+**Layered architecture** divides the system into layers, each with a specific responsibility (e.g., Presentation, Business Logic, Data Access).
+
+#### Diagram
+
+```mermaid
+flowchart TD
+    A[User] --> B[Presentation Layer]
+    B --> C[Business Logic Layer]
+    C --> D[Data Layer]
+    D --> E[Database]
+```
+
+A simpler version:
+
+```mermaid
+graph TD
+  UI[Presentation Layer]
+  BL[Business Logic Layer]
+  DL[Data Layer]
+
+  UI --> BL --> DL
+```
+
+```mermaid
+graph TD
+    UI[Presentation Layer] --> BLL[Business Logic Layer]
+    BLL --> DAL[Data Access Layer]
+    DAL --> DB[(Database)]
+```
+
+ASCII view:
+
+```
++--------------------+
+| Presentation Layer |
++--------------------+
+         |
++--------------------+
+| Business Logic     |
++--------------------+
+         |
++--------------------+
+| Data Access Layer  |
++--------------------+
+```
+
+#### Code Structure
+
+```plaintext
+/app
+  /presentation
+      user_controller.py
+  /business_logic
+      user_service.py
+  /data_access
+      user_repository.py
+```
+
+#### Example Code: Python Flask 3-Layer
+
+```python
+# Presentation Layer
+@app.route('/users')
+def get_users():
+    return jsonify(UserController().get_users())
+
+# Business Logic Layer
+class UserController:
+    def get_users(self):
+        return UserService().fetch_users()
+
+# Data Access Layer
+class UserService:
+    def fetch_users(self):
+        return UserModel.query.all()
+```
+
+A simpler module-based variant:
+
+```python
+# presentation.py
+def show_user_profile(user_id):
+    data = get_user_profile(user_id)
+    return render_profile(data)
+
+# business_logic.py
+def get_user_profile(user_id):
+    return fetch_user_from_db(user_id)
+
+# data_access.py
+def fetch_user_from_db(user_id):
+    # Fetch from database
+    pass
+```
+
+#### Pros & Cons
+
+| Pros                                      | Cons                                         |
+|-------------------------------------------|----------------------------------------------|
+| Clear separation of concerns              | Performance overhead due to layer traversal  |
+| Easier to maintain and scale              | Layers may become tightly coupled            |
+| Easy to test                              | Can become rigid; changes in one layer may impact others |
+
+#### Use Cases
+
+- Enterprise applications (CRM, ERP)
+- Banking / financial systems
+- Large web applications
+
+*(From AI Library chapter 4.)*
+
+### Multi-Tier Architecture — A Deep Dive
+
+**Multi-tier architecture** is a software design pattern that organizes an application into multiple logical layers (or "tiers"), each responsible for a specific set of tasks. This pattern powers everything from small desktop apps to global-scale web services like Amazon and Netflix.
+
+#### Key Benefits
+
+- **Separation of concerns:** Each layer handles a specific role, making the codebase easier to manage.
+- **Improved scalability:** Layers can be scaled independently.
+- **Better security:** Isolating sensitive operations (like database access) reduces attack surfaces.
+- **Maintainability:** Changes in one layer have minimal impact on others.
+- **Organizes applications into independent layers.**
+- **Used in:** Web apps, enterprise systems, cloud architectures.
+
+#### Types of Multi-Tier Architectures
+
+| Type      | Layers                                       | Use Case                          |
+|-----------|----------------------------------------------|-----------------------------------|
+| 2-Tier    | Client ↔ DB                                  | Simple desktop apps               |
+| 3-Tier    | UI ↔ Business Logic ↔ DB                     | Standard web apps                 |
+| N-Tier    | UI ↔ API ↔ Logic ↔ Cache ↔ DB                | Large-scale / cloud, microservices|
+
+#### 2-Tier Architecture
+
+The client contains both the UI and application logic, communicating directly with the database.
+
+```
+[Client Application] <------> [Database Server]
+```
+
+```mermaid
+flowchart LR
+    Client["Client Layer (UI + App Logic)"]
+    DB["(Database Layer)"]
+    Client <--> DB
+```
+
+```mermaid
+graph LR
+  A[Client/UI & Logic] -- SQL/NoSQL Query --> B[Database]
+```
+
+**Example (Python + SQLite):**
+
+```python
+# Two-tier example: direct database access
+import sqlite3
+
+conn = sqlite3.connect('example.db')
+cursor = conn.cursor()
+cursor.execute("SELECT * FROM users")
+for row in cursor.fetchall():
+    print(row)
+conn.close()
+```
+
+**Pros & Cons:**
+
+| Pros                  | Cons                                   |
+|-----------------------|----------------------------------------|
+| Simple to implement   | Poor scalability (few users)           |
+| Fast for small apps   | Security risks (direct DB access)      |
+|                       | Limited to small/simple apps           |
+
+**Use case:** A desktop app directly querying a local SQL database.
+
+#### 3-Tier Architecture
+
+Adds a **Business Logic Layer** between the UI and the database.
+
+```
+[Presentation Layer] <--> [Business Logic Layer] <--> [Data Layer]
+```
+
+```mermaid
+flowchart LR
+    UI["Presentation Layer (UI)"]
+    BL["Business Logic Layer (API/Server)"]
+    DB["(Database Layer)"]
+    UI <--> BL <--> DB
+```
+
+```mermaid
+graph LR
+  A[Presentation/UI] -- API Call --> B[Business Logic/API Server]
+  B -- SQL/ORM --> C[Database]
+```
+
+Or with the database on the right:
+
+```mermaid
+flowchart TD
+    A[Client/UI] --> B[Business Logic/API]
+    B --> C[Database]
+```
+
+**Example (Node.js Express API as the Business Logic layer):**
+
+```js
+// Business Logic Layer (API)
+const express = require('express');
+const app = express();
+const db = require('./db'); // Assume db.js handles DB connection
+
+app.get('/users', async (req, res) => {
+  const users = await db.query('SELECT * FROM users');
+  res.json(users);
+});
+
+app.listen(3000, () => console.log('API running on port 3000'));
+```
+
+A more decoupled version with separate route and data-access modules:
+
+```js
+// server/routes/users.js
+const express = require('express');
+const router = express.Router();
+const { getUserById } = require('../services/userService'); // Business logic
+
+router.get('/:id', async (req, res) => {
+  const user = await getUserById(req.params.id); // Calls data access layer
+  res.json(user);
+});
+
+module.exports = router;
+```
+
+```js
+// server/data/userRepository.js
+const db = require('./dbConnection');
+
+async function getUserById(id) {
+  return db.query('SELECT * FROM users WHERE id = $1', [id]);
+}
+
+module.exports = { getUserById };
+```
+
+**Project structure:**
+
+```
+project/
+│
+├── frontend/      # Presentation Layer (React, Angular, etc.)
+├── server/        # Business Logic Layer (Node.js/Express)
+├── database/      # Data Layer (PostgreSQL, MongoDB)
+```
+
+**Pros & Cons:**
+
+| Pros                                | Cons                      |
+|-------------------------------------|---------------------------|
+| Improved scalability & security     | Slightly higher latency   |
+| Better separation of concerns       | More complex than 2-tier  |
+| Easier maintenance                  |                           |
+
+**Use case:** Traditional web applications (React front-end → Node.js/Express API → PostgreSQL DB).
+
+#### N-Tier Architecture
+
+Extends 3-tier by adding specialized layers (caching, API gateway, microservices, etc.).
+
+**Example layers:**
+
+- API Gateway
+- Authentication Service
+- Caching Layer (e.g., Redis)
+- Microservices (e.g., User Service, Payment Service)
+- Database Layer
+
+```mermaid
+flowchart LR
+    UI[UI Layer]
+    API[API Gateway]
+    Cache[Cache Layer]
+    SVC[Microservices Layer]
+    BL[Business Logic Layer]
+    DB[(Database Layer)]
+    UI <--> API <--> Cache <--> SVC <--> BL <--> DB
+```
+
+```mermaid
+graph LR
+  A[Client/UI]
+  B[API Gateway]
+  C[Auth Service]
+  D[Business Logic/Microservices]
+  E[Cache]
+  F[Database]
+
+  A --> B --> C --> D --> E --> F
+  D --> F
+  E --> F
+```
+
+```mermaid
+graph TD
+  Client[Client Tier]
+  Web[Web Server Tier]
+  App[Application Tier]
+  DB[Database Tier]
+
+  Client --> Web --> App --> DB
+```
+
+*Note: actual order and number of layers may vary based on requirements.*
+
+**Example (Pseudo-code: API Gateway forwards to microservice, checks cache):**
+
+```python
+def get_user_profile(user_id):
+    cached = redis.get(f"profile:{user_id}")
+    if cached:
+        return cached
+    profile = user_service.get_profile(user_id)
+    redis.set(f"profile:{user_id}", profile)
+    return profile
+```
+
+**Caching example:**
+
+```python
+def get_product(product_id):
+    product = cache.get(product_id)
+    if not product:
+        product = db.fetch(product_id)
+        cache.set(product_id, product)
+    return product
+```
+
+**Pros & Cons:**
+
+| Pros                                          | Cons              |
+|-----------------------------------------------|-------------------|
+| Handles high-traffic & complex business logic | Higher complexity |
+| Independent scaling of layers                 | More moving parts |
+| Highly scalable                               | More points of failure |
+| Fault tolerant                                | Requires robust monitoring and deployment |
+
+**Use case:** Large-scale enterprise software, microservices-based applications, e-commerce platforms.
+
+#### Performance and Scalability — How Do Tiers Impact Your System?
+
+##### Latency Considerations
+
+- **More tiers = higher latency** (if not optimized).
+- Each request passes through more processing steps.
+
+**Mitigations:**
+
+- **Caching:** Store frequently accessed data for quick retrieval (e.g., Redis, Memcached).
+- **Load Balancing:** Distribute requests across servers/layers for resilience and speed.
+
+##### Scaling Strategies
+
+- **Vertical Scaling:** Add resources to a single server (CPU, RAM).
+- **Horizontal Scaling:** Add more servers (better for high-traffic systems).
+- **Optimizations:** Caching, load balancing, and asynchronous messaging can reduce bottlenecks.
+
+#### Multi-Tier — Tips and Tricks
+
+- **Keep layers independent:** Avoid tight coupling; use clear interfaces/APIs between layers.
+- **Optimize for latency:** Introduce caching and asynchronous processing where possible.
+- **Secure inter-layer communication:** Use encryption (TLS), API keys, and input validation.
+- **Monitor and log each layer:** Add observability (logging, tracing, metrics) to identify bottlenecks quickly.
+- **Scale horizontally where possible:** Especially for API/business logic and caching layers.
+- **Automate deployments and testing:** CI/CD pipelines ensure each layer is robust and can be deployed independently.
+- **Start simple:** Begin with three-tier unless you know you'll need n-tier complexity.
+- **Isolate secrets and credentials:** Never expose DB credentials in the UI/client layer.
+- **Leverage caching:** Use Redis or Memcached for reducing database load.
+- **Use load balancers:** Distribute API requests with load balancers for horizontal scaling.
+- **Secure APIs:** Validate and sanitize all input at the business logic layer.
+
+#### Multi-Tier — Common Interview Questions
+
+1. What is Multi-Tier Architecture, and why is it used?
+2. How does a 2-Tier architecture differ from a 3-Tier architecture?
+3. What are the key components of a 3-Tier architecture?
+4. How does scalability improve in a multi-tier system?
+5. What strategies can reduce latency in a multi-tier app?
+
+*(From AI Library chapter 4.)*
+
 ---
 
 ## Prereqs

@@ -295,45 +295,7 @@ In practice, scaling is often *worse* than Amdahl predicts because of **coordina
 
 ### Failure Containment Patterns
 
-Scaling isn't only about handling load — it's about preventing one failure from cascading.
-
-#### Circuit Breaker
-
-If a downstream service is failing, **stop calling it for a while** so the failing service can recover and your service doesn't waste resources waiting on timeouts.
-
-```
-States:  CLOSED  →  OPEN  →  HALF-OPEN  →  CLOSED
-         (normal)   (fail fast)  (try one)  (back to normal)
-```
-
-**Implementation:** count failures in a window; trip if >N% fail; after a cooldown, allow one trial request.
-
-#### Bulkhead
-
-Isolate resources so failure in one part of the system can't drown the rest. Just like the watertight compartments on a ship — if one floods, the rest stay dry.
-
-**Example:** dedicate separate thread pools (or connection pools) per downstream service. If the slow payment service eats all 200 threads, your auth calls still have their own pool.
-
-#### Rate Limiting
-
-Cap how many requests any one client (IP, user, API key) can send in a window. Protects against abuse *and* against your own systems thundering when something goes wrong.
-
-**Algorithms (in order of sophistication):**
-
-| Algorithm        | Simplicity | Burst handling | Memory cost |
-|------------------|-----------|-----------------|-------------|
-| Fixed window     | simplest   | bad (allows 2× burst at window edges) | tiny |
-| Sliding window log | precise  | great           | high (stores timestamps) |
-| Sliding window counter | balanced | good       | low |
-| Token bucket     | most flexible | great (allows bursts up to bucket size) | small |
-| Leaky bucket     | smoothes traffic | enforces constant rate | small |
-
-> **Default choice:** token bucket. Easy to reason about, allows reasonable bursts, well-supported in libraries.
-
-#### Backpressure
-
-When you can't keep up, **tell upstream to slow down** rather than silently dropping or queuing forever. Standard mechanisms: HTTP 429, gRPC `RESOURCE_EXHAUSTED`, blocking writes on a bounded queue.
-
+*This section is in [Volume 3, Chapter 14 — Resilience Patterns (Idempotency, Retries, Backoff, Circuit Breakers)](../volume-3-low-level-design/ch14-resilience-patterns-idempotency-retries-backoff-circuit-breakers.md), next to that chapter's practice material, so it is not repeated here.*
 
 ### Rate Limiting, Throttling and Backpressure
 
