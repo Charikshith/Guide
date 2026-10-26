@@ -101,6 +101,14 @@ Idempotency-Key: 6f7d3e4a-9b2c-4f1d-8e3a-1c2b3d4e5f60
 
 Stripe, PayPal, and modern payment APIs all use this. **You should too** for any non-idempotent operation.
 
+**Getting idempotency keys right — the details that bite:**
+
+- **Record the key and do the work atomically.** If the server stores the key, then crashes before doing the work, every retry is skipped and the operation never happens. If it does the work first and crashes before storing the key, the retry does it twice. Store the key, the result, and the business change **in one database transaction**. If the handler also calls other services, one transaction can't cover them — use an outbox or a saga ([Vol 1 Ch 47](../volume-1-cs-foundations/ch47-acid-transactions-and-isolation.md)) and pass the key downstream.
+- **Return the original response**, not "already exists": the client should see exactly what a first successful attempt would have returned (`201 Created` with the same body), so its code doesn't need a special path for retries.
+- **Same key, different request → reject it** (e.g. `422`): it is a client bug, not a retry.
+- **Keys don't live forever.** Keep them a bit longer than clients may retry (Stripe: 24 hours), then purge them.
+- **Surprising interleavings:** client A creates an order but times out; client B deletes that order; A retries with the same key. Re-running would resurrect a deleted order, and an error would confuse A. Least surprising is to return A's original "created" response — the order was created; it was simply deleted afterwards.
+
 *(From AI Library chapter 9.)*
 
 ### Failure Containment Patterns

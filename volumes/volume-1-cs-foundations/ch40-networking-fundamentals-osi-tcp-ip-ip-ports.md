@@ -53,6 +53,14 @@ Layered models, IP addressing/subnets, ports, DNS resolution, and NAT.
 | NS | zone → authoritative servers | |
 | TTL | how long resolvers may cache it | 300 s |
 
+**DNS as a dependency — and a single point of failure**
+
+- **Choosing a TTL is a trade-off.** Long TTLs mean fewer lookups and less load on name servers, but a changed record (a failover, a migration) takes that long to reach everyone. Short TTLs make changes fast but add lookup latency and load — and the shorter the TTL, the more clients break immediately if your name servers go down.
+- **Not every client respects the TTL.** Some resolvers and long-running clients cache longer, so expect a trickle of traffic to old addresses well after a change; keep old endpoints alive for a while.
+- **If DNS fails, nothing else matters.** Clients that can't resolve your name can't reach you, however healthy your servers are. Real outages have come from expired domain registrations, a provider's name servers being DDoSed (Dyn, 2016), and whole top-level domains having trouble. Use more than one DNS provider for critical names, monitor domain and certificate expiry, and keep TTLs sensible.
+- **Serve stale rather than fail.** A resolver that can't reach the authoritative servers can keep answering with an *expired* cached record (standardized as "serve-stale", RFC 8767) — the address almost never changed, so a stale answer beats no answer. The general principle — keep working with the last known good data when a dependency is down — is called *static stability*.
+- **Privacy.** Classic DNS is plain text over UDP, visible to anyone on the path; **DNS over TLS (DoT)** and **DNS over HTTPS (DoH)** encrypt it.
+
 **NAT** — a router rewrites private source addresses and ports to its public address and keeps a table to map replies back. It stretches IPv4 and blocks *unsolicited* inbound connections, but it is **not a firewall**, it breaks peer-to-peer (needing STUN/TURN), and it complicates logs and rate limiting (many users share one IP).
 
 ---

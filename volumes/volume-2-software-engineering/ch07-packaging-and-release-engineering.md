@@ -56,6 +56,38 @@ Flag hygiene: an owner and expiry per flag, default to the safe value when the f
 
 **Rollback readiness** — keep the previous artifact; make DB migrations backward compatible (**expand → migrate → contract**, so old and new code both work mid-rollout); automate the trigger (error rate or latency above the baseline → roll back); practice it.
 
+**A safe production rollout, step by step**
+
+Releases are one of the biggest sources of outages, so the pipeline — not a person watching dashboards — should carry every change (code, config, static assets, infrastructure-as-code) from merge to production:
+
+1. **Review and build.** Before approving, ask: are there tests at the right levels? Metrics, logs and traces for the new path? Could it break production — a backward-incompatible API or schema change, a service limit? Can it be rolled back safely? Then build one artifact.
+2. **Pre-production.** Deploy to environments that judge health with the *same* signals and alerts as production (otherwise pre-prod becomes a second-class check that catches nothing), run end-to-end tests, and optionally mirror a slice of production traffic.
+3. **Production in waves** — one instance or canary, then one low-traffic region, then larger groups of regions in parallel as confidence grows. Keep spare capacity: instances being replaced aren't serving.
+4. **Bake time** after each wave: wait long enough for slow-burning problems to show (memory growth, peak-hour latency, a nightly job), or until enough requests have hit each endpoint. Shorten the bake in later waves once early ones are clean.
+5. **Watch neighbours too:** a release can break its upstream callers or overload its downstream dependencies, so the gate checks their health as well as the service's own.
+6. **Act on a bad signal:** roll back automatically, or page the on-call engineer to choose: retry the step (the trouble was something else), roll back, or **roll forward** with a hotfix. Rolling back is safer than rolling forward, so every change must be backward compatible enough to be rolled back.
+
+```mermaid
+flowchart LR
+    M["merge"] --> B["build artifact"] --> P["pre-prod:<br/>e2e tests, prod-like alerts"]
+    P --> W1["wave 1:<br/>1 instance / canary"]
+    W1 -->|"bake ✓"| W2["wave 2:<br/>1 low-traffic region"]
+    W2 -->|"bake ✓"| W3["wave 3:<br/>remaining regions"]
+    W1 & W2 & W3 -->|"health ✗ (self or neighbours)"| RB["automatic rollback<br/>or page on-call"]
+```
+
+**Breaking changes in three safe steps (prepare → activate → cleanup).** Suppose a producer must change its message format in a way the consumer can't read:
+
+| Step | Change | Safe to roll back? |
+|------|--------|--------------------|
+| **Prepare** | consumer learns to read *both* the old and the new format | yes — the new reader is just unused |
+| **Activate** | producer starts writing the new format | yes — the consumer still reads the old one |
+| **Cleanup** | consumer drops support for the old format, once activate won't be rolled back | yes, after the activate step has baked |
+
+The same idea is *expand → migrate → contract* for database schemas. Changing a serialization format used for storage or messages is the classic way to make a release impossible to roll back, so add an automated **upgrade → downgrade test** in pre-production: deploy the new version, write data, roll back, and check that the old version still reads everything.
+
+**Configuration you can change without a deploy** — settings live outside the artifact in a configuration store (AWS AppConfig, Azure App Configuration, Consul), and secrets in a secrets manager, never in code. Values injected as environment variables at deploy time need a redeploy to change; for operators to act fast, the application should **re-read configuration at runtime** and rebuild whatever depends on it. That is what turns a feature flag into an operations tool: release dark, enable for 1% of users, run A/B tests, and switch off instantly in an incident — and config changes deserve the same review, validation and gradual rollout as code.
+
 ---
 
 ## Prereqs
@@ -213,6 +245,12 @@ flowchart LR
 2. **"Why feature flags for releases?"**
    <details><summary>Answer</summary>They decouple deploying from releasing. Code can merge and deploy continuously while hidden (trunk-based development). Features can be rolled out gradually, per segment, or as experiments. Kill switches give instant mitigation without a deploy. Risky changes can be tested in production with internal users first. The costs are flag debt and combinatorial paths, so flags need owners, expiries, and cleanup.</details>
 
+3. **"How would you roll out a change that alters a message format?"**
+   <details><summary>Answer</summary>In three individually reversible releases. Prepare: consumers accept both formats. Activate: producers emit the new format. Cleanup: consumers drop the old format, only after the activate step has baked and won't be rolled back. Verify reversibility with an upgrade-then-downgrade test in pre-production, and roll each step out in waves with bake time and automatic rollback.</details>
+
+4. **"What is bake time and why does it matter?"**
+   <details><summary>Answer</summary>The wait after each rollout wave before moving on, so problems that only appear over time — memory leaks, peak-hour load, daily jobs, rarely used endpoints — can show up while the blast radius is still small. It can be a fixed duration or gated on enough traffic having hit each endpoint, and it can shrink in later waves as confidence builds.</details>
+
 ---
 
 ## Checklist
@@ -220,6 +258,8 @@ flowchart LR
 - [ ] automate versioning
 - [ ] ship behind flags
 - [ ] always be able to roll back
+- [ ] roll out in waves with bake time and automatic rollback
+- [ ] split breaking changes into prepare / activate / cleanup
 
 ---
 

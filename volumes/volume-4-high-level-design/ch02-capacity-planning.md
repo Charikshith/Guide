@@ -147,6 +147,20 @@ sequenceDiagram
 
 > **Goal:** Good design should ensure responsiveness at scale.
 
+#### Capacity and Goodput: What Happens Past the Limit
+
+**Capacity** is the most load a system can take before some resource (CPU, memory, connections, disk, network) runs out. Below it, throughput rises with load. At capacity, throughput flattens. *Past* it, things usually get **worse, not just flat**: queues grow, latency climbs, requests time out and are retried, and the system spends its effort on work nobody is waiting for any more. Measure **goodput** — requests answered *successfully and fast enough* — not raw throughput.
+
+```mermaid
+xychart-beta
+    title "Goodput vs offered load"
+    x-axis "offered load (requests per second)" [100, 200, 300, 400, 500, 600, 700, 800]
+    y-axis "goodput (good responses per second)" 0 --> 500
+    line [100, 200, 300, 400, 450, 380, 200, 50]
+```
+
+Capacity here is about 500 req/s: beyond it goodput collapses as timeouts and retries pile up. Scaling up (a bigger machine) or out (more machines) moves the peak right; load shedding and rate limiting ([Vol 3 Ch 14](../volume-3-low-level-design/ch14-resilience-patterns-idempotency-retries-backoff-circuit-breakers.md)) keep the curve flat at the peak instead of letting it fall.
+
 *(From AI Library chapter 8.)*
 
 ### Measuring Performance — SLAs, SLOs, SLIs, and Percentiles

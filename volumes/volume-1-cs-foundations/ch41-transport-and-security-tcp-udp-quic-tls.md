@@ -46,6 +46,10 @@ TCP (handshake, reliability, flow/congestion control), UDP, QUIC; TLS handshake 
 | **Authentication** (of the server; optionally the client with mTLS) | an X.509 certificate chain signed by a trusted CA, and a matching hostname |
 | Does **not** hide | IP addresses, timing, sizes, and (without ECH) the server name (SNI) |
 
+**Why TLS integrity matters even though TCP has a checksum** — TCP's 16-bit checksum is weak: studies of real traffic found it misses roughly 1 in 16 million to 1 in 10 billion corrupted packets. With 1 KB packets that is one undetected error somewhere between every 16 GB and every 10 TB transferred — routine at scale. TLS's authentication tag (an AEAD tag in TLS 1.3, an HMAC in older versions) rejects any record whose bits changed, whether by an attacker or a faulty router or NIC, so encrypting even internal traffic also buys end-to-end corruption detection. The CPU cost is small on modern processors with AES instructions — one more reason to use TLS everywhere, not only on the public internet.
+
+**Abstractions leak.** Libraries make a remote call look like a local function call, but the layers underneath show through when things go wrong: exhausted connection pools, sockets stuck in `TIME_WAIT`, expired certificates, DNS failures, congested routers dropping packets, retried non-idempotent requests. Knowing how TCP, TLS and DNS behave is what lets you debug those — and the fastest, most reliable network call is the one you don't make.
+
 ---
 
 ## Prereqs
@@ -85,6 +89,33 @@ sequenceDiagram
  TCP (HTTP/2): one byte stream   [s1][s2][s3 LOST][s1][s2] → everything waits for s3's resend
  QUIC:         separate streams  s1: ■■■■  s2: ■■■■  s3: ■ ✗ ■ (only s3 waits)
 ```
+
+**Flow control: the receiver advertises how much room it has left**
+
+```mermaid
+sequenceDiagram
+    participant S as Sender
+    participant R as Receiver (receive buffer 64 KB)
+    S->>R: segments (40 KB)
+    Note over R: app hasn't read yet → 24 KB free
+    R-->>S: ACK, window = 24 KB
+    S->>R: at most 24 KB more
+    Note over R: buffer full
+    R-->>S: ACK, window = 0 → sender pauses
+    Note over R: app reads 64 KB
+    R-->>S: window update = 64 KB → sender resumes
+```
+
+**Why distance limits throughput** — the sender can have at most one window of unacknowledged data in flight, and an ACK takes one round trip, so **max throughput ≈ window ÷ RTT**. With a 64 KB window: 10 ms RTT → about 52 Mbit/s; 100 ms RTT → about 5 Mbit/s, on the same link. Slow start also grows the window once per RTT, so a short RTT reaches full speed sooner:
+
+```mermaid
+flowchart LR
+    A["new connection:<br/>small congestion window"] --> B{"RTT"}
+    B -->|"10 ms (server nearby / CDN)"| C["window doubles every 10 ms →<br/>full bandwidth in ~0.1 s"]
+    B -->|"150 ms (other continent)"| D["window doubles every 150 ms →<br/>full bandwidth after ~1.5 s,<br/>and lower ceiling (window ÷ RTT)"]
+```
+
+This is why connections are reused (keep-alive, pools), why servers and CDN PoPs are placed near users, and why TCP's reliability costs throughput compared with raw UDP.
 
 **A certificate chain**
 

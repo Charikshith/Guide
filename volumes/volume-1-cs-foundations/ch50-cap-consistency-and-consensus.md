@@ -48,6 +48,8 @@ An algorithm is only correct *under a model* of what can go wrong. Three dimensi
 
 When you read about an algorithm, ask which model it assumes — then imagine how a real network, disk or GC pause could violate it.
 
+**The two generals problem — why "just confirm it" never ends** — two armies on opposite hills must attack at the same time, and can only talk through messengers who may be captured. General 1 sends "attack at dawn", but can't know it arrived. General 2 sends back a confirmation, but can't know *that* arrived — so it would need a confirmation of the confirmation, and so on forever. No finite number of messages over an unreliable channel guarantees both sides are certain. Real systems live with this: they make operations idempotent and retry, use timeouts, and settle agreement with protocols like 2PC and consensus that tolerate uncertainty instead of eliminating it.
+
 **Failure detection: slow and dead look the same**
 
 When a request gets no reply, the caller cannot tell a crashed server from a slow one or from a lost message. A timeout is therefore a *guess*: too short and you declare healthy nodes dead (and trigger needless failovers); too long and you wait on corpses. No failure detector can be both always-accurate and always-fast. Two ways to watch peers proactively:

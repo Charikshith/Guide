@@ -49,6 +49,50 @@ Shapes you'll hear about: the **pyramid** (this one); the **testing trophy** (in
 
 Policy: **quarantine** a flaky test immediately (don't let it train people to ignore red), file a ticket with an owner, fix or delete within days, and track the flake rate.
 
+**Scope and size are different questions**
+
+*Scope* is **what code a test verifies**: a *unit* test checks one small piece through its public interface (test behaviour and resulting state, not the exact sequence of internal calls, so refactoring doesn't break it); a *narrow integration* test checks one service's adapter against one real dependency (the repository against a real Postgres); a *broad* or *end-to-end* test checks a user scenario across several live services. *Size* is **what it needs to run** (Google's terms):
+
+| Size | Runs | Speed and flakiness |
+|------|------|---------------------|
+| **Small** | one process, no I/O, no sleeping, no network | milliseconds, deterministic |
+| **Medium** | one machine; local disk, `localhost` network, a database in a container | seconds; some timing risk |
+| **Large** | several machines or a shared environment | minutes; most flaky |
+
+Write the *smallest* test that can catch the bug at the scope you need. End-to-end tests are the most brittle and the hardest to diagnose (which of five services broke?), so keep them few and make each one a **user journey** — create an order, change it, cancel it — rather than many separate one-step tests.
+
+**Choosing a test double** — to shrink a test you replace a dependency:
+
+| Double | What it is | Resemblance to the real thing |
+|--------|-----------|-------------------------------|
+| **Real implementation** | the actual library or service | full — prefer it when it is fast, deterministic, and has no external dependencies |
+| **Fake** | a working lightweight version (an in-memory database, a local S3 emulator), ideally maintained by the dependency's owners | good |
+| **Stub** | returns canned answers whatever you pass | low |
+| **Mock** | records calls and asserts *how* it was called | low, and couples the test to implementation details |
+
+The less a double resembles reality, the less a passing test proves. Pair mocks with **contract tests**: the consumer records the request it sends and the response it expects; the provider's own test suite replays those contracts against the real implementation, so the mock can't silently drift from reality.
+
+**When the stakes are high, test the real thing in production.** Some behaviour is too costly to get wrong to trust doubles — for example "delete all of a user's data" under GDPR, where a silent failure can mean fines of up to 4% of annual turnover. Run an end-to-end check periodically *in production* against live services (create a synthetic user, purge it, verify nothing remains anywhere).
+
+**Check the design before writing code: formal specifications.** Tests only explore the cases people think of. A system at scale will eventually hit the rare interleavings nobody imagined. A *formal specification* in a language like **TLA+** describes the system as states and the steps between them; a **model checker** then explores *every* reachable interleaving and checks your properties — *safety* ("the two stores never disagree permanently") and *liveness* ("every write is eventually applied") — returning a step-by-step counterexample when one fails. Amazon used it on S3 and DynamoDB, Microsoft on Cosmos DB. Specify only the risky core (a replication or migration protocol), at a level of detail that still catches the bug.
+
+Example: migrating from store X to store Y with **dual writes** (write both, read X, backfill Y, then switch reads to Y). A model checker quickly finds two failures: a process that crashes between the two writes leaves them permanently different, and two instances writing concurrently can have their writes land in *opposite orders* in the two stores:
+
+```mermaid
+sequenceDiagram
+    participant I1 as Instance 1
+    participant X as Store X
+    participant Y as Store Y
+    participant I2 as Instance 2
+    I1->>X: write "bar"
+    I2->>X: write "foo"
+    I2->>Y: write "foo"
+    I1->>Y: write "bar"
+    Note over X,Y: X ends with "foo", Y ends with "bar" — they disagree forever
+```
+
+The fix is to stop writing to two places directly: write once to a log or queue that fixes a single global order, and have both stores apply it in that order (the [outbox / change-data-capture](../volume-4-high-level-design/ch12-event-driven-systems.md) pattern).
+
 ---
 
 ## Prereqs
@@ -200,6 +244,12 @@ flowchart LR
 2. **"How do you handle flaky tests?"**
    <details><summary>Answer</summary>Treat them as bugs. Detect them (run failures again, track flake rate per test); quarantine immediately so the main signal stays trustworthy; assign an owner and a deadline; find the root cause (time, shared state, ordering, concurrency, network, randomness) and fix it with determinism (injected clocks, isolated fixtures, awaiting real conditions); delete tests that provide no value. Never normalize "just rerun it".</details>
 
+3. **"Fake, stub or mock — which do you prefer?"**
+   <details><summary>Answer</summary>In order: the real implementation if it is fast and deterministic, then a fake (a working lightweight version, ideally maintained by the dependency's owners), and only then stubs or mocks. Stubs and mocks resemble the real thing least, so tests that rely on them prove less and break on refactors. If you do mock a service, back the mock with a contract test that the provider runs against its real implementation.</details>
+
+4. **"Can formal methods replace tests?"**
+   <details><summary>Answer</summary>No — they complement them. A model checker such as TLC for TLA+ explores every interleaving of a design and finds rare concurrency or failure bugs (a crash between two writes, writes applied in different orders) before code exists, which tests rarely catch. But it checks the model, not the code, so you still need tests to show the implementation matches it. Use formal specs for the small, risky core: replication, migrations, locking protocols.</details>
+
 ---
 
 ## Checklist
@@ -207,6 +257,8 @@ flowchart LR
 - [ ] keep tests fast & deterministic
 - [ ] isolate I/O in tests
 - [ ] use property tests for pure logic
+- [ ] choose the smallest test size and the most realistic double for each behavior
+- [ ] model-check risky designs (dual writes, migrations) before coding them
 
 ---
 

@@ -58,6 +58,16 @@ The short window makes the alert stop quickly once the problem is fixed.
 
 Put SLO status at the top, show deploys as annotations, and keep the same layout for every service.
 
+**Black-box and white-box monitoring** — *white-box* metrics come from inside the service (instrumented code: cache hits, queue depth, dependency latency) and help find causes. *Black-box* checks look from outside: **synthetic** probes run on a schedule from the regions your users are in and call your public endpoints like a user would. They catch what the service can't see about itself — a DNS outage or broken certificate looks, from inside, like "slightly fewer requests than usual" — and they exercise endpoints real users hit rarely. Measure each SLI as close to the user as you can afford: client-side timings include every hop, load-balancer metrics most of them, service metrics the least.
+
+**Events vs pre-aggregated metrics** — you can ship one event per occurrence (`{failure: 1, region: "eu-west"}`) and aggregate at query time, which is flexible but expensive to ingest and slow to query over months of data. Or **pre-aggregate**: the telemetry service, and even the local agent, sums counts into fixed periods (1 min, 5 min, 1 h) as data arrives. That cuts bandwidth, storage and query time by orders of magnitude, but you can never re-slice below the period you kept (a 1-hour rollup can't become 5-minute data) — so keep fine-grained data for a short time and coarse rollups for long.
+
+**Why the tail matters, in numbers (Little's law)** — the number of requests in flight = arrival rate × time each spends in the system. A service handling 10,000 req/s at 200 ms average needs about 10,000 × 0.2 = 2,000 concurrent workers (threads, connections). If just 1% of requests start taking 20 s (a congested switch, a lax timeout), those 100 req/s × 20 s add *another* 2,000 in flight — the service needs twice the threads to stand still. That's why you track p99/p99.9 and cap them with timeouts: the slow 1% can exhaust the pools that serve the other 99%.
+
+**Logs worth keeping: one wide event per unit of work** — instead of scattering dozens of log lines per request, build *one* structured event per request or message as it is processed (pass a context object down the call path) and emit it at the end: who and what, the outcome, durations of each step, and every downstream call's status and latency, plus the request/trace ID to join with other services' events. Strip personal data before logging. Control cost with dynamic log levels, **sampling** (keep every failure, sample successes), and rate limits on the log collector so one buggy deploy can't flood it.
+
+Metrics and traces can be seen as **views derived from these events**: a metric rolls counters from many events into a time series; a trace stitches together the span events that share a trace ID. Traces also give **resource attribution** — which customers drive load on which downstream services — useful for capacity planning, rate limits and billing.
+
 **Debugging with traces** — start from the symptom (an SLO alert or a slow p99), use an *exemplar* to jump from the latency histogram to a real slow trace, find the span that dominates (critical path), then read that span's logs via the trace ID. Compare slow traces with normal ones: what attribute is different (a tenant, a region, a payload size, a cache miss)?
 
 ---
@@ -208,6 +218,9 @@ flowchart LR
 2. **"What's an SLO vs SLA?"**
    <details><summary>Answer</summary>An SLO is an internal reliability target for a user-centric indicator (e.g. 99.9% of checkouts succeed within 800 ms over 30 days); it drives alerting and the error-budget policy. An SLA is an external contract with customers that specifies consequences (credits, refunds) if a level isn't met. SLAs are set looser than SLOs, so you're alerted and act well before a contractual breach.</details>
 
+3. **"Why care about p99 if the average is fine?"**
+   <details><summary>Answer</summary>Your heaviest users make the most requests, so they are the most likely to hit the tail; a page that fans out to 50 backend calls hits a p99 latency on most loads. Tail latency also eats capacity: by Little's law, requests in flight = rate × latency, so 1% of requests slowing from 200 ms to 20 s doubles the concurrent threads needed. Track p99/p99.9, cap them with timeouts and load shedding, and averages improve too.</details>
+
 ---
 
 ## Checklist
@@ -215,6 +228,8 @@ flowchart LR
 - [ ] emit all three signals
 - [ ] correlate via trace IDs
 - [ ] alert on SLO burn
+- [ ] add synthetic black-box checks for the public surface
+- [ ] log one wide, structured event per unit of work
 
 ---
 
