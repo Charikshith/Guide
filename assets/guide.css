@@ -12,6 +12,9 @@
 .guide-vol a .tick { margin-left: auto; color: var(--success); font-weight: 700; opacity: 0; }
 .guide-vol a.done .tick { opacity: 1; }
 
+/* "On this page": subsections sit indented under their section */
+.toc-list li.toc-sub a { padding: 4px 12px 4px 24px; font-size: 12.5px; }
+
 /* Progress */
 .chapter-card { position: relative; }
 .chapter-card .done-badge { position: absolute; top: 14px; right: 14px; background: var(--success-faint); color: var(--success); font-size: 11px; font-weight: 700;

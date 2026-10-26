@@ -13,8 +13,8 @@ m.querySelectorAll(":scope > h2").forEach(function(hd){
  while(n&&n.tagName!=="H2"&&n!==nav){var x=n.nextElementSibling;n.remove();n=x;}
  var p=hd.previousElementSibling;if(p&&p.tagName==="HR")p.remove();hd.remove();});
 var toc=document.getElementById("tocList");
-m.querySelectorAll(m.querySelector(":scope > h2")?":scope > h2":":scope > h1").forEach(function(hd){
- var li=document.createElement("li"),a=document.createElement("a");
+m.querySelectorAll(m.querySelector(":scope > h2")?":scope > h2, :scope > h3":":scope > h1").forEach(function(hd){
+ var li=document.createElement("li"),a=document.createElement("a");if(hd.tagName==="H3")li.className="toc-sub";
  a.href="#"+hd.id;a.textContent=hd.textContent;li.appendChild(a);toc.appendChild(li);});
 m.querySelectorAll("table").forEach(function(t){
  var w=document.createElement("div");w.className="table-wrapper";t.parentNode.insertBefore(w,t);w.appendChild(t);});

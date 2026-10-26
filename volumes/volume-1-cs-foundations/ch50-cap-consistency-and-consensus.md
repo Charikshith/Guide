@@ -34,6 +34,65 @@ Networks *do* partition, so P isn't optional. CAP really says: **during a partit
 
 **Why consensus?** Leader election, distributed locks, configuration, and replicated logs all need nodes to agree on *one* value even if some crash. The FLP result says that with fully asynchronous networks, no deterministic algorithm can guarantee agreement if even one node may fail — so real algorithms (Paxos, Raft) are always *safe* and make progress when the network is "stable enough", using timeouts. They need a **majority (quorum)**: 3 nodes tolerate 1 failure; 5 tolerate 2.
 
+**Safety and liveness** — every distributed algorithm promises two kinds of things. *Safety*: nothing bad ever happens (never two leaders in one term, never two different committed values). *Liveness*: something good eventually happens (an election eventually finishes, a write is eventually committed). FLP says you can't guarantee both in a fully asynchronous network, so Raft and Paxos never give up safety and only promise liveness when the network behaves.
+
+**System models — the assumptions behind every algorithm**
+
+An algorithm is only correct *under a model* of what can go wrong. Three dimensions:
+
+| Dimension | Options (weakest assumption last) | What real systems assume |
+|-----------|----------------------------------|--------------------------|
+| **Links** | *reliable* (every message delivered exactly once) · *authenticated reliable* (plus you know who sent it) · *fair-loss* (messages may be lost or duplicated, but keep resending and one gets through) | fair-loss — and build reliability on top: TCP adds retransmission and de-duplication, TLS adds authentication |
+| **Processes** | *crash-stop* (a crashed node never returns) · *crash-recovery* (it restarts, losing memory but keeping disk) · *Byzantine / arbitrary* (it may lie or misbehave) | crash-recovery. Byzantine tolerance needs **3f + 1 nodes to survive f traitors** (vs 2f + 1 for crashes) and is used by blockchains and safety-critical systems |
+| **Timing** | *synchronous* (known upper bound on message and processing delay) · *partially synchronous* (bounded most of the time) · *asynchronous* (no bound at all) | partially synchronous: GC pauses, page faults and congestion break any fixed bound now and then |
+
+When you read about an algorithm, ask which model it assumes — then imagine how a real network, disk or GC pause could violate it.
+
+**Failure detection: slow and dead look the same**
+
+When a request gets no reply, the caller cannot tell a crashed server from a slow one or from a lost message. A timeout is therefore a *guess*: too short and you declare healthy nodes dead (and trigger needless failovers); too long and you wait on corpses. No failure detector can be both always-accurate and always-fast. Two ways to watch peers proactively:
+
+- **Ping** — I ask you periodically "are you alive?" and expect an answer in time.
+- **Heartbeat** — you tell me periodically "I'm alive"; silence past a deadline marks you suspect.
+
+Use them when you must react quickly to a peer vanishing (leader liveness, cluster membership); otherwise detecting failure when you next call is enough. Adaptive detectors such as *phi-accrual* (Cassandra, Akka) output a suspicion level from the observed heartbeat-interval distribution instead of a fixed timeout.
+
+**Time and ordering**
+
+*Physical clocks lie.* A machine's quartz clock runs slightly fast or slow (**drift**, tens of ppm), so two clocks disagree at any instant (**skew**). **NTP** corrects the clock by comparing it with a server, estimating the network delay — and the correction can make the clock **jump backwards**, so an event that happened later can carry an earlier timestamp. Rules of thumb:
+
+- Measure durations (timeouts, latency) with a **monotonic clock**: it only moves forward, but is meaningless across machines.
+- Never order events on *different* machines by wall-clock timestamps unless you can bound the error (Spanner's TrueTime, [Chapter 47](ch47-acid-transactions-and-isolation.md)). Wall time is fine for human-readable logs.
+
+*Logical clocks* order events by causality instead of time. Event a **happened-before** b (a → b) if they are on the same process and a came first, or a is sending a message and b is receiving it, or there is a chain of such steps. Otherwise a and b are **concurrent** — neither could have influenced the other.
+
+| Clock | Rules | Guarantees | Can't do |
+|-------|-------|-----------|----------|
+| **Lamport clock** — one integer per process | increment before each local event; attach the value to every message sent; on receive, set `clock = max(local, received) + 1` | if a → b then L(a) < L(b). Break ties with the process id to get a total order everyone agrees on (handy for last-writer-wins) | L(a) < L(b) does **not** mean a → b; it can't detect concurrency |
+| **Vector clock** — one counter *per process* | increment your own slot on each event; send the whole vector; on receive, take the element-wise max, then increment your slot | a → b **iff** V(a) ≤ V(b) in every slot and < in at least one; if neither is ≤ the other, the events are concurrent — a conflict | size grows with the number of participants; real systems prune it or use *version vectors* / *dotted version vectors* (Riak) that track only replicas that write |
+| **Hybrid logical clock (HLC)** | physical time plus a logical counter for events within the same tick | close to wall time, yet still respects causality; fits in 64 bits | needs clocks to be roughly synchronized |
+
+Dynamo-style stores use vector-style versions to spot concurrent writes to the same key and return both siblings or merge them; CockroachDB and MongoDB use HLCs.
+
+**Broadcast: from best-effort to total order**
+
+Delivering one message to a whole group must be built from point-to-point links:
+
+| Kind | Promise | Typical implementation | Cost |
+|------|---------|------------------------|------|
+| Best-effort | if the sender stays up, everyone gets it | send to each member in turn | a sender crash mid-loop leaves some members without it |
+| Reliable | every live member gets it, even if the sender crashes | *eager*: each receiver re-sends it to everyone on first receipt | about N² messages |
+| Gossip | almost certainly everyone gets it | re-send only to a few random peers | probabilistic, tunable; scales to thousands of nodes |
+| **Total-order** | everyone gets every message *in the same order* | needs consensus — it is equivalent to consensus | a single sequencer/leader is a bottleneck, and it stops during partitions (CAP applies) |
+
+Raft's log replication is total-order broadcast. Give that up and any replica can accept writes — at the price of replicas temporarily diverging.
+
+**Coordination avoidance: strong eventual consistency and CALM**
+
+- **Strong eventual consistency** = every update eventually reaches every replica, *and* any two replicas that have received the same set of updates are in the same state, regardless of order. No consensus, no conflicts — if the data type's merge is commutative, associative and idempotent. Those data types are **CRDTs** (counters, sets, last-writer-wins and multi-value registers, maps); see [Volume 4, Ch 50 — Collaborative Docs](../volume-4-high-level-design/ch50-library-28-collaborative-docs.md). A periodic full-state exchange (*anti-entropy*) lets even an unreliable broadcast converge.
+- **The CALM theorem** (Consistency As Logical Monotonicity) tells you *when* you can skip coordination: a program can be consistent without coordination **if and only if it is monotonic** — new inputs only add to the output and never retract it. Adding to a set, taking a max, incrementing a counter: monotonic, coordination-free. Overwriting a value, deleting, or answering "is X absent?": not monotonic, so it needs coordination, or a redesign (e.g. tombstones plus version numbers turn a delete into an addition).
+- **Causal consistency** is the strongest model that stays available during partitions. A typical implementation (as in COPS): every client records the versions it has read; a write carries those dependencies; a replica receiving a replicated write *waits to apply it until its dependencies are applied locally*. Wrapping values in last-writer-wins registers (*causal+*) makes replicas converge even on concurrent writes. Example: a photo upload and the gallery post that references it — a replica will never show the post before the photo exists.
+
 **Classifying real systems (roughly)**
 
 | System | Under a partition | Notes |
@@ -91,6 +150,44 @@ sequenceDiagram
 <div class="fig">
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 160" role="img" aria-label="Consistency spectrum from strong to weak: linearizable, sequential, causal, read-your-writes, eventual" style="width:100%;max-width:800px;height:auto;font-family:inherit"><defs><marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="context-stroke"/></marker></defs><line x1="40" y1="56" x2="760" y2="56" stroke="var(--text-muted)" stroke-width="1.6" marker-end="url(#ar)" marker-start="url(#ar)"/><text x="40" y="34" font-size="13" text-anchor="start" fill="var(--success)" font-weight="700">strong</text><text x="760" y="34" font-size="13" text-anchor="end" fill="var(--danger)" font-weight="700">weak</text><circle cx="100" cy="56" r="7" fill="var(--success)" fill-opacity="1" stroke="var(--success)" stroke-width="1.6"/><text x="100" y="86" font-size="13" text-anchor="middle" fill="var(--text)" font-weight="600">linearizable</text><circle cx="250" cy="56" r="7" fill="var(--success)" fill-opacity="1" stroke="var(--success)" stroke-width="1.6"/><text x="250" y="86" font-size="13" text-anchor="middle" fill="var(--text)" font-weight="600">sequential</text><circle cx="400" cy="56" r="7" fill="var(--accent)" fill-opacity="1" stroke="var(--accent)" stroke-width="1.6"/><text x="400" y="86" font-size="13" text-anchor="middle" fill="var(--text)" font-weight="600">causal</text><circle cx="550" cy="56" r="7" fill="var(--accent)" fill-opacity="1" stroke="var(--accent)" stroke-width="1.6"/><text x="550" y="86" font-size="13" text-anchor="middle" fill="var(--text)" font-weight="600">read-your-writes</text><circle cx="700" cy="56" r="7" fill="var(--danger)" fill-opacity="1" stroke="var(--danger)" stroke-width="1.6"/><text x="700" y="86" font-size="13" text-anchor="middle" fill="var(--text)" font-weight="600">eventual</text><text x="40" y="130" font-size="12.5" text-anchor="start" fill="var(--text-muted)">slower, less available under partitions</text><text x="760" y="130" font-size="12.5" text-anchor="end" fill="var(--text-muted)">faster, always answers</text></svg>
 </div>
+
+**Lamport clocks: causality gives order, but not the reverse**
+
+```mermaid
+sequenceDiagram
+    participant P1
+    participant P2
+    participant P3
+    Note over P1: a: L=1
+    P1->>P2: msg (L=2)
+    Note over P2: receive: max(0,2)+1 = 3
+    Note over P3: e: L=1 (unrelated)
+    P2->>P3: msg (L=4)
+    Note over P3: receive: max(1,4)+1 = 5
+    Note over P1,P3: a → receive-on-P3, so 1 < 5 ✓<br/>a and e both have L=1 yet are concurrent — Lamport can't tell
+```
+
+**Vector clocks detect concurrency**
+
+```mermaid
+flowchart LR
+    A["P1 writes x<br/>[1,0,0]"] --> B["P2 reads it, writes x<br/>[1,1,0]"]
+    A --> C["P3 writes x without seeing P2<br/>[1,0,1]"]
+    B --> D{"compare [1,1,0] vs [1,0,1]"}
+    C --> D
+    D --> E["neither ≤ the other →<br/>concurrent: keep both siblings or merge"]
+```
+
+**Broadcast guarantees, weakest to strongest**
+
+```mermaid
+flowchart LR
+    BE["best-effort<br/>(sender must survive)"] --> RB["reliable<br/>(eager re-send, ~N² msgs)"]
+    RB --> GO["gossip<br/>(probabilistic, scales)"]
+    RB --> TO["total-order<br/>(= consensus: Raft, Paxos)"]
+    GO --> SEC["strong eventual consistency<br/>with CRDT merge"]
+    TO --> SMR["state machine replication<br/>(linearizable)"]
+```
 
 ---
 
@@ -184,6 +281,18 @@ flowchart LR
 2. **"Linearizable vs eventually consistent?"**
    <details><summary>Answer</summary>Linearizable: every operation appears to take effect at one instant between its start and end, and all clients see one order consistent with real time — it behaves like a single copy. It costs coordination (quorums), latency, and availability under partitions. Eventual: replicas may disagree for a while but converge when writes stop — fast and always available, but clients can see stale or out-of-order data, and conflicts need resolution.</details>
 
+3. **"Why can't you order events across machines with timestamps?"**
+   <details><summary>Answer</summary>Clocks drift and are only loosely synchronized by NTP, whose corrections can even move a clock backwards; two machines can disagree by milliseconds or more, so a later event can carry an earlier timestamp. Use logical clocks to capture causality: Lamport clocks give an order consistent with causality, vector clocks also detect concurrent (conflicting) events, and hybrid logical clocks stay close to wall time. Only systems with bounded clock error (Spanner's TrueTime) can safely order by physical time.</details>
+
+4. **"Lamport clock vs vector clock?"**
+   <details><summary>Answer</summary>A Lamport clock is one counter: if a happened before b then L(a) < L(b), and with a tie-breaker it gives a total order, but a smaller timestamp does not prove causality, so it can't detect conflicts. A vector clock keeps one counter per participant; comparing two vectors tells you whether one event happened before the other or whether they are concurrent. The price is size proportional to the number of participants.</details>
+
+5. **"How can a replica tell a slow node from a dead one?"**
+   <details><summary>Answer</summary>It can't with certainty: a missing reply could be a crash, a slow process (GC pause) or a lost message. Systems use timeouts, pings or heartbeats as an educated guess and tune them: too short means false failovers, too long means slow recovery. Adaptive detectors like phi-accrual adjust to observed heartbeat timing. Because suspicion can be wrong, algorithms must stay safe even when a "dead" node comes back — hence terms, epochs and fencing tokens.</details>
+
+6. **"What does the CALM theorem tell a system designer?"**
+   <details><summary>Answer</summary>That an operation can be made consistent without any coordination exactly when it is monotonic — it only ever adds information (set union, max, counters). Those parts can run on any replica and merge later (CRDTs). Non-monotonic operations — overwrites, deletes, checks for absence, enforcing "at most N" — need coordination such as consensus or locks, or a redesign that turns them into additions.</details>
+
 ---
 
 ## Checklist
@@ -191,6 +300,10 @@ flowchart LR
 - [ ] state CAP precisely
 - [ ] pick consistency per workload
 - [ ] know what a partition does
+- [ ] name the system model (links, process failures, timing) an algorithm assumes
+- [ ] explain why timeouts can't tell slow from dead
+- [ ] order events with Lamport or vector clocks, not wall clocks
+- [ ] spot which operations are monotonic and can skip coordination (CALM)
 
 ---
 

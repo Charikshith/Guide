@@ -48,6 +48,31 @@ Atomicity/Consistency/Isolation/Durability; transactions; isolation levels (read
 
 **Keep transactions short:** long transactions hold locks, block `VACUUM`, bloat tables, and raise conflict rates. Never wait for user input or call slow external APIs inside a transaction.
 
+**How a database actually enforces isolation: pessimistic vs optimistic**
+
+| Approach | How it works | Wins when | Costs |
+|----------|-------------|-----------|-------|
+| **Two-phase locking (2PL)** — pessimistic | Shared (read) locks can be held by many; an exclusive (write) lock by one. A transaction only *acquires* locks during its growing phase and only *releases* them in its shrinking phase. **Strict 2PL** keeps every lock until commit, so nobody ever reads uncommitted data and one abort never forces others to abort (no *cascading aborts*). | many conflicting writes: waiting is cheaper than redoing work | blocking; **deadlocks** (T1 waits for T2, T2 waits for T1) — the database finds the cycle in a wait-for graph and aborts a *victim* |
+| **Optimistic concurrency control (OCC)** | Run without locks, buffering writes in a private workspace. At commit, *validate*: did anything I read change since? If not, publish the writes; if so, abort and retry. Short internal *latches* still protect shared structures during validation — not the same as logical locks. | reads dominate and conflicts are rare | wasted work and retries when conflicts are common |
+| **MVCC** (above) | Readers get a snapshot; writers still use 2PL or OCC between themselves | read-only queries must never block or abort | old versions to garbage-collect |
+
+The version-column trick under *Fixing lost updates* is OCC applied to a single row: read version 42, write only if it is still 42 (a compare-and-swap), else retry.
+
+**Serializable vs strict serializable** — *serializable* only promises the result equals *some* serial order, which may not match real time (a transaction that committed later can appear earlier). *Strict serializable* adds the real-time rule: once a transaction commits, every transaction that starts afterwards sees it. It is serializability plus linearizability (see [Chapter 50](ch50-cap-consistency-and-consensus.md)); Spanner and CockroachDB-style systems advertise it.
+
+**Atomicity across machines: two-phase commit (2PC)**
+
+A WAL makes a transaction atomic inside *one* database. Once a transfer touches two databases (two banks, two shards, two services), you need a protocol so both commit or both abort:
+
+1. **Prepare.** A *coordinator* asks every *participant* "can you commit?". A participant that answers yes first makes the changes durable in a *prepared* state and keeps its locks. From that moment it has given up the right to decide alone.
+2. **Commit or abort.** If every vote is yes, the coordinator durably logs "commit" and tells everyone; any no or timeout means "abort". Once logged, the decision is final, and the coordinator retries until every participant acknowledges.
+
+The weak spot is the gap between the phases: if the coordinator crashes after participants voted yes, they are **blocked** — holding locks, unable to commit or abort — until it comes back. 2PC also costs two round trips plus forced log writes, and every participant must speak the protocol (the X/Open **XA** standard in relational databases; most queues, search engines and SaaS APIs don't). Making it fault-tolerant means replicating the coordinator's and participants' state with consensus (Paxos/Raft) so a replica can take over a stuck transaction. Agreeing on commit is actually a harder problem than ordinary consensus (*uniform* consensus): even a participant that later fails must not have decided differently.
+
+**Spanner: 2PC that doesn't block, and global time** — Spanner splits data into partitions; each partition is a Paxos group whose leader also runs 2PL for that partition. A cross-partition transaction runs 2PC between the group leaders, but since each leader's log is replicated by Paxos, a failed coordinator or participant is replaced by another replica of its group instead of blocking everyone. Read-only transactions use MVCC snapshots and take no locks. To give every transaction a globally meaningful timestamp, **TrueTime** returns an *interval* `[earliest, latest]` that is guaranteed to contain the real time (GPS and atomic clocks keep it to a few ms). On commit, Spanner waits until `earliest` has passed its chosen timestamp — **commit wait** — before releasing locks, so timestamp order matches real-time order: strict serializability. CockroachDB and YugabyteDB, lacking atomic clocks, use **hybrid logical clocks** (physical time + a logical counter) and restart reads that fall into the clock-uncertainty window.
+
+**When 2PC is not an option** — long-running steps (hours), services you don't control, or stores without XA. Then trade isolation for availability: commit locally and send a durable message ([outbox](../volume-4-high-level-design/ch12-event-driven-systems.md)), or run a **saga** — a chain of local transactions, each with a compensating action that undoes it on failure. Sagas are atomic in the end but not isolated: other requests can see the half-done state. A common patch is a **semantic lock** — mark touched records `PENDING` until the saga finishes, and make other operations wait, fail, or treat pending records specially.
+
 ---
 
 ## Prereqs
@@ -103,6 +128,40 @@ sequenceDiagram
 ```
  row id=1:  [v1 balance=100, created by tx 90, deleted by tx 95] → [v2 balance=150, created by tx 95]
  tx 93 (started before 95 committed) sees v1   ·   tx 97 sees v2   ·   VACUUM removes v1 once no one can see it
+```
+
+**Two-phase commit — and where it blocks**
+
+```mermaid
+sequenceDiagram
+    participant C as Coordinator
+    participant A as Bank A (participant)
+    participant B as Bank B (participant)
+    C->>A: PREPARE (debit €100)
+    C->>B: PREPARE (credit €100)
+    A-->>C: YES (prepared, locks held)
+    B-->>C: YES (prepared, locks held)
+    Note over C: log COMMIT durably — decision is now final
+    C->>A: COMMIT
+    C->>B: COMMIT
+    A-->>C: ACK
+    B-->>C: ACK
+    Note over A,B: if C crashed before sending COMMIT,<br/>A and B would wait with locks held — the blocking problem
+```
+
+**Spanner: Paxos groups + 2PL + 2PC**
+
+```mermaid
+flowchart LR
+    CL["client transaction<br/>touching partitions 1 and 2"] --> L1
+    subgraph G1["Partition 1 — Paxos group"]
+        L1["leader: lock manager (2PL)<br/>+ 2PC coordinator"] --- R1a["replica"] --- R1b["replica"]
+    end
+    subgraph G2["Partition 2 — Paxos group"]
+        L2["leader: lock manager (2PL)<br/>+ 2PC participant"] --- R2a["replica"] --- R2b["replica"]
+    end
+    L1 <-->|"2PC prepare / commit"| L2
+    TT["TrueTime: now() = [earliest, latest]"] -.->|"commit wait"| L1
 ```
 
 ---
@@ -206,6 +265,15 @@ flowchart LR
 2. **"How does MVCC work?"**
    <details><summary>Answer</summary>Each write creates a new row version tagged with the creating transaction's ID, and marks the old version as deleted by that ID. Each transaction reads with a snapshot that defines which transaction IDs count as committed and visible. So readers see a consistent past state without locking, and writers don't block readers. Write–write conflicts are still detected. Garbage collection (VACUUM, undo purge) reclaims versions no snapshot can see.</details>
 
+3. **"How does two-phase commit work, and what is its main weakness?"**
+   <details><summary>Answer</summary>A coordinator asks all participants to prepare; each makes its changes durable in a prepared state, keeps its locks, and votes. If all vote yes, the coordinator durably logs commit and tells everyone; otherwise it aborts. Its weakness is blocking: a participant that voted yes cannot decide alone, so if the coordinator dies between the phases, participants sit on locks until it recovers. It is also slow (two round trips plus forced writes) and needs every participant to implement it (XA). Spanner fixes the blocking by replicating each participant and the coordinator with Paxos; long-running or cross-company flows use sagas instead.</details>
+
+4. **"Pessimistic or optimistic concurrency control?"**
+   <details><summary>Answer</summary>Pessimistic (two-phase locking) blocks conflicting transactions up front; it wins when conflicts are frequent, because waiting is cheaper than redoing work, but it brings deadlocks that the database must detect and break by aborting a victim. Optimistic (OCC) runs without locks and validates at commit, aborting on conflict; it wins for read-heavy, low-conflict workloads. Most databases add MVCC on top so read-only transactions never block or abort, and use 2PL or OCC only between writers.</details>
+
+5. **"What is strict serializability, and how does Spanner provide it across data centers?"**
+   <details><summary>Answer</summary>Serializability plus real-time order: a transaction that starts after another commits must see it. Spanner timestamps transactions with TrueTime, which returns an uncertainty interval instead of a single instant, and waits out that uncertainty before releasing locks (commit wait). Any later transaction therefore gets a strictly larger timestamp, so timestamp order equals real-time order everywhere.</details>
+
 ---
 
 ## Checklist
@@ -213,6 +281,9 @@ flowchart LR
 - [ ] name the ACID properties
 - [ ] pick an isolation level deliberately
 - [ ] keep transactions short
+- [ ] explain 2PL vs OCC vs MVCC and when each wins
+- [ ] walk through 2PC and its blocking failure
+- [ ] know when to use a saga instead of 2PC
 
 ---
 
