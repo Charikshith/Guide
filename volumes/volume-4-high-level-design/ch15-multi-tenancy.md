@@ -46,6 +46,39 @@ Real SaaS usually mixes them: pool for the long tail, silo for the biggest or mo
 
 **Tenant-aware routing** — resolve the tenant from the subdomain (`acme.app.com`), a header, or the token, then look up its placement (`tenant → shard / region / stack`) in a small, cached **tenant catalog**, and route there.
 
+### Fault Isolation: Bulkheads, Shuffle Sharding and Cells
+
+Redundancy protects you from a *machine* failing. It does nothing against a fault that every copy shares: a **poison pill** request that crashes whichever server handles it, or a **noisy neighbor** tenant whose heavy workload slows everyone down. If any request can land on any server, one bad tenant can take out the whole fleet — the blast radius is everything. The fix is to partition *who can hurt whom*.
+
+**Bulkheads (plain partitioning)** — split the fleet into fixed groups and pin each tenant to one group. With 6 servers in 3 groups of 2, a poisonous tenant can only take down its own group: one third of tenants are affected instead of all. More groups means a smaller blast radius — but every tenant that shares the bad tenant's group still suffers fully.
+
+**Shuffle sharding** — instead of fixed groups, give each tenant its own *random combination* of servers (a virtual shard). With 6 servers and 2 per tenant there are C(6, 2) = 15 possible combinations instead of 3 fixed groups, so two tenants rarely share *both* servers. If tenant X's requests crash its two servers, a tenant whose combination overlaps on one server still has the other — combined with a load balancer that ejects bad servers and clients that retry, it barely notices. The numbers grow fast: 100 servers, 5 per tenant → about 75 million combinations, so almost no two tenants are fully exposed to each other. Route-53-style services use exactly this for stateless fleets.
+
+```mermaid
+flowchart TB
+    subgraph Fixed["Bulkheads: 3 fixed groups"]
+        g1["group 1: s1 s2"]
+        g2["group 2: s3 s4 ← bad tenant X + tenant Y"]
+        g3["group 3: s5 s6"]
+    end
+    subgraph Shuffle["Shuffle sharding: random pairs"]
+        x["tenant X → s2, s5"]
+        y["tenant Y → s5, s6 (shares only s5)"]
+        z["tenant Z → s1, s4 (shares nothing)"]
+    end
+```
+
+**Cell-based architecture** — take the idea all the way down the stack: run several complete, independent copies of the *whole* system (load balancers, services, databases, queues) called **cells**, and assign each tenant (or region, or workload) to one cell through a thin routing layer that reads the tenant catalog. A bug, bad deploy, poison pill or overload stays inside one cell. Deploy to one cell first, then the rest in waves.
+
+The underrated benefit is a **fixed maximum cell size**. You never grow a cell past the size you have load-tested; to add capacity you add cells. No surprise scaling cliffs, predictable performance, and test results that stay true as the business grows. The costs: a routing layer that must be very simple and very available, moving tenants between cells, and cross-cell queries for global features (admin views, analytics). Azure Storage stamps, Slack, and AWS's internal services are cell-based; Azure calls the same pattern *deployment stamps* ([Ch 13](ch13-cloud-design-patterns.md)).
+
+| Technique | Isolates | Blast radius of one bad tenant | Cost |
+|-----------|---------|-------------------------------|------|
+| None (shared pool) | nothing | 100% | lowest |
+| Bulkheads | fixed groups of servers | 1 / number of groups | low |
+| Shuffle sharding | random server combinations | tiny, and rarely total for anyone else | low — stateless services |
+| Cells | the entire stack | 1 / number of cells | highest — duplicate everything, plus routing |
+
 *(From AI Library chapter 13.)*
 
 The diagram, worked example, exercises, mini-project, design prompt, open-source reading, interview questions and checklist below are this chapter's practice layer.
@@ -259,6 +292,12 @@ flowchart TB
 2. **"How do you prevent tenant data leaks?"**
    <details><summary>Answer</summary>Defense in depth: derive the tenant from the authenticated token; set a tenant context once per request; make data access impossible without a tenant (a scoped repository API); enforce it again in the database with RLS; include the tenant in every cache key, index filter, queue message, and storage path; use per-tenant encryption keys for sensitive tiers; and continuously run automated cross-tenant access tests. Log and alert on authorization denials.</details>
 
+3. **"One customer's malformed request keeps crashing your servers. How do you limit the damage?"**
+   <details><summary>Answer</summary>Redundancy doesn't help: every server crashes on the same request. Limit the blast radius by partitioning who can reach which servers. Bulkheads pin tenants to fixed groups; shuffle sharding gives each tenant a random subset of servers, so almost no other tenant shares all of the bad tenant's servers, and retries plus health-check ejection hide the rest. For the strongest isolation, use cells: complete copies of the stack with tenants routed to one cell. Then fix the bug and quarantine the poison input.</details>
+
+4. **"Why cap the size of a cell?"**
+   <details><summary>Answer</summary>So the largest cell you run is one you have already load-tested. Growth is handled by adding cells, not by growing them, so there are no unknown scaling limits in production, and each cell's failure affects a known, bounded share of customers. The price is a routing layer, tenant moves between cells, and cross-cell features.</details>
+
 ---
 
 ## Checklist
@@ -266,6 +305,7 @@ flowchart TB
 - [ ] isolate data per tenant
 - [ ] test cross-tenant access
 - [ ] plan per-tenant scaling
+- [ ] shrink the blast radius with bulkheads, shuffle sharding or cells
 
 ---
 

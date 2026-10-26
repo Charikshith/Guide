@@ -152,6 +152,44 @@ Cap how many requests any one client (IP, user, API key) can send in a window. P
 
 When you can't keep up, **tell upstream to slow down** rather than silently dropping or queuing forever. Standard mechanisms: HTTP 429, gRPC `RESOURCE_EXHAUSTED`, blocking writes on a bounded queue.
 
+### Choosing Timeouts
+
+**Assume the default is "wait forever".** Many popular clients ship with no timeout at all: browser `XMLHttpRequest` (0 = none), the original `fetch` (needs an `AbortController`), Python `requests`, Go's default `http.Client`. Others have very lax ones (.NET `HttpClient`: 100 s). A call that never returns holds a thread, a socket and a pooled connection forever — the classic resource leak behind slow-motion outages. Set a timeout on every network call, including calls made inside third-party libraries.
+
+**Pick the number from data, not instinct.** Decide what share of calls that *would* have succeeded you are willing to cut off — the *false-timeout rate* — and use that percentile of the dependency's latency. Accept 0.1% false timeouts → time out at the dependency's **p99.9**. Then check the budget end to end: a caller's timeout must be larger than its callee's timeout plus its own work, or the caller gives up while the callee is still working (pass a *deadline* down the chain, as gRPC does).
+
+**Measure every integration point.** Wrap outbound calls in one shared helper (or let a sidecar proxy do it) that sets the timeout and records duration, status code and whether it timed out — otherwise you can't debug the dependency when it misbehaves.
+
+**Retry later, not now** — for batch or background work, a failed request can be parked in a *retry queue* and processed later by the same or another worker, instead of blocking a thread on backoff.
+
+### Protecting Yourself from Your Callers
+
+Timeouts, retries and circuit breakers protect you from *downstream* failures. Overload comes from *upstream*, and needs its own defences:
+
+| Defence | Decides based on | How | Good for |
+|---------|-----------------|-----|----------|
+| **Load shedding** | *local* state of this process (in-flight requests, queue length, CPU) | when over capacity, fail fast with `503` instead of letting latency explode; drop low-priority traffic first, or the oldest requests (they'll time out and be retried anyway) | protecting a server from overload of any origin |
+| **Load leveling** | — | put a queue between callers and the service; it works at its own pace | spiky load where callers can wait |
+| **Rate limiting** | *global* state: a quota per API key, user or IP across all instances | reject over-quota requests with `429` + `Retry-After` | fairness, abuse protection, enforcing pricing tiers |
+| **Autoscaling** | load metrics | add capacity | sustained growth — combine with shedding, which buys time while new instances start |
+
+Rejecting is **not free**: the server may still pay for the TLS handshake and for reading the request to find the API key, so shedding and rate limiting delay collapse but can't stop a big enough flood. That is also why rate limiting only partially protects against **DDoS**; the real defence is scale — one large shared edge/gateway (a CDN, a cloud edge service) absorbs attacks aimed at any of the services behind it, and its cost is shared across all of them.
+
+A distributed rate limiter keeps counters in a shared store; use atomic increments (`INCR`) rather than transactions, batch updates in memory and flush them periodically, and if the store is unreachable keep enforcing the **last known state** instead of rejecting everything (see Rate Limiting above and [Vol 4 Ch 8](../volume-4-high-level-design/ch08-rate-limiting-throttling-and-backpressure.md)).
+
+### Static Stability and Constant Work
+
+**Static stability** — a system should keep doing its job when a dependency it needs only for *changes* is down. The usual case is a **control plane / data plane** split: the data plane serves every request (the gateway, the load balancer, the rate limiter); the control plane manages its configuration (routes, API keys, quotas). If the data plane can't start or can't serve without reaching the control plane, the system is only as available as the product of the two (`0.9999 × 0.99 ≈ 0.9899`). So the data plane keeps a **local copy** of the last good configuration and keeps serving with it when the control plane is unreachable. The same idea: serve stale DNS or cache entries when the source is down; a rate limiter that remembers its last counters.
+
+**Watch for scale imbalance** — the data plane is huge and the control plane is small. If thousands of data-plane instances restart together and all ask the control plane for their full configuration, they knock it over — and then can't start. Two common fixes:
+
+- **Snapshot in a file store:** the control plane periodically writes its *entire* state to S3/Blob storage; data-plane instances read it from there. The file store absorbs the load; the control plane never sees the stampede.
+- **Push, not pull:** the control plane pushes changes (or small deltas) to connected data-plane instances at its own pace, so it slows down rather than falls over; new instances load the snapshot first, then ask only for the recent delta.
+
+**Constant work** — systems that behave differently under stress (a "slow path" that only runs during overload, a flood of individual config updates after a big change) fail in ways nobody tested. Prefer designs that do **the same amount of work every time**, however much changed: e.g. the control plane rewrites the full configuration file every 10 seconds, changed or not, and every data-plane instance reads all of it every 10 seconds. It costs more on a quiet day, but load is flat and predictable, a corrupt file heals itself on the next cycle, and rolling back a bad change is just writing the old file again. Pre-allocating capacity for the maximum number of tenants in a cell is the same idea. A related rule: keep the number of **operating modes** small — which is one reason data planes favour simple key-value stores with predictable latency over relational query planners.
+
+**Close the loop** — a control plane that pushes configuration but never checks it was applied is open-loop. Like a thermostat, it should *monitor* the data plane, *compare* with the desired state, and *act* (re-push, restart, eject a stale node). Kubernetes controllers and a deployment pipeline that watches health and rolls back are closed loops.
+
 *(From AI Library chapter 6.)*
 
 ---
@@ -361,6 +399,15 @@ flowchart LR
 2. **"How does a circuit breaker recover?"**
    <details><summary>Answer</summary>After it opens, it fails calls immediately for a cooldown period, giving the dependency room to recover and protecting the caller's resources. When the cooldown expires it goes half-open and lets a limited number of trial requests through. If they succeed, it closes and normal traffic resumes, with counters reset. If a trial fails, it opens again for another cooldown (often with growing cooldowns).</details>
 
+3. **"How do you choose a timeout?"**
+   <details><summary>Answer</summary>From the dependency's latency distribution and the share of slow-but-successful calls you're willing to abandon: accept 0.1% false timeouts, so use about its p99.9. Make sure each caller's timeout exceeds its callee's timeout plus its own work (or propagate a deadline), never rely on library defaults (several are infinite), and record duration and timeouts for every outbound call.</details>
+
+4. **"Load shedding vs rate limiting?"**
+   <details><summary>Answer</summary>Load shedding looks only at the server's own state — in-flight requests, queue depth — and rejects excess work with 503 so it can finish what it already accepted; it protects against overload from any cause. Rate limiting enforces a quota per client across the whole fleet, so it needs shared state, and returns 429 with Retry-After; it gives fairness and abuse protection. Neither is free, because rejecting still costs TLS and parsing, so pair them with autoscaling and, for DDoS, a large shared edge.</details>
+
+5. **"What is static stability?"**
+   <details><summary>Answer</summary>The property that the request-serving part of a system keeps working, with its last known configuration, when the parts it depends on for changes (control plane, config service, DNS, rate-limit store) are unavailable. You get it by caching the last good state locally, distributing config through a highly available file store, and avoiding designs where startup or serving needs a live call to the control plane.</details>
+
 ---
 
 ## Checklist
@@ -368,6 +415,9 @@ flowchart LR
 - [ ] idempotent writes
 - [ ] back off with jitter
 - [ ] fail fast with a breaker when downstream is down
+- [ ] set every timeout from the dependency's latency percentiles
+- [ ] shed load and rate-limit to protect against callers
+- [ ] keep the data plane serving when the control plane is down
 
 ---
 

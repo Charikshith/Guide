@@ -366,6 +366,47 @@ In this sketch every box is a single point of failure. Each fix below adds redun
 
 **Trade-off:** every redundant part costs money and adds complexity (replication lag, failover logic, more to monitor). Spend redundancy where an outage costs more than the redundancy does, and rehearse the failover so you know it works.
 
+### What Actually Breaks Production Systems
+
+A **fault** is something going wrong inside or under your system — a disk dies, a dependency times out. A **failure** is when users no longer get the service they were promised. Resilience engineering is turning faults into non-failures. Most outages are not exotic; they come from a short list:
+
+| Cause | What it looks like | First defence |
+|-------|-------------------|---------------|
+| **Hardware** | disks, memory, NICs, power, a whole data center | redundancy across failure domains |
+| **Bad error handling** | errors swallowed, a too-broad `catch` that kills the process, a `TODO` in a handler. Studies of real outages in distributed databases found most *catastrophic* failures came from mishandled non-fatal errors — bugs that simple tests would have caught | test the error paths, not just the happy path |
+| **Configuration changes** | a bad value, or a valid one that switches on a rarely-used, broken code path; often lands *hours later* when the code first reads it | treat config like code: version it, review it, validate it on change, roll it out gradually |
+| **Single points of failure** | including humans running manual runbooks, DNS, and an expired TLS certificate | automate, add redundancy, monitor expiry dates; otherwise shrink the blast radius |
+| **Network trouble** | not clean outages but *slow* calls and partial packet loss | timeouts everywhere ([Vol 3 Ch 14](../volume-3-low-level-design/ch14-resilience-patterns-idempotency-retries-backoff-circuit-breakers.md)) |
+| **Resource leaks** | memory, threads, file handles, pooled connections never returned (often a call with no timeout) — the process gets slower and slower | timeouts, bounded pools, leak alerts, a watchdog that restarts a degraded instance |
+| **Load surges** | daily peaks, scrapers, retries, DDoS | autoscaling plus load shedding and rate limiting |
+| **Cascading failures** | one replica fails, its load moves to the others, they overload and fail too | headroom, load shedding, retry budgets, circuit breakers |
+
+**Gray failures** — the most dangerous are failures nobody can see clearly: a node that is up but slow, a link dropping 2% of packets, a disk with rising latency. Health checks pass, yet users suffer. Watch latency percentiles and error rates *as clients see them*, not only "is it up".
+
+**Metastable failures** — sometimes a system stays broken *after the trigger is gone*. Example: replica B drops out briefly; A takes double load and slows down; clients time out and retry, adding still more load; A gets ejected; B comes back alone and gets flattened the same way. The original fault has healed, but a feedback loop (retries, cache misses, queue backlogs) keeps the system in its bad state. Usually only a big intervention breaks the loop — shedding most traffic, pausing retries, warming caches before letting traffic back. Prevention beats cure: retry budgets, load shedding, circuit breakers, and capacity headroom stop the loop from forming.
+
+```mermaid
+flowchart LR
+    T["trigger: replica B<br/>drops out briefly"] --> L["replica A gets<br/>double the load"]
+    L --> S["A slows down"]
+    S --> R["clients time out<br/>and retry"]
+    R --> X["even more load"]
+    X --> S
+    X --> E["A ejected; B returns alone<br/>and is flattened too"]
+    E --> L
+```
+
+**Prioritise with a risk matrix** — you can't defend against everything. Score each fault by **likelihood × impact**: handle likely, high-impact faults first; accept rare, low-impact ones. Then either lower the likelihood (better tests, safer deploys) or lower the impact (redundancy, isolation, graceful degradation).
+
+**When redundancy actually helps** — adding a spare doesn't automatically raise availability. It only does if:
+
+1. the added complexity (load balancer, failover logic) causes fewer outages than it prevents;
+2. the system reliably detects which copies are healthy (health checks — slow detection means users see errors meanwhile);
+3. the system can run *degraded* — the survivors have the capacity to absorb the failed part's load;
+4. it returns to full redundancy — failed instances are replaced automatically.
+
+And the copies must not fail **together**: replicas in one zone share power and network, so a zone outage takes them all. Availability zones (separate buildings close enough for synchronous replication) protect against that; regions protect against regional disasters, at the cost of asynchronous replication and multi-region complexity. Multi-region is usually driven by latency or data-residency laws more than by fear of losing a whole region.
+
 *(From AI Library chapter 9.)*
 
 The diagram, worked example, exercises, mini-project, design prompt, open-source reading, interview questions and checklist below are this chapter's practice layer.
@@ -527,6 +568,12 @@ flowchart TB
 2. **"What does 99.99% allow per year?"**
    <details><summary>Answer</summary>About 52.6 minutes of downtime per year (~4.4 minutes per month). That is too little time for a human to notice, diagnose, and fix most problems, so it requires automatic failover, redundancy across zones, safe deploys, and fast rollbacks.</details>
 
+3. **"What is a metastable failure and how do you prevent one?"**
+   <details><summary>Answer</summary>A failure that persists after its trigger has gone, because a feedback loop keeps the system overloaded: a brief outage causes timeouts, timeouts cause retries, retries add load, so the system never recovers on its own. Prevent it with retry budgets (retry at one layer, cap retries as a share of traffic), backoff with jitter, load shedding, circuit breakers and spare capacity. Once in it, you usually need a large action — shed or block most traffic, then ramp back up.</details>
+
+4. **"Adding a second instance didn't improve availability. Why might that be?"**
+   <details><summary>Answer</summary>Redundancy only helps if failures are detected quickly, the survivor has the capacity to run alone, failed copies are replaced, and the copies don't fail together. Two instances in the same zone, behind a health check that never fails, where one alone can't carry peak load, add complexity without adding availability. Spread them across zones, size for N−1, and test the failover.</details>
+
 ---
 
 ## Checklist
@@ -534,6 +581,9 @@ flowchart TB
 - [ ] design for statelessness
 - [ ] spread across failure domains
 - [ ] compute availability correctly
+- [ ] list the common causes of outages and a defence for each
+- [ ] recognise gray and metastable failures
+- [ ] rank risks by likelihood × impact
 
 ---
 
