@@ -189,6 +189,75 @@ flowchart LR
     TO --> SMR["state machine replication<br/>(linearizable)"]
 ```
 
+**Linearizable: each operation takes effect at one instant between its start and its end**
+
+```mermaid
+sequenceDiagram
+    participant A as Client A
+    participant L as Leader (single copy)
+    participant B as Client B
+    Note over L: x = 1
+    A->>L: write x = 3 (starts)
+    B->>L: read x (overlaps the write)
+    L-->>B: 1 or 3 — either is legal while the write is in flight
+    Note over L: write takes effect here
+    L-->>A: write done
+    B->>L: read x (starts after the write finished)
+    L-->>B: must be 3 — never 1 again
+```
+
+**Sequential: everyone sees the same order, but not at the same time**
+
+```mermaid
+sequenceDiagram
+    participant Ld as Leader
+    participant F1 as Follower 1
+    participant F2 as Follower 2 (lagging)
+    participant C as Client pinned to F2
+    Ld->>F1: x=1, then x=3, then x=4
+    Ld->>F2: x=1, then x=3 (x=4 not yet)
+    C->>F2: read x
+    F2-->>C: 3 — stale, but never out of order
+    Note over F1,F2: both followers apply 1 → 3 → 4 in the same order —<br/>a client hopping between them could go back in time (eventual)
+```
+
+**Concurrent writes: last-writer-wins vs multi-value register**
+
+```mermaid
+flowchart LR
+    W1["replica A: x = 44<br/>(Lamport ts 1, vector [1,0])"] --> M{"replicas exchange<br/>and merge"}
+    W2["replica B: x = 48<br/>(Lamport ts 3, vector [0,1])"] --> M
+    M -->|"LWW: keep higher timestamp"| R1["x = 48 everywhere<br/>(44 silently lost)"]
+    M -->|"multi-value: vectors are concurrent"| R2["x = {44, 48}<br/>the application resolves"]
+```
+
+**Causal consistency: a replica waits for a write's dependencies**
+
+```mermaid
+sequenceDiagram
+    participant C as Client
+    participant R1 as Local replica
+    participant R2 as Remote replica
+    C->>R1: read photo:7 → version 12 (remember dep photo:7@12)
+    C->>R1: write post:9 = "see photo 7", deps {photo:7@12}
+    R1-->>C: ok, post:9@20
+    R1->>R2: replicate post:9@20 with deps {photo:7@12}
+    Note over R2: photo:7@12 not here yet → hold post:9
+    R1->>R2: replicate photo:7@12
+    Note over R2: dependency met → apply photo, then post<br/>(no reader ever sees the post without the photo)
+```
+
+**A missing reply has three possible causes the caller can't tell apart**
+
+```mermaid
+flowchart LR
+    C["client sends request,<br/>no reply before the timeout"] --> Q{"what happened?"}
+    Q --> L["request lost on the way<br/>(server never saw it)"]
+    Q --> D["server crashed<br/>(maybe after doing the work)"]
+    Q --> S["server or network just slow<br/>(the reply is still coming)"]
+    L & D & S --> T["all look identical → timeouts are guesses;<br/>retries need idempotency"]
+```
+
 ---
 
 ## Example

@@ -509,6 +509,35 @@ http {
 
 **Connection draining.** When a backend is removed or deployed, stop sending it new requests but let in-flight ones finish before shutting it down, so users do not see errors during rollouts.
 
+**When health checks lie: fail open.** A bad threshold, a bug in the `/health` handler, or a shared dependency blip can make *every* backend look unhealthy at once. A naive balancer then empties its pool and takes the whole service down by itself. Good balancers notice that "most of my backends are failing" is more likely a broken check than a dead fleet, and **ignore health checks** above a threshold, spreading traffic over all backends (Envoy calls this the *panic threshold*).
+
+**Let a sick process restart itself.** Some degradations are slow and rare — a memory leak that eventually forces heavy swapping. Instead of complex recovery code, run a **watchdog** thread that checks a vital sign (free memory, a stuck event loop) and deliberately crashes or restarts the process once it stays past a threshold. The balancer drains it, the orchestrator restarts it, and the system heals while engineers find the root cause. The watchdog itself must be well tested — a buggy one restarts everything in a loop.
+
+**Why balancing on load is harder than it looks.** If the balancer routes by each server's reported load, but that report is cached for a few seconds, a newly added server reporting 0 gets *all* the traffic until its next report, then reports overload and gets none — it oscillates (*herding*). Purely random choice beats stale load data; the best of both is **power of two random choices**: pick two servers at random and send the request to the less loaded one.
+
+**Redundancy math.** With N servers behind a balancer, the service is down only if *all* are down: availability = `1 − (failure rate)^N`. Two 99% servers give `1 − 0.01² = 99.99%` — each independent server adds its "nines". Real gains are lower: the balancer takes time to remove a failed server, failures are often correlated, and the survivors must have the capacity to absorb the load.
+
+#### Inside a Network (L4) Load Balancer
+
+An L4 balancer owns a **virtual IP (VIP)**; clients only ever see the VIP. For each new TCP connection it picks a backend by **hashing the connection 4-tuple** (source IP and port, destination IP and port) — usually with consistent hashing so adding a backend disturbs few existing connections — then forwards that connection's packets, rewriting addresses (NAT).
+
+- **Direct server return (DSR).** Responses are usually much larger than requests. With DSR, the balancer forwards only the inbound packets, and the backend replies **straight to the client** using the VIP as its source address, so the balancer handles a fraction of the bytes.
+- **Scaling the balancer itself: Anycast + ECMP.** Several balancer machines announce the *same* VIP to the data center's edge routers with equal BGP weight (Anycast). The routers spread connections over them with **equal-cost multi-path routing**, which hashes each connection consistently so all its packets reach the same balancer. Google's Maglev and AWS's Network Load Balancer work this way.
+- **Why an L4 tier in front of L7.** An L4 balancer just shuffles packets, so it is very fast but can't terminate TLS or look at HTTP. A common layout is L4 (internet-facing, cheap per packet, absorbs volumetric attacks such as **SYN floods** — huge numbers of half-opened TCP connections) in front of a pool of L7 proxies that do TLS, routing and retries.
+- **Client-side balancing.** For internal traffic the balancing can move into each client's **sidecar proxy** (a service mesh, [Ch 10](ch10-service-mesh-and-service-discovery.md)), removing the central balancer — at the price of a control plane to configure all the sidecars.
+
+```mermaid
+flowchart LR
+    C["clients"] --> R["edge routers<br/>(ECMP)"]
+    R --> LB1["L4 LB #1<br/>announces VIP"]
+    R --> LB2["L4 LB #2<br/>announces VIP"]
+    LB1 -->|"hash(4-tuple)"| S1["server"]
+    LB1 --> S2["server"]
+    LB2 --> S2
+    LB2 --> S3["server"]
+    S2 -. "DSR: reply goes straight<br/>to the client, source = VIP" .-> C
+```
+
 #### From Nothing to a Running Server: SSH, a Runtime and a Process Manager
 
 Before you can put anything behind a load balancer, you need one working server. This walk-through shows the manual steps on any cloud provider (the first-server experience on DigitalOcean, AWS, Google Cloud and others is nearly identical). A server like this is called a **virtual private server (VPS)**; DigitalOcean calls it a *droplet*, AWS an *EC2 instance*.

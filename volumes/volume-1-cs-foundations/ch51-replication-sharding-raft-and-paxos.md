@@ -178,6 +178,22 @@ flowchart LR
     CP -.-> T
 ```
 
+**CRAQ: any node answers reads, asking the tail only when its copy is dirty**
+
+```mermaid
+sequenceDiagram
+    participant C as Client
+    participant M as Middle node
+    participant T as Tail
+    Note over M: holds k: v1 (clean), v2 (dirty — not yet acked by tail)
+    C->>M: read k
+    M->>T: which version of k is committed?
+    T-->>M: v1
+    M-->>C: v1 (still linearizable)
+    T-->>M: ack for v2 travels back up the chain
+    Note over M: v2 now clean → later reads answered locally with v2
+```
+
 **Gossip spreading a membership change**
 
 ```

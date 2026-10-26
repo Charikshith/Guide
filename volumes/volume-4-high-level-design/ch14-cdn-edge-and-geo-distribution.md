@@ -112,6 +112,26 @@ flowchart TD
 
 Requests are routed to the nearest edge server.
 
+#### The CDN as an Overlay Network
+
+It is tempting to think a CDN is "just a cache". Its bigger value is the **network** it runs on top of the internet — an *overlay*:
+
+- **The internet routes for reachability, not speed.** BGP picks paths mostly by the number of networks crossed, ignoring latency and congestion. A CDN measures its own paths continuously and routes traffic between its PoPs along the fastest, least congested ones.
+- **PoPs sit at internet exchange points**, where ISPs interconnect, so a user's packets reach the CDN within a few short hops, and nearly the whole journey to the origin runs over the CDN's own links.
+- **Short first hop, warm long haul.** TCP and TLS handshakes and slow start all cost round trips (see [Vol 1 Ch 41](../volume-1-cs-foundations/ch41-transport-and-security-tcp-udp-quic-tls.md)). The user handshakes with a PoP a few milliseconds away; the PoP talks to the origin over **pre-opened, already-warmed connections** with large windows. Throughput is roughly window ÷ RTT, so shortening the RTT the user sees raises their bandwidth even for content that can't be cached.
+- **Dynamic and API traffic benefits too** (often sold as *dynamic site acceleration*), and with the CDN as the front door the origin is hidden behind it, which is what makes CDN-level DDoS protection possible.
+- **Edge count vs hit ratio:** more edge locations bring content closer to more users but split the traffic, so each edge's hit ratio falls and the origin sees more misses. A middle tier of fewer, larger caches (*regional edge* / *origin shield*) restores the hit ratio.
+
+```mermaid
+flowchart LR
+    U1["user"] -->|"short RTT:<br/>fast handshakes"| P1["edge PoP<br/>(at an IXP)"]
+    U2["user"] --> P2["edge PoP"]
+    P1 ==>|"CDN backbone:<br/>measured fastest path,<br/>warm pooled connections"| SH["regional / shield tier"]
+    P2 ==> SH
+    SH ==>|"few, well-fed requests"| O["origin"]
+    P1 -.->|"public internet path<br/>(chosen by BGP hop count)"| O
+```
+
 #### How a CDN Handles Requests
 
 1. **User Requests Content:** A user tries to load a resource (e.g., image, video, API data).

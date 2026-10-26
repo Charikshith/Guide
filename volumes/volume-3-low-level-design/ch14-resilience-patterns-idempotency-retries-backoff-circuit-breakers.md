@@ -188,6 +188,19 @@ A distributed rate limiter keeps counters in a shared store; use atomic incremen
 
 **Constant work** — systems that behave differently under stress (a "slow path" that only runs during overload, a flood of individual config updates after a big change) fail in ways nobody tested. Prefer designs that do **the same amount of work every time**, however much changed: e.g. the control plane rewrites the full configuration file every 10 seconds, changed or not, and every data-plane instance reads all of it every 10 seconds. It costs more on a quiet day, but load is flat and predictable, a corrupt file heals itself on the next cycle, and rolling back a bad change is just writing the old file again. Pre-allocating capacity for the maximum number of tenants in a cell is the same idea. A related rule: keep the number of **operating modes** small — which is one reason data planes favour simple key-value stores with predictable latency over relational query planners.
 
+```mermaid
+flowchart LR
+    CP["control plane<br/>(small, consistent)"] -->|"writes FULL config<br/>every 10 s"| FS[("file store<br/>S3 / Blob")]
+    FS -->|"bulk read at startup<br/>and every 10 s"| DP1["data plane 1"]
+    FS --> DP2["data plane 2"]
+    FS --> DPN["data plane … N<br/>(thousands)"]
+    CP -. "optional: push small deltas<br/>for faster propagation" .-> DP1
+    CP -.-> DP2
+    DP1 --- LC1[("last good config<br/>kept locally")]
+```
+
+The file store absorbs the stampede when the whole fleet restarts, the data plane keeps running on its local copy if the control plane is down (static stability), and the work is the same whether 1 or 1,000,000 settings changed (constant work).
+
 **Close the loop** — a control plane that pushes configuration but never checks it was applied is open-loop. Like a thermostat, it should *monitor* the data plane, *compare* with the desired state, and *act* (re-push, restart, eject a stale node). Kubernetes controllers and a deployment pipeline that watches health and rolls back are closed loops.
 
 *(From AI Library chapter 6.)*

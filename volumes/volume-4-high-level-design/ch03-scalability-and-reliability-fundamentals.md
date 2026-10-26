@@ -398,6 +398,16 @@ flowchart LR
 
 **Prioritise with a risk matrix** — you can't defend against everything. Score each fault by **likelihood × impact**: handle likely, high-impact faults first; accept rare, low-impact ones. Then either lower the likelihood (better tests, safer deploys) or lower the impact (redundancy, isolation, graceful degradation).
 
+| Impact ↓ / Likelihood → | Rare | Unlikely | Possible | Likely | Almost certain |
+|---|:-:|:-:|:-:|:-:|:-:|
+| **Catastrophic** (all users, data loss) | 🟨 medium | 🟥 high | 🟥 high | 🟥 high | 🟥 high |
+| **Major** (a region or core feature down) | 🟩 low | 🟨 medium | 🟥 high | 🟥 high | 🟥 high |
+| **Moderate** (degraded, some users) | 🟩 low | 🟨 medium | 🟨 medium | 🟥 high | 🟥 high |
+| **Minor** (a few users, workaround exists) | 🟩 low | 🟩 low | 🟨 medium | 🟨 medium | 🟨 medium |
+| **Negligible** | 🟩 low | 🟩 low | 🟩 low | 🟩 low | 🟨 medium |
+
+Example placements: an expired TLS certificate is *possible × catastrophic* (high — automate renewal and alert on expiry); a single disk failure in a replicated store is *likely × negligible* (low — redundancy already covers it).
+
 **When redundancy actually helps** — adding a spare doesn't automatically raise availability. It only does if:
 
 1. the added complexity (load balancer, failover logic) causes fewer outages than it prevents;

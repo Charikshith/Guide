@@ -240,6 +240,34 @@ graph TD
 
 **Visibility timeout.** When a consumer receives a message, the broker hides it from other consumers for a set time. If the consumer acknowledges before the timeout, the message is deleted. If it crashes or is too slow, the message becomes visible again and is retried. Set the timeout **longer than your slowest normal processing time**; too short causes duplicate work, too long delays retries after a crash. Messages that keep failing go to a **dead-letter queue** (see the queue primer in Chapter 4).
 
+#### Messaging Styles: One-Way, Request-Response and Broadcast
+
+| Style | Channel | Use for |
+|-------|---------|---------|
+| **One-way** (fire and forget, but durable) | point-to-point queue; one consumer instance handles each message | commands and background jobs: "encode this video" — the API answers `202 Accepted` right away |
+| **Request-response over queues** | each consumer reads a request queue; each producer has its own **reply queue**. The request carries a **correlation ID** and the reply-queue name; the reply is tagged with the same ID so the producer can match it | asynchronous RPC that must survive either side being down for a while |
+| **Broadcast** | publish-subscribe topic; every subscriber gets a copy | events: "order placed" → billing, email, analytics |
+
+```mermaid
+sequenceDiagram
+    participant P as Producer
+    participant RQ as request queue
+    participant C as Consumer
+    participant RP as producer's reply queue
+    P->>RQ: {corr_id: 42, reply_to: RP, body}
+    RQ->>C: deliver
+    C->>RP: {corr_id: 42, result}
+    RP->>P: deliver — matched to request 42
+```
+
+Messages are typed as **commands** (do this — usually one consumer) or **events** (this happened — any number of subscribers). Consumers can also pull messages in **batches** (e.g. up to 10 per read): latency per message goes up slightly, throughput goes up a lot.
+
+#### Backlogs and Poison Messages
+
+A queue makes the system *bimodal*. Normally messages are deleted as fast as they arrive and there is no backlog. Once arrivals outpace processing — more producers, a slower consumer, or messages that keep failing and being redelivered — a **backlog** builds, and the longer it grows the longer it takes to drain. Watch it with the **age of the oldest message** (or average time-in-queue before first read), not just queue length: age is what users feel, and brokers stamp each message with its enqueue time. (The two timestamps come from different clocks, so treat small values loosely.)
+
+**Poison messages** — messages that fail every time — waste consumer capacity on each retry until they reach the dead-letter queue. If messages carry their source (user, tenant), a consumer that sees one source failing repeatedly can move that source's messages to a **low-priority side queue** it reads less often, so one bad producer can't delay everyone else. Fix the cause, then replay the dead-letter queue into the main one.
+
 #### Queue Types: Standard, FIFO, Priority and Delay
 
 | Queue type | Behaviour | Typical use |

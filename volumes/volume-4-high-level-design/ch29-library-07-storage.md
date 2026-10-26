@@ -924,6 +924,33 @@ s3 = boto3.client('s3')
 s3.upload_file('photo1.jpg', 'mybucket', 'photos/photo1.jpg', ExtraArgs={'Metadata': {'uploaded_by': 'alice'}})
 ```
 
+#### Inside a Cloud Object Store: How Azure Storage Is Built
+
+It helps to know roughly what sits behind a bucket URL. Azure Storage (published as the *Windows Azure Storage* paper) is a good example, because almost every pattern in this volume shows up in it:
+
+- **Global namespace through DNS.** A blob URL is `https://<account>.blob.core.windows.net/<file>`. A global **location service** (a control plane) assigns each account to a *storage stamp* — a cluster of racks in one region — and publishes a DNS record pointing the account name at that stamp. It can also move accounts between stamps to balance load. Each stamp is effectively a **cell** ([Ch 15](ch15-multi-tenancy.md)).
+- **Inside a stamp, three layers:**
+  - a **front-end layer** — stateless reverse proxies that authenticate requests and route them to the right partition server;
+  - a **partition layer** — a range-partitioned index from (account, file) to where the bytes live. A **partition manager** (another control plane) assigns index ranges to partition servers, splits hot ranges and merges cold ones;
+  - a **stream layer** — a distributed, append-only file system. Data is stored in *extents*, the unit of replication; each extent is copied synchronously to several storage servers with **chain replication** ([Vol 1 Ch 51](../volume-1-cs-foundations/ch51-replication-sharding-raft-and-paxos.md)). A **stream manager** (control plane) chooses each extent's chain and repairs it when a server fails.
+- **Across stamps,** the partition layer replicates accounts *asynchronously* in the background — for disaster recovery and to migrate accounts between stamps.
+- Azure Storage was **strongly consistent** from the start; Amazon S3 offered read-after-write consistency for all operations only from December 2020.
+
+```mermaid
+flowchart TB
+    C["client"] -->|"1. resolve account"| DNS["DNS"]
+    LS["location service<br/>(global control plane)"] -->|"create account → DNS record"| DNS
+    LS -->|"allocate / move accounts"| S1
+    C -->|"2. request file"| FE
+    subgraph S1["storage stamp (a cell)"]
+        FE["front-end layer<br/>(auth + route)"] --> PL["partition layer<br/>(range-partitioned index)"]
+        PM["partition manager"] -.->|"assign / split / merge ranges"| PL
+        PL --> SL["stream layer<br/>(append-only extents)"]
+        SM["stream manager"] -.->|"build replica chains"| SL
+        SL --> E1[("server")] --> E2[("server")] --> E3[("server")]
+    end
+```
+
 #### Object Storage — Tips & Tricks
 
 - **Use metadata wisely:** Tag objects for easier search, access control, and automation.

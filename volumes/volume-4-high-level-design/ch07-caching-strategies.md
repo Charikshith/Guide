@@ -253,6 +253,35 @@ app.listen(3000, () => console.log("Server running on port 3000"));
 
 **Key terms:** **TTL** (a safety net for missed invalidations); **invalidation** (removing or updating a value when its source changes); **stampede** (a hot key expires and thousands of requests miss at once and hit the database; stop it with a lock or single-flight, TTL jitter, or early refresh); **cache coherence** (keeping many copies, such as several cache nodes or per-server local caches, in agreement); **eviction** (what is thrown out when the cache is full: LRU, LFU, random).
 
+#### Local vs External Caches, and When the Cache Fails
+
+**Local (in-process) cache** — a hash map or an embedded store (Caffeine, RocksDB) inside each service instance. Fastest possible (no network hop), but every instance caches its own copy: 50 instances with a 1 GB cache still hold only about 1 GB of *distinct* data, copies drift apart, and every new or restarted instance starts cold. A rolling restart or a scale-out therefore sends a **thundering herd** of misses to the origin; mitigate by **coalescing** requests (at most one in-flight fetch per key per instance, a.k.a. *single-flight*).
+
+**External cache** — Redis or Memcached as a shared service. One copy of each object, hit ratio independent of the number of clients, and it scales by partitioning (consistent hashing keeps most keys in place when nodes are added) and replicating. Costs: a network hop, another system to run, and the load merely moves from the database to the cache cluster.
+
+**Treat the cache as an optimisation, never as load-bearing.** If the external cache goes down and every request falls through to the database, the database — sized for the miss rate, not the full rate — collapses too: one outage becomes two (a cascading failure). Defences:
+
+- size the origin, or at least its load shedding, for a cold cache;
+- keep a small **local cache in front of the external one**, so its outage isn't a total miss;
+- **serve stale** entries past their TTL while the origin is struggling;
+- rate-limit and coalesce refills, and warm caches before shifting traffic onto them.
+
+The test: *if the cache disappeared right now, would the system get slower, or fall over?* Only "slower" is acceptable.
+
+```mermaid
+flowchart LR
+    subgraph Local["local caches"]
+        A1["instance 1<br/>+ own cache"] --> DB1[("database")]
+        A2["instance 2<br/>+ own cache"] --> DB1
+    end
+    subgraph External["external cache"]
+        B1["instance 1"] --> RC[("Redis cluster<br/>one shared copy")]
+        B2["instance 2"] --> RC
+        RC -. "miss" .-> DB2[("database")]
+    end
+    RC -. "cache down → every request<br/>hits the database at once" .-> X["database overload<br/>(cascading failure)"]
+```
+
 *(From AI Library chapter 8.)*
 
 ### Cache Patterns — The Full Picture

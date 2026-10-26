@@ -296,6 +296,33 @@ sh.status()
 - A query that includes the shard key goes to one shard; one that does not is **scattered** to all shards. This is why shard-key choice is the most important sharding decision (see Sharding Strategies above).
 - Clean up by stopping the processes and deleting the `data` folder.
 
+#### Routing to Partitions and Rebalancing Them
+
+**Who knows where a key lives?** A partitioned store needs a **routing tier**: a gateway (or a smart client library) that maps a key to its partition and the partition to a node. The map itself is small but must be correct, so it is kept in a fault-tolerant coordination service (etcd, ZooKeeper) or a config server (MongoDB's config servers), and cached by the routers. Partitioning also costs you: cross-partition queries must be scattered and gathered (think `GROUP BY` across shards), cross-partition atomic updates need distributed transactions, and one hot partition caps the whole system.
+
+**Range partitioning in practice.** Splitting the key space evenly only works if keys are spread evenly — words in a dictionary are not (far more start with *s* than *x*), so boundaries must follow the data. Ranges also attract hot spots: partition by date and every write for today lands on one node. Adding a random or hashed prefix spreads the writes, but range scans then have to query every prefix.
+
+**Rebalancing without moving everything.** When nodes are added or removed, as little data as possible should move, while the system keeps serving:
+
+| Strategy | How | Good | Bad |
+|----------|-----|------|-----|
+| `hash(key) mod N` | key → partition number directly | trivial | changing N moves almost every key |
+| **Fixed number of partitions** (static) | create far more partitions than nodes (e.g. 1,000 for 10 nodes); move *whole partitions* between nodes | moving a partition is a simple copy; keys never change partition | choosing the number up front is hard: too many adds overhead, too few caps scaling; partitions grow with the data |
+| **Dynamic split / merge** | start with one partition; split one in two when it gets too big or too hot, merge small cold neighbours | adapts to the data; works for ranges | more machinery; a brand-new table starts on one node (pre-split if you can) |
+| **Consistent hashing** (+ virtual nodes) | keys and nodes on a ring | adding a node moves ~1/N of keys | no range scans |
+
+Elasticsearch, Riak and Couchbase use a fixed number of partitions; HBase, Bigtable, CockroachDB and MongoDB range shards split and merge dynamically; Cassandra and Dynamo use consistent hashing.
+
+```mermaid
+flowchart LR
+    CL["clients"] --> RT["routing tier<br/>(gateway or smart client)"]
+    MAP[("partition map<br/>in etcd / ZooKeeper")] -. "cached" .-> RT
+    RT -->|"keys A–H"| P1["node 1"]
+    RT -->|"keys I–P"| P2["node 2"]
+    RT -->|"keys Q–Z"| P3["node 3"]
+    P1 -. "A–H grew hot → split into A–D and E–H,<br/>move E–H to a new node, update the map" .-> MAP
+```
+
 #### Polyglot Persistence
 
 **Polyglot persistence** means using multiple database types in one architecture, choosing the best tool for each job.
