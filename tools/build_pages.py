@@ -4,7 +4,7 @@ Usage:  python tools/build_pages.py     (safe to re-run; writes the .html files 
 Output: index.html, roadmap.html, volumes/<volume>/index.html and volumes/<volume>/chNN-*.html
 
 The Markdown chapters are the source of truth. Each page embeds its Markdown and the browser renders
-it with marked (text, from a local copy in assets/), mermaid (diagrams) and Prism (code), loaded from a CDN.
+it with marked (text) and mermaid (diagrams) from local copies in assets/, and Prism (code) from a CDN.
 
 The look comes from the AI Library's course theme: assets/system-design.css, assets/home.css and
 assets/system-design.js are copies of that theme, and the constants and render script below are taken
@@ -42,7 +42,7 @@ COURSE_CSS = (".main .mermaid{display:flex;justify-content:center;margin:24px 0;
 
 MARKED_JS = "assets/marked.min.js"  # local copy of marked 12.0.2, so text renders without the internet
 
-MERMAID_JS = "https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.min.js"
+MERMAID_JS = "assets/mermaid.min.js"  # local copy of mermaid 10.9.1, so diagrams draw without the internet
 
 PRISM_AUTOLOADER = ('<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/'
                     'prism-autoloader.min.js"></script>')
@@ -316,7 +316,7 @@ def chapter_page(vol, i, vols):
         f'<span class="chapter-label">{h(label)}</span><h1>{h(c["title"])}</h1>',
         f'<p class="hero-subtitle">{h(c["lead"])}</p></section>',
         f'<nav class="chapter-nav">{prev_card}{next_card}</nav></main></div>',
-        f'<script src="{root}{MARKED_JS}"></script><script src="{MERMAID_JS}"></script>',
+        f'<script src="{root}{MARKED_JS}"></script><script src="{root}{MERMAID_JS}"></script>',
         f'<script>const MD={embed_md(prep_md(c["text"]))};{COURSE_RENDER_JS}</script>',
         f'<script src="{root}assets/venn.js"></script>',
         f'<script src="{root}assets/figs.js"></script>',
@@ -336,7 +336,7 @@ def simple_page(title, label, md_text, root=""):
         '<div class="layout"><aside class="sidebar" id="sidebar"><h3>On This Page</h3><ul class="toc-list" id="tocList"></ul></aside>',
         f'<main class="main" id="main"><section class="hero"><span class="chapter-label">{h(label)}</span><h1>{h(title)}</h1></section>',
         f'<nav class="chapter-nav">{nav}</nav></main></div>',
-        f'<script src="{root}{MARKED_JS}"></script><script src="{MERMAID_JS}"></script>',
+        f'<script src="{root}{MARKED_JS}"></script><script src="{root}{MERMAID_JS}"></script>',
         f'<script>const MD={embed_md(text)};{COURSE_RENDER_JS}</script>',
         f'<script src="{root}assets/venn.js"></script>',
         f'<script src="{root}assets/figs.js"></script>',

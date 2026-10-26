@@ -345,8 +345,9 @@ redis.on('message', (channel, message) => {
 });
 ```
 
-```
-Client --WebSocket--> Bid Service --Pub/Sub--> WebSocket Server --Fan Out--> Watchers
+```mermaid
+flowchart LR
+    C["Client"] -- WebSocket --> B["Bid Service"] -- Pub/Sub --> W["WebSocket Server"] -- fan out --> X["Watchers"]
 ```
 
 

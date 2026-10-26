@@ -70,9 +70,10 @@ Because the key is a hash of the content, **same content → same hash → store
 | **Staging area** (index) | the *next* commit, being prepared | `git add` |
 | **Repository** (`.git`) | all committed history | `git commit` |
 
-```text
- working dir ──git add──▶ staging area ──git commit──▶ repository
-      ◀────────────────── git restore / git switch ◀──────────────
+```mermaid
+flowchart LR
+    W["Working dir"] -- "git add" --> S["Staging area"] -- "git commit" --> R["Repository"]
+    R -- "git restore / git switch" --> W
 ```
 
 The staging area lets you build a commit from part of your changes (`git add -p`), so each commit holds one idea.

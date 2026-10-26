@@ -126,13 +126,6 @@ print("Throughput:", measure_throughput("https://example.com", 100), "req/sec")
 
 #### Diagram: Latency vs. Throughput
 
-```
-|--- Latency ---|
-[Client]----request---->[Server]----response---->[Client]
-            (1 request)
-Throughput = Requests handled in 1 second
-```
-
 ```mermaid
 sequenceDiagram
     participant Client

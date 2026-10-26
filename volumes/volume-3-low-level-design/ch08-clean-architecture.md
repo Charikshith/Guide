@@ -213,10 +213,6 @@ conn.close()
 
 Adds a **Business Logic Layer** between the UI and the database.
 
-```
-[Presentation Layer] <--> [Business Logic Layer] <--> [Data Layer]
-```
-
 ```mermaid
 flowchart LR
     UI["Presentation Layer (UI)"]

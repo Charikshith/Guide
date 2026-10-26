@@ -391,10 +391,6 @@ flowchart LR
     Backend --> Logs
 ```
 
-```
-[User]-->(API Gateway)--(Token Bucket)-->[Backend Service]
-```
-
 
 ### Network Segmentation & Isolation
 

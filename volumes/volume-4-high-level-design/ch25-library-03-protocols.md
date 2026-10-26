@@ -475,9 +475,14 @@ This is called *optimistic* concurrency because nothing is locked while the user
 - **Sessions:** Server stores user data; client holds a session ID (usually in a cookie).
 - **Tokens (JWT, OAuth):** Client sends a token with each request that the server validates. A **JWT** (JSON Web Token) is a signed token that proves who the caller is; **OAuth** is the standard for letting one app act on a user's behalf. Chapter 5 and Chapter 10 explain both.
 
-```
-Request 1: [Client] ---> [Server] (No memory)
-Request 2: [Client] ---> [Server] (Still no memory)
+```mermaid
+sequenceDiagram
+    participant C as Client
+    participant S as Server
+    C->>S: Request 1
+    Note over S: no memory of the client
+    C->>S: Request 2
+    Note over S: still no memory
 ```
 
 Visual summary of stateless HTTP with cookies:
@@ -1110,9 +1115,12 @@ In modern system design, delivering **instant updates** to users — whether in 
 
 HTTP follows a **request-response** model:
 
-```
-Client: --------> [Request] --------> Server
-Client: <-------- [Response] <-------- Server
+```mermaid
+sequenceDiagram
+    participant C as Client
+    participant S as Server
+    C->>S: Request
+    S-->>C: Response
 ```
 
 **Drawbacks for real-time use:**
@@ -1853,10 +1861,6 @@ sequenceDiagram
     Server->>DB: Fetch name, email from Users
     DB-->>Server: Return name, email
     Server-->>Client: Response { user { name, email } }
-```
-
-```
-[Client] --(POST /graphql { query })--> [GraphQL Server] --(resolves fields)--> [Database/APIs]
 ```
 
 ##### GraphQL Query Example

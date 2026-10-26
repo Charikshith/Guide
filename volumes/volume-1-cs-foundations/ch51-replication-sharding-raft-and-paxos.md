@@ -94,14 +94,13 @@ sequenceDiagram
 
 **A consistent-hash ring with virtual nodes**
 
+```mermaid
+flowchart LR
+    A1["A1 (node A)"] --> B1["B1 (node B)"] --> A2["A2 (node A)"] --> C1["C1 (node C)"] --> C3["C3 (node C)"] --> A3["A3 (node A)"] --> B2["B2 (node B)"] --> C2["C2 (node C)"] --> A1
+    K(["key user:42 hashes to 47°"]) -. walk clockwise .-> B1
 ```
-                 0°
-           A1 ●     ● B1          keys hash to a point; walk clockwise to the first node
-       C2 ●             ● A2      "user:42" → 47° → B1 (node B)
-      B2 ●               ● C1     add node D: it takes over only the arcs just before its
-           A3 ●     ● C3          virtual points (~1/4 of keys move, not all of them)
-                180°
-```
+
+Keys hash to a point on the ring and walk clockwise to the first virtual node ("user:42" lands at 47° and is owned by B1, node B). Adding node D takes over only the arcs just before its virtual points, so about 1/4 of keys move, not all of them.
 
 **Gossip spreading a membership change**
 

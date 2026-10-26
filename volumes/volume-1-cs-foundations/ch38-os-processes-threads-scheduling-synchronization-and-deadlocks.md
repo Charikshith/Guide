@@ -110,14 +110,12 @@ Each thread waits for the other: **forever**.
 
 **Dining philosophers**
 
+```mermaid
+flowchart LR
+    P0((P0)) --- f0[f0] --- P1((P1)) --- f1[f1] --- P2((P2)) --- f2[f2] --- P3((P3)) --- f3[f3] --- P4((P4)) --- f4[f4] --- P0
 ```
-        P0
-     f4    f0          5 philosophers, 5 forks.
-   P4        P1        Each grabs the LEFT fork, then the RIGHT.
-     f3    f1          If all grab left at once → everyone waits → deadlock.
-   P3   f2   P2        Fix: the last philosopher grabs RIGHT first (lock ordering),
-                       or allow at most 4 at the table (a semaphore).
-```
+
+Five philosophers sit at a round table with five forks, one between each pair. Each grabs the LEFT fork, then the RIGHT. If all grab left at once, everyone waits: deadlock. Fix: the last philosopher grabs RIGHT first (lock ordering), or allow at most 4 at the table (a semaphore).
 
 ---
 

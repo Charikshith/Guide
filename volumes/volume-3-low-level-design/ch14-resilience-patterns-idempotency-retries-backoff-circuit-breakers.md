@@ -111,9 +111,17 @@ Scaling isn't only about handling load — it's about preventing one failure fro
 
 If a downstream service is failing, **stop calling it for a while** so the failing service can recover and your service doesn't waste resources waiting on timeouts.
 
-```
-States:  CLOSED  →  OPEN  →  HALF-OPEN  →  CLOSED
-         (normal)   (fail fast)  (try one)  (back to normal)
+```mermaid
+stateDiagram-v2
+    direction LR
+    [*] --> CLOSED
+    CLOSED --> OPEN: failures exceed threshold
+    OPEN --> HALF_OPEN: cooldown ends
+    HALF_OPEN --> CLOSED: trial request succeeds
+    HALF_OPEN --> OPEN: trial request fails
+    note right of CLOSED: normal
+    note right of OPEN: fail fast
+    note right of HALF_OPEN: try one request
 ```
 
 **Implementation:** count failures in a window; trip if >N% fail; after a cooldown, allow one trial request.

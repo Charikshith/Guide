@@ -797,8 +797,9 @@ A **forward proxy** sits between the client and the internet. It acts on behalf 
 
 **How It Works:**
 
-```
-[Client] ---> [Forward Proxy] ---> [Internet/Server]
+```mermaid
+flowchart LR
+    C["Client"] --> P["Forward Proxy"] --> I["Internet / Server"]
 ```
 
 **Flow:**
@@ -842,8 +843,9 @@ A **reverse proxy** sits in front of backend servers. Clients interact with the 
 
 **How It Works:**
 
-```
-[Client] ---> [Reverse Proxy] ---> [Backend Servers]
+```mermaid
+flowchart LR
+    C["Client"] --> P["Reverse Proxy"] --> B["Backend Servers"]
 ```
 
 **Flow:**
