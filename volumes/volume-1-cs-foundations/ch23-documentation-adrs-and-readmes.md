@@ -10,9 +10,11 @@ Markdown, API docs, docstrings, Architecture Decision Records, and READMEs that 
 
 **In one sentence:** code shows *what* and *how*; documentation must capture *why*, *how to start*, and *what we decided and what it cost us* — in the smallest form that a reader will actually read.
 
-**Mental model — signs in a building.** The README is the lobby sign: what this place is and how to get in. Docstrings are room labels: what happens in this room. ADRs are the architect's notebook: why the stairs are here and not there. Without the notebook, the next architect tears down a load-bearing wall.
+### Mental model — signs in a building
 
-**What goes where**
+The README is the lobby sign: what this place is and how to get in. Docstrings are room labels: what happens in this room. ADRs are the architect's notebook: why the stairs are here and not there. Without the notebook, the next architect tears down a load-bearing wall.
+
+### What goes where
 
 | Document | Audience | Answers | Lives |
 |----------|----------|---------|-------|
@@ -24,7 +26,7 @@ Markdown, API docs, docstrings, Architecture Decision Records, and READMEs that 
 | Guides / how-tos | users with a task | step-by-step procedures | docs site |
 | Runbook | on-call engineers | alert fired → what do I check and do? | ops docs |
 
-**README skeleton**
+### README skeleton
 
 1. One-sentence description + a status badge.
 2. Quick start: install → run → see a result, in under 10 commands.
@@ -33,9 +35,13 @@ Markdown, API docs, docstrings, Architecture Decision Records, and READMEs that 
 5. Development: tests, lint, project layout.
 6. Links: docs, ADRs, contributing, license.
 
-**Docstring content** — summary line; parameters with types and meaning; return value; raised errors; a runnable example (Python `doctest`, Rust doc tests compile and run!).
+### Docstring content
 
-**ADRs** — short (one page), numbered, immutable once accepted. If the decision changes, write a new ADR that *supersedes* the old one; don't edit history.
+Summary line; parameters with types and meaning; return value; raised errors; a runnable example (Python `doctest`, Rust doc tests compile and run!).
+
+### ADRs
+
+Short (one page), numbered, immutable once accepted. If the decision changes, write a new ADR that *supersedes* the old one; don't edit history.
 
 ---
 
@@ -47,7 +53,7 @@ Markdown, API docs, docstrings, Architecture Decision Records, and READMEs that 
 
 ## Diagram
 
-**ADR template layout**
+### ADR template layout
 
 **ADR 0007: Use PostgreSQL as the primary datastore** · Status: Accepted · Date: 2024-05-02 · Supersedes: —
 
@@ -58,7 +64,7 @@ Markdown, API docs, docstrings, Architecture Decision Records, and READMEs that 
 | **DECISION** | "We will use PostgreSQL 16 on managed RDS." |
 | **CONSEQUENCES** | + ACID, joins, mature tooling<br>− vertical scaling limits; sharding is manual<br>→ revisit if writes exceed 20k/s |
 
-**ADR lifecycle**
+### ADR lifecycle
 
 ```mermaid
 stateDiagram-v2
@@ -70,7 +76,7 @@ stateDiagram-v2
     Superseded --> [*]
 ```
 
-**Docs as a pipeline**
+### Docs as a pipeline
 
 ```mermaid
 flowchart LR
@@ -146,7 +152,7 @@ A good inline comment explains *why*:
 
 ## Mini project
 
-**Generate API docs from docstrings and write a project README + first ADR.**
+### Generate API docs from docstrings and write a project README + first ADR
 
 ```mermaid
 flowchart LR
@@ -156,7 +162,7 @@ flowchart LR
     CI["CI: mkdocs build --strict<br/>+ doctests"] --> SITE
 ```
 
-**Steps**
+### Steps
 
 1. Add docstrings to every public function of a small project.
 2. Set up `mkdocs` with `mkdocs-material` and `mkdocstrings`; the API page is generated.

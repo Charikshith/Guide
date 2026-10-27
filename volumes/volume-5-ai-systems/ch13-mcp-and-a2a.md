@@ -10,9 +10,11 @@ The Model Context Protocol (tools/resources for agents) and Agent-to-Agent proto
 
 **In one sentence:** MCP is a standard plug that lets any AI application connect to any tool or data source through one protocol instead of custom glue code, and A2A is a standard way for independent agents — possibly built by different teams or vendors — to discover each other and hand off tasks.
 
-**Mental model — USB and a phone network.** MCP is USB for AI apps: a laptop (the host app) can use any keyboard, drive, or camera (MCP servers) that speaks USB, without a custom driver for each pair. A2A is the phone network between companies: each agent has a public listing (its Agent Card), you call it, describe the job, and it reports back as the job progresses.
+### Mental model — USB and a phone network
 
-**MCP — the Model Context Protocol**
+MCP is USB for AI apps: a laptop (the host app) can use any keyboard, drive, or camera (MCP servers) that speaks USB, without a custom driver for each pair. A2A is the phone network between companies: each agent has a public listing (its Agent Card), you call it, describe the job, and it reports back as the job progresses.
+
+### MCP — the Model Context Protocol
 
 | Piece | Meaning |
 |-------|---------|
@@ -23,7 +25,7 @@ The Model Context Protocol (tools/resources for agents) and Agent-to-Agent proto
 | Transports | **stdio** (the host launches the server as a local subprocess) or **Streamable HTTP** (a remote server over HTTP, optionally streaming with SSE) |
 | Lifecycle | `initialize` → capability negotiation → `notifications/initialized` → normal operation |
 
-**What a server can offer**
+### What a server can offer
 
 | Primitive | Controlled by | Methods | Example |
 |-----------|---------------|---------|---------|
@@ -33,7 +35,9 @@ The Model Context Protocol (tools/resources for agents) and Agent-to-Agent proto
 
 Clients can offer features back to servers too, such as *sampling* (the server asks the host's model for a completion) and *elicitation* (the server asks the user for input). Remote servers use OAuth 2.1 for authorization.
 
-**What MCP standardizes:** discovery (what can this server do?), invocation (call with JSON arguments matching a JSON Schema), results and errors, and notifications (e.g. "the tool list changed"). It turns an N × M integration problem (every app × every tool) into N + M.
+### What MCP standardizes
+
+Discovery (what can this server do?), invocation (call with JSON arguments matching a JSON Schema), results and errors, and notifications (e.g. "the tool list changed"). It turns an N × M integration problem (every app × every tool) into N + M.
 
 **A2A — the Agent2Agent protocol** (open source, originally from Google, now a Linux Foundation project)
 
@@ -46,7 +50,7 @@ Clients can offer features back to servers too, such as *sampling* (the server a
 | Message / Part | turns between agents; parts can be text, files, or structured data |
 | **Artifact** | the output the task produces |
 
-**MCP vs A2A**
+### MCP vs A2A
 
 | | MCP | A2A |
 |-|-----|-----|
@@ -67,7 +71,7 @@ They complement each other: an A2A agent often uses MCP servers internally.
 
 ## Diagram
 
-**MCP client ↔ server**
+### MCP client ↔ server
 
 ```mermaid
 flowchart LR
@@ -81,7 +85,7 @@ flowchart LR
     LLM -. "decides tool calls" .-> C1 & C2
 ```
 
-**The MCP session**
+### The MCP session
 
 ```mermaid
 sequenceDiagram
@@ -97,7 +101,7 @@ sequenceDiagram
     S-->>C: content text "22 C, sunny", isError false
 ```
 
-**An A2A task hand-off**
+### An A2A task hand-off
 
 ```mermaid
 sequenceDiagram
@@ -207,7 +211,7 @@ asyncio.run(main())
 
 ## Mini project
 
-**An MCP server + client, plus a two-agent A2A hand-off.**
+### An MCP server + client, plus a two-agent A2A hand-off
 
 ```mermaid
 flowchart LR
@@ -222,7 +226,7 @@ flowchart LR
     end
 ```
 
-**Steps**
+### Steps
 
 1. Notes server: SQLite-backed tools with clear JSON Schemas, a resource listing all notes, and a prompt template.
 2. Turn your Ch 11 agent into an MCP client: at startup, `list_tools` and convert each MCP tool into the model's tool format; route tool calls to `call_tool`.

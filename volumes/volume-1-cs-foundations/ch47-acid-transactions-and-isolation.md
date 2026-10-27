@@ -10,9 +10,11 @@ Atomicity/Consistency/Isolation/Durability; transactions; isolation levels (read
 
 **In one sentence:** a transaction groups several changes into one all-or-nothing unit, and the isolation level decides how much concurrent transactions can see of each other's half-finished work — trading correctness against speed.
 
-**Mental model — a bank teller's window.** Moving €100 from savings to checking is two steps. ACID promises that you never see the money vanish or appear twice, even if the power fails halfway (atomicity, durability), that the rules still hold afterward (consistency), and that another teller working on the same accounts at the same time doesn't mess up your math (isolation).
+### Mental model — a bank teller's window
 
-**ACID**
+Moving €100 from savings to checking is two steps. ACID promises that you never see the money vanish or appear twice, even if the power fails halfway (atomicity, durability), that the rules still hold afterward (consistency), and that another teller working on the same accounts at the same time doesn't mess up your math (isolation).
+
+### ACID
 
 | Property | Promise | How databases do it |
 |----------|---------|---------------------|
@@ -21,7 +23,7 @@ Atomicity/Consistency/Isolation/Durability; transactions; isolation levels (read
 | **Isolation** | concurrent transactions behave as if more or less serial | locks and/or MVCC snapshots |
 | **Durability** | once committed, it survives crashes | a write-ahead log (WAL) flushed with fsync before COMMIT returns; replication |
 
-**Anomalies**
+### Anomalies
 
 | Anomaly | What happens |
 |---------|--------------|
@@ -31,7 +33,7 @@ Atomicity/Consistency/Isolation/Durability; transactions; isolation levels (read
 | **Lost update** | two transactions read-modify-write the same value; one overwrites the other |
 | **Write skew** | two transactions read overlapping data, each writes a *different* row, and together they break a rule (e.g. both doctors go off call) |
 
-**Isolation levels (as implemented in PostgreSQL)**
+### Isolation levels (as implemented in PostgreSQL)
 
 | Level | Dirty read | Non-repeatable | Phantom | Lost update | Write skew |
 |-------|:-:|:-:|:-:|:-:|:-:|
@@ -42,13 +44,19 @@ Atomicity/Consistency/Isolation/Durability; transactions; isolation levels (read
 
 ✗ = prevented. At Repeatable Read and Serializable, the database may abort you with a *serialization failure* — your code must **retry** the transaction.
 
-**MVCC (multi-version concurrency control)** — writers create new row *versions* instead of overwriting. Each transaction reads from a *snapshot*: the versions committed before it started (Repeatable Read) or before each statement (Read Committed). Readers never block writers and writers never block readers. Old versions are later cleaned up (`VACUUM` in Postgres).
+### MVCC (multi-version concurrency control)
 
-**Fixing lost updates** — use an atomic update (`SET balance = balance - 100`), `SELECT … FOR UPDATE` (a pessimistic row lock), optimistic concurrency (a version column: `UPDATE … WHERE id = $1 AND version = $2`, and check the row count), or a higher isolation level plus retries.
+Writers create new row *versions* instead of overwriting. Each transaction reads from a *snapshot*: the versions committed before it started (Repeatable Read) or before each statement (Read Committed). Readers never block writers and writers never block readers. Old versions are later cleaned up (`VACUUM` in Postgres).
 
-**Keep transactions short:** long transactions hold locks, block `VACUUM`, bloat tables, and raise conflict rates. Never wait for user input or call slow external APIs inside a transaction.
+### Fixing lost updates
 
-**How a database actually enforces isolation: pessimistic vs optimistic**
+Use an atomic update (`SET balance = balance - 100`), `SELECT … FOR UPDATE` (a pessimistic row lock), optimistic concurrency (a version column: `UPDATE … WHERE id = $1 AND version = $2`, and check the row count), or a higher isolation level plus retries.
+
+### Keep transactions short
+
+Long transactions hold locks, block `VACUUM`, bloat tables, and raise conflict rates. Never wait for user input or call slow external APIs inside a transaction.
+
+### How a database actually enforces isolation: pessimistic vs optimistic
 
 | Approach | How it works | Wins when | Costs |
 |----------|-------------|-----------|-------|
@@ -58,9 +66,11 @@ Atomicity/Consistency/Isolation/Durability; transactions; isolation levels (read
 
 The version-column trick under *Fixing lost updates* is OCC applied to a single row: read version 42, write only if it is still 42 (a compare-and-swap), else retry.
 
-**Serializable vs strict serializable** — *serializable* only promises the result equals *some* serial order, which may not match real time (a transaction that committed later can appear earlier). *Strict serializable* adds the real-time rule: once a transaction commits, every transaction that starts afterwards sees it. It is serializability plus linearizability (see [Chapter 50](ch50-cap-consistency-and-consensus.md)); Spanner and CockroachDB-style systems advertise it.
+### Serializable vs strict serializable
 
-**Atomicity across machines: two-phase commit (2PC)**
+*serializable* only promises the result equals *some* serial order, which may not match real time (a transaction that committed later can appear earlier). *Strict serializable* adds the real-time rule: once a transaction commits, every transaction that starts afterwards sees it. It is serializability plus linearizability (see [Chapter 50](ch50-cap-consistency-and-consensus.md)); Spanner and CockroachDB-style systems advertise it.
+
+### Atomicity across machines: two-phase commit (2PC)
 
 A WAL makes a transaction atomic inside *one* database. Once a transfer touches two databases (two banks, two shards, two services), you need a protocol so both commit or both abort:
 
@@ -69,9 +79,13 @@ A WAL makes a transaction atomic inside *one* database. Once a transfer touches 
 
 The weak spot is the gap between the phases: if the coordinator crashes after participants voted yes, they are **blocked** — holding locks, unable to commit or abort — until it comes back. 2PC also costs two round trips plus forced log writes, and every participant must speak the protocol (the X/Open **XA** standard in relational databases; most queues, search engines and SaaS APIs don't). Making it fault-tolerant means replicating the coordinator's and participants' state with consensus (Paxos/Raft) so a replica can take over a stuck transaction. Agreeing on commit is actually a harder problem than ordinary consensus (*uniform* consensus): even a participant that later fails must not have decided differently.
 
-**Spanner: 2PC that doesn't block, and global time** — Spanner splits data into partitions; each partition is a Paxos group whose leader also runs 2PL for that partition. A cross-partition transaction runs 2PC between the group leaders, but since each leader's log is replicated by Paxos, a failed coordinator or participant is replaced by another replica of its group instead of blocking everyone. Read-only transactions use MVCC snapshots and take no locks. To give every transaction a globally meaningful timestamp, **TrueTime** returns an *interval* `[earliest, latest]` that is guaranteed to contain the real time (GPS and atomic clocks keep it to a few ms). On commit, Spanner waits until `earliest` has passed its chosen timestamp — **commit wait** — before releasing locks, so timestamp order matches real-time order: strict serializability. CockroachDB and YugabyteDB, lacking atomic clocks, use **hybrid logical clocks** (physical time + a logical counter) and restart reads that fall into the clock-uncertainty window.
+### Spanner: 2PC that doesn't block, and global time
 
-**When 2PC is not an option** — long-running steps (hours), services you don't control, or stores without XA. Then trade isolation for availability: commit locally and send a durable message ([outbox](../volume-4-high-level-design/ch12-event-driven-systems.md)), or run a **saga** — a chain of local transactions, each with a compensating action that undoes it on failure. Sagas are atomic in the end but not isolated: other requests can see the half-done state. A common patch is a **semantic lock** — mark touched records `PENDING` until the saga finishes, and make other operations wait, fail, or treat pending records specially.
+Spanner splits data into partitions; each partition is a Paxos group whose leader also runs 2PL for that partition. A cross-partition transaction runs 2PC between the group leaders, but since each leader's log is replicated by Paxos, a failed coordinator or participant is replaced by another replica of its group instead of blocking everyone. Read-only transactions use MVCC snapshots and take no locks. To give every transaction a globally meaningful timestamp, **TrueTime** returns an *interval* `[earliest, latest]` that is guaranteed to contain the real time (GPS and atomic clocks keep it to a few ms). On commit, Spanner waits until `earliest` has passed its chosen timestamp — **commit wait** — before releasing locks, so timestamp order matches real-time order: strict serializability. CockroachDB and YugabyteDB, lacking atomic clocks, use **hybrid logical clocks** (physical time + a logical counter) and restart reads that fall into the clock-uncertainty window.
+
+### When 2PC is not an option
+
+Long-running steps (hours), services you don't control, or stores without XA. Then trade isolation for availability: commit locally and send a durable message ([outbox](../volume-4-high-level-design/ch12-event-driven-systems.md)), or run a **saga** — a chain of local transactions, each with a compensating action that undoes it on failure. Sagas are atomic in the end but not isolated: other requests can see the half-done state. A common patch is a **semantic lock** — mark touched records `PENDING` until the saga finishes, and make other operations wait, fail, or treat pending records specially.
 
 ---
 
@@ -83,7 +97,7 @@ The weak spot is the gap between the phases: if the coordinator crashes after pa
 
 ## Diagram
 
-**Transaction state diagram**
+### Transaction state diagram
 
 ```mermaid
 stateDiagram-v2
@@ -98,7 +112,7 @@ stateDiagram-v2
     Aborted --> [*]: retry if it was a conflict
 ```
 
-**A lost update (Read Committed, read-then-write in the app)**
+### A lost update (Read Committed, read-then-write in the app)
 
 ```
  balance = 100
@@ -110,7 +124,7 @@ stateDiagram-v2
  fix: UPDATE accounts SET balance = balance + 50  (atomic)  or  SELECT … FOR UPDATE
 ```
 
-**A phantom read under two isolation levels**
+### A phantom read under two isolation levels
 
 ```mermaid
 sequenceDiagram
@@ -123,14 +137,14 @@ sequenceDiagram
     Note over T1,DB: Read Committed → 11 (phantom)<br/>Repeatable Read → 10 (same snapshot)
 ```
 
-**MVCC row versions**
+### MVCC row versions
 
 ```
  row id=1:  [v1 balance=100, created by tx 90, deleted by tx 95] → [v2 balance=150, created by tx 95]
  tx 93 (started before 95 committed) sees v1   ·   tx 97 sees v2   ·   VACUUM removes v1 once no one can see it
 ```
 
-**Two-phase commit — and where it blocks**
+### Two-phase commit — and where it blocks
 
 ```mermaid
 sequenceDiagram
@@ -149,7 +163,7 @@ sequenceDiagram
     Note over A,B: if C crashed before sending COMMIT,<br/>A and B would wait with locks held — the blocking problem
 ```
 
-**Spanner: Paxos groups + 2PL + 2PC**
+### Spanner: Paxos groups + 2PL + 2PC
 
 ```mermaid
 flowchart LR
@@ -229,7 +243,7 @@ def transfer(conn, src, dst, cents, attempts=5):
 
 ## Mini project
 
-**A money-transfer service with transactions that pass a concurrency test.**
+### A money-transfer service with transactions that pass a concurrency test
 
 ```mermaid
 flowchart LR
@@ -239,7 +253,7 @@ flowchart LR
     T --> INV["invariants after the run:<br/>Σ balances unchanged<br/>no balance < 0<br/>ledger replays to balances"]
 ```
 
-**Steps**
+### Steps
 
 1. Tables: `accounts(id, balance CHECK (balance >= 0))`, `ledger(id, from_id, to_id, cents, created_at)`, `idempotency_keys(key PK, response)`.
 2. Implement `transfer` twice: (a) `SELECT … FOR UPDATE` with ordered locking, (b) `SERIALIZABLE` with a retry loop.

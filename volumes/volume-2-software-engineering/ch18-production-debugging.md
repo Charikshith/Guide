@@ -10,9 +10,11 @@ Debugging live systems safely — read-only access, replicating in staging, grac
 
 **In one sentence:** production is where the real bug lives but also where mistakes hurt customers, so you debug it the way a doctor examines a patient — observe first, touch carefully, change one thing at a time, reproduce risky experiments somewhere safe, and keep switches ready to turn off whatever is failing.
 
-**Mental model — a surgeon vs a mechanic in a garage.** A mechanic can take the engine apart on the bench (local debugging). A surgeon works on a live patient: first scans and tests (read-only observation), then a plan, then the smallest possible incision, with monitors on the whole time and a way to stop. You also practice difficult procedures on a simulator first (staging).
+### Mental model — a surgeon vs a mechanic in a garage
 
-**Rules of engagement in production**
+A mechanic can take the engine apart on the bench (local debugging). A surgeon works on a live patient: first scans and tests (read-only observation), then a plan, then the smallest possible incision, with monitors on the whole time and a way to stop. You also practice difficult procedures on a simulator first (staging).
+
+### Rules of engagement in production
 
 | Rule | Why |
 |------|-----|
@@ -25,7 +27,7 @@ Debugging live systems safely — read-only access, replicating in staging, grac
 | Reproduce in staging with prod-like data and traffic | experiment freely there |
 | Leave instrumentation behind | the next person debugs faster |
 
-**The toolkit (least to most invasive)**
+### The toolkit (least to most invasive)
 
 | Tool | Shows | Risk |
 |------|-------|------|
@@ -39,11 +41,17 @@ Debugging live systems safely — read-only access, replicating in staging, grac
 | `kubectl debug` ephemeral container | tools inside the pod's namespaces | low |
 | Attaching a debugger with breakpoints | full control | **high** — pauses the process; almost never in prod |
 
-**Graceful degradation** — design the system to lose non-essential features instead of failing entirely: serve cached or default recommendations, hide a broken widget, queue work for later, show "prices may be delayed". Built with **feature flags / kill switches** ([Ch 7](ch07-packaging-and-release-engineering.md)), **timeouts**, **bulkheads** (separate pools per dependency), and **circuit breakers**.
+### Graceful degradation
 
-**Circuit breaker** — wraps calls to a dependency. After too many failures it *opens*: calls fail fast (or use a fallback) without waiting on the broken dependency, so threads aren't exhausted and the dependency can recover. After a cool-down it goes *half-open* and lets a trial request through; success closes it again. Details in [Vol 3 Ch 14](../volume-3-low-level-design/ch14-resilience-patterns-idempotency-retries-backoff-circuit-breakers.md).
+Design the system to lose non-essential features instead of failing entirely: serve cached or default recommendations, hide a broken widget, queue work for later, show "prices may be delayed". Built with **feature flags / kill switches** ([Ch 7](ch07-packaging-and-release-engineering.md)), **timeouts**, **bulkheads** (separate pools per dependency), and **circuit breakers**.
 
-**Forensics** — preserve evidence (logs, dumps, the exact artifact version, configs, recent changes), write the timeline as you go, and record what you checked and ruled out. That becomes the postmortem ([Ch 17](ch17-incident-response-and-postmortems.md)).
+### Circuit breaker
+
+Wraps calls to a dependency. After too many failures it *opens*: calls fail fast (or use a fallback) without waiting on the broken dependency, so threads aren't exhausted and the dependency can recover. After a cool-down it goes *half-open* and lets a trial request through; success closes it again. Details in [Vol 3 Ch 14](../volume-3-low-level-design/ch14-resilience-patterns-idempotency-retries-backoff-circuit-breakers.md).
+
+### Forensics
+
+Preserve evidence (logs, dumps, the exact artifact version, configs, recent changes), write the timeline as you go, and record what you checked and ruled out. That becomes the postmortem ([Ch 17](ch17-incident-response-and-postmortems.md)).
 
 ---
 
@@ -56,7 +64,7 @@ Debugging live systems safely — read-only access, replicating in staging, grac
 
 ## Diagram
 
-**A decision flow: observe → hypothesize → reproduce in staging → fix → verify**
+### A decision flow: observe → hypothesize → reproduce in staging → fix → verify
 
 ```mermaid
 flowchart TD
@@ -72,7 +80,7 @@ flowchart TD
     VER --> DOC["forensic notes → postmortem"]
 ```
 
-**Circuit breaker states**
+### Circuit breaker states
 
 ```mermaid
 stateDiagram-v2
@@ -87,7 +95,7 @@ stateDiagram-v2
     end note
 ```
 
-**Graceful degradation on a product page**
+### Graceful degradation on a product page
 
 | Page element | When things fail |
 |---|---|
@@ -193,7 +201,7 @@ flowchart LR
     YOU --> NOTES["forensic log: time, command,<br/>observation, conclusion"] --> PM["postmortem"]
 ```
 
-**Steps**
+### Steps
 
 1. Add fault-injection switches (env var or flag) to a service: memory leak, N+1 query, a lock held too long, a dependency that hangs.
 2. Add a kill switch and a circuit breaker around one non-critical dependency.

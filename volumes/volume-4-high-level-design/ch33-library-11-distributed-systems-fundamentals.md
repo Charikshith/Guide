@@ -32,6 +32,26 @@ After reading this chapter, you'll be able to:
 
 *This section is in [Chapter 12 — Event-Driven Systems](ch12-event-driven-systems.md), next to that chapter's practice material, so it is not repeated here.*
 
+### Quorums at a glance
+
+With N replicas, a write waits for W acknowledgements and a read asks R replicas. When R + W > N, every read set overlaps every write set in at least one replica, so a read always reaches someone holding the latest acknowledged write.
+
+```mermaid
+flowchart LR
+  WR["Write v2<br/>W = 2"] --> A
+  WR --> B
+  subgraph N3["N = 3 replicas"]
+    A[("A: v2")]
+    B[("B: v2")]
+    C[("C: v1 (missed the write)")]
+  end
+  RD["Read<br/>R = 2"] --> B
+  RD --> C
+  B --> OUT["The read gets v2 from B and v1 from C,<br/>and returns the newer value, v2"]
+```
+
+What it does not guarantee: concurrent writes can still conflict, a failed write may be left on some replicas, and sloppy quorums (writing to stand-in nodes during a failure) break the overlap.
+
 ### Key Takeaways
 
 - Distributed systems fail partially, so every call needs a timeout, a retry policy and an idempotent handler.

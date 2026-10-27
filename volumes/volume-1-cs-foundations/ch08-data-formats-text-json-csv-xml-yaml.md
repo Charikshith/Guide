@@ -10,9 +10,11 @@ Structured serialization formats — syntax, trade-offs, and when to use each.
 
 **In one sentence:** serialization turns in-memory objects into text you can save or send, and each text format trades off readability, strictness, and expressiveness in a different way.
 
-**Mental model — packing for a trip.** JSON is a hard-shell suitcase: strict shape, travels anywhere. CSV is a flat tray: great for rows of identical items, useless for nesting. XML is a shipping crate with labels on every box: verbose, but very explicit. YAML is a soft duffel bag: fits anything and looks tidy, but things can shift around. TOML is a labeled drawer organizer: built for settings.
+### Mental model — packing for a trip
 
-**Comparison**
+JSON is a hard-shell suitcase: strict shape, travels anywhere. CSV is a flat tray: great for rows of identical items, useless for nesting. XML is a shipping crate with labels on every box: verbose, but very explicit. YAML is a soft duffel bag: fits anything and looks tidy, but things can shift around. TOML is a labeled drawer organizer: built for settings.
+
+### Comparison
 
 | | JSON | CSV | XML | YAML | TOML |
 |-|------|-----|-----|------|------|
@@ -23,7 +25,7 @@ Structured serialization formats — syntax, trade-offs, and when to use each.
 | Human-edited? | ok | ok in spreadsheets | painful | pleasant | pleasant |
 | Best for | APIs, data exchange | tabular data, exports | documents, legacy enterprise, SVG | CI/K8s configs | app/tool configs (`pyproject.toml`, `Cargo.toml`) |
 
-**Famous footguns**
+### Famous footguns
 
 | Format | Trap |
 |--------|------|
@@ -43,7 +45,7 @@ Structured serialization formats — syntax, trade-offs, and when to use each.
 
 ## Diagram
 
-**The same record in five formats**
+### The same record in five formats
 
 ```
  JSON                                   YAML
@@ -65,7 +67,7 @@ Structured serialization formats — syntax, trade-offs, and when to use each.
  Ada Lovelace,1815,"English;French",false </person>
 ```
 
-**Serialize / deserialize round trip**
+### Serialize / deserialize round trip
 
 ```mermaid
 flowchart LR
@@ -139,7 +141,7 @@ for row in csv.DictReader(io.StringIO(raw)):
 
 ## Mini project
 
-**A config-file migrator that converts YAML ↔ JSON ↔ TOML.**
+### A config-file migrator that converts YAML ↔ JSON ↔ TOML
 
 ```mermaid
 flowchart LR
@@ -147,7 +149,7 @@ flowchart LR
     N --> WARN["warn on lossy cases:<br/>TOML has no null,<br/>JSON has no comments"]
 ```
 
-**Steps**
+### Steps
 
 1. CLI: `migrate config.yaml --to toml`.
 2. Parse with `yaml.safe_load`, `json.load`, or `tomllib.load`; write with `yaml.safe_dump`, `json.dump`, or `tomli_w.dump`.

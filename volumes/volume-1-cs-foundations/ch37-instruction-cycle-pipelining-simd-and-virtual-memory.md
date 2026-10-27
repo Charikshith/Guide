@@ -10,9 +10,11 @@ Fetch-decode-execute; pipelining and hazards; SIMD (data parallelism); virtual m
 
 **In one sentence:** a CPU runs instructions in an assembly line (pipeline) so several are in flight at once, does the same operation on many numbers with one instruction (SIMD), and gives every process the illusion of its own private memory through virtual addresses that hardware translates on the fly.
 
-**Mental model — a laundromat.** Washing (fetch), drying (decode), folding (execute), putting away (write back). With one load at a time, each takes 4 hours. With an assembly line, a new load starts every hour, so 4 loads are in progress at once. A *hazard* is when load 2 needs a sock still in load 1's dryer: it must wait (a bubble). SIMD is a washer big enough for 8 shirts in one cycle.
+### Mental model — a laundromat
 
-**The instruction cycle**
+Washing (fetch), drying (decode), folding (execute), putting away (write back). With one load at a time, each takes 4 hours. With an assembly line, a new load starts every hour, so 4 loads are in progress at once. A *hazard* is when load 2 needs a sock still in load 1's dryer: it must wait (a bubble). SIMD is a washer big enough for 8 shirts in one cycle.
+
+### The instruction cycle
 
 | Stage | Classic 5-stage RISC | Does |
 |-------|---------------------|------|
@@ -22,7 +24,7 @@ Fetch-decode-execute; pipelining and hazards; SIMD (data parallelism); virtual m
 | MEM | memory access | load or store |
 | WB | write back | write the result to the destination register |
 
-**Hazards — why the pipeline stalls**
+### Hazards — why the pipeline stalls
 
 | Type | Cause | Example | Fix |
 |------|-------|---------|-----|
@@ -32,7 +34,7 @@ Fetch-decode-execute; pipelining and hazards; SIMD (data parallelism); virtual m
 
 A mispredicted branch flushes the pipeline — ~15–20 cycles lost on modern CPUs. That's why sorted data can make an `if` inside a loop several times faster.
 
-**SIMD (single instruction, multiple data)**
+### SIMD (single instruction, multiple data)
 
 | ISA | Register width | 32-bit floats per instruction |
 |-----|---------------:|:-:|
@@ -43,7 +45,7 @@ A mispredicted branch flushes the pipeline — ~15–20 cycles lost on modern CP
 
 You rarely write SIMD by hand: NumPy, BLAS, compilers (auto-vectorization), and libraries like `simdjson` use it for you. GPUs push the same idea to thousands of lanes.
 
-**Virtual memory**
+### Virtual memory
 
 * Each process sees its own flat address space (0 … 2⁴⁸ on x86-64).
 * Memory is split into **pages** (usually 4 KB; "huge pages" are 2 MB or 1 GB).
@@ -63,7 +65,7 @@ Benefits: isolation (one process can't read another's memory), overcommit and la
 
 ## Diagram
 
-**A 5-stage pipeline with a data-hazard bubble**
+### A 5-stage pipeline with a data-hazard bubble
 
 | cycle | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 |
 |---|---|---|---|---|---|---|---|---|
@@ -73,13 +75,13 @@ Benefits: isolation (one process can't read another's memory), overcommit and la
 
 I2 needs `r1`, so there is **one bubble** (a stall; forwarding from EX/MEM removes most of these). Without a pipeline: 3 instructions × 5 cycles = 15 cycles; with it: about 8.
 
-**SIMD: one instruction, 8 lanes**
+### SIMD: one instruction, 8 lanes
 
 <div class="fig">
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 270" role="img" aria-label="Scalar code does eight separate adds; one AVX2 VADDPS adds two eight-lane registers at once" style="width:100%;max-width:800px;height:auto;font-family:inherit"><defs><marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="context-stroke"/></marker></defs><text x="150" y="26" font-size="13.5" text-anchor="middle" fill="var(--text)" font-weight="700">scalar: 8 separate ADDs</text><text x="560" y="26" font-size="13.5" text-anchor="middle" fill="var(--text)" font-weight="700">AVX2: one VADDPS</text><rect x="20" y="50" width="62" height="38" rx="8" fill="var(--primary)" fill-opacity=".14" stroke="var(--primary)" stroke-width="1.6"/><text x="51.0" y="73.2" font-size="12" text-anchor="middle" fill="var(--text)" font-weight="600">a0+b0</text><rect x="90" y="50" width="62" height="38" rx="8" fill="var(--primary)" fill-opacity=".14" stroke="var(--primary)" stroke-width="1.6"/><text x="121.0" y="73.2" font-size="12" text-anchor="middle" fill="var(--text)" font-weight="600">a1+b1</text><rect x="160" y="50" width="62" height="38" rx="8" fill="var(--primary)" fill-opacity=".14" stroke="var(--primary)" stroke-width="1.6"/><text x="191.0" y="73.2" font-size="12" text-anchor="middle" fill="var(--text)" font-weight="600">a2+b2</text><rect x="230" y="50" width="62" height="38" rx="8" fill="var(--primary)" fill-opacity=".14" stroke="var(--primary)" stroke-width="1.6"/><text x="261.0" y="73.2" font-size="12" text-anchor="middle" fill="var(--text)" font-weight="600">a3+b3</text><rect x="20" y="100" width="62" height="38" rx="8" fill="var(--primary)" fill-opacity=".14" stroke="var(--primary)" stroke-width="1.6"/><text x="51.0" y="123.2" font-size="12" text-anchor="middle" fill="var(--text)" font-weight="600">a4+b4</text><rect x="90" y="100" width="62" height="38" rx="8" fill="var(--primary)" fill-opacity=".14" stroke="var(--primary)" stroke-width="1.6"/><text x="121.0" y="123.2" font-size="12" text-anchor="middle" fill="var(--text)" font-weight="600">a5+b5</text><rect x="160" y="100" width="62" height="38" rx="8" fill="var(--primary)" fill-opacity=".14" stroke="var(--primary)" stroke-width="1.6"/><text x="191.0" y="123.2" font-size="12" text-anchor="middle" fill="var(--text)" font-weight="600">a6+b6</text><rect x="230" y="100" width="62" height="38" rx="8" fill="var(--primary)" fill-opacity=".14" stroke="var(--primary)" stroke-width="1.6"/><text x="261.0" y="123.2" font-size="12" text-anchor="middle" fill="var(--text)" font-weight="600">a7+b7</text><rect x="360" y="50" width="44" height="40" rx="8" fill="var(--primary)" fill-opacity=".14" stroke="var(--primary)" stroke-width="1.6"/><text x="382.0" y="74.375" font-size="12.5" text-anchor="middle" fill="var(--text)" font-weight="600">a0</text><rect x="408" y="50" width="44" height="40" rx="8" fill="var(--primary)" fill-opacity=".14" stroke="var(--primary)" stroke-width="1.6"/><text x="430.0" y="74.375" font-size="12.5" text-anchor="middle" fill="var(--text)" font-weight="600">a1</text><rect x="456" y="50" width="44" height="40" rx="8" fill="var(--primary)" fill-opacity=".14" stroke="var(--primary)" stroke-width="1.6"/><text x="478.0" y="74.375" font-size="12.5" text-anchor="middle" fill="var(--text)" font-weight="600">a2</text><rect x="504" y="50" width="44" height="40" rx="8" fill="var(--primary)" fill-opacity=".14" stroke="var(--primary)" stroke-width="1.6"/><text x="526.0" y="74.375" font-size="12.5" text-anchor="middle" fill="var(--text)" font-weight="600">a3</text><rect x="552" y="50" width="44" height="40" rx="8" fill="var(--primary)" fill-opacity=".14" stroke="var(--primary)" stroke-width="1.6"/><text x="574.0" y="74.375" font-size="12.5" text-anchor="middle" fill="var(--text)" font-weight="600">a4</text><rect x="600" y="50" width="44" height="40" rx="8" fill="var(--primary)" fill-opacity=".14" stroke="var(--primary)" stroke-width="1.6"/><text x="622.0" y="74.375" font-size="12.5" text-anchor="middle" fill="var(--text)" font-weight="600">a5</text><rect x="648" y="50" width="44" height="40" rx="8" fill="var(--primary)" fill-opacity=".14" stroke="var(--primary)" stroke-width="1.6"/><text x="670.0" y="74.375" font-size="12.5" text-anchor="middle" fill="var(--text)" font-weight="600">a6</text><rect x="696" y="50" width="44" height="40" rx="8" fill="var(--primary)" fill-opacity=".14" stroke="var(--primary)" stroke-width="1.6"/><text x="718.0" y="74.375" font-size="12.5" text-anchor="middle" fill="var(--text)" font-weight="600">a7</text><text x="758" y="76" font-size="12.5" text-anchor="start" fill="var(--text-muted)" font-weight="600">ymm0</text><rect x="360" y="112" width="44" height="40" rx="8" fill="var(--accent)" fill-opacity=".14" stroke="var(--accent)" stroke-width="1.6"/><text x="382.0" y="136.375" font-size="12.5" text-anchor="middle" fill="var(--text)" font-weight="600">b0</text><rect x="408" y="112" width="44" height="40" rx="8" fill="var(--accent)" fill-opacity=".14" stroke="var(--accent)" stroke-width="1.6"/><text x="430.0" y="136.375" font-size="12.5" text-anchor="middle" fill="var(--text)" font-weight="600">b1</text><rect x="456" y="112" width="44" height="40" rx="8" fill="var(--accent)" fill-opacity=".14" stroke="var(--accent)" stroke-width="1.6"/><text x="478.0" y="136.375" font-size="12.5" text-anchor="middle" fill="var(--text)" font-weight="600">b2</text><rect x="504" y="112" width="44" height="40" rx="8" fill="var(--accent)" fill-opacity=".14" stroke="var(--accent)" stroke-width="1.6"/><text x="526.0" y="136.375" font-size="12.5" text-anchor="middle" fill="var(--text)" font-weight="600">b3</text><rect x="552" y="112" width="44" height="40" rx="8" fill="var(--accent)" fill-opacity=".14" stroke="var(--accent)" stroke-width="1.6"/><text x="574.0" y="136.375" font-size="12.5" text-anchor="middle" fill="var(--text)" font-weight="600">b4</text><rect x="600" y="112" width="44" height="40" rx="8" fill="var(--accent)" fill-opacity=".14" stroke="var(--accent)" stroke-width="1.6"/><text x="622.0" y="136.375" font-size="12.5" text-anchor="middle" fill="var(--text)" font-weight="600">b5</text><rect x="648" y="112" width="44" height="40" rx="8" fill="var(--accent)" fill-opacity=".14" stroke="var(--accent)" stroke-width="1.6"/><text x="670.0" y="136.375" font-size="12.5" text-anchor="middle" fill="var(--text)" font-weight="600">b6</text><rect x="696" y="112" width="44" height="40" rx="8" fill="var(--accent)" fill-opacity=".14" stroke="var(--accent)" stroke-width="1.6"/><text x="718.0" y="136.375" font-size="12.5" text-anchor="middle" fill="var(--text)" font-weight="600">b7</text><text x="758" y="138" font-size="12.5" text-anchor="start" fill="var(--text-muted)" font-weight="600">ymm1</text><rect x="360" y="174" width="44" height="40" rx="8" fill="var(--success)" fill-opacity=".14" stroke="var(--success)" stroke-width="1.6"/><text x="382.0" y="198.375" font-size="12.5" text-anchor="middle" fill="var(--text)" font-weight="600">c0</text><rect x="408" y="174" width="44" height="40" rx="8" fill="var(--success)" fill-opacity=".14" stroke="var(--success)" stroke-width="1.6"/><text x="430.0" y="198.375" font-size="12.5" text-anchor="middle" fill="var(--text)" font-weight="600">c1</text><rect x="456" y="174" width="44" height="40" rx="8" fill="var(--success)" fill-opacity=".14" stroke="var(--success)" stroke-width="1.6"/><text x="478.0" y="198.375" font-size="12.5" text-anchor="middle" fill="var(--text)" font-weight="600">c2</text><rect x="504" y="174" width="44" height="40" rx="8" fill="var(--success)" fill-opacity=".14" stroke="var(--success)" stroke-width="1.6"/><text x="526.0" y="198.375" font-size="12.5" text-anchor="middle" fill="var(--text)" font-weight="600">c3</text><rect x="552" y="174" width="44" height="40" rx="8" fill="var(--success)" fill-opacity=".14" stroke="var(--success)" stroke-width="1.6"/><text x="574.0" y="198.375" font-size="12.5" text-anchor="middle" fill="var(--text)" font-weight="600">c4</text><rect x="600" y="174" width="44" height="40" rx="8" fill="var(--success)" fill-opacity=".14" stroke="var(--success)" stroke-width="1.6"/><text x="622.0" y="198.375" font-size="12.5" text-anchor="middle" fill="var(--text)" font-weight="600">c5</text><rect x="648" y="174" width="44" height="40" rx="8" fill="var(--success)" fill-opacity=".14" stroke="var(--success)" stroke-width="1.6"/><text x="670.0" y="198.375" font-size="12.5" text-anchor="middle" fill="var(--text)" font-weight="600">c6</text><rect x="696" y="174" width="44" height="40" rx="8" fill="var(--success)" fill-opacity=".14" stroke="var(--success)" stroke-width="1.6"/><text x="718.0" y="198.375" font-size="12.5" text-anchor="middle" fill="var(--text)" font-weight="600">c7</text><text x="758" y="200" font-size="12.5" text-anchor="start" fill="var(--text-muted)" font-weight="600">ymm2</text><text x="340" y="76" font-size="1" text-anchor="middle" fill="var(--text)"></text><text x="370" y="236" font-size="12.5" text-anchor="start" fill="var(--text-muted)">+  and  =  applied to all 8 lanes in one instruction</text></svg>
 </div>
 
-**Virtual → physical address translation**
+### Virtual → physical address translation
 
 ```mermaid
 flowchart LR
@@ -154,7 +156,7 @@ grep -o -w 'avx2\|avx512f' /proc/cpuinfo | sort -u   # which SIMD sets this CPU 
 
 ## Mini project
 
-**A 5-stage pipeline simulator that shows stalls/bubbles on a small program.**
+### A 5-stage pipeline simulator that shows stalls/bubbles on a small program
 
 ```mermaid
 flowchart LR
@@ -165,7 +167,7 @@ flowchart LR
     SIM --> TABLE["print a cycle × instruction table<br/>+ CPI"]
 ```
 
-**Steps**
+### Steps
 
 1. Represent each instruction with `op, dst, src1, src2`; keep five pipeline "latches".
 2. Each cycle, move instructions forward; detect RAW (read-after-write) dependencies against instructions still in the pipeline.

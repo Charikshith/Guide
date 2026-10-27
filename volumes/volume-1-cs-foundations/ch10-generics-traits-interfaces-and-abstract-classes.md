@@ -10,9 +10,11 @@ Writing code over types; bounded polymorphism (traits/interfaces) and shared con
 
 **In one sentence:** generics let one piece of code work for many types, and traits/interfaces say *what a type must be able to do* for that code to work.
 
-**Mental model — a USB port.** A laptop's USB port doesn't care whether you plug in a mouse, a drive, or a phone. It only requires that the device speaks USB. The port is generic code; "speaks USB" is the trait bound; each device is a type that implements it.
+### Mental model — a USB port
 
-**The tools**
+A laptop's USB port doesn't care whether you plug in a mouse, a drive, or a phone. It only requires that the device speaks USB. The port is generic code; "speaks USB" is the trait bound; each device is a type that implements it.
+
+### The tools
 
 | Tool | What it is | Example |
 |------|-----------|---------|
@@ -23,7 +25,7 @@ Writing code over types; bounded polymorphism (traits/interfaces) and shared con
 | Protocol (Python) | structural typing: "has these methods" | `class Sized(Protocol): def __len__(self) -> int` |
 | Abstract class | a partial class: some methods implemented, some left abstract; cannot be instantiated | `class Shape(ABC)` with `@abstractmethod area` |
 
-**Interface vs abstract class**
+### Interface vs abstract class
 
 | | Interface / trait | Abstract class |
 |-|-------------------|----------------|
@@ -31,7 +33,7 @@ Writing code over types; bounded polymorphism (traits/interfaces) and shared con
 | Implement many? | yes | usually one parent |
 | Best for | "can do" capabilities: `Comparable`, `Iterator` | "is a" families with shared code: `HttpHandler` base |
 
-**Static vs dynamic dispatch**
+### Static vs dynamic dispatch
 
 | | Static (monomorphization) | Dynamic (vtable) |
 |-|---------------------------|------------------|
@@ -51,7 +53,7 @@ Writing code over types; bounded polymorphism (traits/interfaces) and shared con
 
 ## Diagram
 
-**`Box<T>` / `List<T>` — one blueprint, many concrete types**
+### `Box<T>` / `List<T>` — one blueprint, many concrete types
 
 ```mermaid
 flowchart TD
@@ -63,7 +65,7 @@ flowchart TD
 
 The compiler checks each use of the blueprint.
 
-**A `Shape` interface implemented by `Circle` and `Square`**
+### A `Shape` interface implemented by `Circle` and `Square`
 
 ```mermaid
 classDiagram
@@ -84,7 +86,7 @@ classDiagram
     Shape <|.. Square
 ```
 
-**Dispatch: monomorphized copies vs one vtable**
+### Dispatch: monomorphized copies vs one vtable
 
 <div class="fig">
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 230" role="img" aria-label="Static dispatch compiles one copy per type with direct calls; dynamic dispatch goes through a vtable pointer" style="width:100%;max-width:760px;height:auto;font-family:inherit"><defs><marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="context-stroke"/></marker></defs><text x="180" y="26" font-size="14" text-anchor="middle" fill="var(--text)" font-weight="700">static (generics)</text><text x="560" y="26" font-size="14" text-anchor="middle" fill="var(--text)" font-weight="700">dynamic (dyn Shape)</text><rect x="20" y="50" width="170" height="38" rx="8" fill="var(--primary)" fill-opacity=".14" stroke="var(--primary)" stroke-width="1.6"/><text x="105.0" y="73.2" font-size="12" text-anchor="middle" fill="var(--text)" font-weight="600">print_area::&lt;Circle&gt;</text><line x1="190" y1="69" x2="250" y2="69" stroke="var(--text-muted)" stroke-width="1.6" marker-end="url(#ar)"/><rect x="250" y="50" width="130" height="38" rx="8" fill="var(--success)" fill-opacity=".14" stroke="var(--success)" stroke-width="1.6"/><text x="315.0" y="73.2" font-size="12" text-anchor="middle" fill="var(--text)" font-weight="600">Circle::area</text><rect x="20" y="104" width="170" height="38" rx="8" fill="var(--primary)" fill-opacity=".14" stroke="var(--primary)" stroke-width="1.6"/><text x="105.0" y="127.2" font-size="12" text-anchor="middle" fill="var(--text)" font-weight="600">print_area::&lt;Square&gt;</text><line x1="190" y1="123" x2="250" y2="123" stroke="var(--text-muted)" stroke-width="1.6" marker-end="url(#ar)"/><rect x="250" y="104" width="130" height="38" rx="8" fill="var(--success)" fill-opacity=".14" stroke="var(--success)" stroke-width="1.6"/><text x="315.0" y="127.2" font-size="12" text-anchor="middle" fill="var(--text)" font-weight="600">Square::area</text><text x="200" y="178" font-size="12.5" text-anchor="middle" fill="var(--text-muted)">two compiled copies, direct calls</text><rect x="420" y="50" width="320" height="38" rx="8" fill="var(--primary)" fill-opacity=".14" stroke="var(--primary)" stroke-width="1.6"/><text x="580.0" y="73.375" font-size="12.5" text-anchor="middle" fill="var(--text)" font-weight="600">&amp;dyn Shape = (data ptr, vtable ptr)</text><line x1="660" y1="88" x2="660" y2="120" stroke="var(--text-muted)" stroke-width="1.6" marker-end="url(#ar)"/><rect x="480" y="120" width="260" height="70" rx="8" fill="var(--accent)" fill-opacity=".16" stroke="var(--accent)" stroke-width="1.6"/><text x="610" y="142" font-size="12.5" text-anchor="middle" fill="var(--accent)" font-weight="700">vtable</text><text x="494" y="162" font-size="12.5" text-anchor="start" fill="var(--text)">area → Circle::area</text><text x="494" y="180" font-size="12.5" text-anchor="start" fill="var(--text)">name → Circle::name</text></svg>
@@ -183,7 +185,7 @@ def smallest(xs: list[T]) -> T:
 
 ## Mini project
 
-**A generic in-memory cache `Cache<K, V>` with a trait for eviction policy.**
+### A generic in-memory cache `Cache<K, V>` with a trait for eviction policy
 
 ```mermaid
 classDiagram
@@ -207,7 +209,7 @@ classDiagram
     Cache --> EvictionPolicy : uses
 ```
 
-**Steps**
+### Steps
 
 1. Define `trait EvictionPolicy<K> { fn on_access(&mut self, k: &K); fn on_insert(&mut self, k: K); fn victim(&mut self) -> Option<K>; }`.
 2. Implement `Fifo` (a `VecDeque`) and `Lru` (a `VecDeque` moved-to-back on access; optimize later).

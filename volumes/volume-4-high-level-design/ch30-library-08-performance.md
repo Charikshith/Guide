@@ -46,6 +46,23 @@ Performance in system design is a **multidimensional goal** — balancing speed,
 > **Performance is a feature, not an afterthought.**
 
 
+### Where time goes in a request
+
+Each hop adds latency, and each has its own standard fix. Find the slowest hop first, then apply the fix for that hop.
+
+```mermaid
+flowchart TD
+  C([Client]) --> LB[Load balancer]
+  LB --> APP[App server<br/>thread or async pool]
+  APP -->|1. look up| CA[(Cache)]
+  CA -->|hit: fast path| APP
+  APP -->|2. on a miss| DB[(Database<br/>indexes, connection pool)]
+  APP -->|slow work| Q[[Queue]] --> W[Background worker]
+  CA -.- F1["Fixes: TTLs, request coalescing<br/>against stampedes"]
+  DB -.- F2["Fixes: indexes, batching,<br/>no N+1 queries, pagination"]
+  APP -.- F3["Fixes: pools sized to the work,<br/>async for I/O-bound calls"]
+```
+
 ### Key Metrics — Latency, Throughput, Scalability & Responsiveness
 
 *This section is in [Chapter 2 — Capacity Planning](ch02-capacity-planning.md), next to that chapter's practice material, so it is not repeated here.*
@@ -64,6 +81,8 @@ Performance in system design is a **multidimensional goal** — balancing speed,
 | Stress Testing   | Beyond normal load        | Graceful degradation/crash  |
 | Spike Testing    | Sudden burst load         | Absorb traffic spikes       |
 | Endurance (Soak) | Extended duration load    | Memory leaks / fatigue      |
+
+The four types differ in the shape of the load over time. Load and soak tests hold a normal level; soak simply runs for hours to expose leaks. Stress keeps rising until something breaks. Spike jumps suddenly and drops back.
 
 **Goal:** Identify bottlenecks & ensure reliability.
 

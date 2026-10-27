@@ -10,9 +10,11 @@ Debuggers (breakpoints, stepping), stack traces, profiling CPU/memory, and the s
 
 **In one sentence:** debugging is the scientific method applied to code — observe, guess, test the guess, narrow down — and profiling is measuring where time and memory actually go before you try to make anything faster.
 
-**Mental model — a detective.** The stack trace is the crime scene photo. The debugger is the ability to freeze time and inspect every suspect. `git bisect` is interviewing witnesses in halves: "was it before or after lunch?" A profiler is the security camera that shows where everyone actually spent their time — usually not where you guessed.
+### Mental model — a detective
 
-**The scientific debugging loop**
+The stack trace is the crime scene photo. The debugger is the ability to freeze time and inspect every suspect. `git bisect` is interviewing witnesses in halves: "was it before or after lunch?" A profiler is the security camera that shows where everyone actually spent their time — usually not where you guessed.
+
+### The scientific debugging loop
 
 1. **Reproduce** reliably — ideally as a failing automated test.
 2. **Observe** — read the *whole* error, stack trace, and logs.
@@ -21,7 +23,7 @@ Debuggers (breakpoints, stepping), stack traces, profiling CPU/memory, and the s
 5. **Narrow** — halve the search space: bisect commits, inputs, or code paths.
 6. **Fix + keep the test** so the bug can never return silently.
 
-**Debugger vocabulary**
+### Debugger vocabulary
 
 | Command | pdb | gdb / lldb | Does |
 |---------|-----|-----------|------|
@@ -34,7 +36,7 @@ Debuggers (breakpoints, stepping), stack traces, profiling CPU/memory, and the s
 | stack | `w`, `u`, `d` | `bt`, `up`, `down` | walk the call stack |
 | conditional | `b 42, total > 1000` | `break 42 if total > 1000` | stop only when a condition holds |
 
-**Profiler types**
+### Profiler types
 
 | Type | How | Overhead | Tools |
 |------|-----|----------|-------|
@@ -42,7 +44,9 @@ Debuggers (breakpoints, stepping), stack traces, profiling CPU/memory, and the s
 | Deterministic (tracing) | hook every call and return | high; distorts small functions | `cProfile`, `line_profiler` |
 | Memory | track allocations | medium | `tracemalloc`, `memray`, `heaptrack` |
 
-**Rule:** measure first. "Optimize" only the top of the profile, then measure again.
+### Rule
+
+Measure first. "Optimize" only the top of the profile, then measure again.
 
 ---
 
@@ -54,7 +58,7 @@ Debuggers (breakpoints, stepping), stack traces, profiling CPU/memory, and the s
 
 ## Diagram
 
-**A stack trace, annotated**
+### A stack trace, annotated
 
 ```pytb
 Traceback (most recent call last):
@@ -73,13 +77,13 @@ ZeroDivisionError: division by zero
 - `ZeroDivisionError: division by zero` is the error type and message.
 - **Hypothesis:** `paid` is empty. Why? Check the filter on line 10.
 
-**A flame graph of hot functions**
+### A flame graph of hot functions
 
 <div class="fig">
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 250" role="img" aria-label="Flame graph: str.format takes 60 percent of all time under format_rows, under build_report, under main" style="width:100%;max-width:760px;height:auto;font-family:inherit"><defs><marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="context-stroke"/></marker></defs><text x="20" y="22" font-size="12.5" text-anchor="start" fill="var(--text-muted)" font-weight="600">width = share of samples (time) · stacked = call depth · read the WIDE bars</text><rect x="20" y="40" width="720" height="40" rx="3" fill="var(--primary)" fill-opacity=".2" stroke="var(--primary)" stroke-width="1.6"/><text x="380.0" y="65" font-size="13" text-anchor="middle" fill="var(--text)" font-weight="600">main</text><rect x="20" y="86" width="540.0" height="40" rx="3" fill="var(--primary)" fill-opacity=".2" stroke="var(--primary)" stroke-width="1.6"/><text x="290.0" y="111" font-size="13" text-anchor="middle" fill="var(--text)" font-weight="600">build_report</text><rect x="560.0" y="86" width="180.0" height="40" rx="3" fill="var(--success)" fill-opacity=".2" stroke="var(--success)" stroke-width="1.6"/><text x="650.0" y="111" font-size="13" text-anchor="middle" fill="var(--text)" font-weight="600">load_orders</text><rect x="20" y="132" width="396.00000000000006" height="40" rx="3" fill="var(--primary)" fill-opacity=".2" stroke="var(--primary)" stroke-width="1.6"/><text x="218.00000000000003" y="157" font-size="13" text-anchor="middle" fill="var(--text)" font-weight="600">format_rows</text><rect x="416.00000000000006" y="132" width="143.99999999999997" height="40" rx="3" fill="var(--primary)" fill-opacity=".2" stroke="var(--primary)" stroke-width="1.6"/><text x="488.0" y="157" font-size="13" text-anchor="middle" fill="var(--text)" font-weight="600">sum</text><rect x="560.0" y="132" width="180.0" height="40" rx="3" fill="var(--success)" fill-opacity=".2" stroke="var(--success)" stroke-width="1.6"/><text x="650.0" y="157" font-size="13" text-anchor="middle" fill="var(--text)" font-weight="600">json.loads</text><rect x="20" y="178" width="396.00000000000006" height="40" rx="3" fill="var(--danger)" fill-opacity=".45" stroke="var(--danger)" stroke-width="1.6"/><text x="218.00000000000003" y="203" font-size="13" text-anchor="middle" fill="var(--text)" font-weight="600">str.format  ←  60% of all time</text></svg>
 </div>
 
-**git bisect — binary search over history**
+### git bisect — binary search over history
 
 ```mermaid
 flowchart LR
@@ -159,7 +163,7 @@ flowchart LR
     C --> D["py-spy record → flame graph:<br/>list.__contains__ dominates"] --> E["fix: id_set = set(id_list)"] --> F["re-profile; commit both SVGs<br/>+ timings in a short write-up"]
 ```
 
-**Steps**
+### Steps
 
 1. Write a report generator and a benchmark with a fixed seed and a realistic data size.
 2. Introduce one realistic bug: list membership in a loop, or an N+1 query against SQLite.

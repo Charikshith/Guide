@@ -10,9 +10,11 @@ ReAct-style agents, tool calling, planning loops, and frameworks (LangGraph, and
 
 **In one sentence:** an agent is an LLM in a loop — it reads the goal, decides which tool to call, your code runs that tool, the result goes back into the context, and the loop repeats until the model says it's done or a limit stops it.
 
-**Mental model — a new intern with a phone.** The intern (the LLM) can't touch anything directly. They can only *ask* you: "please run `search('flight prices')`". You run it, hand back the answer, and they decide the next step. You stay in control of every real action — and you set a rule like "at most 10 calls, then report back".
+### Mental model — a new intern with a phone
 
-**How tool calling works under the hood**
+The intern (the LLM) can't touch anything directly. They can only *ask* you: "please run `search('flight prices')`". You run it, hand back the answer, and they decide the next step. You stay in control of every real action — and you set a rule like "at most 10 calls, then report back".
+
+### How tool calling works under the hood
 
 | Step | What happens |
 |------|--------------|
@@ -24,7 +26,7 @@ ReAct-style agents, tool calling, planning loops, and frameworks (LangGraph, and
 
 The model was trained to emit tool calls in this format; the "magic" is just structured output plus your loop.
 
-**Agent patterns**
+### Agent patterns
 
 | Pattern | Idea | Use when |
 |---------|------|----------|
@@ -34,9 +36,11 @@ The model was trained to emit tool calls in this format; the "magic" is just str
 | Reflection / critic | a second pass checks the result and asks for fixes | quality-critical outputs (code, reports) |
 | Workflow (fixed graph) | the steps are code; the LLM fills in each step | predictable processes — often better than a free agent |
 
-**Frameworks vs the loop beneath them** — LangGraph models an agent as a *state graph*: nodes (LLM call, tool node), edges (conditional: "if the model asked for a tool, go to the tool node"), a shared state object, checkpoints for pause/resume, and human-in-the-loop interrupts. Others: the Claude Agent SDK, OpenAI Agents SDK, LlamaIndex, CrewAI. All of them wrap the same ~30-line loop. Learn the loop first; adopt a framework when you need persistence, streaming, or complex graphs.
+### Frameworks vs the loop beneath them
 
-**Keeping an agent from looping forever**
+LangGraph models an agent as a *state graph*: nodes (LLM call, tool node), edges (conditional: "if the model asked for a tool, go to the tool node"), a shared state object, checkpoints for pause/resume, and human-in-the-loop interrupts. Others: the Claude Agent SDK, OpenAI Agents SDK, LlamaIndex, CrewAI. All of them wrap the same ~30-line loop. Learn the loop first; adopt a framework when you need persistence, streaming, or complex graphs.
+
+### Keeping an agent from looping forever
 
 | Guard | How |
 |-------|-----|
@@ -57,7 +61,7 @@ The model was trained to emit tool calls in this format; the "magic" is just str
 
 ## Diagram
 
-**The agent loop: plan → call tool → observe → repeat until done**
+### The agent loop: plan → call tool → observe → repeat until done
 
 ```mermaid
 flowchart TD
@@ -72,7 +76,7 @@ flowchart TD
     D -- "end_turn" --> F["final answer"]
 ```
 
-**What the messages look like**
+### What the messages look like
 
 ```mermaid
 sequenceDiagram
@@ -91,7 +95,7 @@ sequenceDiagram
     LLM-->>App: end_turn "About 2.38 million people."
 ```
 
-**LangGraph's view of the same loop**
+### LangGraph's view of the same loop
 
 ```mermaid
 stateDiagram-v2
@@ -183,7 +187,7 @@ print(run_agent("What is 17% of Tokyo's population?"))
 
 ## Mini project
 
-**A tool-calling agent with bounded iterations and error recovery.**
+### A tool-calling agent with bounded iterations and error recovery
 
 ```mermaid
 flowchart LR
@@ -195,7 +199,7 @@ flowchart LR
     L --> LOG["JSONL transcript of every step"]
 ```
 
-**Steps**
+### Steps
 
 1. A `Tool` dataclass: name, description, JSON Schema, function, and `dangerous` flag.
 2. Validate arguments with `jsonschema` before running; return schema errors as actionable text.
@@ -209,7 +213,7 @@ flowchart LR
 
 ## Build #3
 
-**An AI Coding Assistant — read/write files, run commands, plan and execute tasks.**
+### An AI Coding Assistant — read/write files, run commands, plan and execute tasks
 
 ```mermaid
 flowchart TD
@@ -224,7 +228,7 @@ flowchart TD
     AG --> OUT["summary + diff + test results"]
 ```
 
-**Steps**
+### Steps
 
 1. File tools restricted to one workspace directory (resolve paths; reject `..` and symlinks leaving the root).
 2. `edit_file` takes an exact old string and new string (like a search-and-replace), so edits are small and reviewable; refuse if the old string isn't unique.

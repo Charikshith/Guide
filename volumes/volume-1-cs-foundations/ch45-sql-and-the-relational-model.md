@@ -10,9 +10,11 @@ The relational model; SQL (SELECT/JOIN/GROUP BY/subqueries); PostgreSQL vs MySQL
 
 **In one sentence:** a relational database stores facts in tables of rows and columns linked by keys, and SQL is a declarative language where you describe *what* rows you want and the database figures out *how* to get them.
 
-**Mental model — spreadsheets that reference each other.** Each table is a sheet with one kind of thing (users, orders). Every row has a unique ID (the primary key). Instead of copying a customer's name into every order, an order stores the customer's ID (a foreign key) — like a cell that points to a row in another sheet. A JOIN follows those pointers.
+### Mental model — spreadsheets that reference each other
 
-**Vocabulary**
+Each table is a sheet with one kind of thing (users, orders). Every row has a unique ID (the primary key). Instead of copying a customer's name into every order, an order stores the customer's ID (a foreign key) — like a cell that points to a row in another sheet. A JOIN follows those pointers.
+
+### Vocabulary
 
 | Term | Meaning |
 |------|---------|
@@ -39,7 +41,7 @@ The relational model; SQL (SELECT/JOIN/GROUP BY/subqueries); PostgreSQL vs MySQL
 
 That's why you can't use a `SELECT` alias in `WHERE` — `WHERE` runs first.
 
-**Join types**
+### Join types
 
 | Join | Returns |
 |------|---------|
@@ -51,7 +53,7 @@ That's why you can't use a `SELECT` alias in `WHERE` — `WHERE` runs first.
 | Self-join | a table joined to itself (employee → manager) |
 | Anti-join | "rows with no match": `LEFT JOIN … WHERE right.id IS NULL`, or `NOT EXISTS` |
 
-**PostgreSQL vs MySQL (InnoDB)**
+### PostgreSQL vs MySQL (InnoDB)
 
 | | PostgreSQL | MySQL |
 |-|------------|-------|
@@ -71,7 +73,7 @@ None. (Set operations from [Vol 0 Ch 2](../volume-0-math/ch02-sets-relations-and
 
 ## Diagram
 
-**An ER diagram with FK relationships**
+### An ER diagram with FK relationships
 
 ```mermaid
 erDiagram
@@ -103,7 +105,7 @@ erDiagram
     }
 ```
 
-**INNER vs LEFT JOIN on sample data**
+### INNER vs LEFT JOIN on sample data
 
 | users.id | users.name |
 |---|---|
@@ -125,7 +127,7 @@ erDiagram
 | Ada | 11 |
 | Bob | 12 |
 
-**LEFT JOIN**
+### LEFT JOIN
 
 | name | order |
 |---|---|
@@ -235,7 +237,7 @@ SELECT * FROM ranked WHERE rn = 1;
 
 ## Mini project
 
-**A normalized schema + query set for an e-commerce store.**
+### A normalized schema + query set for an e-commerce store
 
 ```mermaid
 flowchart LR
@@ -244,7 +246,7 @@ flowchart LR
     Q --> T["tests: each query checked<br/>against a small hand-made dataset"]
 ```
 
-**Steps**
+### Steps
 
 1. Design the tables with PKs, FKs, `NOT NULL`, `UNIQUE`, and `CHECK` constraints; money as integer cents.
 2. Seed realistic data with Faker (and some edge cases: users with no orders, cancelled orders).

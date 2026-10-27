@@ -10,9 +10,11 @@ Normal forms, denormalization trade-offs, B-tree indexes, composite indexes, and
 
 **In one sentence:** normalization stores each fact exactly once so it can't contradict itself, denormalization deliberately copies facts to make reads faster, and indexes are sorted side-structures that let the database jump to rows instead of scanning them — and `EXPLAIN` shows you which path the planner chose.
 
-**Mental model — a library.** Normalization: each author's biography is written once, in the author file, not photocopied into every book. An index is the card catalog, sorted by author then title: you flip straight to "Tolkien" instead of walking every shelf. A composite index is like a phone book sorted by (last name, first name): it helps you find "Smith, John" or all Smiths, but not everyone named John.
+### Mental model — a library
 
-**Normal forms (the practical three)**
+Normalization: each author's biography is written once, in the author file, not photocopied into every book. An index is the card catalog, sorted by author then title: you flip straight to "Tolkien" instead of walking every shelf. A composite index is like a phone book sorted by (last name, first name): it helps you find "Smith, John" or all Smiths, but not everyone named John.
+
+### Normal forms (the practical three)
 
 | Form | Rule | Violation example | Fix |
 |------|------|-------------------|-----|
@@ -22,9 +24,13 @@ Normal forms, denormalization trade-offs, B-tree indexes, composite indexes, and
 
 "Every non-key attribute depends on the key, the whole key, and nothing but the key."
 
-**Anomalies normalization prevents:** *update* (change a city in one row but not the others), *insert* (can't add a product until someone orders it), *delete* (deleting the last order erases the customer).
+### Anomalies normalization prevents
 
-**When to denormalize** — on purpose, after measuring:
+*update* (change a city in one row but not the others), *insert* (can't add a product until someone orders it), *delete* (deleting the last order erases the customer).
+
+### When to denormalize
+
+On purpose, after measuring:
 
 * read-heavy paths where joins dominate (feeds, dashboards) → materialized views, summary tables, cached counters;
 * analytics (star schemas);
@@ -32,7 +38,7 @@ Normal forms, denormalization trade-offs, B-tree indexes, composite indexes, and
 
 Cost: you must keep the copies in sync (triggers, application logic, events), and they can drift.
 
-**B-tree indexes**
+### B-tree indexes
 
 | Fact | Consequence |
 |------|------------|
@@ -41,7 +47,9 @@ Cost: you must keep the copies in sync (triggers, application logic, events), an
 | Every index is updated on every write | more indexes → slower writes and more storage |
 | Low-selectivity columns (`is_active` true/false) | rarely helpful alone; consider a partial index |
 
-**Composite index order matters — the leftmost-prefix rule.** An index on `(user_id, created_at)` supports:
+### Composite index order matters — the leftmost-prefix rule
+
+An index on `(user_id, created_at)` supports:
 
 | Query | Uses the index? |
 |-------|:-:|
@@ -62,7 +70,7 @@ Rule of thumb: equality columns first, then the range or sort column. A **coveri
 
 ## Diagram
 
-**A B-tree index over `orders.user_id`**
+### A B-tree index over `orders.user_id`
 
 ```mermaid
 graph TD
@@ -79,7 +87,7 @@ graph TD
 
 `WHERE user_id = 300`: root → A → leaf 250…399 → heap row. Three hops, not a million.
 
-**Composite index `(user_id, created_at)` — how entries are sorted**
+### Composite index `(user_id, created_at)` — how entries are sorted
 
 Index on `(user_id, created_at)`, in sorted order:
 
@@ -94,7 +102,7 @@ Index on `(user_id, created_at)`, in sorted order:
 
 `created_at` alone is scattered across every `user_id`, so the index doesn't help.
 
-**A query plan tree from EXPLAIN**
+### A query plan tree from EXPLAIN
 
 ```mermaid
 graph TD
@@ -132,7 +140,9 @@ CREATE UNIQUE INDEX users_email_lower_idx ON users (lower(email));
 SELECT * FROM users WHERE lower(email) = lower('Ada@Example.com');
 ```
 
-**Reading EXPLAIN** — look for: `Seq Scan` on big tables with selective filters; big gaps between *estimated* and *actual* rows (stale statistics → `ANALYZE`); `Sort` or `Hash` spilling to disk; `Nested Loop` with many loops over a scan; `Rows Removed by Filter` in the millions.
+### Reading EXPLAIN
+
+Look for: `Seq Scan` on big tables with selective filters; big gaps between *estimated* and *actual* rows (stale statistics → `ANALYZE`); `Sort` or `Hash` spilling to disk; `Nested Loop` with many loops over a scan; `Rows Removed by Filter` in the millions.
 
 ---
 
@@ -161,7 +171,7 @@ SELECT * FROM users WHERE lower(email) = lower('Ada@Example.com');
 
 ## Mini project
 
-**Add indexes to a slow schema and measure the query-speed change.**
+### Add indexes to a slow schema and measure the query-speed change
 
 ```mermaid
 flowchart LR
@@ -171,7 +181,7 @@ flowchart LR
     A & W --> REP["report.md: table of<br/>time, plan type, buffers, index size"]
 ```
 
-**Steps**
+### Steps
 
 1. Load realistic, skewed data with `generate_series` in Postgres (a few heavy users, many light ones).
 2. Pick 5 queries: a lookup by email, a user's recent orders, pending orders older than 1 day, revenue by day for a month, and search by name prefix.

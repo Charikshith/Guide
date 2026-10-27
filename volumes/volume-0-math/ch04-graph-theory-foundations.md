@@ -10,9 +10,11 @@ Vertices, edges, directed vs undirected, degree, paths/cycles, connectivity, tre
 
 **In one sentence:** a graph is dots (vertices) joined by lines (edges), and it is the shape behind maps, social networks, package dependencies, and the internet.
 
-**Mental model — a city map.** Intersections are vertices. Streets are edges. One-way streets make it *directed*. Road length makes it *weighted*. "Can I drive from here to there?" is a *path* question.
+### Mental model — a city map
 
-**Key terms**
+Intersections are vertices. Streets are edges. One-way streets make it *directed*. Road length makes it *weighted*. "Can I drive from here to there?" is a *path* question.
+
+### Key terms
 
 | Term | Meaning |
 |------|---------|
@@ -31,7 +33,7 @@ Vertices, edges, directed vs undirected, degree, paths/cycles, connectivity, tre
 | Bridge / cut vertex | an edge / vertex whose removal disconnects the graph |
 | Biconnected | no cut vertex — survives the loss of any single vertex |
 
-**Two ways to store a graph**
+### Two ways to store a graph
 
 | | Adjacency list | Adjacency matrix |
 |-|----------------|------------------|
@@ -40,7 +42,9 @@ Vertices, edges, directed vs undirected, degree, paths/cycles, connectivity, tre
 | List neighbors | `O(deg a)` | `O(V)` |
 | Best for | sparse graphs (most real ones) | dense graphs, small V |
 
-**Handshaking lemma:** `Σ deg(v) = 2 · |E|`, because every edge adds 1 to the degree of each of its two ends.
+### Handshaking lemma
+
+`Σ deg(v) = 2 · |E|`, because every edge adds 1 to the degree of each of its two ends.
 
 ---
 
@@ -52,7 +56,7 @@ Vertices, edges, directed vs undirected, degree, paths/cycles, connectivity, tre
 
 ## Diagram
 
-**A small graph, labeled**
+### A small graph, labeled
 
 ```mermaid
 graph LR
@@ -64,7 +68,9 @@ graph LR
     D --- E["E · degree 1"]
 ```
 
-**Path:** A → B → D → E · **Cycle:** B → C → D → B · **Degrees:** A 2 + B 3 + C 3 + D 3 + E 1 = 12 = 2 × 6 edges ✓
+### Path
+
+A → B → D → E · **Cycle:** B → C → D → B · **Degrees:** A 2 + B 3 + C 3 + D 3 + E 1 = 12 = 2 × 6 edges ✓
 
 ```mermaid
 graph LR
@@ -76,7 +82,9 @@ graph LR
     D --- E((E))
 ```
 
-**A spanning tree of that graph** — keep every vertex, drop edges until there are no cycles. 5 vertices → 4 edges.
+### A spanning tree of that graph
+
+Keep every vertex, drop edges until there are no cycles. 5 vertices → 4 edges.
 
 ```mermaid
 graph LR
@@ -86,7 +94,7 @@ graph LR
     D --- E((E))
 ```
 
-**Directed acyclic graph (DAG) — build order**
+### Directed acyclic graph (DAG) — build order
 
 ```mermaid
 graph LR
@@ -164,7 +172,7 @@ print(has_cycle_undirected(tree))                  # False — 3 vertices, 2 edg
 
 ## Mini project
 
-**A graph class with degree, path-existence, and cycle-detection helpers.**
+### A graph class with degree, path-existence, and cycle-detection helpers
 
 ```mermaid
 classDiagram
@@ -180,7 +188,7 @@ classDiagram
     }
 ```
 
-**Steps**
+### Steps
 
 1. Store adjacency as `dict[vertex, set[vertex]]`; support `directed=True/False`.
 2. Implement `degree` (in/out for directed), `has_path` (DFS), `components`.

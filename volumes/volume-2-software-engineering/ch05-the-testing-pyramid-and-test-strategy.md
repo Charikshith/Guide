@@ -10,9 +10,11 @@ Unit/integration/e2e proportions, test doubles, property-based testing, and flak
 
 **In one sentence:** a test strategy decides *what* to test at *which* level so the suite catches real bugs quickly and cheaply — lots of fast unit and property tests for logic, fewer integration tests for wiring, a thin layer of end-to-end tests for critical journeys — and treats flaky tests as bugs.
 
-**Mental model — a building inspection.** You check every brick and beam at the factory (unit), then check that walls join properly on site (integration), then walk through the finished house once (end-to-end). Walking through the whole house to check each brick would be absurdly slow — that's a suite made only of E2E tests (the "ice-cream cone" anti-pattern).
+### Mental model — a building inspection
 
-**Proportions (a guide, not a law)**
+You check every brick and beam at the factory (unit), then check that walls join properly on site (integration), then walk through the finished house once (end-to-end). Walking through the whole house to check each brick would be absurdly slow — that's a suite made only of E2E tests (the "ice-cream cone" anti-pattern).
+
+### Proportions (a guide, not a law)
 
 | Level | Share | Speed per test | What it proves | Owner |
 |-------|:-:|---------------|----------------|-------|
@@ -26,7 +28,9 @@ Shapes you'll hear about: the **pyramid** (this one); the **testing trophy** (in
 
 **Right ratio?** The one where most bugs are caught by the cheapest test that *can* catch them. Pure logic → unit. SQL correctness → integration against a real DB (mocks can't catch SQL bugs). Cross-service contracts → contract tests. "The checkout button works" → one E2E.
 
-**Property-based testing** — instead of listing examples, state a *property* that must hold for all inputs and let the tool generate hundreds of inputs, including nasty edge cases, then *shrink* any failure to a minimal counterexample.
+### Property-based testing
+
+Instead of listing examples, state a *property* that must hold for all inputs and let the tool generate hundreds of inputs, including nasty edge cases, then *shrink* any failure to a minimal counterexample.
 
 | Property type | Example |
 |---------------|---------|
@@ -36,7 +40,9 @@ Shapes you'll hear about: the **pyramid** (this one); the **testing trophy** (in
 | Idempotence | `normalize(normalize(s)) == normalize(s)` |
 | Metamorphic | `search(q) ⊇ search(q + " extra filter")` |
 
-**Flaky tests** — tests that pass and fail without code changes. Common causes and fixes:
+### Flaky tests
+
+Tests that pass and fail without code changes. Common causes and fixes:
 
 | Cause | Fix |
 |-------|-----|
@@ -49,7 +55,7 @@ Shapes you'll hear about: the **pyramid** (this one); the **testing trophy** (in
 
 Policy: **quarantine** a flaky test immediately (don't let it train people to ignore red), file a ticket with an owner, fix or delete within days, and track the flake rate.
 
-**Scope and size are different questions**
+### Scope and size are different questions
 
 *Scope* is **what code a test verifies**: a *unit* test checks one small piece through its public interface (test behaviour and resulting state, not the exact sequence of internal calls, so refactoring doesn't break it); a *narrow integration* test checks one service's adapter against one real dependency (the repository against a real Postgres); a *broad* or *end-to-end* test checks a user scenario across several live services. *Size* is **what it needs to run** (Google's terms):
 
@@ -61,7 +67,9 @@ Policy: **quarantine** a flaky test immediately (don't let it train people to ig
 
 Write the *smallest* test that can catch the bug at the scope you need. End-to-end tests are the most brittle and the hardest to diagnose (which of five services broke?), so keep them few and make each one a **user journey** — create an order, change it, cancel it — rather than many separate one-step tests.
 
-**Choosing a test double** — to shrink a test you replace a dependency:
+### Choosing a test double
+
+To shrink a test you replace a dependency:
 
 | Double | What it is | Resemblance to the real thing |
 |--------|-----------|-------------------------------|
@@ -72,9 +80,13 @@ Write the *smallest* test that can catch the bug at the scope you need. End-to-e
 
 The less a double resembles reality, the less a passing test proves. Pair mocks with **contract tests**: the consumer records the request it sends and the response it expects; the provider's own test suite replays those contracts against the real implementation, so the mock can't silently drift from reality.
 
-**When the stakes are high, test the real thing in production.** Some behaviour is too costly to get wrong to trust doubles — for example "delete all of a user's data" under GDPR, where a silent failure can mean fines of up to 4% of annual turnover. Run an end-to-end check periodically *in production* against live services (create a synthetic user, purge it, verify nothing remains anywhere).
+### When the stakes are high, test the real thing in production
 
-**Check the design before writing code: formal specifications.** Tests only explore the cases people think of. A system at scale will eventually hit the rare interleavings nobody imagined. A *formal specification* in a language like **TLA+** describes the system as states and the steps between them; a **model checker** then explores *every* reachable interleaving and checks your properties — *safety* ("the two stores never disagree permanently") and *liveness* ("every write is eventually applied") — returning a step-by-step counterexample when one fails. Amazon used it on S3 and DynamoDB, Microsoft on Cosmos DB. Specify only the risky core (a replication or migration protocol), at a level of detail that still catches the bug.
+Some behaviour is too costly to get wrong to trust doubles — for example "delete all of a user's data" under GDPR, where a silent failure can mean fines of up to 4% of annual turnover. Run an end-to-end check periodically *in production* against live services (create a synthetic user, purge it, verify nothing remains anywhere).
+
+### Check the design before writing code: formal specifications
+
+Tests only explore the cases people think of. A system at scale will eventually hit the rare interleavings nobody imagined. A *formal specification* in a language like **TLA+** describes the system as states and the steps between them; a **model checker** then explores *every* reachable interleaving and checks your properties — *safety* ("the two stores never disagree permanently") and *liveness* ("every write is eventually applied") — returning a step-by-step counterexample when one fails. Amazon used it on S3 and DynamoDB, Microsoft on Cosmos DB. Specify only the risky core (a replication or migration protocol), at a level of detail that still catches the bug.
 
 Example: migrating from store X to store Y with **dual writes** (write both, read X, backfill Y, then switch reads to Y). A model checker quickly finds two failures: a process that crashes between the two writes leaves them permanently different, and two instances writing concurrently can have their writes land in *opposite orders* in the two stores:
 
@@ -103,13 +115,13 @@ The fix is to stop writing to two places directly: write once to a log or queue 
 
 ## Diagram
 
-**The testing pyramid with effort/count annotations**
+### The testing pyramid with effort/count annotations
 
 <div class="fig">
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 338" role="img" aria-label="Test pyramid with counts, run times and tools for end-to-end, contract, integration and unit-plus-property tests" style="width:100%;max-width:800px;height:auto;font-family:inherit"><defs><marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="context-stroke"/></marker></defs><polygon points="210.0,40 250.0,40 287.5,98 172.5,98" fill="var(--danger)" fill-opacity=".28" stroke="var(--danger)" stroke-width="1.8"/><text x="230" y="74" font-size="14" text-anchor="middle" fill="var(--text)" font-weight="700">E2E</text><text x="440" y="66" font-size="13.5" text-anchor="start" fill="var(--text)" font-weight="700">~15 tests · 6 min · Playwright</text><text x="440" y="84" font-size="12.5" text-anchor="start" fill="var(--text-muted)">critical journeys: sign up, checkout, refund</text><polygon points="172.5,102 287.5,102 325.0,160 135.0,160" fill="var(--accent)" fill-opacity=".28" stroke="var(--accent)" stroke-width="1.8"/><text x="230" y="136" font-size="14" text-anchor="middle" fill="var(--text)" font-weight="700">Contract</text><text x="440" y="128" font-size="13.5" text-anchor="start" fill="var(--text)" font-weight="700">~10 · 20 s · Pact</text><polygon points="135.0,164 325.0,164 362.5,222 97.5,222" fill="var(--primary)" fill-opacity=".28" stroke="var(--primary)" stroke-width="1.8"/><text x="230" y="198" font-size="14" text-anchor="middle" fill="var(--text)" font-weight="700">Integration</text><text x="440" y="190" font-size="13.5" text-anchor="start" fill="var(--text)" font-weight="700">~150 · 90 s · Postgres + Redis in containers</text><polygon points="97.5,226 362.5,226 400.0,284 60.0,284" fill="var(--success)" fill-opacity=".28" stroke="var(--success)" stroke-width="1.8"/><text x="230" y="260" font-size="14" text-anchor="middle" fill="var(--text)" font-weight="700">Unit + property</text><text x="440" y="252" font-size="13.5" text-anchor="start" fill="var(--text)" font-weight="700">~1,500 · 20 s · pure logic, fakes</text><text x="230" y="22" font-size="12.5" text-anchor="middle" fill="var(--text-muted)" font-weight="600">▲ cost to write &amp; maintain, run time, flakiness</text><text x="230" y="310" font-size="12.5" text-anchor="middle" fill="var(--text-muted)" font-weight="600">▼ count, speed, precision of failure messages</text></svg>
 </div>
 
-**Pick the cheapest level that can catch the bug**
+### Pick the cheapest level that can catch the bug
 
 ```mermaid
 flowchart TD
@@ -122,7 +134,7 @@ flowchart TD
     C -- no --> E["E2E test (only if it is a critical journey)"]
 ```
 
-**Property-based testing: generate → check → shrink**
+### Property-based testing: generate → check → shrink
 
 ```
  property: for all lists xs, my_sort(xs) == sorted(xs)
@@ -206,7 +218,7 @@ addopts = -p randomly --strict-markers
 
 ## Mini project
 
-**A test suite for a small API with the pyramid proportions enforced by CI.**
+### A test suite for a small API with the pyramid proportions enforced by CI
 
 ```mermaid
 flowchart LR
@@ -216,7 +228,7 @@ flowchart LR
     U & I & E --> REP["junit.xml per level"] --> GATE["CI script: fail if<br/>E2E > 10% of tests,<br/>unit runtime > 30 s,<br/>any test marked flaky > 7 days"]
 ```
 
-**Steps**
+### Steps
 
 1. A small API with pricing rules, carts, and orders.
 2. Unit tests + at least 3 properties (round trip, invariant, oracle) for pricing.

@@ -10,7 +10,9 @@ Turning text into tokens — BPE/WordPiece/SentencePiece; token limits and the b
 
 **In one sentence:** before a model sees text, a tokenizer chops it into subword pieces from a fixed vocabulary and turns each into an integer — and that choice quietly decides your cost, your context limit, and a surprising number of model mistakes.
 
-**Mental model — LEGO bricks.** You could build everything from single-stud bricks (characters): flexible, but a castle needs millions of them. You could have one custom piece per object (whole words): fast to build, but there's no piece for a word you've never seen. Subword tokenizers are a LEGO set with common chunks ("ing", "the", "tion") plus small bricks as a fallback — any text can be built, and common text is built from few pieces.
+### Mental model — LEGO bricks
+
+You could build everything from single-stud bricks (characters): flexible, but a castle needs millions of them. You could have one custom piece per object (whole words): fast to build, but there's no piece for a word you've never seen. Subword tokenizers are a LEGO set with common chunks ("ing", "the", "tion") plus small bricks as a fallback — any text can be built, and common text is built from few pieces.
 
 **Why subwords?**
 
@@ -20,7 +22,7 @@ Turning text into tokens — BPE/WordPiece/SentencePiece; token limits and the b
 | Whole words | millions | often (`<unk>`) | short | huge embedding table; no sharing between "run" / "running" |
 | **Subwords** | ~32k–200k | never (byte fallback) | medium | the sweet spot |
 
-**Algorithms**
+### Algorithms
 
 | Algorithm | Used by | Idea |
 |-----------|---------|------|
@@ -29,11 +31,15 @@ Turning text into tokens — BPE/WordPiece/SentencePiece; token limits and the b
 | Unigram LM | SentencePiece (T5, many multilingual models) | start with a big vocabulary; prune tokens that least hurt the likelihood; can sample segmentations |
 | SentencePiece | a *library* (BPE or Unigram) | treats input as a raw stream, spaces become `▁`; no language-specific pre-tokenizer |
 
-**Rules of thumb (English, GPT-style tokenizers)** — ~4 characters or ~¾ of a word per token; 1,000 tokens ≈ 750 words. Other languages, code, numbers, and emoji can be 2–10× more tokens for the same meaning.
+### Rules of thumb (English, GPT-style tokenizers)
 
-**Token limits and cost** — the **context window** (e.g. 200k tokens) counts *input + output* tokens; APIs bill **per token**, usually with output tokens costing more than input. Always count with the model's own tokenizer — character estimates are off by a lot for code and non-English text.
+~4 characters or ~¾ of a word per token; 1,000 tokens ≈ 750 words. Other languages, code, numbers, and emoji can be 2–10× more tokens for the same meaning.
 
-**Failure modes caused by tokenization**
+### Token limits and cost
+
+The **context window** (e.g. 200k tokens) counts *input + output* tokens; APIs bill **per token**, usually with output tokens costing more than input. Always count with the model's own tokenizer — character estimates are off by a lot for code and non-English text.
+
+### Failure modes caused by tokenization
 
 | Symptom | Cause |
 |---------|-------|
@@ -55,7 +61,9 @@ Turning text into tokens — BPE/WordPiece/SentencePiece; token limits and the b
 
 ## Diagram
 
-**A BPE merge table turning "low lower lowest" into subword tokens** — corpus word counts: low ×5, lower ×2, lowest ×3, newest ×6 (`</w>` marks the end of a word)
+### A BPE merge table turning "low lower lowest" into subword tokens
+
+Corpus word counts: low ×5, lower ×2, lowest ×3, newest ×6 (`</w>` marks the end of a word)
 
 Start: `l o w </w>` · `l o w e r </w>` · `l o w e s t </w>` · `n e w e s t </w>`
 
@@ -68,11 +76,13 @@ Start: `l o w </w>` · `l o w e r </w>` · `l o w e s t </w>` · `n e w e s t </
 | 5 | `west + </w>` | 9 | `lo west</w>` · `n e west</w>` |
 | 6 | `n + e → ne` | 6 | `ne west</w>` |
 
-**Final tokens:** `"low"` → `[lo, w, </w>]` · `"lower"` → `[lo, we, r, </w>]` · `"lowest"` → `[lo, west</w>]` · `"newest"` → `[ne, west</w>]`
+### Final tokens
+
+`"low"` → `[lo, w, </w>]` · `"lower"` → `[lo, we, r, </w>]` · `"lowest"` → `[lo, west</w>]` · `"newest"` → `[ne, west</w>]`
 
 A new word `"slowest"` → `[s, lo, west</w>]`: never seen, still encodable.
 
-**Encode → model → decode**
+### Encode → model → decode
 
 ```mermaid
 flowchart LR
@@ -181,7 +191,7 @@ print(merges)   # [('w','e'), ('l','o'), ('we','s'), ('wes','t'), ('west','</w>'
 
 ## Mini project
 
-**A tokenizer visualizer that highlights token boundaries.**
+### A tokenizer visualizer that highlights token boundaries
 
 ```mermaid
 flowchart LR
@@ -192,7 +202,7 @@ flowchart LR
     VIEW --> CMP["side-by-side comparison of tokenizers"]
 ```
 
-**Steps**
+### Steps
 
 1. Load 2–3 tokenizers (`tiktoken`, a Hugging Face `tokenizers` model, and your own BPE from the exercise).
 2. Encode the input and map each token back to its character span (use offsets, or decode tokens one by one and handle partial UTF-8 bytes).

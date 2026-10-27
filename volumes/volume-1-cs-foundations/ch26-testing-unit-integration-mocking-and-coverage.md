@@ -10,9 +10,11 @@ The testing pyramid; unit vs integration; mocks/stubs/fakes; coverage as a signa
 
 **In one sentence:** tests are executable claims about behavior; most should be fast unit tests of pure logic, some should prove real parts work together, a few should exercise the whole system — and every test must fail for the right reason.
 
-**Mental model — checking a car.** Unit tests check each part on a bench: does the spark plug spark? Integration tests bolt a few parts together: does the engine start? End-to-end tests drive the car around the block. You run bench tests all day; you only take the test drive before delivery.
+### Mental model — checking a car
 
-**Kinds of tests**
+Unit tests check each part on a bench: does the spark plug spark? Integration tests bolt a few parts together: does the engine start? End-to-end tests drive the car around the block. You run bench tests all day; you only take the test drive before delivery.
+
+### Kinds of tests
 
 | Kind | Scope | Speed | Uses real I/O? | Catches |
 |------|-------|-------|:-:|---------|
@@ -22,7 +24,7 @@ The testing pyramid; unit vs integration; mocks/stubs/fakes; coverage as a signa
 | End-to-end | the whole system through its UI/API | seconds – minutes | yes | user-flow breakage |
 | Property-based | a function over many generated inputs | fast | no | edge cases you didn't think of |
 
-**Test doubles**
+### Test doubles
 
 | Double | What it does | Example |
 |--------|-------------|---------|
@@ -32,9 +34,13 @@ The testing pyramid; unit vs integration; mocks/stubs/fakes; coverage as a signa
 | **Spy** | records calls for later checks | counts how many emails were "sent" |
 | **Mock** | pre-programmed with *expectations* that are verified | "expect `charge(500)` called exactly once" |
 
-**Mock only at seams** — mock things *you don't own or can't control* at the boundary of your system: the network, the clock, randomness, third-party APIs. Don't mock your own internal classes: those tests break on every refactor and prove little.
+### Mock only at seams
 
-**Good tests are FIRST:** Fast, Isolated (no order dependence), Repeatable (no flakiness), Self-checking (assert, don't print), Timely (written with the code). Structure each test as **Arrange → Act → Assert**.
+Mock things *you don't own or can't control* at the boundary of your system: the network, the clock, randomness, third-party APIs. Don't mock your own internal classes: those tests break on every refactor and prove little.
+
+### Good tests are FIRST
+
+Fast, Isolated (no order dependence), Repeatable (no flakiness), Self-checking (assert, don't print), Timely (written with the code). Structure each test as **Arrange → Act → Assert**.
 
 **Coverage** tells you which lines ran, not whether they were *checked*. 100% coverage with weak asserts proves nothing. Use it to *find untested areas*; aim for high coverage of core logic; don't game it. *Branch* coverage is more honest than line coverage. *Mutation testing* (inject bugs, see if tests fail) measures test quality directly.
 
@@ -48,13 +54,13 @@ The testing pyramid; unit vs integration; mocks/stubs/fakes; coverage as a signa
 
 ## Diagram
 
-**The testing pyramid**
+### The testing pyramid
 
 <div class="fig">
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 330" role="img" aria-label="Test pyramid: many fast unit tests at the base, fewer integration tests, a few end-to-end tests at the top" style="width:100%;max-width:760px;height:auto;font-family:inherit"><defs><marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="context-stroke"/></marker></defs><polygon points="225,40 275,40 320,110 180,110" fill="var(--danger)" fill-opacity=".25" stroke="var(--danger)" stroke-width="1.8"/><text x="250" y="80.0" font-size="15" text-anchor="middle" fill="var(--text)" font-weight="700">E2E</text><polygon points="179,112 321,112 370,190 130,190" fill="var(--accent)" fill-opacity=".25" stroke="var(--accent)" stroke-width="1.8"/><text x="250" y="156.0" font-size="15" text-anchor="middle" fill="var(--text)" font-weight="700">Integration</text><polygon points="129,192 371,192 420,278 80,278" fill="var(--success)" fill-opacity=".25" stroke="var(--success)" stroke-width="1.8"/><text x="250" y="240.0" font-size="15" text-anchor="middle" fill="var(--text)" font-weight="700">Unit</text><text x="450" y="75" font-size="15" text-anchor="start" fill="var(--text)" font-weight="700">~5%</text><text x="500" y="75" font-size="13" text-anchor="start" fill="var(--text)">a few critical user journeys</text><text x="450" y="151" font-size="15" text-anchor="start" fill="var(--text)" font-weight="700">~20%</text><text x="500" y="151" font-size="13" text-anchor="start" fill="var(--text)">real DB / queue / HTTP in containers</text><text x="450" y="235" font-size="15" text-anchor="start" fill="var(--text)" font-weight="700">~75%</text><text x="500" y="235" font-size="13" text-anchor="start" fill="var(--text)">pure logic, milliseconds each</text><text x="250" y="24" font-size="12.5" text-anchor="middle" fill="var(--text-muted)" font-weight="600">▲ slower, costlier, more realistic</text><text x="250" y="304" font-size="12.5" text-anchor="middle" fill="var(--text-muted)" font-weight="600">▼ faster, cheaper, more precise failure messages</text></svg>
 </div>
 
-**Where doubles plug in**
+### Where doubles plug in
 
 ```mermaid
 flowchart LR
@@ -68,7 +74,7 @@ flowchart LR
     CLK -.fake.-> FC["FakeClock(2024-01-01)"]
 ```
 
-**A test that fails for the right reason**
+### A test that fails for the right reason
 
 | Step | Do | Run |
 |---|---|---|
@@ -164,7 +170,7 @@ pytest -q --cov=src --cov-branch --cov-report=term-missing
 
 ## Mini project
 
-**A test suite for a small service with unit + integration + a coverage report.**
+### A test suite for a small service with unit + integration + a coverage report
 
 ```mermaid
 flowchart LR
@@ -175,7 +181,7 @@ flowchart LR
     COV --> CI["CI gate: tests pass,<br/>coverage ≥ 85% on domain/"]
 ```
 
-**Steps**
+### Steps
 
 1. A tiny to-do service: create, list, complete; due dates depend on a clock.
 2. Unit-test the domain rules with a fake repository and fake clock — no I/O, under 1 s total.

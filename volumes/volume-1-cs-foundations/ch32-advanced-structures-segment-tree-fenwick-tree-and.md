@@ -10,13 +10,13 @@ Range queries (segment/Fenwick) and dynamic connectivity (union-find with path c
 
 **In one sentence:** segment and Fenwick trees precompute partial answers over ranges so that "sum/min of `a[l..r]`" and "change `a[i]`" both take O(log n), and union-find keeps track of which items are in the same group while groups keep merging.
 
-**Mental model.**
+### Mental model
 
 * **Segment tree** — a tournament bracket. Each match stores the winner (min) or total (sum) of its half. To answer "who's best among players 3–9?" you combine a few bracket nodes instead of rescanning everyone.
 * **Fenwick tree** — a clever bookkeeper who keeps running totals of cleverly sized blocks (1, 2, 4, 8 … items), chosen by the lowest set bit of the index.
 * **Union-find** — clubs where each member points to a "representative". Merging two clubs just makes one representative report to the other. "Are we in the same club?" = "do we have the same representative?"
 
-**When to use what**
+### When to use what
 
 | Need | Naive | Prefix sums array | Fenwick (BIT) | Segment tree |
 |------|:-:|:-:|:-:|:-:|
@@ -26,7 +26,7 @@ Range queries (segment/Fenwick) and dynamic connectivity (union-find with path c
 | Range update + range query | O(n) | ✗ | 2 BITs | lazy propagation |
 | Memory | — | n | n | ~4n |
 
-**Union-find (disjoint set union, DSU)**
+### Union-find (disjoint set union, DSU)
 
 | Operation | Meaning |
 |-----------|---------|
@@ -34,7 +34,7 @@ Range queries (segment/Fenwick) and dynamic connectivity (union-find with path c
 | `union(a, b)` | merge the sets containing a and b |
 | `connected(a, b)` | `find(a) == find(b)` |
 
-**Two optimizations — use both**
+### Two optimizations — use both
 
 1. **Union by rank/size** — attach the shorter tree under the taller one, so trees stay shallow (height ≤ log n).
 2. **Path compression** — during `find`, point every visited node directly at the root, so future finds are instant.
@@ -54,7 +54,7 @@ Uses: Kruskal's minimum spanning tree, cycle detection in undirected graphs, gro
 
 ## Diagram
 
-**A sum segment tree over `a = [5, 2, 6, 1, 3, 4, 8, 7]`**
+### A sum segment tree over `a = [5, 2, 6, 1, 3, 4, 8, 7]`
 
 ```mermaid
 graph TD
@@ -74,7 +74,7 @@ graph TD
 
 `sum(2..5) = [2..3] + [4..5] = 7 + 7 = 14` — two nodes instead of four elements. Any range needs at most ~2 log n nodes.
 
-**Fenwick tree: what each index covers (lowest set bit)**
+### Fenwick tree: what each index covers (lowest set bit)
 
 | i (binary) | covers | tree[i] = |
 |---|---|---|
@@ -90,7 +90,7 @@ graph TD
 - `prefix(7) = tree[7] + tree[6] + tree[4]` (`i -= i & -i`: 7 → 6 → 4 → 0)
 - `update(3)` touches `tree[3]`, `tree[4]`, `tree[8]` (`i += i & -i`: 3 → 4 → 8)
 
-**Union-find forest with rank, before and after path compression**
+### Union-find forest with rank, before and after path compression
 
 ```mermaid
 flowchart LR
@@ -196,7 +196,7 @@ print(len({d.find(i) for i in range(5)}))       # 2 components
 
 ## Mini project
 
-**A range-minimum-query engine and a connected-components counter.**
+### A range-minimum-query engine and a connected-components counter
 
 ```mermaid
 flowchart LR
@@ -211,7 +211,7 @@ flowchart LR
     end
 ```
 
-**Steps**
+### Steps
 
 1. An iterative segment tree (size 2n array, bottom-up) for min, with `update(i, v)` and `query(l, r)`.
 2. Property-test against naive `min` on random operations.

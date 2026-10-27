@@ -10,9 +10,11 @@ Automating build/test/deploy pipelines with GitHub Actions and deployment gates.
 
 **In one sentence:** continuous integration automatically builds and tests every change so the main branch is always working, continuous delivery keeps every passing build ready to release, and continuous deployment releases it automatically — with GitHub Actions as a common place to write those pipelines.
 
-**Mental model — an airport security line.** Every bag (commit) goes through the same scanners (lint, test, build) before it can board. Nobody gets a personal exemption. Delivery is the plane being ready at the gate; deployment is the plane actually taking off — sometimes only after a pilot's final check (a manual approval gate).
+### Mental model — an airport security line
 
-**CI vs CD vs CD**
+Every bag (commit) goes through the same scanners (lint, test, build) before it can board. Nobody gets a personal exemption. Delivery is the plane being ready at the gate; deployment is the plane actually taking off — sometimes only after a pilot's final check (a manual approval gate).
+
+### CI vs CD vs CD
 
 | | Continuous Integration | Continuous Delivery | Continuous Deployment |
 |-|------------------------|---------------------|-----------------------|
@@ -20,7 +22,7 @@ Automating build/test/deploy pipelines with GitHub Actions and deployment gates.
 | Does | build, lint, test, security scans | + produce a versioned, deployable artifact; deploy to staging | + deploy to production automatically |
 | Human step | code review | a click to release to prod | none (guarded by tests, canaries, and rollbacks) |
 
-**GitHub Actions vocabulary**
+### GitHub Actions vocabulary
 
 | Term | Meaning |
 |------|---------|
@@ -33,7 +35,7 @@ Automating build/test/deploy pipelines with GitHub Actions and deployment gates.
 | Environment | a deployment target (`staging`, `production`) with protection rules: required reviewers, wait timers, branch limits, scoped secrets |
 | OIDC | short-lived cloud credentials for the job, instead of stored long-lived keys |
 
-**Keeping pipelines fast**
+### Keeping pipelines fast
 
 | Technique | Effect |
 |-----------|--------|
@@ -45,7 +47,9 @@ Automating build/test/deploy pipelines with GitHub Actions and deployment gates.
 | Build once, deploy the *same* artifact everywhere | no rebuild drift between staging and prod |
 | Docker layer caching (`cache-from: type=gha`) | fast image builds |
 
-**Security** — pin third-party actions to a commit SHA; set `permissions:` to least privilege (default `contents: read`); never print secrets; don't run untrusted fork code with secrets (`pull_request_target` is dangerous); use OIDC for clouds.
+### Security
+
+Pin third-party actions to a commit SHA; set `permissions:` to least privilege (default `contents: read`); never print secrets; don't run untrusted fork code with secrets (`pull_request_target` is dangerous); use OIDC for clouds.
 
 ---
 
@@ -58,7 +62,7 @@ Automating build/test/deploy pipelines with GitHub Actions and deployment gates.
 
 ## Diagram
 
-**A workflow: push → build → test → deploy with a manual approval gate**
+### A workflow: push → build → test → deploy with a manual approval gate
 
 ```mermaid
 flowchart LR
@@ -72,7 +76,7 @@ flowchart LR
     PROD --> VERIFY["post-deploy checks<br/>→ auto-rollback on failure"]
 ```
 
-**Parallel jobs and `needs:`**
+### Parallel jobs and `needs:`
 
 ```
  time →    0s        30s       2m        3m        4m
@@ -186,7 +190,7 @@ jobs:
 
 ## Mini project
 
-**A full CI/CD pipeline for a service, deployed on every merge.**
+### A full CI/CD pipeline for a service, deployed on every merge
 
 ```mermaid
 flowchart LR
@@ -198,7 +202,7 @@ flowchart LR
     PROD --> TAG["create a GitHub release + changelog"]
 ```
 
-**Steps**
+### Steps
 
 1. Use the service from an earlier chapter (e.g. the [Ch 26](ch26-testing-unit-integration-mocking-and-coverage.md) to-do API).
 2. PR workflow: lint, types, tests with a coverage threshold, `pip-audit`/`osv-scanner`, and `gitleaks`.

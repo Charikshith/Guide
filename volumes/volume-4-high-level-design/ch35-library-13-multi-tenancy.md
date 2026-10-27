@@ -28,6 +28,17 @@ After reading this chapter, you'll be able to:
 
 *This section is in [Chapter 15 — Multi-Tenancy](ch15-multi-tenancy.md), next to that chapter's practice material, so it is not repeated here.*
 
+### The isolation spectrum
+
+```mermaid
+flowchart TD
+  S["Shared<br/>one database, tenant_id on every row"] --> P["Pooled<br/>shared cluster, a schema or shard per tenant"] --> D["Dedicated<br/>own database or stack per tenant"]
+  S -.- S1["Cheapest, easiest to run.<br/>Highest risk: one missed filter leaks data,<br/>one heavy tenant slows everyone"]
+  D -.- D1["Strongest isolation, simple per-tenant billing.<br/>Costliest: N copies to run, patch and migrate"]
+```
+
+Many SaaS products mix models: small tenants share, and large or regulated tenants get pooled or dedicated capacity, tracked in a tenant catalog that maps each tenant to its placement.
+
 ### Key Takeaways
 
 - Isolation is a spectrum; cost falls and risk rises as sharing increases.

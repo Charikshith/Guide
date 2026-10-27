@@ -10,9 +10,11 @@ Reviewing for correctness, maintainability, security, and performance; giving an
 
 **In one sentence:** a code review is a second pair of eyes that asks "is this correct, is it understandable, is it safe, and will we be glad we merged it in a year?" — delivered as specific, kind, prioritized feedback on a change small enough to actually read.
 
-**Mental model — an editor, not a judge.** A good book editor doesn't rewrite the author's voice or nitpick commas that a spell checker would catch. They catch plot holes (bugs), confusing chapters (unclear design), and missing pages (missing tests) — and they explain *why*. The goal is a better book, not a winner.
+### Mental model — an editor, not a judge
 
-**What to look for, in priority order**
+A good book editor doesn't rewrite the author's voice or nitpick commas that a spell checker would catch. They catch plot holes (bugs), confusing chapters (unclear design), and missing pages (missing tests) — and they explain *why*. The goal is a better book, not a winner.
+
+### What to look for, in priority order
 
 | # | Area | Questions |
 |:-:|------|-----------|
@@ -25,14 +27,14 @@ Reviewing for correctness, maintainability, security, and performance; giving an
 | 7 | **Readability** | Names, comments on *why*, function size, dead code |
 | 8 | Style | only what tools don't already enforce — which should be almost nothing ([Ch 9](ch09-static-analysis-and-type-safety-at-scale.md)) |
 
-**For authors**
+### For authors
 
 * **Keep PRs small**: aim under ~400 changed lines; review quality drops sharply beyond that. Split refactors from behavior changes.
 * Write a description: *what*, *why*, *how to test*, screenshots, risks, rollout plan.
 * Self-review the diff before requesting review.
 * Respond to every comment (fixed / disagree with a reason / follow-up ticket).
 
-**For reviewers**
+### For reviewers
 
 * Review within a working day; speed matters as much as depth.
 * **Label severity**: `blocking:` (must fix), `suggestion:`, `nit:`, `question:`, `praise:`.
@@ -40,7 +42,9 @@ Reviewing for correctness, maintainability, security, and performance; giving an
 * Explain *why* and, where possible, offer an alternative.
 * Approve with minor nits instead of another round trip.
 
-**Disagreements** — take it to a call after two rounds of back-and-forth; decide by the team's written guidelines or by the code owner; record significant design decisions in an ADR; "disagree and commit" once decided.
+### Disagreements
+
+Take it to a call after two rounds of back-and-forth; decide by the team's written guidelines or by the code owner; record significant design decisions in an ADR; "disagree and commit" once decided.
 
 ---
 
@@ -52,7 +56,7 @@ Reviewing for correctness, maintainability, security, and performance; giving an
 
 ## Diagram
 
-**A review checklist flow**
+### A review checklist flow
 
 ```mermaid
 flowchart LR
@@ -67,13 +71,13 @@ flowchart LR
     V --> RC["request changes<br/>(blocking items listed)"]
 ```
 
-**PR size vs review quality**
+### PR size vs review quality
 
 <div class="fig">
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 700 300" role="img" aria-label="Defects found per 100 lines reviewed fall sharply as a pull request grows from 100 to 1000 or more lines changed" style="width:100%;max-width:700px;height:auto;font-family:inherit"><defs><marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="context-stroke"/></marker></defs><line x1="70" y1="240" x2="70" y2="24" stroke="var(--text-muted)" stroke-width="1.6" marker-end="url(#ar)"/><line x1="70" y1="240" x2="660" y2="240" stroke="var(--text-muted)" stroke-width="1.6" marker-end="url(#ar)"/><text x="76" y="20" font-size="12.5" text-anchor="start" fill="var(--text-muted)">defects found per 100 lines reviewed</text><rect x="100" y="50" width="46" height="190" rx="3" fill="var(--success)" fill-opacity=".5" stroke="var(--success)" stroke-width="1.6"/><text x="123" y="258" font-size="12.5" text-anchor="middle" fill="var(--text)">100</text><rect x="180" y="90" width="46" height="150" rx="3" fill="var(--success)" fill-opacity=".5" stroke="var(--success)" stroke-width="1.6"/><text x="203" y="258" font-size="12.5" text-anchor="middle" fill="var(--text)">200</text><rect x="260" y="130" width="46" height="110" rx="3" fill="var(--success)" fill-opacity=".5" stroke="var(--success)" stroke-width="1.6"/><text x="283" y="258" font-size="12.5" text-anchor="middle" fill="var(--text)">300</text><rect x="340" y="170" width="46" height="70" rx="3" fill="var(--accent)" fill-opacity=".5" stroke="var(--accent)" stroke-width="1.6"/><text x="363" y="258" font-size="12.5" text-anchor="middle" fill="var(--text)">400</text><rect x="420" y="200" width="46" height="40" rx="3" fill="var(--accent)" fill-opacity=".5" stroke="var(--accent)" stroke-width="1.6"/><text x="443" y="258" font-size="12.5" text-anchor="middle" fill="var(--text)">600</text><rect x="500" y="214" width="46" height="26" rx="3" fill="var(--danger)" fill-opacity=".5" stroke="var(--danger)" stroke-width="1.6"/><text x="523" y="258" font-size="12.5" text-anchor="middle" fill="var(--text)">800</text><rect x="580" y="228" width="46" height="12" rx="3" fill="var(--danger)" fill-opacity=".5" stroke="var(--danger)" stroke-width="1.6"/><text x="603" y="258" font-size="12.5" text-anchor="middle" fill="var(--text)">1000+</text><text x="660" y="278" font-size="12" text-anchor="end" fill="var(--text-muted)">lines changed in the PR</text><text x="350" y="286" font-size="13" text-anchor="middle" fill="var(--text)" font-weight="600">"looks good to me" usually means "too big to read"</text></svg>
 </div>
 
-**The feedback lifecycle**
+### The feedback lifecycle
 
 ```mermaid
 sequenceDiagram
@@ -90,7 +94,7 @@ sequenceDiagram
 
 ## Example
 
-**A PR comment separating "must fix" from "nice to have"**
+### A PR comment separating "must fix" from "nice to have"
 
 ```text
 blocking: `apply_coupon` can be called twice if the client retries after a timeout
@@ -109,7 +113,7 @@ praise: really nice test names — `test_expired_coupon_is_rejected_with_410`
 told me exactly what the behavior is.
 ```
 
-**A PR description template**
+### A PR description template
 
 ```markdown
 ## What
@@ -155,7 +159,7 @@ Rollback: flag off; the column is unused by old code.
 
 ## Mini project
 
-**Establish a review checklist and apply it to a real (or sample) PR.**
+### Establish a review checklist and apply it to a real (or sample) PR
 
 ```mermaid
 flowchart LR
@@ -166,7 +170,7 @@ flowchart LR
     PR --> RETRO["compare: comments per PR,<br/>time to first review, defects found"]
 ```
 
-**Steps**
+### Steps
 
 1. Write a one-page review guide: priorities (the table above), comment labels, a response-time target, the size guideline, and how disagreements are resolved.
 2. Add a PR template and `CODEOWNERS`.

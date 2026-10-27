@@ -10,9 +10,11 @@ Versioning, changelogs, artifacts, feature flags, and progressive delivery (blue
 
 **In one sentence:** release engineering turns a green commit into a versioned, traceable artifact and gets it in front of users gradually — separating *deploying* code from *releasing* features with flags, and always keeping a fast way back.
 
-**Mental model — a new recipe in a restaurant chain.** You package the recipe with a version number and a list of what changed (artifact + changelog). You try it in one branch first (canary), watching complaints. If fine, you roll out to all branches; if not, you go back to the old recipe tonight (rollback). A feature flag is a laminated card at each counter saying "offer the new dish: yes/no" — you can flip it without re-printing menus.
+### Mental model — a new recipe in a restaurant chain
 
-**Artifacts**
+You package the recipe with a version number and a list of what changed (artifact + changelog). You try it in one branch first (canary), watching complaints. If fine, you roll out to all branches; if not, you go back to the old recipe tonight (rollback). A feature flag is a laminated card at each counter saying "offer the new dish: yes/no" — you can flip it without re-printing menus.
+
+### Artifacts
 
 | Ecosystem | Build | Artifact | Registry |
 |-----------|-------|----------|----------|
@@ -23,9 +25,11 @@ Versioning, changelogs, artifacts, feature flags, and progressive delivery (blue
 
 Good artifacts are **immutable** (a version is never overwritten), **reproducible** (same source → same bytes), **traceable** (version → commit SHA), and **verifiable** (signature + SBOM, e.g. `cosign`, SLSA provenance).
 
-**Versioning** — SemVer for libraries ([Vol 1 Ch 21](../volume-1-cs-foundations/ch21-build-systems-and-package-management.md)); for services, calendar versions or build numbers plus the git SHA are common. Automate the bump from Conventional Commits ([Ch 2](ch02-professional-git-workflow.md)) and generate the changelog.
+### Versioning
 
-**Deploy ≠ release**
+SemVer for libraries ([Vol 1 Ch 21](../volume-1-cs-foundations/ch21-build-systems-and-package-management.md)); for services, calendar versions or build numbers plus the git SHA are common. Automate the bump from Conventional Commits ([Ch 2](ch02-professional-git-workflow.md)) and generate the changelog.
+
+### Deploy ≠ release
 
 | | Deploy | Release |
 |-|--------|---------|
@@ -33,7 +37,7 @@ Good artifacts are **immutable** (a version is never overwritten), **reproducibl
 | Controlled by | the pipeline | **feature flags** / config |
 | Undo | rollback (minutes) | flip the flag (seconds) |
 
-**Feature flags**
+### Feature flags
 
 | Kind | Life | Example |
 |------|------|---------|
@@ -44,7 +48,7 @@ Good artifacts are **immutable** (a version is never overwritten), **reproducibl
 
 Flag hygiene: an owner and expiry per flag, default to the safe value when the flag service is down, test both paths, and remove dead flags (they are technical debt).
 
-**Progressive delivery strategies**
+### Progressive delivery strategies
 
 | Strategy | How | Rollback | Cost | Risk |
 |----------|-----|----------|------|------|
@@ -54,9 +58,11 @@ Flag hygiene: an owner and expiry per flag, default to the safe value when the f
 | **Canary** | send 1% → 10% → 50% → 100% of traffic to the new version while comparing metrics | shift traffic back | small extra | tiny blast radius; needs good metrics |
 | Shadow / dark launch | copy real traffic to the new version; discard its responses | n/a | extra capacity | none for users; watch side effects |
 
-**Rollback readiness** — keep the previous artifact; make DB migrations backward compatible (**expand → migrate → contract**, so old and new code both work mid-rollout); automate the trigger (error rate or latency above the baseline → roll back); practice it.
+### Rollback readiness
 
-**A safe production rollout, step by step**
+Keep the previous artifact; make DB migrations backward compatible (**expand → migrate → contract**, so old and new code both work mid-rollout); automate the trigger (error rate or latency above the baseline → roll back); practice it.
+
+### A safe production rollout, step by step
 
 Releases are one of the biggest sources of outages, so the pipeline — not a person watching dashboards — should carry every change (code, config, static assets, infrastructure-as-code) from merge to production:
 
@@ -76,7 +82,9 @@ flowchart LR
     W1 & W2 & W3 -->|"health ✗ (self or neighbours)"| RB["automatic rollback<br/>or page on-call"]
 ```
 
-**Breaking changes in three safe steps (prepare → activate → cleanup).** Suppose a producer must change its message format in a way the consumer can't read:
+### Breaking changes in three safe steps (prepare → activate → cleanup)
+
+Suppose a producer must change its message format in a way the consumer can't read:
 
 | Step | Change | Safe to roll back? |
 |------|--------|--------------------|
@@ -86,7 +94,9 @@ flowchart LR
 
 The same idea is *expand → migrate → contract* for database schemas. Changing a serialization format used for storage or messages is the classic way to make a release impossible to roll back, so add an automated **upgrade → downgrade test** in pre-production: deploy the new version, write data, roll back, and check that the old version still reads everything.
 
-**Configuration you can change without a deploy** — settings live outside the artifact in a configuration store (AWS AppConfig, Azure App Configuration, Consul), and secrets in a secrets manager, never in code. Values injected as environment variables at deploy time need a redeploy to change; for operators to act fast, the application should **re-read configuration at runtime** and rebuild whatever depends on it. That is what turns a feature flag into an operations tool: release dark, enable for 1% of users, run A/B tests, and switch off instantly in an incident — and config changes deserve the same review, validation and gradual rollout as code.
+### Configuration you can change without a deploy
+
+Settings live outside the artifact in a configuration store (AWS AppConfig, Azure App Configuration, Consul), and secrets in a secrets manager, never in code. Values injected as environment variables at deploy time need a redeploy to change; for operators to act fast, the application should **re-read configuration at runtime** and rebuild whatever depends on it. That is what turns a feature flag into an operations tool: release dark, enable for 1% of users, run A/B tests, and switch off instantly in an incident — and config changes deserve the same review, validation and gradual rollout as code.
 
 ---
 
@@ -98,7 +108,7 @@ The same idea is *expand → migrate → contract* for database schemas. Changin
 
 ## Diagram
 
-**A canary ramp: 1% → 10% → 100% with a rollback trigger**
+### A canary ramp: 1% → 10% → 100% with a rollback trigger
 
 <div class="fig">
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 780 340" role="img" aria-label="Canary rollout: traffic to v2 steps from 1 to 10 to 50 to 100 percent, each step held 10 minutes and checked against v1, with instant rollback on failure" style="width:100%;max-width:780px;height:auto;font-family:inherit"><defs><marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="context-stroke"/></marker></defs><line x1="90" y1="50" x2="90" y2="250" stroke="var(--text-muted)" stroke-width="1.6"/><line x1="90" y1="250" x2="740" y2="250" stroke="var(--text-muted)" stroke-width="1.6" marker-end="url(#ar)"/><text x="82" y="46" font-size="12" text-anchor="end" fill="var(--text-muted)">traffic to v2</text><text x="82" y="254.0" font-size="12" text-anchor="end" fill="var(--text-muted)">0%</text><line x1="86" y1="250.0" x2="90" y2="250.0" stroke="var(--text-muted)" stroke-width="1"/><text x="82" y="235.95" font-size="12" text-anchor="end" fill="var(--text-muted)">1%</text><line x1="86" y1="231.95" x2="90" y2="231.95" stroke="var(--text-muted)" stroke-width="1"/><text x="82" y="196.92088823396074" font-size="12" text-anchor="end" fill="var(--text-muted)">10%</text><line x1="86" y1="192.92088823396074" x2="90" y2="192.92088823396074" stroke="var(--text-muted)" stroke-width="1"/><text x="82" y="126.36722599582818" font-size="12" text-anchor="end" fill="var(--text-muted)">50%</text><line x1="86" y1="122.36722599582818" x2="90" y2="122.36722599582818" stroke="var(--text-muted)" stroke-width="1"/><text x="82" y="64.0" font-size="12" text-anchor="end" fill="var(--text-muted)">100%</text><line x1="86" y1="60.0" x2="90" y2="60.0" stroke="var(--text-muted)" stroke-width="1"/><rect x="100" y="231.95" width="124" height="18.05" rx="2" fill="var(--success)" fill-opacity=".4" stroke="var(--success)" stroke-width="1.6"/><rect x="230" y="192.92088823396074" width="124" height="57.07911176603925" rx="2" fill="var(--success)" fill-opacity=".4" stroke="var(--success)" stroke-width="1.6"/><rect x="360" y="122.36722599582818" width="124" height="127.63277400417182" rx="2" fill="var(--success)" fill-opacity=".4" stroke="var(--success)" stroke-width="1.6"/><rect x="490" y="60" width="124" height="190" rx="2" fill="var(--primary)" fill-opacity=".4" stroke="var(--primary)" stroke-width="1.6"/><text x="555.0" y="52" font-size="13" text-anchor="middle" fill="var(--primary)" font-weight="700">promote</text><text x="740" y="272" font-size="12" text-anchor="end" fill="var(--text-muted)">time</text><text x="20" y="288" font-size="12.5" text-anchor="start" fill="var(--text)" font-weight="600">each step: hold 10 min, compare v2 vs v1:</text><text x="20" y="306" font-size="12.5" text-anchor="start" fill="var(--text-muted)">error rate ≤ baseline + 0.5 pp?   p99 ≤ baseline × 1.1?</text><text x="20" y="326" font-size="12.5" text-anchor="start" fill="var(--danger)" font-weight="700">any check fails → ROLLBACK: 0% to v2 in seconds</text></svg>
@@ -117,7 +127,7 @@ stateDiagram-v2
     Full --> [*]
 ```
 
-**Blue-green**
+### Blue-green
 
 ```mermaid
 flowchart LR
@@ -127,7 +137,7 @@ flowchart LR
     DB[("shared DB:<br/>migrations must work<br/>for v1.3 AND v1.4")] --- BLUE & GREEN
 ```
 
-**Expand → migrate → contract (a safe schema change for renaming a column)**
+### Expand → migrate → contract (a safe schema change for renaming a column)
 
 | Release | Phase | What happens |
 |---|---|---|
@@ -204,7 +214,7 @@ spec:
 
 ## Mini project
 
-**A release pipeline with version bump, artifact, canary deploy, and rollback.**
+### A release pipeline with version bump, artifact, canary deploy, and rollback
 
 ```mermaid
 flowchart LR
@@ -217,7 +227,7 @@ flowchart LR
     FLAG["flag service: dark-release<br/>the feature, ramp separately"] -.-> PROMO
 ```
 
-**Steps**
+### Steps
 
 1. Automate the version and changelog from Conventional Commits.
 2. Build an immutable, signed image; record digest → version → commit.

@@ -10,9 +10,11 @@ Stack vs heap allocation; references; Rust ownership/borrowing/lifetimes; tracin
 
 **In one sentence:** the stack is fast, automatic, short-lived memory tied to function calls; the heap is flexible memory that someone must eventually free — by hand (C), by ownership rules checked at compile time (Rust), or by a garbage collector (Python, Java, Go).
 
-**Mental model — hotel rooms vs a warehouse.** The stack is a stack of hotel trays: each function call takes the next tray, and trays are cleared automatically when the call ends. The heap is a warehouse: you can rent any size of space for any length of time, but somebody must return the key. Forgetting is a *leak*. Using the space after returning the key is *use-after-free*.
+### Mental model — hotel rooms vs a warehouse
 
-**Stack vs heap**
+The stack is a stack of hotel trays: each function call takes the next tray, and trays are cleared automatically when the call ends. The heap is a warehouse: you can rent any size of space for any length of time, but somebody must return the key. Forgetting is a *leak*. Using the space after returning the key is *use-after-free*.
+
+### Stack vs heap
 
 | | Stack | Heap |
 |-|-------|------|
@@ -22,7 +24,7 @@ Stack vs heap allocation; references; Rust ownership/borrowing/lifetimes; tracin
 | Holds | locals, parameters, return addresses | objects that outlive a call or have dynamic size |
 | Failure | stack overflow (deep recursion) | out of memory, fragmentation, leaks |
 
-**Three memory-management strategies**
+### Three memory-management strategies
 
 | Strategy | Languages | How it frees | Cost |
 |----------|-----------|-------------|------|
@@ -31,7 +33,7 @@ Stack vs heap allocation; references; Rust ownership/borrowing/lifetimes; tracin
 | Reference counting | Python (plus a cycle collector), Swift, `Rc`/`Arc` | free when the count hits 0 | a count update on every copy; cycles leak without help |
 | Tracing GC | Java, Go, JS, C#, Python's cycle collector | periodically mark everything reachable from roots, sweep the rest | pauses, extra memory headroom |
 
-**Rust ownership rules**
+### Rust ownership rules
 
 1. Each value has exactly one *owner*.
 2. When the owner goes out of scope, the value is dropped (freed).
@@ -48,13 +50,13 @@ Stack vs heap allocation; references; Rust ownership/borrowing/lifetimes; tracin
 
 ## Diagram
 
-**Memory layout: stack frames and a heap with GC roots**
+### Memory layout: stack frames and a heap with GC roots
 
 <div class="fig">
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 820 420" role="img" aria-label="Stack frames hold locals inline and point to objects on the heap; an unreachable cycle survives under reference counting" style="width:100%;max-width:820px;height:auto;font-family:inherit"><defs><marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="context-stroke"/></marker></defs><text x="150" y="22" font-size="13.5" text-anchor="middle" fill="var(--text)" font-weight="700">STACK (grows down)</text><text x="560" y="22" font-size="13.5" text-anchor="middle" fill="var(--text)" font-weight="700">HEAP</text><rect x="20" y="34" width="260" height="80" rx="0" fill="var(--primary)" fill-opacity=".14" stroke="var(--primary)" stroke-width="1.6"/><text x="34" y="56" font-size="13" text-anchor="start" fill="var(--text)" font-weight="700">main</text><text x="48" y="78" font-size="12.5" text-anchor="start" fill="var(--text)">users</text><text x="48" y="98" font-size="12.5" text-anchor="start" fill="var(--text)">count = 2  (int, inline)</text><rect x="20" y="114" width="260" height="80" rx="0" fill="var(--success)" fill-opacity=".14" stroke="var(--success)" stroke-width="1.6"/><text x="34" y="136" font-size="13" text-anchor="start" fill="var(--text)" font-weight="700">load_user</text><text x="48" y="158" font-size="12.5" text-anchor="start" fill="var(--text)">u</text><text x="48" y="178" font-size="12.5" text-anchor="start" fill="var(--text)">buf = [u8; 64] (inline)</text><rect x="420" y="40" width="170" height="40" rx="8" fill="var(--accent)" fill-opacity=".16" stroke="var(--accent)" stroke-width="1.6"/><text x="505" y="65" font-size="13" text-anchor="middle" fill="var(--text)" font-weight="600">list [ •, • ]</text><text x="602" y="65" font-size="12.5" text-anchor="start" fill="var(--text-muted)">← root-reachable</text><line x1="110" y1="78" x2="420" y2="58" stroke="var(--text-muted)" stroke-width="1.6" marker-end="url(#ar)"/><rect x="380" y="130" width="100" height="36" rx="8" fill="var(--success)" fill-opacity=".18" stroke="var(--success)" stroke-width="1.6"/><text x="430" y="153" font-size="13" text-anchor="middle" fill="var(--text)" font-weight="600">User A</text><rect x="520" y="130" width="100" height="36" rx="8" fill="var(--success)" fill-opacity=".18" stroke="var(--success)" stroke-width="1.6"/><text x="570" y="153" font-size="13" text-anchor="middle" fill="var(--text)" font-weight="600">User B</text><line x1="470" y1="80" x2="430" y2="130" stroke="var(--text-muted)" stroke-width="1.6" marker-end="url(#ar)"/><line x1="540" y1="80" x2="570" y2="130" stroke="var(--text-muted)" stroke-width="1.6" marker-end="url(#ar)"/><line x1="70" y1="158" x2="380" y2="148" stroke="var(--text-muted)" stroke-width="1.6" marker-end="url(#ar)"/><rect x="380" y="260" width="100" height="36" rx="8" fill="var(--danger)" fill-opacity=".18" stroke="var(--danger)" stroke-width="1.6" stroke-dasharray="5 3"/><text x="430" y="283" font-size="13" text-anchor="middle" fill="var(--text)" font-weight="600">Node X</text><rect x="540" y="260" width="100" height="36" rx="8" fill="var(--danger)" fill-opacity=".18" stroke="var(--danger)" stroke-width="1.6" stroke-dasharray="5 3"/><text x="590" y="283" font-size="13" text-anchor="middle" fill="var(--text)" font-weight="600">Node Y</text><line x1="482" y1="278" x2="538" y2="278" stroke="var(--text-muted)" stroke-width="1.6" marker-end="url(#ar)" marker-start="url(#ar)"/><text x="660" y="270" font-size="12.5" text-anchor="start" fill="var(--danger)" font-weight="600">unreachable cycle:</text><text x="660" y="288" font-size="12.5" text-anchor="start" fill="var(--text-muted)">refcounts stay 1,</text><text x="660" y="306" font-size="12.5" text-anchor="start" fill="var(--text-muted)">only a tracing GC frees it</text></svg>
 </div>
 
-**Tracing GC: mark and sweep**
+### Tracing GC: mark and sweep
 
 ```mermaid
 flowchart LR
@@ -68,7 +70,7 @@ flowchart LR
 
 Mark everything reachable from the roots (A, B, C). Sweep the rest (D, E — red).
 
-**Rust move and borrow**
+### Rust move and borrow
 
 | Rust | What happens |
 |---|---|
@@ -140,7 +142,7 @@ print(gc.collect())              # ...the cycle collector finds and frees them (
 
 ## Mini project
 
-**A cycle-producing data structure in Python and how the GC collects it.**
+### A cycle-producing data structure in Python and how the GC collects it
 
 ```mermaid
 flowchart LR
@@ -149,7 +151,7 @@ flowchart LR
     B --> W["variant: child.parent =<br/>weakref.ref(parent)"] --> D2["del root → freed at once"]
 ```
 
-**Steps**
+### Steps
 
 1. Build a tree where each child has a strong reference to its parent (cycles everywhere).
 2. Disable automatic GC (`gc.disable()`), delete the root, and show with `tracemalloc` that memory is *not* released.

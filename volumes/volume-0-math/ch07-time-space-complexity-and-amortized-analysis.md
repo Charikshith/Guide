@@ -10,9 +10,11 @@ Counting operations; space complexity incl. recursion stack; amortized cost via 
 
 **In one sentence:** time complexity counts steps, space complexity counts memory (including the call stack), and amortized analysis averages rare expensive steps over the many cheap steps around them.
 
-**Mental model — a savings jar.** Every cheap operation drops a few coins into a jar. When an expensive operation comes, it pays from the jar. If the jar never goes negative, the *average* cost per operation is the coins per drop.
+### Mental model — a savings jar
 
-**Counting time**
+Every cheap operation drops a few coins into a jar. When an expensive operation comes, it pays from the jar. If the jar never goes negative, the *average* cost per operation is the coins per drop.
+
+### Counting time
 
 | Code shape | Cost |
 |------------|------|
@@ -23,13 +25,13 @@ Counting operations; space complexity incl. recursion stack; amortized cost via 
 | Recursion `T(n) = 2T(n/2) + O(n)` | `O(n log n)` (merge sort) |
 | Recursion `T(n) = T(n−1) + O(1)` | `O(n)` |
 
-**Counting space**
+### Counting space
 
 * **Input space** — the data you were given. Usually *not* counted.
 * **Auxiliary space** — extra memory you allocate: new lists, hash maps, **and the recursion stack**.
 * A recursive function with depth d uses `O(d)` stack space, even if it allocates nothing else.
 
-**Three amortized methods**
+### Three amortized methods
 
 | Method | Idea |
 |--------|------|
@@ -37,7 +39,9 @@ Counting operations; space complexity incl. recursion stack; amortized cost via 
 | Accounting (banker's) | Charge each op a fixed "price"; cheap ops overpay and store credit; expensive ops spend it. Credit must never go negative. |
 | Potential | Define a potential function Φ(state); amortized cost = actual cost + ΔΦ. |
 
-**Amortized ≠ average-case.** Average case averages over *random inputs* and can be unlucky. Amortized cost is a *guarantee* for *any* sequence of operations: n operations never cost more than n × (amortized cost).
+### Amortized ≠ average-case
+
+Average case averages over *random inputs* and can be unlucky. Amortized cost is a *guarantee* for *any* sequence of operations: n operations never cost more than n × (amortized cost).
 
 ---
 
@@ -49,7 +53,7 @@ Counting operations; space complexity incl. recursion stack; amortized cost via 
 
 ## Diagram
 
-**Doubling dynamic array: the copy staircase**
+### Doubling dynamic array: the copy staircase
 
 | append # | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | … |
 |---|---|---|---|---|---|---|---|---|---|---|
@@ -70,7 +74,7 @@ xychart-beta
     bar [0, 1, 2, 0, 4, 0, 0, 0, 8, 0, 0, 0, 0, 0, 0, 0, 16]
 ```
 
-**Accounting method: each append pays 3 coins**
+### Accounting method: each append pays 3 coins
 
 | Coins | What they pay for |
 |---|---|
@@ -79,7 +83,7 @@ xychart-beta
 
 At a resize from *k* to *2k*, the k/2 new elements hold k coins, which exactly pays for k copies.
 
-**Recursion depth = stack space**
+### Recursion depth = stack space
 
 ```mermaid
 flowchart TD
@@ -106,7 +110,7 @@ for i in range(64):
 
 CPython grows lists by roughly 1.125× plus a constant, not 2×. Any constant growth factor > 1 still gives amortized O(1).
 
-**Space: recursive vs iterative sum**
+### Space: recursive vs iterative sum
 
 ```python
 def sum_rec(xs, i=0):          # O(n) stack space — one frame per element
@@ -164,7 +168,7 @@ classDiagram
     }
 ```
 
-**Steps**
+### Steps
 
 1. Back it with a fixed-size Python list of `None`s; track `size` and `capacity`.
 2. On a full append, allocate `2 × capacity` and copy; count each copy.

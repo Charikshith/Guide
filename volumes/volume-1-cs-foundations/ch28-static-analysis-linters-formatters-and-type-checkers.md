@@ -10,9 +10,11 @@ Catching bugs before runtime — linters (style/bugs), formatters (consistency),
 
 **In one sentence:** static analysis reads your code without running it, so whole classes of bugs, style arguments, and type mistakes are caught in seconds on every save instead of in production.
 
-**Mental model — a spell checker, a typesetter, and a proofreader.** The formatter is the typesetter: it lays out every page the same way, and nobody argues about margins. The linter is the spell checker: it underlines suspicious words and common mistakes. The type checker is the proofreader who checks that every "he" refers to someone actually introduced.
+### Mental model — a spell checker, a typesetter, and a proofreader
 
-**The three tools**
+The formatter is the typesetter: it lays out every page the same way, and nobody argues about margins. The linter is the spell checker: it underlines suspicious words and common mistakes. The type checker is the proofreader who checks that every "he" refers to someone actually introduced.
+
+### The three tools
 
 | Tool | Finds | Changes code? | Python | JS/TS | Rust |
 |------|-------|:-:|--------|-------|------|
@@ -21,7 +23,7 @@ Catching bugs before runtime — linters (style/bugs), formatters (consistency),
 | Type checker | type errors: wrong arguments, `None` misuse, missing attributes | no | `mypy`, `pyright` | `tsc` | the compiler |
 | Security scanner | injection, unsafe APIs, secrets | no | `bandit` (ruff `S` rules) | Semgrep, CodeQL | `cargo audit` |
 
-**What each catches**
+### What each catches
 
 ```python
 import os                       # linter: unused import (F401)
@@ -32,7 +34,9 @@ def total(xs: list[int]) -> int:
 total(["a"])                    # type checker: list[str] is not list[int]
 ```
 
-**Gradual typing (Python/TS)** — you can add types a module at a time. Strict mode turns on the checks that matter: no implicit `Any`, every function annotated, `Optional` handled.
+### Gradual typing (Python/TS)
+
+You can add types a module at a time. Strict mode turns on the checks that matter: no implicit `Any`, every function annotated, `Optional` handled.
 
 | Strict flag (mypy) | Catches |
 |--------------------|---------|
@@ -53,7 +57,7 @@ total(["a"])                    # type checker: list[str] is not list[int]
 
 ## Diagram
 
-**A CI pipeline: cheapest and fastest checks first**
+### A CI pipeline: cheapest and fastest checks first
 
 ```mermaid
 flowchart LR
@@ -64,7 +68,7 @@ flowchart LR
     U -- fail --> X
 ```
 
-**Shift left: the same checks at every stage**
+### Shift left: the same checks at every stage
 
 ```mermaid
 flowchart LR
@@ -73,7 +77,7 @@ flowchart LR
 
 The earlier a bug is caught, the cheaper it is to fix.
 
-**How a type checker narrows types**
+### How a type checker narrows types
 
 ```python
 def greet(name: str | None) -> str:
@@ -153,7 +157,7 @@ cargo clippy -- -D warnings    # Rust: the compiler type-checks; clippy adds 700
 
 ## Mini project
 
-**Wire a pre-commit hook running format + lint + type-check on every commit.**
+### Wire a pre-commit hook running format + lint + type-check on every commit
 
 ```mermaid
 flowchart LR
@@ -163,7 +167,7 @@ flowchart LR
     CI["CI job: pre-commit run --all-files"] --> SAME["same checks, same versions"]
 ```
 
-**Steps**
+### Steps
 
 1. Add `.pre-commit-config.yaml` with ruff, ruff-format, mypy (with `additional_dependencies` for your stubs), and basic hygiene hooks.
 2. `pre-commit install`; commit a deliberately broken file and watch it get blocked or auto-fixed.

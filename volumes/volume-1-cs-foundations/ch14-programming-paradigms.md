@@ -10,7 +10,7 @@ Imperative, declarative, object-oriented, functional, reactive, and event-driven
 
 **In one sentence:** a paradigm is a way of organizing a program — step-by-step instructions, descriptions of the result, objects sending messages, pure functions transforming data, or reactions to streams of events — and real codebases mix them.
 
-**Mental model — getting a sandwich.**
+### Mental model — getting a sandwich
 
 * **Imperative:** "Take two slices. Spread butter. Add cheese. Close." (How.)
 * **Declarative:** "One cheese sandwich, please." (What.)
@@ -19,7 +19,7 @@ Imperative, declarative, object-oriented, functional, reactive, and event-driven
 * **Event-driven:** when the buzzer rings (event), pick up the sandwich (handler).
 * **Reactive:** subscribe to a stream of orders and describe how every future order flows to the counter.
 
-**The paradigms**
+### The paradigms
 
 | Paradigm | Core idea | You'll see | Languages / tools |
 |----------|-----------|-----------|-------------------|
@@ -31,7 +31,9 @@ Imperative, declarative, object-oriented, functional, reactive, and event-driven
 | Event-driven | control flow is driven by events | callbacks, handlers, listeners, message queues | JS in browsers, GUIs, Node.js |
 | Reactive | compose asynchronous *streams* of values over time | observables, operators (`map`, `debounce`, `merge`) | RxJS, RxPY, Reactor, Kotlin Flow |
 
-**Pure functions and immutability** — the heart of functional style.
+### Pure functions and immutability
+
+The heart of functional style.
 
 * A **pure function** returns the same output for the same input and has no side effects (no I/O, no mutation of outside state). Easy to test, cache, and parallelize.
 * **Immutable data** can't be changed after creation. No one can modify it behind your back, so sharing it between threads is safe.
@@ -48,7 +50,7 @@ Imperative, declarative, object-oriented, functional, reactive, and event-driven
 
 ## Diagram
 
-**A map of paradigms**
+### A map of paradigms
 
 ```mermaid
 flowchart TD
@@ -63,7 +65,7 @@ flowchart TD
     EVT --> CB["Callbacks<br/><code>button.on('click', handler)</code>"]
 ```
 
-**Same task, three styles: total price of in-stock items**
+### Same task, three styles: total price of in-stock items
 
 ```
  IMPERATIVE                  FUNCTIONAL                          DECLARATIVE (SQL)
@@ -74,7 +76,7 @@ flowchart TD
    how, step by step           transform data, no mutation         what, not how
 ```
 
-**Reactive stream: search-as-you-type**
+### Reactive stream: search-as-you-type
 
 <div class="fig">
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 260" role="img" aria-label="Marble diagram: keystrokes are debounced into hello and world, mapped to searches; switchMap cancels the stale hello request" style="width:100%;max-width:760px;height:auto;font-family:inherit"><defs><marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="context-stroke"/></marker></defs><text x="20" y="45" font-size="12.5" text-anchor="start" fill="var(--text-muted)" font-weight="600">keystrokes</text><line x1="120" y1="40" x2="740" y2="40" stroke="var(--text-muted)" stroke-width="1.6" marker-end="url(#ar)"/><circle cx="140" cy="40" r="9" fill=".25" fill-opacity="0.2" stroke="var(--primary)" stroke-width="1.6"/><text x="140" y="44" font-size="11" text-anchor="middle" fill="var(--text)">h</text><circle cx="164" cy="40" r="9" fill=".25" fill-opacity="0.2" stroke="var(--primary)" stroke-width="1.6"/><text x="164" y="44" font-size="11" text-anchor="middle" fill="var(--text)">e</text><circle cx="188" cy="40" r="9" fill=".25" fill-opacity="0.2" stroke="var(--primary)" stroke-width="1.6"/><text x="188" y="44" font-size="11" text-anchor="middle" fill="var(--text)">l</text><circle cx="212" cy="40" r="9" fill=".25" fill-opacity="0.2" stroke="var(--primary)" stroke-width="1.6"/><text x="212" y="44" font-size="11" text-anchor="middle" fill="var(--text)">l</text><circle cx="236" cy="40" r="9" fill=".25" fill-opacity="0.2" stroke="var(--primary)" stroke-width="1.6"/><text x="236" y="44" font-size="11" text-anchor="middle" fill="var(--text)">o</text><circle cx="430" cy="40" r="9" fill=".25" fill-opacity="0.2" stroke="var(--success)" stroke-width="1.6"/><text x="430" y="44" font-size="11" text-anchor="middle" fill="var(--text)">w</text><circle cx="454" cy="40" r="9" fill=".25" fill-opacity="0.2" stroke="var(--success)" stroke-width="1.6"/><text x="454" y="44" font-size="11" text-anchor="middle" fill="var(--text)">o</text><circle cx="478" cy="40" r="9" fill=".25" fill-opacity="0.2" stroke="var(--success)" stroke-width="1.6"/><text x="478" y="44" font-size="11" text-anchor="middle" fill="var(--text)">r</text><circle cx="502" cy="40" r="9" fill=".25" fill-opacity="0.2" stroke="var(--success)" stroke-width="1.6"/><text x="502" y="44" font-size="11" text-anchor="middle" fill="var(--text)">l</text><circle cx="526" cy="40" r="9" fill=".25" fill-opacity="0.2" stroke="var(--success)" stroke-width="1.6"/><text x="526" y="44" font-size="11" text-anchor="middle" fill="var(--text)">d</text><text x="20" y="105" font-size="12.5" text-anchor="start" fill="var(--text-muted)" font-weight="600">debounce(300)</text><line x1="120" y1="100" x2="740" y2="100" stroke="var(--text-muted)" stroke-width="1.6" marker-end="url(#ar)"/><rect x="240" y="84" width="90" height="32" rx="8" fill="var(--primary)" fill-opacity=".14" stroke="var(--primary)" stroke-width="1.6"/><text x="285.0" y="104.2" font-size="12" text-anchor="middle" fill="var(--text)" font-weight="600">"hello"</text><rect x="540" y="84" width="90" height="32" rx="8" fill="var(--success)" fill-opacity=".14" stroke="var(--success)" stroke-width="1.6"/><text x="585.0" y="104.2" font-size="12" text-anchor="middle" fill="var(--text)" font-weight="600">"world"</text><text x="20" y="165" font-size="12.5" text-anchor="start" fill="var(--text-muted)" font-weight="600">map(search)</text><line x1="120" y1="160" x2="740" y2="160" stroke="var(--text-muted)" stroke-width="1.6" marker-end="url(#ar)"/><rect x="270" y="144" width="110" height="32" rx="8" fill="var(--primary)" fill-opacity=".14" stroke="var(--primary)" stroke-width="1.6"/><text x="325.0" y="164.2" font-size="12" text-anchor="middle" fill="var(--text)" font-weight="600">[results…]</text><rect x="570" y="144" width="110" height="32" rx="8" fill="var(--success)" fill-opacity=".14" stroke="var(--success)" stroke-width="1.6"/><text x="625.0" y="164.2" font-size="12" text-anchor="middle" fill="var(--text)" font-weight="600">[results…]</text><line x1="285" y1="116" x2="285" y2="144" stroke="var(--text-muted)" stroke-width="1.6" stroke-dasharray="3 3" marker-end="url(#ar)"/><line x1="585" y1="116" x2="585" y2="144" stroke="var(--text-muted)" stroke-width="1.6" stroke-dasharray="3 3" marker-end="url(#ar)"/><text x="380" y="226" font-size="13" text-anchor="middle" fill="var(--danger)" font-weight="600">switchMap cancels the "hello" request if "world" arrives first</text></svg>
@@ -162,7 +164,7 @@ rx.from_iterable([1, 2, 3, 4, 5, 6]).pipe(
 
 ## Mini project
 
-**A tiny reactive event bus with subscribe/publish and a functional pipeline.**
+### A tiny reactive event bus with subscribe/publish and a functional pipeline
 
 ```mermaid
 flowchart LR
@@ -172,7 +174,7 @@ flowchart LR
     S1 --> UN["unsubscribe() handle"]
 ```
 
-**Steps**
+### Steps
 
 1. `EventBus.subscribe(topic, fn)` returns an unsubscribe function; `publish(topic, payload)` calls every subscriber.
 2. A `Stream` class with chainable `map`, `filter`, `take(n)`, and `debounce(seconds)` that returns new streams (immutable pipeline objects).

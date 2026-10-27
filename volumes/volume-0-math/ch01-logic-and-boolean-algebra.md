@@ -10,7 +10,9 @@ Propositional logic, truth tables, De Morgan's laws; how boolean algebra maps to
 
 **In one sentence:** every `if` you write is a small logic formula, and boolean algebra is the set of rules that lets you rewrite that formula without changing what it means.
 
-**Mental model — light switches.** A proposition is a switch that is either ON (`True`, `1`) or OFF (`False`, `0`). Operators wire switches together:
+### Mental model — light switches
+
+A proposition is a switch that is either ON (`True`, `1`) or OFF (`False`, `0`). Operators wire switches together:
 
 * **AND** — two switches in *series*: the bulb lights only if both are ON.
 * **OR** — two switches in *parallel*: the bulb lights if either is ON.
@@ -20,7 +22,7 @@ Propositional logic, truth tables, De Morgan's laws; how boolean algebra maps to
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 170" role="img" aria-label="AND is two switches in series, OR is two switches in parallel; the light is on when current can flow" style="width:100%;max-width:760px;height:auto;font-family:inherit"><defs><marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="context-stroke"/></marker></defs><text x="20" y="24" font-size="15" text-anchor="start" fill="var(--text)" font-weight="700">AND (series)</text><line x1="30" y1="100" x2="70" y2="100" stroke="var(--text-muted)" stroke-width="1.6"/><rect x="70" y="80" width="50" height="40" rx="8" fill="var(--primary)" fill-opacity=".14" stroke="var(--primary)" stroke-width="1.6"/><text x="95.0" y="104.55" font-size="13" text-anchor="middle" fill="var(--text)" font-weight="600">A</text><line x1="120" y1="100" x2="160" y2="100" stroke="var(--text-muted)" stroke-width="1.6"/><rect x="160" y="80" width="50" height="40" rx="8" fill="var(--primary)" fill-opacity=".14" stroke="var(--primary)" stroke-width="1.6"/><text x="185.0" y="104.55" font-size="13" text-anchor="middle" fill="var(--text)" font-weight="600">B</text><line x1="210" y1="100" x2="270" y2="100" stroke="var(--text-muted)" stroke-width="1.6"/><circle cx="290" cy="100" r="20" fill="1" fill-opacity="0.2" stroke="var(--accent)" stroke-width="1.6"/><text x="290" y="107" font-size="20" text-anchor="middle" fill="var(--text)">💡</text><text x="20" y="150" font-size="12" text-anchor="start" fill="var(--text-muted)">Both switches must be closed</text><text x="400" y="24" font-size="15" text-anchor="start" fill="var(--text)" font-weight="700">OR (parallel)</text><line x1="400" y1="100" x2="450" y2="100" stroke="var(--text-muted)" stroke-width="1.6"/><line x1="450" y1="60" x2="450" y2="140" stroke="var(--text-muted)" stroke-width="1.6"/><line x1="450" y1="60" x2="490" y2="60" stroke="var(--text-muted)" stroke-width="1.6"/><rect x="490" y="40" width="50" height="40" rx="8" fill="var(--primary)" fill-opacity=".14" stroke="var(--primary)" stroke-width="1.6"/><text x="515.0" y="64.55" font-size="13" text-anchor="middle" fill="var(--text)" font-weight="600">A</text><line x1="540" y1="60" x2="580" y2="60" stroke="var(--text-muted)" stroke-width="1.6"/><line x1="450" y1="140" x2="490" y2="140" stroke="var(--text-muted)" stroke-width="1.6"/><rect x="490" y="120" width="50" height="40" rx="8" fill="var(--primary)" fill-opacity=".14" stroke="var(--primary)" stroke-width="1.6"/><text x="515.0" y="144.55" font-size="13" text-anchor="middle" fill="var(--text)" font-weight="600">B</text><line x1="540" y1="140" x2="580" y2="140" stroke="var(--text-muted)" stroke-width="1.6"/><line x1="580" y1="60" x2="580" y2="140" stroke="var(--text-muted)" stroke-width="1.6"/><line x1="580" y1="100" x2="640" y2="100" stroke="var(--text-muted)" stroke-width="1.6"/><circle cx="660" cy="100" r="20" fill="1" fill-opacity="0.2" stroke="var(--accent)" stroke-width="1.6"/><text x="660" y="107" font-size="20" text-anchor="middle" fill="var(--text)">💡</text><text x="400" y="165" font-size="12" text-anchor="start" fill="var(--text-muted)">Either switch closed is enough</text></svg>
 </div>
 
-**Key terms**
+### Key terms
 
 | Term | Symbol | Python (logical) | Bitwise | Meaning |
 |------|--------|------------------|---------|---------|
@@ -31,7 +33,7 @@ Propositional logic, truth tables, De Morgan's laws; how boolean algebra maps to
 | Implication | `A → B` | `(not a) or b` | — | "if A then B"; false only when A is true and B is false |
 | Equivalence | `A ↔ B` | `a == b` | — | same value |
 
-**The laws you will actually use**
+### The laws you will actually use
 
 | Law | Form |
 |-----|------|
@@ -43,7 +45,9 @@ Propositional logic, truth tables, De Morgan's laws; how boolean algebra maps to
 | Identity / Annihilator | `A ∧ 1 = A`, `A ∧ 0 = 0`, `A ∨ 0 = A`, `A ∨ 1 = 1` |
 | Complement | `A ∧ ¬A = 0`, `A ∨ ¬A = 1` |
 
-**Short-circuit evaluation.** `a and b` does not evaluate `b` if `a` is false; `a or b` does not evaluate `b` if `a` is true. This is why `if user and user.is_admin:` is safe when `user` is `None`.
+### Short-circuit evaluation
+
+`a and b` does not evaluate `b` if `a` is false; `a or b` does not evaluate `b` if `a` is true. This is why `if user and user.is_admin:` is safe when `user` is `None`.
 
 ---
 
@@ -55,7 +59,7 @@ None. This is the first chapter of the guide.
 
 ## Diagram
 
-**Truth tables for the core gates**
+### Truth tables for the core gates
 
 | A | B | A ∧ B | A ∨ B | ¬A | A ⊕ B | A → B |
 |:-:|:-:|:-----:|:-----:|:--:|:-----:|:-----:|
@@ -64,7 +68,9 @@ None. This is the first chapter of the guide.
 | 1 | 0 | 0 | 1 | 0 | 1 | 0 |
 | 1 | 1 | 1 | 1 | 0 | 0 | 1 |
 
-**De Morgan as a Venn diagram** — `¬(A ∧ B)` is "everything outside the overlap", which is exactly "outside A **or** outside B".
+### De Morgan as a Venn diagram
+
+`¬(A ∧ B)` is "everything outside the overlap", which is exactly "outside A **or** outside B".
 
 ```venn
 title: De Morgan: ¬(A ∧ B) = ¬A ∨ ¬B
@@ -76,7 +82,7 @@ label A&B: A ∧ B
 note: Shaded = true. The only unshaded region is the overlap A ∧ B, so "not (A and B)" means "outside A or outside B".
 ```
 
-**Rewriting a condition with De Morgan**
+### Rewriting a condition with De Morgan
 
 ```mermaid
 flowchart LR
@@ -84,7 +90,9 @@ flowchart LR
     B -->|"read aloud"| C["'either not logged in, or not verified'"]
 ```
 
-**Every gate from NAND** — NAND (`¬(A ∧ B)`) is *functionally complete*: you can build any circuit from it alone.
+### Every gate from NAND
+
+NAND (`¬(A ∧ B)`) is *functionally complete*: you can build any circuit from it alone.
 
 ```mermaid
 flowchart LR
@@ -200,7 +208,7 @@ flowchart LR
     I --> V
 ```
 
-**Steps**
+### Steps
 
 1. **Tokenize** strings like `not (a and not b)` into `NOT`, `LPAREN`, `VAR(a)`, `AND`, …
 2. **Parse** into a tree: `Not(And(Var a, Not(Var b)))`.

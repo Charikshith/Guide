@@ -10,9 +10,11 @@ Encapsulation, inheritance, composition, polymorphism; objects as data + behavio
 
 **In one sentence:** an object bundles data with the only operations allowed to change it, so it can guarantee its own rules (invariants) — and you build bigger behavior by composing small objects and swapping them through shared interfaces, using inheritance sparingly.
 
-**Mental model — a vending machine.** You can't reach inside and set the coin count to a million; you press buttons (methods), and the machine enforces its rules: no snack without enough money, never a negative stock count (invariants). It's *made of* parts — a coin box, a dispenser, a display (composition). Different models all accept "insert coin" and "select item" (polymorphism), even though each works differently inside.
+### Mental model — a vending machine
 
-**The four pillars, practically**
+You can't reach inside and set the coin count to a million; you press buttons (methods), and the machine enforces its rules: no snack without enough money, never a negative stock count (invariants). It's *made of* parts — a coin box, a dispenser, a display (composition). Different models all accept "insert coin" and "select item" (polymorphism), even though each works differently inside.
+
+### The four pillars, practically
 
 | Pillar | What it really is for | In code |
 |--------|----------------------|---------|
@@ -22,11 +24,15 @@ Encapsulation, inheritance, composition, polymorphism; objects as data + behavio
 | **Inheritance** | reusing and specializing an existing class ("is-a") | `class SavingsAccount(Account)` — use sparingly |
 | **Composition** | building objects out of other objects ("has-a") | `Car` *has an* `Engine`; delegate to it |
 
-**Invariants** — statements that must be true for every object at every observable moment: `balance >= 0`, `start <= end`, `currency is a valid ISO code`, `items is never empty for a submitted order`. Encapsulation's job is to make it *impossible* to break them from outside: validate in the constructor, change state only through methods that re-check, and return copies (or immutable views) instead of internal mutable collections.
+### Invariants
 
-**Make invalid states unrepresentable** — design types so that a bad value can't even be constructed: `Email` instead of `str`, an enum instead of a status string, `DateRange(start, end)` that validates `start <= end`, separate `DraftOrder` and `SubmittedOrder` types instead of one class with nullable fields.
+Statements that must be true for every object at every observable moment: `balance >= 0`, `start <= end`, `currency is a valid ISO code`, `items is never empty for a submitted order`. Encapsulation's job is to make it *impossible* to break them from outside: validate in the constructor, change state only through methods that re-check, and return copies (or immutable views) instead of internal mutable collections.
 
-**Composition vs inheritance**
+### Make invalid states unrepresentable
+
+Design types so that a bad value can't even be constructed: `Email` instead of `str`, an enum instead of a status string, `DateRange(start, end)` that validates `start <= end`, separate `DraftOrder` and `SubmittedOrder` types instead of one class with nullable fields.
+
+### Composition vs inheritance
 
 | | Inheritance ("is-a") | Composition ("has-a") |
 |-|---------------------|------------------------|
@@ -47,7 +53,7 @@ Rule of thumb: **favor composition**; inherit only for genuine subtypes that hon
 
 ## Diagram
 
-**A class diagram with fields/methods, is-a vs has-a**
+### A class diagram with fields/methods, is-a vs has-a
 
 ```mermaid
 classDiagram
@@ -77,15 +83,17 @@ classDiagram
     Account --> Money : uses
 ```
 
-**Encapsulation guarding an invariant**
+### Encapsulation guarding an invariant
 
 <div class="fig">
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 260" role="img" aria-label="BankAccount keeps its balance private and enforces the invariant balance at least zero in every method" style="width:100%;max-width:760px;height:auto;font-family:inherit"><defs><marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="context-stroke"/></marker></defs><rect x="240" y="24" width="340" height="200" rx="12" fill="var(--primary)" fill-opacity=".10" stroke="var(--primary)" stroke-width="1.6"/><text x="410" y="50" font-size="14" text-anchor="middle" fill="var(--primary)" font-weight="700">BankAccount</text><text x="258" y="86" font-size="13" font-family="ui-monospace,Menlo,Consolas,monospace" fill="var(--text)">if amount &gt; balance: raise ✗</text><text x="258" y="108" font-size="13" font-family="ui-monospace,Menlo,Consolas,monospace" fill="var(--text)">balance -= amount</text><text x="258" y="146" font-size="13" font-family="ui-monospace,Menlo,Consolas,monospace" fill="var(--text)">if amount &lt;= 0: raise ✗</text><text x="258" y="186" font-size="13" font-family="ui-monospace,Menlo,Consolas,monospace" fill="var(--accent)">_balance  (private)</text><text x="20" y="96" font-size="13" font-family="ui-monospace,Menlo,Consolas,monospace" fill="var(--text)">withdraw(500)</text><line x1="150" y1="92" x2="240" y2="92" stroke="var(--text-muted)" stroke-width="1.6" marker-end="url(#ar)"/><text x="20" y="146" font-size="13" font-family="ui-monospace,Menlo,Consolas,monospace" fill="var(--text)">deposit(-20)</text><line x1="150" y1="142" x2="240" y2="142" stroke="var(--text-muted)" stroke-width="1.6" marker-end="url(#ar)"/><text x="20" y="206" font-size="13" font-family="ui-monospace,Menlo,Consolas,monospace" fill="var(--danger)">acct._balance = -1</text><text x="190" y="240" font-size="12.5" text-anchor="start" fill="var(--danger)" font-weight="600">✗ not part of the public interface</text><text x="600" y="100" font-size="13" text-anchor="start" fill="var(--success)" font-weight="700">invariant: balance ≥ 0</text><text x="600" y="120" font-size="12.5" text-anchor="start" fill="var(--text-muted)">holds after EVERY method</text></svg>
 </div>
 
-**Inheritance explosion vs composition**
+### Inheritance explosion vs composition
 
-**Inheritance:** one class per combination.
+### Inheritance
+
+One class per combination.
 
 ```mermaid
 flowchart LR
@@ -94,7 +102,9 @@ flowchart LR
     Bird --> more["… one class per combination"]
 ```
 
-**Composition:** any combination, swappable at runtime.
+### Composition
+
+Any combination, swappable at runtime.
 
 ```mermaid
 flowchart LR
@@ -222,7 +232,7 @@ print(Transfer(FlatFee()).total(Money(1000)).cents, Transfer(PercentFee(2)).tota
 
 ## Mini project
 
-**A `BankAccount`/`Transaction` domain model with enforced invariants.**
+### A `BankAccount`/`Transaction` domain model with enforced invariants
 
 ```mermaid
 classDiagram
@@ -258,7 +268,7 @@ classDiagram
     TransferService --> FeePolicy
 ```
 
-**Steps**
+### Steps
 
 1. An immutable `Money` value object (integer cents, currency; arithmetic refuses mixed currencies).
 2. `Account` with private state; `deposit`/`withdraw` enforce `balance >= 0`; `history` is read-only.

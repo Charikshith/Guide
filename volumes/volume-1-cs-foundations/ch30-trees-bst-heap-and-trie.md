@@ -10,13 +10,13 @@ Tree terminology; binary search trees; heaps (priority queues); tries (prefix se
 
 **In one sentence:** a tree is a hierarchy with one root; a BST keeps it sorted so you can search by halving, a heap keeps only the *smallest* item on top so you can always grab it fast, and a trie shares common prefixes so you can find all words starting with "ca" at once.
 
-**Mental model — three kinds of organizing.**
+### Mental model — three kinds of organizing
 
 * **BST** — a "guess the number" game: at each node, go left if smaller, right if bigger.
 * **Heap** — a company org chart where every boss earns more than their reports: the CEO (root) is always the max, but siblings aren't sorted.
 * **Trie** — a phone's contact search: typing `c`, `a`, `r` narrows the tree letter by letter.
 
-**Terminology**
+### Terminology
 
 | Term | Meaning |
 |------|---------|
@@ -27,7 +27,7 @@ Tree terminology; binary search trees; heaps (priority queues); tries (prefix se
 | Balanced | height is O(log n) (AVL, red-black trees guarantee it) |
 | Complete | every level full except the last, filled left to right (heaps) |
 
-**Comparison**
+### Comparison
 
 | | BST (balanced) | Binary heap | Trie |
 |-|----------------|-------------|------|
@@ -39,7 +39,7 @@ Tree terminology; binary search trees; heaps (priority queues); tries (prefix se
 | Prefix queries | range scan | no | **O(L + results)** |
 | Typical use | ordered maps (`TreeMap`, `BTreeMap`), indexes | priority queues, schedulers, Dijkstra, top-k | autocomplete, routers, spell check, IP lookup |
 
-**Traversals (DFS orders)**
+### Traversals (DFS orders)
 
 | Order | Visit | Use |
 |-------|-------|-----|
@@ -48,7 +48,9 @@ Tree terminology; binary search trees; heaps (priority queues); tries (prefix se
 | Post-order | left, right, node | delete / evaluate expression trees |
 | Level-order (BFS) | level by level | shortest depth, printing by level |
 
-**Unbalanced BSTs degrade:** inserting 1, 2, 3, 4, 5 in order makes a "linked list" of height n, so search is O(n). Self-balancing trees rotate nodes to keep height O(log n).
+### Unbalanced BSTs degrade
+
+Inserting 1, 2, 3, 4, 5 in order makes a "linked list" of height n, so search is O(n). Self-balancing trees rotate nodes to keep height O(log n).
 
 ---
 
@@ -60,7 +62,9 @@ Tree terminology; binary search trees; heaps (priority queues); tries (prefix se
 
 ## Diagram
 
-**A balanced BST** — searching for 6: 8 → 3 → 6, three comparisons.
+### A balanced BST
+
+Searching for 6: 8 → 3 → 6, three comparisons.
 
 ```mermaid
 graph TD
@@ -76,7 +80,7 @@ graph TD
 
 In-order traversal: 1, 3, 4, 6, 7, 8, 9, 10, 14 — sorted.
 
-**Unbalanced BST after inserting 1..5 in order**
+### Unbalanced BST after inserting 1..5 in order
 
 ```
  1
@@ -90,7 +94,7 @@ In-order traversal: 1, 3, 4, 6, 7, 8, 9, 10, 14 — sorted.
          5
 ```
 
-**A min-heap as a tree and as an array**
+### A min-heap as a tree and as an array
 
 ```
             1                 index:  0  1  2  3  4  5  6
@@ -101,7 +105,7 @@ In-order traversal: 1, 3, 4, 6, 7, 8, 9, 10, 14 — sorted.
  no pointers needed — the shape is implied by the index
 ```
 
-**Heap push: sift up**
+### Heap push: sift up
 
 | Step | Array |
 |---|---|
@@ -110,7 +114,7 @@ In-order traversal: 1, 3, 4, 6, 7, 8, 9, 10, 14 — sorted.
 | 0 < 3 → swap | `[1,0,2,3,4,5,6,7]` |
 | 0 < 1 → swap | `[0,1,2,3,4,5,6,7]` (done: **O(log n)** swaps) |
 
-**A trie of: car, cart, cat, dog**
+### A trie of: car, cart, cat, dog
 
 ```mermaid
 graph TD
@@ -221,7 +225,7 @@ print(tr.complete("ca"))                         # ['car', 'cart', 'cat']
 
 ## Mini project
 
-**A URL router or autocomplete engine backed by a trie.**
+### A URL router or autocomplete engine backed by a trie
 
 ```mermaid
 flowchart LR
@@ -229,7 +233,7 @@ flowchart LR
     REQ["GET /users/42/orders"] --> M["match segment by segment<br/>static beats :param"] --> H["handler + params {id: 42}"]
 ```
 
-**Steps (router version)**
+### Steps (router version)
 
 1. Split paths into segments; each trie node has static children, one `:param` child, and an optional handler per HTTP method.
 2. Match request paths segment by segment, preferring static over param; collect params into a dict.

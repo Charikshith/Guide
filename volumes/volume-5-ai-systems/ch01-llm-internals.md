@@ -10,9 +10,11 @@ How a language model works — parameters, pretraining, the attention mechanism,
 
 **In one sentence:** a large language model is a giant function with billions of adjustable numbers (parameters) that has been trained, on trillions of words, to answer one question over and over — "given this text so far, what token comes next?" — and everything else it can do falls out of getting very good at that.
 
-**Mental model — the world's most-read autocomplete.** Your phone's keyboard suggests the next word from a few recent words. An LLM does the same thing, but it looks at the *whole* conversation at once (attention), it has read a large slice of the internet, books, and code, and it has billions of knobs to store the patterns it found. To predict the next word of a physics answer well, it has to have picked up some physics; to finish a Python function, it has to model what the code does.
+### Mental model — the world's most-read autocomplete
 
-**The pieces**
+Your phone's keyboard suggests the next word from a few recent words. An LLM does the same thing, but it looks at the *whole* conversation at once (attention), it has read a large slice of the internet, books, and code, and it has billions of knobs to store the patterns it found. To predict the next word of a physics answer well, it has to have picked up some physics; to finish a Python function, it has to model what the code does.
+
+### The pieces
 
 | Piece | What it is | Intuition |
 |-------|-----------|-----------|
@@ -25,7 +27,7 @@ How a language model works — parameters, pretraining, the attention mechanism,
 | Softmax | turns logits into probabilities that sum to 1 | `p_i = e^{z_i} / Σ e^{z_j}` |
 | **Parameters** | all learned weights: embeddings, attention matrices, FFN matrices | the model's compressed knowledge and skills; a "7B" model has ~7 billion |
 
-**Training stages**
+### Training stages
 
 | Stage | Data | Objective | Result |
 |-------|------|-----------|--------|
@@ -35,9 +37,13 @@ How a language model works — parameters, pretraining, the attention mechanism,
 
 **Why next-token prediction is so powerful** — to lower the loss on *all* text, the model is pushed to learn grammar, facts, reasoning patterns, coding conventions, and even some world modeling, because each of these helps predict what comes next somewhere in the data. The objective is simple; what it takes to be good at it is not.
 
-**Scaling laws (intuition)** — loss falls smoothly and predictably as a power law when you grow **parameters (N)**, **data (D)**, and **compute (C ≈ 6·N·D FLOPs)** together. The "Chinchilla" result: for a fixed compute budget, the best trade-off is roughly **~20 tokens of training data per parameter**; many modern models are trained on far more tokens than that because smaller models are cheaper to *serve*. Some abilities appear to "emerge" suddenly with scale, though much of that is how we measure them.
+### Scaling laws (intuition)
 
-**What LLMs are not** — they don't look things up (unless given tools or RAG, [Ch 9](ch09-embeddings-and-rag.md)); they have a knowledge cutoff; they can produce fluent, confident, wrong text (hallucination); and they "think" only through the tokens they generate.
+Loss falls smoothly and predictably as a power law when you grow **parameters (N)**, **data (D)**, and **compute (C ≈ 6·N·D FLOPs)** together. The "Chinchilla" result: for a fixed compute budget, the best trade-off is roughly **~20 tokens of training data per parameter**; many modern models are trained on far more tokens than that because smaller models are cheaper to *serve*. Some abilities appear to "emerge" suddenly with scale, though much of that is how we measure them.
+
+### What LLMs are not
+
+They don't look things up (unless given tools or RAG, [Ch 9](ch09-embeddings-and-rag.md)); they have a knowledge cutoff; they can produce fluent, confident, wrong text (hallucination); and they "think" only through the tokens they generate.
 
 ---
 
@@ -49,7 +55,7 @@ How a language model works — parameters, pretraining, the attention mechanism,
 
 ## Diagram
 
-**A high-level transformer (decoder-only) diagram**
+### A high-level transformer (decoder-only) diagram
 
 ```mermaid
 flowchart TB
@@ -67,7 +73,7 @@ flowchart TB
     LM --> SM["softmax → probabilities"] --> NEXT["next token: ' mat' (p = 0.31)"]
 ```
 
-**Tracing one token through the model**
+### Tracing one token through the model
 
 Predicting the token after "…the cat sat on", at position 5 (`"the"`):
 
@@ -81,7 +87,7 @@ Predicting the token after "…the cat sat on", at position 5 (`"the"`):
 | LM head | vector · `W_out` (4096 × 100k) | `[100k]` logits |
 | softmax | `' mat'` 0.31 · `' floor'` 0.18 · `' sofa'` 0.09 · `' bed'` 0.07 · … | probabilities |
 
-**Logits → probabilities (softmax)**
+### Logits → probabilities (softmax)
 
 ```
  token    logit   e^logit    probability
@@ -91,7 +97,7 @@ Predicting the token after "…the cat sat on", at position 5 (`"the"`):
                   Σ = 11.21   Σ = 1.000
 ```
 
-**Pretraining in one loop**
+### Pretraining in one loop
 
 ```mermaid
 flowchart LR
@@ -164,7 +170,7 @@ print(sum(p.numel() for p in model.parameters()) / 1e6, "M parameters")   # ~124
 
 ## Mini project
 
-**A tiny bigram/character-level model trained on a small corpus.**
+### A tiny bigram/character-level model trained on a small corpus
 
 ```mermaid
 flowchart LR
@@ -175,7 +181,7 @@ flowchart LR
     NN --> CURVE["plot train/val loss"]
 ```
 
-**Steps**
+### Steps
 
 1. Load a small text (e.g. tinyshakespeare), build a character vocabulary, and encode it as integers.
 2. **Counting model:** a 65×65 table of bigram counts → probabilities; sample text from it.

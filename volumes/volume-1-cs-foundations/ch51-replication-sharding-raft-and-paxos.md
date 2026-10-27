@@ -10,9 +10,11 @@ Replication strategies, sharding/partitioning, distributed locks, gossip, leader
 
 **In one sentence:** replication keeps copies of the same data on several machines for safety and read scale, sharding splits different data across machines for write scale, and consensus algorithms like Raft make a group of machines agree on one ordered log so that they act like a single, reliable machine.
 
-**Mental model — a class taking notes.** Replication: several students copy the same lecture notes, so losing one notebook is fine. Sharding: each student is responsible for a different chapter, so the work spreads out. Raft: the class elects a note-taker (the leader) who reads each line aloud; a line counts as official once most of the class has written it down; if the note-taker falls asleep, the class elects a new one.
+### Mental model — a class taking notes
 
-**Replication strategies**
+Replication: several students copy the same lecture notes, so losing one notebook is fine. Sharding: each student is responsible for a different chapter, so the work spreads out. Raft: the class elects a note-taker (the leader) who reads each line aloud; a line counts as official once most of the class has written it down; if the note-taker falls asleep, the class elects a new one.
+
+### Replication strategies
 
 | Strategy | Writes go to | Pros | Cons | Examples |
 |----------|-------------|------|------|----------|
@@ -21,7 +23,7 @@ Replication strategies, sharding/partitioning, distributed locks, gossip, leader
 | Leaderless | any replica; quorum reads and writes (R + W > N) | highly available | conflicts, read repair, sloppy quorums | Cassandra, DynamoDB, Riak |
 | **Sync vs async** | sync: wait for replicas before ACK | sync: no loss on failover / async: fast | sync: slow, blocked by one slow replica / async: data loss on failover | semi-sync: wait for one replica |
 
-**Sharding (partitioning)**
+### Sharding (partitioning)
 
 | Scheme | How | Good | Bad |
 |--------|-----|------|-----|
@@ -30,9 +32,13 @@ Replication strategies, sharding/partitioning, distributed locks, gossip, leader
 | **Consistent hashing** | keys and nodes on a ring; a key goes to the next node clockwise; virtual nodes | adding a node moves only ~1/N of keys | uneven without virtual nodes |
 | Directory / lookup | a service maps key → shard | flexible, supports moves | an extra hop; the directory must be highly available |
 
-**Leader election and distributed locks — use leases, not bare locks.** A process that holds a lock can pause (GC, VM freeze) past its expiry while another process takes the lock → two holders (*split-brain*). Fix: **fencing tokens** — every lock grant carries a monotonically increasing number, and the storage rejects writes with an older token.
+### Leader election and distributed locks — use leases, not bare locks
 
-**Leader election in practice — borrow consensus, don't build it.** Unless you are writing a database, don't implement Raft yourself. Use a coordination service (etcd, ZooKeeper, Consul) that offers a linearizable **compare-and-swap with a TTL**:
+A process that holds a lock can pause (GC, VM freeze) past its expiry while another process takes the lock → two holders (*split-brain*). Fix: **fencing tokens** — every lock grant carries a monotonically increasing number, and the storage rejects writes with an older token.
+
+### Leader election in practice — borrow consensus, don't build it
+
+Unless you are writing a database, don't implement Raft yourself. Use a coordination service (etcd, ZooKeeper, Consul) that offers a linearizable **compare-and-swap with a TTL**:
 
 1. Every candidate tries to *create* the key `/leader` with its id and a lease (TTL). The create only succeeds if the key is absent, so exactly one wins.
 2. The winner keeps renewing the lease. If it dies or stalls, the lease expires and the key disappears.
@@ -40,9 +46,13 @@ Replication strategies, sharding/partitioning, distributed locks, gossip, leader
 
 Even so, **plan for two leaders at once**: a stalled old leader may not yet know its lease expired, and an in-flight request can land after expiry. Protect shared state with fencing tokens or conditional writes ("write only if the version is still 42"), or make the leader's work idempotent so a duplicate does no harm. Two more rules: keep the leader's work small, because it is a throughput bottleneck and a single point of failure with a large blast radius; and when one leader isn't enough, **partition** the work and elect a **leader per partition** (Kafka partition leaders, CockroachDB ranges, Spanner Paxos groups).
 
-**Consensus, seen from the outside** — consensus means every non-faulty process eventually decides, all decide the same value, and that value was actually proposed by someone. Think of it as a **write-once register**: the first value written wins forever, and everyone can read it. A Raft log is just a sequence of such registers, one per log slot.
+### Consensus, seen from the outside
 
-**Linearizable reads in Raft** — writes are linearizable because they go through the log, but reads need care. A node that *thinks* it is the leader may already have been replaced (it was partitioned or paused), so answering from its local state could return stale data. Options:
+Consensus means every non-faulty process eventually decides, all decide the same value, and that value was actually proposed by someone. Think of it as a **write-once register**: the first value written wins forever, and everyone can read it. A Raft log is just a sequence of such registers, one per log slot.
+
+### Linearizable reads in Raft
+
+Writes are linearizable because they go through the log, but reads need care. A node that *thinks* it is the leader may already have been replaced (it was partitioned or paused), so answering from its local state could return stale data. Options:
 
 | Read path | Consistency | Cost |
 |-----------|------------|------|
@@ -50,7 +60,7 @@ Even so, **plan for two leaders at once**: a stalled old leader may not yet know
 | **Leader lease**: majority promises not to elect anyone else for T seconds; leader serves reads locally during the lease | linearizable *if* clock drift is bounded | cheap; unsafe if clocks misbehave |
 | Read from any follower | stale (sequential if you stick to one follower; eventual if you hop) | cheapest; scales reads |
 
-**Chain replication — a different shape than Raft**
+### Chain replication — a different shape than Raft
 
 Arrange the replicas in a line: **head → middle → … → tail**.
 
@@ -72,9 +82,11 @@ Arrange the replicas in a line: **head → middle → … → tail**.
 
 Writes can be **pipelined** down the chain for high throughput. **CRAQ** (Chain Replication with Apportioned Queries) also spreads reads over every node: each node keeps versions of an object marked *dirty* until the tail's acknowledgement flows back (then *clean*). A read of a clean object is answered locally; a read of a dirty one asks the tail which version is committed — still linearizable, but read throughput grows with the chain length. Chain replication shows a recurring idea: a lean **data plane** (the chain, which serves requests) and a consensus-backed **control plane** (membership), which keeps expensive coordination off the request path. Azure Storage replicates its storage extents this way.
 
-**Gossip** — each node periodically tells a few random peers what it knows (membership, heartbeats, versions). Information spreads to all N nodes in O(log N) rounds with no central coordinator. Used for failure detection and membership (Cassandra, Consul/Serf SWIM).
+### Gossip
 
-**Raft in five facts**
+Each node periodically tells a few random peers what it knows (membership, heartbeats, versions). Information spreads to all N nodes in O(log N) rounds with no central coordinator. Used for failure detection and membership (Cassandra, Consul/Serf SWIM).
+
+### Raft in five facts
 
 1. Nodes are **followers**, **candidates**, or the **leader**. Time is divided into numbered **terms**.
 2. A follower that hears nothing for a randomized election timeout (150–300 ms) becomes a candidate, increments the term, votes for itself, and asks others for votes.
@@ -82,7 +94,9 @@ Writes can be **pipelined** down the chain for high throughput. **CRAQ** (Chain 
 4. The leader appends client commands to its log and replicates them (`AppendEntries`). An entry is **committed** once stored on a majority; then it is applied to the state machine.
 5. Safety: at most one leader per term, and a committed entry is never lost — any future leader must have it.
 
-**Paxos vs Raft** — both reach consensus with majorities and survive f failures with 2f + 1 nodes. Paxos (Lamport, 1989) is minimal and general, but famously hard to understand and to turn into a full system (Multi-Paxos). Raft (2014) was designed for understandability, with a strong leader and a clearly specified log, elections, and membership changes. Most new systems use Raft (etcd, Consul, CockroachDB, TiKV); Google's Chubby and Spanner use Paxos.
+### Paxos vs Raft
+
+Both reach consensus with majorities and survive f failures with 2f + 1 nodes. Paxos (Lamport, 1989) is minimal and general, but famously hard to understand and to turn into a full system (Multi-Paxos). Raft (2014) was designed for understandability, with a strong leader and a clearly specified log, elections, and membership changes. Most new systems use Raft (etcd, Consul, CockroachDB, TiKV); Google's Chubby and Spanner use Paxos.
 
 ---
 
@@ -94,7 +108,7 @@ Writes can be **pipelined** down the chain for high throughput. **CRAQ** (Chain 
 
 ## Diagram
 
-**Raft leader election**
+### Raft leader election
 
 ```mermaid
 stateDiagram-v2
@@ -106,7 +120,7 @@ stateDiagram-v2
     Leader --> Follower: sees a higher term
 ```
 
-**Raft log replication**
+### Raft log replication
 
 ```mermaid
 sequenceDiagram
@@ -132,7 +146,7 @@ sequenceDiagram
  F2      1:1 x=1  2:1 y=2  3:2 x=3              (catching up)
 ```
 
-**A consistent-hash ring with virtual nodes**
+### A consistent-hash ring with virtual nodes
 
 ```mermaid
 flowchart LR
@@ -142,7 +156,7 @@ flowchart LR
 
 Keys hash to a point on the ring and walk clockwise to the first virtual node ("user:42" lands at 47° and is owned by B1, node B). Adding node D takes over only the arcs just before its virtual points, so about 1/4 of keys move, not all of them.
 
-**Leader election with a lease in etcd / ZooKeeper**
+### Leader election with a lease in etcd / ZooKeeper
 
 ```mermaid
 sequenceDiagram
@@ -162,7 +176,7 @@ sequenceDiagram
     S-->>B: ok — B is leader (new fencing token)
 ```
 
-**Chain replication: writes flow down, reads hit the tail**
+### Chain replication: writes flow down, reads hit the tail
 
 ```mermaid
 flowchart LR
@@ -178,7 +192,7 @@ flowchart LR
     CP -.-> T
 ```
 
-**CRAQ: any node answers reads, asking the tail only when its copy is dirty**
+### CRAQ: any node answers reads, asking the tail only when its copy is dirty
 
 ```mermaid
 sequenceDiagram
@@ -194,7 +208,7 @@ sequenceDiagram
     Note over M: v2 now clean → later reads answered locally with v2
 ```
 
-**Gossip spreading a membership change**
+### Gossip spreading a membership change
 
 ```
  round 0:  ● ○ ○ ○ ○ ○ ○ ○        ● = knows "node 9 joined"
@@ -277,7 +291,7 @@ e.Campaign(ctx, "node-2")            // blocks until this node is the leader
 
 ## Mini project
 
-**A Raft leader-election + log-replication simulator (3 nodes).**
+### A Raft leader-election + log-replication simulator (3 nodes)
 
 ```mermaid
 flowchart LR
@@ -293,7 +307,7 @@ flowchart LR
     Cluster --> INV["invariant checks each tick:<br/>≤ 1 leader per term;<br/>committed entries identical everywhere"]
 ```
 
-**Steps**
+### Steps
 
 1. Implement `RequestVote` and `AppendEntries` (including the log-consistency check on `prevLogIndex/prevLogTerm`) as messages on a bus.
 2. Randomized election timeouts in ticks; the leader sends heartbeats every few ticks.

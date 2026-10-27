@@ -10,9 +10,11 @@ FP16/INT8/INT4, GPTQ/AWQ, KV-cache quantization, and the accuracy/speed/memory t
 
 **In one sentence:** quantization stores a model's numbers with fewer bits — 16, 8, or 4 instead of 32 — so the model takes a fraction of the memory and runs faster (because decoding is limited by how fast weights can be read), usually with only a small loss in quality.
 
-**Mental model — rounding prices.** A store that prices items at $3.14159 could print $3.14 and almost nobody would notice. Rounding every price to the nearest dollar ($3) saves even more ink, but now some totals are noticeably off. Quantization is choosing how coarse the rounding can be — and doing it cleverly (a separate scale per shelf, extra care for the few very expensive items) so the totals stay right.
+### Mental model — rounding prices
 
-**Number formats**
+A store that prices items at $3.14159 could print $3.14 and almost nobody would notice. Rounding every price to the nearest dollar ($3) saves even more ink, but now some totals are noticeably off. Quantization is choosing how coarse the rounding can be — and doing it cleverly (a separate scale per shelf, extra care for the few very expensive items) so the totals stay right.
+
+### Number formats
 
 | Format | Bits | Bytes/param | 7B weights | 70B weights | Notes |
 |--------|:-:|:-:|---:|---:|-------|
@@ -24,7 +26,7 @@ FP16/INT8/INT4, GPTQ/AWQ, KV-cache quantization, and the accuracy/speed/memory t
 
 (Weights only. Add the KV cache ([Ch 4](ch04-inference-and-serving.md)), activations, and runtime overhead — typically +10–30%.)
 
-**How integer quantization works**
+### How integer quantization works
 
 ```
  affine (asymmetric):   q = round(x / scale) + zero_point        x ≈ (q − zero_point) × scale
@@ -32,11 +34,13 @@ FP16/INT8/INT4, GPTQ/AWQ, KV-cache quantization, and the accuracy/speed/memory t
  symmetric:             q = round(x / scale),  scale = max|x| / (2^(bits−1) − 1)
 ```
 
-**Granularity matters** — one scale per whole tensor is crushed by outliers; **per-channel** (per row) or **per-group** (e.g. every 128 weights get their own scale) keeps errors small. Group size 128 at 4 bits costs ~0.125 extra bits per weight for the scales.
+### Granularity matters
+
+One scale per whole tensor is crushed by outliers; **per-channel** (per row) or **per-group** (e.g. every 128 weights get their own scale) keeps errors small. Group size 128 at 4 bits costs ~0.125 extra bits per weight for the scales.
 
 **Why quality usually survives** — weights are roughly bell-shaped and redundant; networks are trained with noise and are robust to small perturbations; errors from independent roundings partly cancel; and modern methods protect the few weights and activations that matter most (outliers).
 
-**Methods**
+### Methods
 
 | Method | Type | Idea |
 |--------|------|------|
@@ -50,7 +54,9 @@ FP16/INT8/INT4, GPTQ/AWQ, KV-cache quantization, and the accuracy/speed/memory t
 | QAT | during training | simulate quantization in training so the model adapts; best quality, costliest |
 | **KV-cache quantization** | runtime | store K/V in FP8 or INT8 → ~2× more concurrent context |
 
-**Trade-offs** — memory shrinks nearly in proportion to bits. Speed improves for memory-bound decoding (fewer bytes to read), but only if kernels are efficient; prefill (compute-bound) may gain less or even slow down with dequantization overhead. Quality: 8-bit ≈ lossless; 4-bit with GPTQ/AWQ is typically a small drop; 3-bit and below degrades noticeably, especially for small models, reasoning, and long contexts. **Always measure on your own tasks.**
+### Trade-offs
+
+Memory shrinks nearly in proportion to bits. Speed improves for memory-bound decoding (fewer bytes to read), but only if kernels are efficient; prefill (compute-bound) may gain less or even slow down with dequantization overhead. Quality: 8-bit ≈ lossless; 4-bit with GPTQ/AWQ is typically a small drop; 3-bit and below degrades noticeably, especially for small models, reasoning, and long contexts. **Always measure on your own tasks.**
 
 ---
 
@@ -62,20 +68,20 @@ FP16/INT8/INT4, GPTQ/AWQ, KV-cache quantization, and the accuracy/speed/memory t
 
 ## Diagram
 
-**A weight-matrix quantization diagram (float → int with scale/zero-point)**
+### A weight-matrix quantization diagram (float → int with scale/zero-point)
 
 <div class="fig">
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 820 270" role="img" aria-label="8-bit affine quantization maps FP32 values from minus 1.50 to 2.30 onto int8 codes 0 to 255, with zero mapped to code 101" style="width:100%;max-width:820px;height:auto;font-family:inherit"><defs><marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="context-stroke"/></marker></defs><text x="20" y="24" font-size="13" text-anchor="start" fill="var(--text)" font-weight="700">FP32 weights (one group):   0.12   −1.50   0.80   2.30   −0.40</text><text x="20" y="48" font-size="12.5" text-anchor="start" fill="var(--text-muted)">min = −1.50, max = 2.30 · scale = 3.80 / 255 = 0.0149 · zero_point = round(1.50 / 0.0149) = 101</text><text x="20" y="70" font-size="13" text-anchor="start" fill="var(--accent)" font-weight="700">q = round(x / scale) + 101   →   109    0    155    255    74</text><text x="20" y="92" font-size="12.5" text-anchor="start" fill="var(--success)" font-weight="700">dequantized:   0.119   −1.505   0.805   2.295   −0.402     (max error ≈ 0.005)</text><text x="20" y="150" font-size="12.5" text-anchor="start" fill="var(--text-muted)" font-weight="600">value line</text><line x1="120" y1="146" x2="780" y2="146" stroke="var(--primary)" stroke-width="2.4"/><text x="20" y="220" font-size="12.5" text-anchor="start" fill="var(--text-muted)" font-weight="600">int8 codes</text><line x1="120" y1="216" x2="780" y2="216" stroke="var(--accent)" stroke-width="2.4"/><circle cx="120" cy="146" r="6" fill="var(--primary)" fill-opacity="1" stroke="var(--primary)" stroke-width="1.6"/><text x="120" y="130" font-size="12.5" text-anchor="middle" fill="var(--text)" font-weight="700">−1.50</text><circle cx="120" cy="216" r="6" fill="var(--accent)" fill-opacity="1" stroke="var(--accent)" stroke-width="1.6"/><text x="120" y="242" font-size="12.5" text-anchor="middle" fill="var(--text)" font-weight="700">0</text><line x1="120" y1="152" x2="120" y2="210" stroke="var(--text-muted)" stroke-width="1.6" stroke-dasharray="4 4"/><circle cx="380.5263157894737" cy="146" r="6" fill="var(--primary)" fill-opacity="1" stroke="var(--primary)" stroke-width="1.6"/><text x="380.5263157894737" y="130" font-size="12.5" text-anchor="middle" fill="var(--text)" font-weight="700">0</text><circle cx="381.4117647058824" cy="216" r="6" fill="var(--accent)" fill-opacity="1" stroke="var(--accent)" stroke-width="1.6"/><text x="381.4117647058824" y="242" font-size="12.5" text-anchor="middle" fill="var(--text)" font-weight="700">101</text><line x1="380.5263157894737" y1="152" x2="381.4117647058824" y2="210" stroke="var(--text-muted)" stroke-width="1.6" stroke-dasharray="4 4"/><circle cx="780" cy="146" r="6" fill="var(--primary)" fill-opacity="1" stroke="var(--primary)" stroke-width="1.6"/><text x="780" y="130" font-size="12.5" text-anchor="middle" fill="var(--text)" font-weight="700">2.30</text><circle cx="780" cy="216" r="6" fill="var(--accent)" fill-opacity="1" stroke="var(--accent)" stroke-width="1.6"/><text x="780" y="242" font-size="12.5" text-anchor="middle" fill="var(--text)" font-weight="700">255</text><line x1="780" y1="152" x2="780" y2="210" stroke="var(--text-muted)" stroke-width="1.6" stroke-dasharray="4 4"/></svg>
 </div>
 
-**Per-tensor vs per-group scales**
+### Per-tensor vs per-group scales
 
 | Scheme | Weights | Result |
 |---|---|---|
 | **per-tensor** (one scale for everything) | `[0.01 0.02 −0.03 … 0.02 \| 9.7 (outlier!) \| 0.01 …]` | scale set by 9.7; small weights all round to 0 ✗ |
 | **per-group (128)** (each group gets its own scale) | group 1: scale from max 0.03 · group 7: scale from 9.7 | group 1 keeps fine resolution ✓; the outlier is contained in group 7 |
 
-**Where the memory goes: a 7B model on a 24 GB GPU**
+### Where the memory goes: a 7B model on a 24 GB GPU
 
 ```mermaid
 xychart-beta
@@ -87,7 +93,7 @@ xychart-beta
 
 (Weights 14 / 7 / 3.5 / 3.5 GB + KV cache ~4.3 GB in FP16, ~2.1 GB in FP8, for 8 × 4k tokens with 8 KV heads.)
 
-**Choosing a format**
+### Choosing a format
 
 ```mermaid
 flowchart TD
@@ -169,7 +175,7 @@ python convert_hf_to_gguf.py ./Qwen2.5-7B-Instruct --outfile qwen7b-f16.gguf
 
 ## Mini project
 
-**Quantize a small model and measure speedup + quality change.**
+### Quantize a small model and measure speedup + quality change
 
 ```mermaid
 flowchart LR
@@ -180,7 +186,7 @@ flowchart LR
     BENCH --> TABLE["results table + recommendation"]
 ```
 
-**Steps**
+### Steps
 
 1. Pick a small instruct model and a task set you care about (e.g. 50 JSON-extraction prompts with exact-match scoring).
 2. Produce three quantized variants.

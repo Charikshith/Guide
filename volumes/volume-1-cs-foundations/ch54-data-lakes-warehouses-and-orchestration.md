@@ -10,9 +10,11 @@ Lakes vs warehouses vs lakehouses, schema evolution, and pipeline orchestration 
 
 **In one sentence:** a data lake is cheap object storage holding raw files of any shape, a warehouse is a structured, fast SQL database for analysis, a lakehouse adds warehouse features (tables, transactions, schemas) directly on top of lake files, and an orchestrator runs all the pipeline steps in the right order, retrying and alerting when they fail.
 
-**Mental model — groceries.** The lake is the pantry: everything you bought, in its original packaging, cheap to store, messy to cook from. The warehouse is the prepared-meals fridge: portioned, labeled, ready to eat, more expensive per item. A lakehouse is a pantry with a labeling system and a shelf manager. The orchestrator is the kitchen schedule: thaw at 8, cook at 9, serve at 12 — and call the chef if the oven fails.
+### Mental model — groceries
 
-**Lake vs warehouse vs lakehouse**
+The lake is the pantry: everything you bought, in its original packaging, cheap to store, messy to cook from. The warehouse is the prepared-meals fridge: portioned, labeled, ready to eat, more expensive per item. A lakehouse is a pantry with a labeling system and a shelf manager. The orchestrator is the kitchen schedule: thaw at 8, cook at 9, serve at 12 — and call the chef if the oven fails.
+
+### Lake vs warehouse vs lakehouse
 
 | | Data lake | Data warehouse | Lakehouse |
 |-|-----------|----------------|-----------|
@@ -24,7 +26,7 @@ Lakes vs warehouses vs lakehouses, schema evolution, and pipeline orchestration 
 | Users | data engineers, ML | analysts, BI | both |
 | Examples | S3 + Glue catalog | Snowflake, BigQuery, Redshift | Databricks, Iceberg + Trino/Spark/Snowflake |
 
-**Medallion layers (a common layout)**
+### Medallion layers (a common layout)
 
 | Layer | Contents | Rules |
 |-------|----------|-------|
@@ -32,9 +34,11 @@ Lakes vs warehouses vs lakehouses, schema evolution, and pipeline orchestration 
 | **Silver / staging** | cleaned, typed, deduplicated, conformed | one row per real entity or event |
 | **Gold / marts** | business-level aggregates, facts and dimensions | what dashboards and ML features read |
 
-**Parquet** — columnar, compressed, with column statistics. Queries read only the needed columns and skip row groups by min/max. Partition folders (`date=2024-05-01/`) let engines prune whole directories.
+### Parquet
 
-**Schema evolution**
+Columnar, compressed, with column statistics. Queries read only the needed columns and skip row groups by min/max. Partition folders (`date=2024-05-01/`) let engines prune whole directories.
+
+### Schema evolution
 
 | Change | Safe? | How |
 |--------|:-:|-----|
@@ -44,7 +48,7 @@ Lakes vs warehouses vs lakehouses, schema evolution, and pipeline orchestration 
 | Drop a column / narrow a type | ✗ | a new version plus a migration and communication |
 | Enforce at the boundary | — | schema registry / contracts; reject or quarantine bad records |
 
-**Orchestration (Airflow, Dagster, Prefect)**
+### Orchestration (Airflow, Dagster, Prefect)
 
 | Concept | Meaning |
 |---------|---------|
@@ -66,7 +70,7 @@ Lakes vs warehouses vs lakehouses, schema evolution, and pipeline orchestration 
 
 ## Diagram
 
-**Lake (raw) → warehouse (structured) → serving layer**
+### Lake (raw) → warehouse (structured) → serving layer
 
 ```mermaid
 flowchart LR
@@ -79,7 +83,7 @@ flowchart LR
     CAT["catalog + lineage<br/>(Glue / Unity / DataHub)"] -.- BR & SI & GO
 ```
 
-**A DAG of tasks**
+### A DAG of tasks
 
 ```mermaid
 flowchart LR
@@ -92,7 +96,7 @@ flowchart LR
     Q -. fail .-> A["alert on-call, stop"]
 ```
 
-**Partition pruning**
+### Partition pruning
 
 ```
  s3://lake/silver/orders/
@@ -173,7 +177,7 @@ print(DeltaTable("lake/silver/orders").history()[0]["operation"])   # WRITE — 
 
 ## Mini project
 
-**An orchestrated pipeline: ingest → transform → load, with retries and a run log.**
+### An orchestrated pipeline: ingest → transform → load, with retries and a run log
 
 ```mermaid
 flowchart LR
@@ -185,7 +189,7 @@ flowchart LR
     LD --> LOG[("run_log: run_id, date,<br/>task, status, rows, duration")]
 ```
 
-**Steps**
+### Steps
 
 1. Ingest a real API into bronze, partitioned by date; store the raw response unchanged.
 2. Transform with DuckDB or Polars into typed silver Parquet, deduplicated.

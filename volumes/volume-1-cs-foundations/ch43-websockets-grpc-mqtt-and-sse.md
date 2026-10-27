@@ -10,7 +10,7 @@ Real-time/streaming protocols — WebSockets (bidirectional), gRPC (binary, stre
 
 **In one sentence:** when plain request/response is too slow or chatty, you keep a connection open — SSE for the server to push updates, WebSockets for both sides to talk freely, gRPC for typed, fast service-to-service calls with streams, and MQTT for tiny devices publishing to topics through a broker.
 
-**Mental model.**
+### Mental model
 
 * **HTTP request/response** — sending a letter and waiting for a reply.
 * **SSE** — a radio station: the server broadcasts, you only listen.
@@ -18,7 +18,7 @@ Real-time/streaming protocols — WebSockets (bidirectional), gRPC (binary, stre
 * **gRPC** — a phone call with a strict script (the `.proto` contract), in a compact language.
 * **MQTT** — a bulletin board: devices pin messages to topics; anyone subscribed to a topic gets a copy.
 
-**Comparison**
+### Comparison
 
 | | SSE | WebSocket | gRPC | MQTT |
 |-|-----|-----------|------|------|
@@ -30,7 +30,7 @@ Real-time/streaming protocols — WebSockets (bidirectional), gRPC (binary, stre
 | Delivery guarantees | none beyond TCP | none beyond TCP | per call | **QoS 0 / 1 / 2** |
 | Typical use | live feeds, notifications, **LLM token streaming** | chat, collaboration, games, trading UIs | microservices, mobile backends, ML serving | IoT sensors, telemetry, mobile push |
 
-**MQTT QoS levels**
+### MQTT QoS levels
 
 | QoS | Guarantee | Cost |
 |-----|-----------|------|
@@ -40,7 +40,9 @@ Real-time/streaming protocols — WebSockets (bidirectional), gRPC (binary, stre
 
 Other MQTT features: *retained* messages (new subscribers get the last value), *last will* (the broker announces when a device drops), and topic wildcards (`home/+/temp`, `home/#`).
 
-**Operating persistent connections** — each open connection costs memory and a file descriptor; load balancers need long idle timeouts; deploys must drain connections; clients need heartbeats (ping/pong) and reconnect with jittered backoff.
+### Operating persistent connections
+
+Each open connection costs memory and a file descriptor; load balancers need long idle timeouts; deploys must drain connections; clients need heartbeats (ping/pong) and reconnect with jittered backoff.
 
 ---
 
@@ -52,9 +54,11 @@ Other MQTT features: *retained* messages (new subscribers get the last value), *
 
 ## Diagram
 
-**Connection models compared**
+### Connection models compared
 
-**Request / response (HTTP):** a new request per update.
+### Request / response (HTTP)
+
+A new request per update.
 
 ```mermaid
 sequenceDiagram
@@ -64,7 +68,9 @@ sequenceDiagram
     S-->>C: res
 ```
 
-**Persistent (WebSocket):** one long-lived connection, both sides send any time.
+### Persistent (WebSocket)
+
+One long-lived connection, both sides send any time.
 
 ```mermaid
 sequenceDiagram
@@ -75,7 +81,9 @@ sequenceDiagram
     C->>S: msg
 ```
 
-**Publish / subscribe (MQTT):** senders and receivers never know each other.
+### Publish / subscribe (MQTT)
+
+Senders and receivers never know each other.
 
 ```mermaid
 sequenceDiagram
@@ -84,7 +92,7 @@ sequenceDiagram
     broker-->>dashboard: sub temp
 ```
 
-**SSE (server push):**
+### SSE (server push)
 
 ```mermaid
 sequenceDiagram
@@ -94,7 +102,9 @@ sequenceDiagram
     S-->>C: event
 ```
 
-**gRPC bidirectional stream:** typed messages, many streams on one HTTP/2 connection.
+### gRPC bidirectional stream
+
+Typed messages, many streams on one HTTP/2 connection.
 
 ```mermaid
 sequenceDiagram
@@ -105,7 +115,7 @@ sequenceDiagram
     S-->>C: Resp
 ```
 
-**The WebSocket upgrade**
+### The WebSocket upgrade
 
 ```mermaid
 sequenceDiagram
@@ -120,7 +130,7 @@ sequenceDiagram
     B->>S: pong
 ```
 
-**MQTT topics and a broker**
+### MQTT topics and a broker
 
 ```mermaid
 flowchart LR
@@ -210,7 +220,7 @@ mosquitto_pub -h localhost -t home/kitchen/temp -m 21.5 -q 1 -r   # -r: retained
 
 ## Mini project
 
-**A live-updates feed using SSE + a WebSocket chat room.**
+### A live-updates feed using SSE + a WebSocket chat room
 
 ```mermaid
 flowchart LR
@@ -221,7 +231,7 @@ flowchart LR
     WS --> BUS
 ```
 
-**Steps**
+### Steps
 
 1. SSE feed: each event gets an increasing `id`; keep the last 100 in memory; on reconnect, replay everything after `Last-Event-ID`.
 2. WebSocket chat with rooms, join/leave messages, heartbeats, and back-pressure (drop slow clients).

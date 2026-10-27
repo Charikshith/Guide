@@ -10,9 +10,11 @@ On-call hygiene, detection→response→remediation, blameless postmortems, and 
 
 **In one sentence:** when production breaks, the first job is to stop the bleeding (mitigate), not to find out why; clear roles and a written timeline keep a stressful hour orderly; and afterwards a blameless postmortem turns the pain into specific, owned fixes that actually get done.
 
-**Mental model — a fire brigade.** When the alarm rings, firefighters don't investigate the cause of the fire first; they put it out and get people safe. One person commands, others each have a job, and someone radios updates to everyone waiting outside. Days later, the fire investigator asks *how* the fire started and *what* would have stopped it — without blaming the person who left the stove on, because the goal is safer buildings, not a scapegoat.
+### Mental model — a fire brigade
 
-**The incident lifecycle**
+When the alarm rings, firefighters don't investigate the cause of the fire first; they put it out and get people safe. One person commands, others each have a job, and someone radios updates to everyone waiting outside. Days later, the fire investigator asks *how* the fire started and *what* would have stopped it — without blaming the person who left the stove on, because the goal is safer buildings, not a scapegoat.
+
+### The incident lifecycle
 
 | Phase | Goal | Key actions |
 |-------|------|-------------|
@@ -22,9 +24,11 @@ On-call hygiene, detection→response→remediation, blameless postmortems, and 
 | **Resolve** | restore normal service | fix forward if needed; verify with metrics; monitor for recurrence |
 | **Learn** | prevent recurrence | postmortem within ~5 business days; action items with owners and dates |
 
-**Mitigate before root-causing.** The most common mistake is debugging for 45 minutes while users suffer, when a rollback would have taken 2. If something changed recently, undo it first.
+### Mitigate before root-causing
 
-**Roles (Incident Command System, simplified)**
+The most common mistake is debugging for 45 minutes while users suffer, when a rollback would have taken 2. If something changed recently, undo it first.
+
+### Roles (Incident Command System, simplified)
 
 | Role | Does | Doesn't |
 |------|------|---------|
@@ -35,7 +39,7 @@ On-call hygiene, detection→response→remediation, blameless postmortems, and 
 
 In small teams, one person may hold several roles — but the IC role is always named explicitly.
 
-**Severity matrix (example)**
+### Severity matrix (example)
 
 | SEV | Impact | Examples | Response | Comms |
 |-----|--------|----------|----------|-------|
@@ -44,9 +48,13 @@ In small teams, one person may hold several roles — but the IC role is always 
 | 3 | minor: limited impact, a workaround exists | admin export failing | on-call, business hours | internal only |
 | 4 | no user impact yet | a replica lagging, a disk at 80% | ticket | none |
 
-**On-call hygiene** — sustainable rotations (≥ 6–8 people), handoffs with notes, pages only for actionable user-impacting problems (every page links to a runbook, [Ch 15](ch15-documentation-as-a-system.md)), a target of ≤ ~2 incidents per shift, compensation or time off, and reviewing noisy alerts every week.
+### On-call hygiene
 
-**Blameless postmortems** — assume everyone acted reasonably with the information and tools they had. Ask "how did the *system* allow this?" not "who did this?". People who fear blame hide information, and hidden information is how incidents repeat.
+Sustainable rotations (≥ 6–8 people), handoffs with notes, pages only for actionable user-impacting problems (every page links to a runbook, [Ch 15](ch15-documentation-as-a-system.md)), a target of ≤ ~2 incidents per shift, compensation or time off, and reviewing noisy alerts every week.
+
+### Blameless postmortems
+
+Assume everyone acted reasonably with the information and tools they had. Ask "how did the *system* allow this?" not "who did this?". People who fear blame hide information, and hidden information is how incidents repeat.
 
 **Good action items** are specific, owned, dated, and prioritized, and they target the system: *detect* sooner, *mitigate* faster, *prevent* the class of failure. "Be more careful" is not an action item.
 
@@ -60,7 +68,7 @@ In small teams, one person may hold several roles — but the IC role is always 
 
 ## Diagram
 
-**An incident timeline (detect → mitigate → resolve → learn)**
+### An incident timeline (detect → mitigate → resolve → learn)
 
 | Time | Event | |
 |---|---|---|
@@ -74,7 +82,7 @@ In small teams, one person may hold several roles — but the IC role is always 
 | 14:55 | resolved · status page closed | **TTR**: time to resolve |
 | +3 days | postmortem review → 5 action items with owners | |
 
-**Response flow**
+### Response flow
 
 ```mermaid
 flowchart TD
@@ -90,7 +98,7 @@ flowchart TD
     VER -- yes --> RES["resolve → monitor → postmortem"]
 ```
 
-**Escalation path**
+### Escalation path
 
 ```mermaid
 flowchart LR
@@ -104,7 +112,7 @@ flowchart LR
 
 ## Example
 
-**A blameless postmortem template**
+### A blameless postmortem template
 
 ```markdown
 # Postmortem: Checkout errors after the v1.42 deploy (2024-06-12)
@@ -170,7 +178,7 @@ likely cause and are rolling back a recent change. Next update by 14:55 UTC.
 
 ## Mini project
 
-**Run a tabletop incident drill and produce a postmortem with follow-ups.**
+### Run a tabletop incident drill and produce a postmortem with follow-ups
 
 ```mermaid
 flowchart LR
@@ -181,7 +189,7 @@ flowchart LR
     AI --> TRACK["30-day follow-up review:<br/>done / slipped / dropped"]
 ```
 
-**Steps**
+### Steps
 
 1. Write a realistic scenario with timed "injects": a symptom, a misleading clue, a failed first mitigation, a customer escalation.
 2. Run it with 3–5 people; assign IC, communications, scribe, and operators; the facilitator reveals what the actions show.

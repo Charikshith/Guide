@@ -10,9 +10,11 @@ HTTP methods/status codes/headers/cookies/caching/CORS; REST resources; GraphQL 
 
 **In one sentence:** HTTP is a request/response protocol of verbs, paths, headers, and status codes; REST uses it to expose *resources*, GraphQL lets the client ask for exactly the fields it wants from one endpoint, and JSON-RPC simply calls named functions.
 
-**Mental model — ordering food.** REST is a restaurant with a fixed menu per dish: `GET /pizzas/7` returns the whole pizza. GraphQL is a build-your-own bowl: you list exactly which ingredients you want in one order. JSON-RPC is phoning the kitchen: "please run `make_pizza` with these arguments".
+### Mental model — ordering food
 
-**HTTP methods**
+REST is a restaurant with a fixed menu per dish: `GET /pizzas/7` returns the whole pizza. GraphQL is a build-your-own bowl: you list exactly which ingredients you want in one order. JSON-RPC is phoning the kitchen: "please run `make_pizza` with these arguments".
+
+### HTTP methods
 
 | Method | Meaning | Safe? | Idempotent? | Body? |
 |--------|---------|:-:|:-:|:-:|
@@ -26,7 +28,7 @@ HTTP methods/status codes/headers/cookies/caching/CORS; REST resources; GraphQL 
 
 *Safe* = no side effects. *Idempotent* = doing it twice has the same effect as once, so it's safe to retry.
 
-**Status codes you'll actually use**
+### Status codes you'll actually use
 
 | Code | Meaning | Use when |
 |------|---------|----------|
@@ -45,7 +47,7 @@ HTTP methods/status codes/headers/cookies/caching/CORS; REST resources; GraphQL 
 | 429 Too Many Requests | rate limited; add `Retry-After` | |
 | 500 / 502 / 503 / 504 | server bug / bad upstream / overloaded / upstream timeout | |
 
-**Caching headers**
+### Caching headers
 
 | Header | Effect |
 |--------|--------|
@@ -56,11 +58,15 @@ HTTP methods/status codes/headers/cookies/caching/CORS; REST resources; GraphQL 
 | `Last-Modified` + `If-Modified-Since` | date-based revalidation |
 | `Vary: Accept-Encoding, Authorization` | the cache key includes these headers |
 
-**Cookies:** `Set-Cookie: session=…; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=3600`. `HttpOnly` blocks JavaScript access (limits XSS theft), `Secure` means HTTPS only, and `SameSite` limits cross-site sending (CSRF).
+### Cookies
 
-**CORS** — browsers block JavaScript on `app.com` from *reading* responses from `api.com` unless `api.com` allows it with `Access-Control-Allow-Origin: https://app.com`. "Non-simple" requests (custom headers, JSON body, PUT/DELETE) first send an `OPTIONS` *preflight*. CORS protects users' browsers; it is not server-side access control.
+`Set-Cookie: session=…; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=3600`. `HttpOnly` blocks JavaScript access (limits XSS theft), `Secure` means HTTPS only, and `SameSite` limits cross-site sending (CSRF).
 
-**REST vs GraphQL vs JSON-RPC**
+### CORS
+
+Browsers block JavaScript on `app.com` from *reading* responses from `api.com` unless `api.com` allows it with `Access-Control-Allow-Origin: https://app.com`. "Non-simple" requests (custom headers, JSON body, PUT/DELETE) first send an `OPTIONS` *preflight*. CORS protects users' browsers; it is not server-side access control.
+
+### REST vs GraphQL vs JSON-RPC
 
 | | REST | GraphQL | JSON-RPC |
 |-|------|---------|----------|
@@ -81,7 +87,7 @@ HTTP methods/status codes/headers/cookies/caching/CORS; REST resources; GraphQL 
 
 ## Diagram
 
-**A request/response exchange**
+### A request/response exchange
 
 ```
  GET /users/1 HTTP/1.1                    HTTP/1.1 200 OK
@@ -92,7 +98,7 @@ HTTP methods/status codes/headers/cookies/caching/CORS; REST resources; GraphQL 
                                           {"id": 1, "name": "Ada"}
 ```
 
-**Choosing a status code**
+### Choosing a status code
 
 ```mermaid
 flowchart TD
@@ -111,9 +117,11 @@ flowchart TD
     C -- no --> OK["200 / 201 / 204"]
 ```
 
-**REST vs GraphQL query shape** — "user 1's name and the titles of their 3 latest posts"
+### REST vs GraphQL query shape
 
-**REST: 2 round trips, extra fields**
+"user 1's name and the titles of their 3 latest posts"
+
+### REST: 2 round trips, extra fields
 
 ```http
 GET /users/1
@@ -123,7 +131,7 @@ GET /users/1/posts?limit=3
 → [{id, title, body, tags, …}, …]
 ```
 
-**GraphQL: 1 round trip, exact fields**
+### GraphQL: 1 round trip, exact fields
 
 ```graphql
 POST /graphql
@@ -138,7 +146,7 @@ POST /graphql
   "posts": [{"title": "…"}, …]}}}
 ```
 
-**CORS preflight**
+### CORS preflight
 
 ```mermaid
 sequenceDiagram
@@ -231,7 +239,7 @@ curl -i https://api.example.com/users/1 -H 'If-None-Match: "u1-v7"'   # → 304 
 
 ## Mini project
 
-**A small REST API + a GraphQL endpoint exposing the same data.**
+### A small REST API + a GraphQL endpoint exposing the same data
 
 ```mermaid
 flowchart LR
@@ -241,7 +249,7 @@ flowchart LR
     REST & GQL --> T["the same tests run against both<br/>+ a count of SQL queries per request"]
 ```
 
-**Steps**
+### Steps
 
 1. Model authors and books in SQLite; a service layer with plain functions.
 2. REST: CRUD, cursor pagination, `ETag`/`If-None-Match` → 304, 409 on duplicate ISBN, 422 on validation.

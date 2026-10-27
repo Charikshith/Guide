@@ -10,11 +10,13 @@ Licenses (MIT/Apache/GPL/AGPL), attribution, and scanning dependencies for licen
 
 **In one sentence:** every open-source dependency comes with a license — a set of permissions and obligations — and compliance means knowing what you ship, honoring those obligations (attribution, source sharing), and catching risky licenses automatically before they reach a release.
 
-**Mental model — borrowing tools from neighbors.** Some neighbors say "take it, just keep my name tag on it" (permissive: MIT, BSD, Apache). Some say "use it freely, but if you hand a modified version to someone else, give them the modifications too" (copyleft: GPL). One says "even if people only *use* your workshop through a window, share your modifications" (AGPL, network use). Losing track of whose tool is whose is how you end up in trouble.
+### Mental model — borrowing tools from neighbors
+
+Some neighbors say "take it, just keep my name tag on it" (permissive: MIT, BSD, Apache). Some say "use it freely, but if you hand a modified version to someone else, give them the modifications too" (copyleft: GPL). One says "even if people only *use* your workshop through a window, share your modifications" (AGPL, network use). Losing track of whose tool is whose is how you end up in trouble.
 
 *This chapter is engineering guidance, not legal advice. For real decisions, involve your legal or open-source program office.*
 
-**The license spectrum**
+### The license spectrum
 
 | License | Type | Main obligations when you distribute | Patent grant | Typical effect on your code |
 |---------|------|--------------------------------------|:-:|-----------------------------|
@@ -29,7 +31,9 @@ Licenses (MIT/Apache/GPL/AGPL), attribution, and scanning dependencies for licen
 
 **"Distribution" is the key trigger** for GPL — shipping a binary, a mobile app, an appliance, or a Docker image to customers. Running GPL code only on your own servers doesn't trigger GPL's source obligations (AGPL closes that gap).
 
-**Compatibility** — Apache-2.0 code can go into a GPL-3.0 project, but not into GPL-2.0-only projects; GPL code can't be relicensed as MIT. Mixed licensing in one binary must satisfy all of them together.
+### Compatibility
+
+Apache-2.0 code can go into a GPL-3.0 project, but not into GPL-2.0-only projects; GPL code can't be relicensed as MIT. Mixed licensing in one binary must satisfy all of them together.
 
 **Why track dependency licenses?**
 
@@ -39,7 +43,7 @@ Licenses (MIT/Apache/GPL/AGPL), attribution, and scanning dependencies for licen
 * Customers, acquirers, and regulations (SBOM requirements) ask for the list.
 * Licenses change: a project can switch to a source-available license in a new version.
 
-**Tools and formats**
+### Tools and formats
 
 | Need | Tool / standard |
 |------|-----------------|
@@ -59,13 +63,13 @@ Licenses (MIT/Apache/GPL/AGPL), attribution, and scanning dependencies for licen
 
 ## Diagram
 
-**The permissive → copyleft spectrum**
+### The permissive → copyleft spectrum
 
 <div class="fig">
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 820 360" role="img" aria-label="License spectrum from public domain with fewest obligations to AGPL with the most; the first group is usually fine in proprietary products" style="width:100%;max-width:820px;height:auto;font-family:inherit"><defs><marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="context-stroke"/></marker></defs><text x="20" y="24" font-size="12.5" text-anchor="start" fill="var(--success)" font-weight="700">fewer obligations</text><text x="800" y="24" font-size="12.5" text-anchor="end" fill="var(--danger)" font-weight="700">more obligations</text><line x1="20" y1="36" x2="800" y2="36" stroke="var(--text-muted)" stroke-width="1.6" marker-end="url(#ar)" marker-start="url(#ar)"/><rect x="30" y="56" width="752" height="30" rx="6" fill="var(--success)" fill-opacity=".22" stroke="var(--success)" stroke-width="1.4"/><text x="42" y="76" font-size="12.5" text-anchor="start" fill="var(--text)" font-weight="600">Public domain / CC0 · Unlicense</text><rect x="92" y="94" width="690" height="30" rx="6" fill="var(--success)" fill-opacity=".22" stroke="var(--success)" stroke-width="1.4"/><text x="104" y="114" font-size="12.5" text-anchor="start" fill="var(--text)" font-weight="600">MIT · BSD · ISC</text><rect x="154" y="132" width="628" height="30" rx="6" fill="var(--success)" fill-opacity=".22" stroke="var(--success)" stroke-width="1.4"/><text x="166" y="152" font-size="12.5" text-anchor="start" fill="var(--text)" font-weight="600">Apache-2.0  (+ patent grant, NOTICE)</text><rect x="216" y="170" width="566" height="30" rx="6" fill="var(--accent)" fill-opacity=".22" stroke="var(--accent)" stroke-width="1.4"/><text x="228" y="190" font-size="12.5" text-anchor="start" fill="var(--text)" font-weight="600">MPL-2.0  (file-level copyleft)</text><rect x="278" y="208" width="504" height="30" rx="6" fill="var(--accent)" fill-opacity=".22" stroke="var(--accent)" stroke-width="1.4"/><text x="290" y="228" font-size="12.5" text-anchor="start" fill="var(--text)" font-weight="600">LGPL  (library copyleft)</text><rect x="340" y="246" width="442" height="30" rx="6" fill="var(--danger)" fill-opacity=".22" stroke="var(--danger)" stroke-width="1.4"/><text x="352" y="266" font-size="12.5" text-anchor="start" fill="var(--text)" font-weight="600">GPL-2.0 / GPL-3.0  (whole combined work, on distribution)</text><rect x="402" y="284" width="380" height="30" rx="6" fill="var(--danger)" fill-opacity=".22" stroke="var(--danger)" stroke-width="1.4"/><text x="414" y="304" font-size="12.5" text-anchor="start" fill="var(--text)" font-weight="600">AGPL-3.0  (also over the network)</text><text x="20" y="336" font-size="12.5" text-anchor="start" fill="var(--success)" font-weight="700">usually OK in proprietary products</text><text x="800" y="336" font-size="12.5" text-anchor="end" fill="var(--danger)" font-weight="700">needs review / policy</text><line x1="380" y1="326" x2="380" y2="346" stroke="var(--text-muted)" stroke-width="1.4" stroke-dasharray="3 3"/></svg>
 </div>
 
-**Does GPL apply to my product?**
+### Does GPL apply to my product?
 
 ```mermaid
 flowchart TD
@@ -78,7 +82,7 @@ flowchart TD
     L -- "linked / derived" --> GPL["combined work must be GPL-compatible<br/>and source provided → legal review"]
 ```
 
-**License scanning in CI**
+### License scanning in CI
 
 ```mermaid
 flowchart LR
@@ -149,7 +153,7 @@ syft dir:. -o cyclonedx-json > sbom.cdx.json
 
 ## Mini project
 
-**Add a license + NOTICE + dependency license scan to a project's CI.**
+### Add a license + NOTICE + dependency license scan to a project's CI
 
 ```mermaid
 flowchart LR
@@ -160,7 +164,7 @@ flowchart LR
     REL["release"] --> BUNDLE["ship notices + SBOM with the artifact"]
 ```
 
-**Steps**
+### Steps
 
 1. Pick a license for your project and write a one-paragraph rationale (e.g. Apache-2.0 for the patent grant).
 2. Add SPDX headers to source files; run `reuse lint` to verify.

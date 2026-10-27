@@ -10,9 +10,11 @@ Golden datasets, LLM-as-judge, offline vs online eval, and regression testing fo
 
 **In one sentence:** evaluation is the test suite of an LLM application — a curated set of realistic inputs with known-good expectations, scored automatically (exact checks where possible, an LLM judge with a rubric where not), run on every prompt or model change so quality becomes a number you can gate on instead of a vibe.
 
-**Mental model — a driving test.** You don't judge a driver by one trip around the block. You use a fixed route with known hard spots (the golden dataset), a checklist the examiner fills in (the rubric), and the same test for every candidate (every prompt or model version). Some items are objective (stopped at the red light — exact check); some need judgment (drove smoothly — the examiner, i.e. the LLM judge).
+### Mental model — a driving test
 
-**Offline vs online**
+You don't judge a driver by one trip around the block. You use a fixed route with known hard spots (the golden dataset), a checklist the examiner fills in (the rubric), and the same test for every candidate (every prompt or model version). Some items are objective (stopped at the red light — exact check); some need judgment (drove smoothly — the examiner, i.e. the LLM judge).
+
+### Offline vs online
 
 | | Offline eval | Online eval |
 |-|--------------|-------------|
@@ -21,7 +23,7 @@ Golden datasets, LLM-as-judge, offline vs online eval, and regression testing fo
 | Scores | exact checks, LLM judge, reference comparison | user feedback, implicit signals (retries, edits, abandonment), LLM judge on samples, A/B metrics |
 | Purpose | **gate changes**, compare candidates, catch regressions | detect drift, find new failure types, validate that offline gains are real |
 
-**Building a golden dataset**
+### Building a golden dataset
 
 | Rule | Why |
 |------|-----|
@@ -31,7 +33,7 @@ Golden datasets, LLM-as-judge, offline vs online eval, and regression testing fo
 | Version it like code | results are only comparable on the same set |
 | Keep a held-out slice you don't tune on | avoid overfitting prompts to the test |
 
-**Scoring methods, cheapest and most reliable first**
+### Scoring methods, cheapest and most reliable first
 
 | Method | Good for | Example |
 |--------|----------|---------|
@@ -41,7 +43,7 @@ Golden datasets, LLM-as-judge, offline vs online eval, and regression testing fo
 | **LLM-as-judge** | open-ended quality: helpfulness, groundedness, tone, completeness | a rubric + scale, or pairwise "A vs B" |
 | Human review | calibrating the judge, high-stakes launches | a sample each release |
 
-**LLM-as-judge — pros and cons**
+### LLM-as-judge — pros and cons
 
 | Pros | Cons, and mitigations |
 |------|-----------------------|
@@ -50,7 +52,9 @@ Golden datasets, LLM-as-judge, offline vs online eval, and regression testing fo
 | can explain its score | may be wrong → **calibrate** against ~50–100 human labels and report agreement |
 | rubric makes criteria explicit | vague criteria → binary or small-scale questions ("Does the answer cite a source for every number? yes/no") beat "rate 1–10" |
 
-**Gating** — define pass criteria before the run ("overall ≥ baseline − 1 point, no slice drops more than 5%, JSON validity 100%, refusal cases 100%"). Compare against the *current production* version on the same dataset, and account for noise (run twice, or bootstrap confidence intervals).
+### Gating
+
+Define pass criteria before the run ("overall ≥ baseline − 1 point, no slice drops more than 5%, JSON validity 100%, refusal cases 100%"). Compare against the *current production* version on the same dataset, and account for noise (run twice, or bootstrap confidence intervals).
 
 ---
 
@@ -62,7 +66,7 @@ Golden datasets, LLM-as-judge, offline vs online eval, and regression testing fo
 
 ## Diagram
 
-**An eval pipeline: golden set → run → score → gate**
+### An eval pipeline: golden set → run → score → gate
 
 ```mermaid
 flowchart LR
@@ -76,7 +80,7 @@ flowchart LR
     PROD["production traces (Ch 16)"] -->|"failures + 👎"| GS
 ```
 
-**Per-slice results beat one average**
+### Per-slice results beat one average
 
 ```
                      baseline v14   candidate v15   Δ
@@ -88,7 +92,7 @@ flowchart LR
  verdict: BLOCK — fix refund-policy regression and JSON errors
 ```
 
-**Offline and online together**
+### Offline and online together
 
 ```mermaid
 flowchart TD
@@ -188,7 +192,7 @@ jobs:
 
 ## Mini project
 
-**An eval harness with offline scoring and a CI gate.**
+### An eval harness with offline scoring and a CI gate
 
 ```mermaid
 flowchart LR
@@ -199,7 +203,7 @@ flowchart LR
     GATE --> CI["GitHub Actions on prompt/model PRs"]
 ```
 
-**Steps**
+### Steps
 
 1. A JSONL golden set (≥ 50 cases) with tags and either `expected` or `criteria`.
 2. A harness that runs the candidate and baseline concurrently with retries, caching outputs so reruns are cheap.
@@ -236,7 +240,7 @@ flowchart TD
     EV --> SB["scoreboard per framework version<br/>+ CI gate"]
 ```
 
-**Steps**
+### Steps
 
 1. A small core: `Agent`, `Tool`, `Memory`, and `Orchestrator` interfaces; each agent declares its tools, output schema, and budget.
 2. Built-in tracing on every run: steps, tokens, cost, tool calls, and hand-offs.

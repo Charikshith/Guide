@@ -10,9 +10,11 @@ Class, sequence, and component diagrams; reading and writing the diagrams that c
 
 **In one sentence:** a design diagram is a deliberately simplified picture that answers one question — *what things exist and how they relate* (class), *who calls whom in what order* (sequence), or *which deployable parts talk to which* (component) — at the right level of detail for its audience.
 
-**Mental model — maps at different zoom levels.** A world map, a city map, and a floor plan are all "maps", but each answers different questions, and one map that tried to show everything would be unreadable. Diagrams are the same: choose the zoom level (altitude) and the question first, then draw only what answers it.
+### Mental model — maps at different zoom levels
 
-**The three diagrams you'll use 90% of the time**
+A world map, a city map, and a floor plan are all "maps", but each answers different questions, and one map that tried to show everything would be unreadable. Diagrams are the same: choose the zoom level (altitude) and the question first, then draw only what answers it.
+
+### The three diagrams you'll use 90% of the time
 
 | Diagram | Question it answers | Shows | Typical audience |
 |---------|--------------------|-------|------------------|
@@ -22,7 +24,7 @@ Class, sequence, and component diagrams; reading and writing the diagrams that c
 
 Others worth knowing: **state** (lifecycle of one object, [Vol 1 Ch 17](../volume-1-cs-foundations/ch17-linux-processes-signals-services-systemd-ssh-cron.md) has one), **activity/flowchart** (a process with decisions), **ER** (database tables, [Vol 1 Ch 45](../volume-1-cs-foundations/ch45-sql-and-the-relational-model.md)), **deployment** (what runs where). The **C4 model** gives a clean set of zoom levels: Context → Containers → Components → Code.
 
-**Class diagram notation**
+### Class diagram notation
 
 | Symbol (UML) | Mermaid | Meaning | Example |
 |--------------|---------|---------|---------|
@@ -35,7 +37,7 @@ Others worth knowing: **state** (lifecycle of one object, [Vol 1 Ch 17](../volum
 | dashed arrow ⇢ | `..>` | dependency (temporary use) | `ReportService ..> PdfRenderer` |
 | `1`, `0..1`, `*`, `1..*` | `"1" -- "*"` | multiplicity | one customer, many orders |
 
-**Sequence diagram notation**
+### Sequence diagram notation
 
 | Element | Meaning |
 |---------|---------|
@@ -60,7 +62,7 @@ Others worth knowing: **state** (lifecycle of one object, [Vol 1 Ch 17](../volum
 
 *(This chapter is the diagram.)*
 
-**Class diagram — an ordering domain**
+### Class diagram — an ordering domain
 
 ```mermaid
 classDiagram
@@ -100,7 +102,7 @@ classDiagram
     Order ..> PaymentGateway : pays via
 ```
 
-**Sequence diagram — a request through controller → service → repo**
+### Sequence diagram — a request through controller → service → repo
 
 ```mermaid
 sequenceDiagram
@@ -126,7 +128,7 @@ sequenceDiagram
     end
 ```
 
-**Component diagram (C4 "container" level)**
+### Component diagram (C4 "container" level)
 
 ```mermaid
 flowchart LR
@@ -139,7 +141,7 @@ flowchart LR
     API -->|"HTTPS"| PSP["Stripe<br/>(external)"]
 ```
 
-**Choosing the altitude**
+### Choosing the altitude
 
 | Zoom | C4 level | What it shows | Audience |
 |---|---|---|---|
@@ -152,7 +154,7 @@ flowchart LR
 
 ## Example
 
-**Diagrams as code, living next to the code they describe**
+### Diagrams as code, living next to the code they describe
 
 ````markdown
 <!-- docs/architecture/checkout.md -->
@@ -229,7 +231,7 @@ Reading checklist for someone else's class diagram
 
 ## Mini project
 
-**Document a real component with class + sequence diagrams (Mermaid).**
+### Document a real component with class + sequence diagrams (Mermaid)
 
 ```mermaid
 flowchart LR
@@ -240,7 +242,7 @@ flowchart LR
     CTX & CLS & SEQ --> DOC["docs/architecture/COMPONENT.md<br/>rendered in CI"]
 ```
 
-**Steps**
+### Steps
 
 1. Choose a component you know well (e.g. the transfer service from [Ch 1](ch01-oop-fundamentals.md), or `requests.Session`).
 2. Draw the context/container view: what it talks to.

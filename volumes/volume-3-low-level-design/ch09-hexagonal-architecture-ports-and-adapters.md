@@ -10,9 +10,11 @@ Ports (the contract) and adapters (the implementations) around a core; driving v
 
 **In one sentence:** put the application core in the middle, let it talk to the outside world only through *ports* (interfaces it defines), and plug in *adapters* for each technology — the ones that call the core on one side (web, CLI, tests) and the ones the core calls on the other (DB, payments, email).
 
-**Mental model — a game console.** The console (core) has standard ports: controller ports on the front, HDMI and network ports on the back. Any controller brand, any TV, any router works if its plug fits the port. You can test the console with a fake controller and a fake screen on a workbench. The shape is a hexagon only to suggest "many sides, many ports" — the number six means nothing.
+### Mental model — a game console
 
-**Driving vs driven**
+The console (core) has standard ports: controller ports on the front, HDMI and network ports on the back. Any controller brand, any TV, any router works if its plug fits the port. You can test the console with a fake controller and a fake screen on a workbench. The shape is a hexagon only to suggest "many sides, many ports" — the number six means nothing.
+
+### Driving vs driven
 
 | | Driving (primary) side | Driven (secondary) side |
 |-|------------------------|-------------------------|
@@ -23,7 +25,7 @@ Ports (the contract) and adapters (the implementations) around a core; driving v
 
 Both kinds of adapters depend on the core, never the reverse.
 
-**Ports & adapters vs Clean Architecture**
+### Ports & adapters vs Clean Architecture
 
 | | Hexagonal (Cockburn, 2005) | Clean Architecture (Martin, 2012) |
 |-|---------------------------|-----------------------------------|
@@ -32,9 +34,13 @@ Both kinds of adapters depend on the core, never the reverse.
 | Emphasis | symmetry: every external actor (even tests) is just an adapter | layer responsibilities and the direction of dependencies |
 | Compatible? | yes — Clean Architecture is essentially hexagonal plus a layered core; Onion Architecture is similar too |
 
-**How it helps testing** — the tests are just another driving adapter, and fakes are just other driven adapters. You can run the whole core — every use case — with in-memory adapters in milliseconds, then run a small set of *adapter contract tests* against the real technologies.
+### How it helps testing
 
-**Design a good port** — speak the *domain's* language (`charge(Money, CardToken) -> ChargeId`), not the vendor's (`PaymentIntent.create(amount, currency, confirm=True)`); keep it small; return domain types or domain errors (`PaymentDeclined`), never vendor exceptions.
+The tests are just another driving adapter, and fakes are just other driven adapters. You can run the whole core — every use case — with in-memory adapters in milliseconds, then run a small set of *adapter contract tests* against the real technologies.
+
+### Design a good port
+
+Speak the *domain's* language (`charge(Money, CardToken) -> ChargeId`), not the vendor's (`PaymentIntent.create(amount, currency, confirm=True)`); keep it small; return domain types or domain errors (`PaymentDeclined`), never vendor exceptions.
 
 ---
 
@@ -46,7 +52,7 @@ Both kinds of adapters depend on the core, never the reverse.
 
 ## Diagram
 
-**A hexagon with driving adapters on the left, driven adapters on the right**
+### A hexagon with driving adapters on the left, driven adapters on the right
 
 ```mermaid
 flowchart LR
@@ -82,7 +88,7 @@ flowchart LR
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1020 330" role="img" aria-label="Hexagonal architecture: REST, CLI and tests call the core through ports; the core calls payment, repository and notifier ports implemented by real or fake adapters" style="width:100%;max-width:860px;height:auto;font-family:inherit"><defs><marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="context-stroke"/></marker></defs><polygon points="260,50 560,50 640,160 560,270 260,270 180,160" fill="var(--primary)" fill-opacity=".08" stroke="var(--primary)" stroke-width="2.2"/><text x="370" y="74" font-size="13" text-anchor="middle" fill="var(--primary)" font-weight="700">port: PayInvoice</text><rect x="300" y="110" width="140" height="100" rx="8" fill="var(--primary)" fill-opacity=".2" stroke="var(--primary)" stroke-width="1.6"/><text x="370" y="154" font-size="15" text-anchor="middle" fill="var(--text)" font-weight="700">core</text><text x="370" y="174" font-size="12.5" text-anchor="middle" fill="var(--text-muted)">(domain)</text><rect x="20" y="90" width="90" height="38" rx="8" fill="var(--accent)" fill-opacity=".14" stroke="var(--accent)" stroke-width="1.6"/><text x="65.0" y="113.55" font-size="13" text-anchor="middle" fill="var(--text)" font-weight="600">REST</text><line x1="110" y1="109" x2="190" y2="117" stroke="var(--text-muted)" stroke-width="1.6" marker-end="url(#ar)"/><rect x="20" y="150" width="90" height="38" rx="8" fill="var(--accent)" fill-opacity=".14" stroke="var(--accent)" stroke-width="1.6"/><text x="65.0" y="173.55" font-size="13" text-anchor="middle" fill="var(--text)" font-weight="600">CLI</text><line x1="110" y1="169" x2="190" y2="169" stroke="var(--text-muted)" stroke-width="1.6" marker-end="url(#ar)"/><rect x="20" y="210" width="90" height="38" rx="8" fill="var(--accent)" fill-opacity=".14" stroke="var(--accent)" stroke-width="1.6"/><text x="65.0" y="233.55" font-size="13" text-anchor="middle" fill="var(--text)" font-weight="600">Test</text><line x1="110" y1="229" x2="190" y2="221" stroke="var(--text-muted)" stroke-width="1.6" marker-end="url(#ar)"/><line x1="440" y1="136" x2="680" y2="109" stroke="var(--text-muted)" stroke-width="1.6" marker-end="url(#ar)"/><rect x="680" y="90" width="150" height="38" rx="8" fill="var(--primary)" fill-opacity=".14" stroke="var(--primary)" stroke-width="1.6"/><text x="755.0" y="113.2" font-size="12" text-anchor="middle" fill="var(--text)" font-weight="600">port: PaymentGateway</text><line x1="830" y1="109" x2="870" y2="109" stroke="var(--text-muted)" stroke-width="1.6" marker-end="url(#ar)"/><rect x="872" y="90" width="128" height="38" rx="8" fill="var(--success)" fill-opacity=".14" stroke="var(--success)" stroke-width="1.6"/><text x="936.0" y="113.2" font-size="12" text-anchor="middle" fill="var(--text)" font-weight="600">Stripe | Fake</text><line x1="440" y1="160" x2="680" y2="169" stroke="var(--text-muted)" stroke-width="1.6" marker-end="url(#ar)"/><rect x="680" y="150" width="150" height="38" rx="8" fill="var(--primary)" fill-opacity=".14" stroke="var(--primary)" stroke-width="1.6"/><text x="755.0" y="173.2" font-size="12" text-anchor="middle" fill="var(--text)" font-weight="600">port: InvoiceRepo</text><line x1="830" y1="169" x2="870" y2="169" stroke="var(--text-muted)" stroke-width="1.6" marker-end="url(#ar)"/><rect x="872" y="150" width="128" height="38" rx="8" fill="var(--success)" fill-opacity=".14" stroke="var(--success)" stroke-width="1.6"/><text x="936.0" y="173.2" font-size="12" text-anchor="middle" fill="var(--text)" font-weight="600">Postgres | Memory</text><line x1="440" y1="184" x2="680" y2="229" stroke="var(--text-muted)" stroke-width="1.6" marker-end="url(#ar)"/><rect x="680" y="210" width="150" height="38" rx="8" fill="var(--primary)" fill-opacity=".14" stroke="var(--primary)" stroke-width="1.6"/><text x="755.0" y="233.2" font-size="12" text-anchor="middle" fill="var(--text)" font-weight="600">port: Notifier</text><line x1="830" y1="229" x2="870" y2="229" stroke="var(--text-muted)" stroke-width="1.6" marker-end="url(#ar)"/><rect x="872" y="210" width="128" height="38" rx="8" fill="var(--success)" fill-opacity=".14" stroke="var(--success)" stroke-width="1.6"/><text x="936.0" y="233.2" font-size="12" text-anchor="middle" fill="var(--text)" font-weight="600">SMTP | Spy</text><text x="20" y="296" font-size="12.5" text-anchor="start" fill="var(--text-muted)" font-weight="600">left: things that CALL the core</text><text x="1000" y="296" font-size="12.5" text-anchor="end" fill="var(--text-muted)" font-weight="600">right: things the core CALLS</text></svg>
 </div>
 
-**The same core, two configurations**
+### The same core, two configurations
 
 ```
  production:   REST → PayInvoice → StripeGateway + PostgresRepo + SmtpNotifier
@@ -185,7 +191,7 @@ except PaymentDeclined:
 
 ## Mini project
 
-**A payments component with a real and fake gateway adapter.**
+### A payments component with a real and fake gateway adapter
 
 ```mermaid
 flowchart LR
@@ -197,7 +203,7 @@ flowchart LR
     CT["contract tests: one suite,<br/>run against both adapters"] --> REAL & FAKE
 ```
 
-**Steps**
+### Steps
 
 1. Core: `Invoice`, `Money`, `PayInvoice`, and `RefundPayment` use cases with domain errors.
 2. Driving adapters: a FastAPI route and a CLI command that call the same use cases.

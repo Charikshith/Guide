@@ -10,9 +10,11 @@ Inject dependencies instead of constructing them; interfaces at seams; why DI en
 
 **In one sentence:** instead of a class building the things it needs (`self.db = PostgresDB()`), it receives them from outside — so the same class works with a real database in production, a fake one in tests, and a different vendor tomorrow, without changing a line of it.
 
-**Mental model — a lamp and a wall socket.** A lamp wired straight into the wall (hardcoded `new`) can only ever use that one circuit, and to test the bulb you need an electrician. A lamp with a plug (an injected dependency) works in any socket that follows the standard (the interface): mains power, a battery pack, or a test bench.
+### Mental model — a lamp and a wall socket
 
-**Terms**
+A lamp wired straight into the wall (hardcoded `new`) can only ever use that one circuit, and to test the bulb you need an electrician. A lamp with a plug (an injected dependency) works in any socket that follows the standard (the interface): mains power, a battery pack, or a test bench.
+
+### Terms
 
 | Term | Meaning |
 |------|---------|
@@ -23,7 +25,7 @@ Inject dependencies instead of constructing them; interfaces at seams; why DI en
 | Composition root | the one place (usually `main()`) where concrete objects are created and wired together |
 | DI container | a library that builds the object graph for you (Spring, .NET's DI, `dependency-injector`). Optional — manual wiring is often clearer |
 
-**Ways to inject**
+### Ways to inject
 
 | Style | Example | Use |
 |-------|---------|-----|
@@ -32,14 +34,16 @@ Inject dependencies instead of constructing them; interfaces at seams; why DI en
 | Setter / property | `svc.logger = log` | optional or late dependencies (rarely a good idea) |
 | Framework-provided | FastAPI `Depends(get_db)`, Spring `@Autowired` | the framework resolves them per request |
 
-**Anti-patterns**
+### Anti-patterns
 
 * `new`/constructor calls for collaborators *inside* business logic.
 * **Service locator**: `Registry.get("db")` anywhere in the code — hides dependencies, just like globals.
 * Singletons and module-level globals as dependencies.
 * Injecting 12 things into one class — a sign it has too many responsibilities.
 
-**The Dependency Inversion Principle (the D in SOLID)** — high-level policy (`OrderService`) should depend on an abstraction it *owns* (`PaymentGateway` interface), and low-level details (`StripeClient`) implement it. The source-code dependency points *toward* the business logic, even though control flows outward. See [Vol 3 Ch 2](../volume-3-low-level-design/ch02-solid-principles.md).
+### The Dependency Inversion Principle (the D in SOLID)
+
+High-level policy (`OrderService`) should depend on an abstraction it *owns* (`PaymentGateway` interface), and low-level details (`StripeClient`) implement it. The source-code dependency points *toward* the business logic, even though control flows outward. See [Vol 3 Ch 2](../volume-3-low-level-design/ch02-solid-principles.md).
 
 ---
 
@@ -52,7 +56,7 @@ Inject dependencies instead of constructing them; interfaces at seams; why DI en
 
 ## Diagram
 
-**Hardcoded `new` vs injected dependencies**
+### Hardcoded `new` vs injected dependencies
 
 ```
  HARDCODED                                  INJECTED
@@ -65,7 +69,7 @@ Inject dependencies instead of constructing them; interfaces at seams; why DI en
  test → hits the real DB and charges real cards      test → fast, deterministic, no network
 ```
 
-**Dependency direction: before and after inversion**
+### Dependency direction: before and after inversion
 
 ```mermaid
 flowchart LR
@@ -79,7 +83,7 @@ flowchart LR
     end
 ```
 
-**The composition root wires everything once**
+### The composition root wires everything once
 
 ```mermaid
 flowchart TD
@@ -194,7 +198,7 @@ impl Db for MemDb { fn get_user(&self, _: u64) -> Option<String> { Some("Ada".in
 
 ## Mini project
 
-**A service wired via constructor injection with a config-chosen backend.**
+### A service wired via constructor injection with a config-chosen backend
 
 ```mermaid
 flowchart LR
@@ -204,7 +208,7 @@ flowchart LR
     TESTS["tests: memory storage,<br/>spy notifier, fixed clock,<br/>sequential ids"] --> SVC
 ```
 
-**Steps**
+### Steps
 
 1. Define `Storage`, `Notifier`, `Clock`, and `IdGenerator` protocols.
 2. Implement at least two backends per interface (SQLite + in-memory; email + console).

@@ -10,9 +10,11 @@ Self-attention, multi-head attention, positional encoding, and the encoder/decod
 
 **In one sentence:** a transformer processes all tokens in parallel, and in each layer every token asks every other (allowed) token "how relevant are you to me?", then blends their information in proportion to the answer — that blending step is attention.
 
-**Mental model — a meeting where everyone takes notes on everyone.** Each person (token) writes a question on a card (**query**), wears a name badge describing what they know (**key**), and holds a folder of notes (**value**). Everyone compares their question with every badge, decides how much attention each person deserves, and copies a weighted mix of their folders. Several such meetings happen in parallel, each focused on a different topic (**heads**).
+### Mental model — a meeting where everyone takes notes on everyone
 
-**Scaled dot-product attention**
+Each person (token) writes a question on a card (**query**), wears a name badge describing what they know (**key**), and holds a folder of notes (**value**). Everyone compares their question with every badge, decides how much attention each person deserves, and copies a weighted mix of their folders. Several such meetings happen in parallel, each focused on a different topic (**heads**).
+
+### Scaled dot-product attention
 
 ```
  Attention(Q, K, V) = softmax( Q·Kᵀ / √d_k  + mask ) · V
@@ -27,11 +29,17 @@ Self-attention, multi-head attention, positional encoding, and the encoder/decod
  · V          each token's output = weighted average of values
 ```
 
-**Multi-head attention** — split the model dimension into *h* heads (e.g. 4096 = 32 heads × 128), run attention separately in each, concatenate, and project with `W_O`. Different heads learn different relations: previous-token, syntax (subject → verb), coreference ("it" → "cat"), copying.
+### Multi-head attention
 
-**The rest of a block** — `x = x + Attention(Norm(x))`, then `x = x + FFN(Norm(x))`. Residual connections let information and gradients flow through deep stacks; normalization (LayerNorm / RMSNorm) keeps activations in range; the FFN (typically 4× wider, SwiGLU in modern models) transforms each token independently.
+Split the model dimension into *h* heads (e.g. 4096 = 32 heads × 128), run attention separately in each, concatenate, and project with `W_O`. Different heads learn different relations: previous-token, syntax (subject → verb), coreference ("it" → "cat"), copying.
 
-**Positional encoding** — attention by itself ignores order (it's a set operation), so position must be injected:
+### The rest of a block
+
+`x = x + Attention(Norm(x))`, then `x = x + FFN(Norm(x))`. Residual connections let information and gradients flow through deep stacks; normalization (LayerNorm / RMSNorm) keeps activations in range; the FFN (typically 4× wider, SwiGLU in modern models) transforms each token independently.
+
+### Positional encoding
+
+Attention by itself ignores order (it's a set operation), so position must be injected:
 
 | Method | How | Used by |
 |--------|-----|---------|
@@ -40,7 +48,7 @@ Self-attention, multi-head attention, positional encoding, and the encoder/decod
 | **RoPE** (rotary) | rotate Q and K vectors by a position-dependent angle, so `q·k` depends on *relative* distance | Llama, Mistral, Qwen, most modern LLMs |
 | ALiBi | add a distance-proportional penalty to attention scores | BLOOM, MPT |
 
-**Encoder vs decoder**
+### Encoder vs decoder
 
 | | Encoder-only | Decoder-only | Encoder–decoder |
 |-|--------------|--------------|-----------------|
@@ -49,7 +57,9 @@ Self-attention, multi-head attention, positional encoding, and the encoder/decod
 | Good at | understanding: classification, embeddings, NER | generation, chat, code — **most LLMs today** | translation, summarization |
 | Examples | BERT, RoBERTa, embedding models | GPT, Claude, Llama | T5, BART, original Transformer |
 
-**The O(n²) cost** — `Q·Kᵀ` compares every token with every token: n² scores per head per layer. Doubling the context quadruples attention compute and (naively) memory. Mitigations: FlashAttention (the same math, tiled to avoid materializing the n×n matrix in slow memory), sliding-window / sparse attention, grouped-query attention (fewer K/V heads), and the KV cache during generation ([Ch 4](ch04-inference-and-serving.md)).
+### The O(n²) cost
+
+`Q·Kᵀ` compares every token with every token: n² scores per head per layer. Doubling the context quadruples attention compute and (naively) memory. Mitigations: FlashAttention (the same math, tiled to avoid materializing the n×n matrix in slow memory), sliding-window / sparse attention, grouped-query attention (fewer K/V heads), and the KV cache during generation ([Ch 4](ch04-inference-and-serving.md)).
 
 ---
 
@@ -62,7 +72,7 @@ Self-attention, multi-head attention, positional encoding, and the encoder/decod
 
 ## Diagram
 
-**Scaled dot-product attention**
+### Scaled dot-product attention
 
 ```mermaid
 flowchart TB
@@ -73,7 +83,7 @@ flowchart TB
     SM & V --> OUT["weights · V<br/>[n × d_v]"]
 ```
 
-**The causal mask and attention weights for "the cat sat"**
+### The causal mask and attention weights for "the cat sat"
 
 ```
                keys →   the    cat    sat
@@ -83,7 +93,7 @@ flowchart TB
  each row sums to 1
 ```
 
-**Multi-head attention**
+### Multi-head attention
 
 ```mermaid
 flowchart LR
@@ -107,7 +117,9 @@ flowchart LR
 
 ## Example
 
-**Attention weights for a 3-token sequence, by hand** — with `d_k = 2` and (to keep it small) `Q = K = X`:
+### Attention weights for a 3-token sequence, by hand
+
+With `d_k = 2` and (to keep it small) `Q = K = X`:
 
 <div class="fig">
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 480" role="img" aria-label="Worked self-attention example: Q times K-transpose, scaled by root 2, softmax per row, then multiplied by V" style="width:100%;max-width:900px;height:auto;font-family:inherit"><defs><marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="context-stroke"/></marker></defs><text x="70.0" y="30" font-size="12.5" text-anchor="middle" fill="var(--primary)" font-weight="700">X = Q = K</text><rect x="20" y="40" width="100" height="90" rx="6" fill="var(--primary)" fill-opacity=".08" stroke="var(--primary)" stroke-width="1.6"/><text x="45.0" y="59.5" font-size="12.5" text-anchor="middle" fill="var(--text)">1</text><text x="95.0" y="59.5" font-size="12.5" text-anchor="middle" fill="var(--text)">0</text><text x="45.0" y="89.5" font-size="12.5" text-anchor="middle" fill="var(--text)">0</text><text x="95.0" y="89.5" font-size="12.5" text-anchor="middle" fill="var(--text)">1</text><text x="45.0" y="119.5" font-size="12.5" text-anchor="middle" fill="var(--text)">1</text><text x="95.0" y="119.5" font-size="12.5" text-anchor="middle" fill="var(--text)">1</text><text x="200.0" y="30" font-size="12.5" text-anchor="middle" fill="var(--accent)" font-weight="700">V</text><rect x="150" y="40" width="100" height="90" rx="6" fill="var(--accent)" fill-opacity=".08" stroke="var(--accent)" stroke-width="1.6"/><text x="175.0" y="59.5" font-size="12.5" text-anchor="middle" fill="var(--text)">1</text><text x="225.0" y="59.5" font-size="12.5" text-anchor="middle" fill="var(--text)">0</text><text x="175.0" y="89.5" font-size="12.5" text-anchor="middle" fill="var(--text)">0</text><text x="225.0" y="89.5" font-size="12.5" text-anchor="middle" fill="var(--text)">2</text><text x="175.0" y="119.5" font-size="12.5" text-anchor="middle" fill="var(--text)">1</text><text x="225.0" y="119.5" font-size="12.5" text-anchor="middle" fill="var(--text)">1</text><text x="104.0" y="165" font-size="12.5" text-anchor="middle" fill="var(--primary)" font-weight="700">Q·Kᵀ</text><rect x="20" y="175" width="168" height="90" rx="6" fill="var(--primary)" fill-opacity=".08" stroke="var(--primary)" stroke-width="1.6"/><text x="48.0" y="194.5" font-size="12.5" text-anchor="middle" fill="var(--text)">1</text><text x="104.0" y="194.5" font-size="12.5" text-anchor="middle" fill="var(--text)">0</text><text x="160.0" y="194.5" font-size="12.5" text-anchor="middle" fill="var(--text)">1</text><text x="48.0" y="224.5" font-size="12.5" text-anchor="middle" fill="var(--text)">0</text><text x="104.0" y="224.5" font-size="12.5" text-anchor="middle" fill="var(--text)">1</text><text x="160.0" y="224.5" font-size="12.5" text-anchor="middle" fill="var(--text)">1</text><text x="48.0" y="254.5" font-size="12.5" text-anchor="middle" fill="var(--text)">1</text><text x="104.0" y="254.5" font-size="12.5" text-anchor="middle" fill="var(--text)">1</text><text x="160.0" y="254.5" font-size="12.5" text-anchor="middle" fill="var(--text)">2</text><line x1="200" y1="220" x2="260" y2="220" stroke="var(--text-muted)" stroke-width="1.6" marker-end="url(#ar)"/><text x="230" y="210" font-size="12.5" text-anchor="middle" fill="var(--text-muted)">÷ √2</text><text x="363.0" y="165" font-size="12.5" text-anchor="middle" fill="var(--primary)" font-weight="700">scaled</text><rect x="270" y="175" width="186" height="90" rx="6" fill="var(--primary)" fill-opacity=".08" stroke="var(--primary)" stroke-width="1.6"/><text x="301.0" y="194.5" font-size="12.5" text-anchor="middle" fill="var(--text)">0.707</text><text x="363.0" y="194.5" font-size="12.5" text-anchor="middle" fill="var(--text)">0.000</text><text x="425.0" y="194.5" font-size="12.5" text-anchor="middle" fill="var(--text)">0.707</text><text x="301.0" y="224.5" font-size="12.5" text-anchor="middle" fill="var(--text)">0.000</text><text x="363.0" y="224.5" font-size="12.5" text-anchor="middle" fill="var(--text)">0.707</text><text x="425.0" y="224.5" font-size="12.5" text-anchor="middle" fill="var(--text)">0.707</text><text x="301.0" y="254.5" font-size="12.5" text-anchor="middle" fill="var(--text)">0.707</text><text x="363.0" y="254.5" font-size="12.5" text-anchor="middle" fill="var(--text)">0.707</text><text x="425.0" y="254.5" font-size="12.5" text-anchor="middle" fill="var(--text)">1.414</text><line x1="470" y1="220" x2="530" y2="220" stroke="var(--text-muted)" stroke-width="1.6" marker-end="url(#ar)"/><text x="500" y="210" font-size="12.5" text-anchor="middle" fill="var(--text-muted)">softmax</text><text x="500" y="236" font-size="12" text-anchor="middle" fill="var(--text-muted)">each row</text><text x="633.0" y="165" font-size="12.5" text-anchor="middle" fill="var(--success)" font-weight="700">softmax (no mask)</text><rect x="540" y="175" width="186" height="90" rx="6" fill="var(--success)" fill-opacity=".08" stroke="var(--success)" stroke-width="1.6"/><text x="571.0" y="194.5" font-size="12.5" text-anchor="middle" fill="var(--text)">0.401</text><text x="633.0" y="194.5" font-size="12.5" text-anchor="middle" fill="var(--text)">0.198</text><text x="695.0" y="194.5" font-size="12.5" text-anchor="middle" fill="var(--text)">0.401</text><text x="571.0" y="224.5" font-size="12.5" text-anchor="middle" fill="var(--text)">0.198</text><text x="633.0" y="224.5" font-size="12.5" text-anchor="middle" fill="var(--text)">0.401</text><text x="695.0" y="224.5" font-size="12.5" text-anchor="middle" fill="var(--text)">0.401</text><text x="571.0" y="254.5" font-size="12.5" text-anchor="middle" fill="var(--text)">0.248</text><text x="633.0" y="254.5" font-size="12.5" text-anchor="middle" fill="var(--text)">0.248</text><text x="695.0" y="254.5" font-size="12.5" text-anchor="middle" fill="var(--text)">0.503</text><line x1="740" y1="220" x2="790" y2="220" stroke="var(--text-muted)" stroke-width="1.6" marker-end="url(#ar)"/><text x="765" y="205" font-size="13" text-anchor="middle" fill="var(--text)" font-weight="700">· V</text><text x="730.0" y="330" font-size="12.5" text-anchor="middle" fill="var(--accent)" font-weight="700">weights · V</text><rect x="660" y="340" width="140" height="90" rx="6" fill="var(--accent)" fill-opacity=".08" stroke="var(--accent)" stroke-width="1.6"/><text x="695.0" y="359.5" font-size="12.5" text-anchor="middle" fill="var(--text)">0.802</text><text x="765.0" y="359.5" font-size="12.5" text-anchor="middle" fill="var(--text)">0.797</text><text x="695.0" y="389.5" font-size="12.5" text-anchor="middle" fill="var(--text)">0.599</text><text x="765.0" y="389.5" font-size="12.5" text-anchor="middle" fill="var(--text)">1.203</text><text x="695.0" y="419.5" font-size="12.5" text-anchor="middle" fill="var(--text)">0.752</text><text x="765.0" y="419.5" font-size="12.5" text-anchor="middle" fill="var(--text)">1.000</text><text x="20" y="360" font-size="13" text-anchor="start" fill="var(--text)" font-weight="600">token 3 ([1, 1]) matches itself best,</text><text x="20" y="380" font-size="13" text-anchor="start" fill="var(--text)" font-weight="600">so it keeps ~50% of its own value.</text><line x1="790" y1="220" x2="790" y2="330" stroke="var(--text-muted)" stroke-width="1.6" marker-end="url(#ar)"/></svg>
@@ -175,7 +187,7 @@ print(np.allclose(ref[0, 0].numpy(), out))                  # True
 
 ## Mini project
 
-**A from-scratch transformer block on small inputs, verified against a reference.**
+### A from-scratch transformer block on small inputs, verified against a reference
 
 ```mermaid
 flowchart LR
@@ -186,7 +198,7 @@ flowchart LR
     Y --> CMP
 ```
 
-**Steps**
+### Steps
 
 1. Implement RMSNorm, multi-head causal attention, a SwiGLU FFN, and residual connections as plain functions.
 2. Add RoPE: rotate pairs of dimensions in Q and K by `position × θ_i`.

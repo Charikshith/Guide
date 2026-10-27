@@ -10,9 +10,11 @@ Adapter, Decorator, Facade, Proxy, Bridge, Composite, Flyweight.
 
 **In one sentence:** structural patterns are ways of *wrapping and combining* objects — to make an interface fit (Adapter), add behavior without editing (Decorator), hide a mess (Facade), control access (Proxy), split an abstraction from its implementation (Bridge), treat a tree like one object (Composite), or share the heavy parts (Flyweight).
 
-**Mental model — travel gear.** An Adapter is a plug adapter: your laptop plug stays the same; the adapter makes it fit a foreign socket. A Decorator is a phone case: the phone is unchanged, the case adds grip or a wallet, and you can stack cases. A Facade is a hotel concierge: one person who deals with taxis, restaurants, and tickets for you. A Proxy is a receptionist who decides whether you may see the manager.
+### Mental model — travel gear
 
-**The seven patterns**
+An Adapter is a plug adapter: your laptop plug stays the same; the adapter makes it fit a foreign socket. A Decorator is a phone case: the phone is unchanged, the case adds grip or a wallet, and you can stack cases. A Facade is a hotel concierge: one person who deals with taxis, restaurants, and tickets for you. A Proxy is a receptionist who decides whether you may see the manager.
+
+### The seven patterns
 
 | Pattern | Intent | Same interface as the wrapped object? | Typical use |
 |---------|--------|:-:|-------------|
@@ -24,11 +26,17 @@ Adapter, Decorator, Facade, Proxy, Bridge, Composite, Flyweight.
 | **Composite** | treat single objects and groups the same way (tree) | yes | file systems, UI widget trees, org charts, pricing bundles |
 | **Flyweight** | share immutable intrinsic state among many objects | yes | glyphs in an editor, map tiles, game sprites, interned strings |
 
-**Decorator vs Proxy vs Adapter** — all three wrap an object. Ask *why*: Adapter changes the shape to fit; Decorator adds behavior and is chosen by the client; Proxy controls access and usually pretends to be the real object (the client may not know).
+### Decorator vs Proxy vs Adapter
 
-**Decorator vs inheritance** — inheritance fixes behavior at compile time and multiplies subclasses (`CachedLoggedRetryingClient`). Decorators compose at runtime: `Retry(Logging(Cache(client)))`, in any order and combination, following *composition over inheritance* and the open–closed principle ([Ch 2](ch02-solid-principles.md)).
+All three wrap an object. Ask *why*: Adapter changes the shape to fit; Decorator adds behavior and is chosen by the client; Proxy controls access and usually pretends to be the real object (the client may not know).
 
-**Python note** — Python's `@decorator` syntax is a *function* decorator. It is the same idea (wrap, keep the signature), applied to functions instead of objects.
+### Decorator vs inheritance
+
+Inheritance fixes behavior at compile time and multiplies subclasses (`CachedLoggedRetryingClient`). Decorators compose at runtime: `Retry(Logging(Cache(client)))`, in any order and combination, following *composition over inheritance* and the open–closed principle ([Ch 2](ch02-solid-principles.md)).
+
+### Python note
+
+Python's `@decorator` syntax is a *function* decorator. It is the same idea (wrap, keep the signature), applied to functions instead of objects.
 
 ---
 
@@ -40,7 +48,7 @@ Adapter, Decorator, Facade, Proxy, Bridge, Composite, Flyweight.
 
 ## Diagram
 
-**Adapter (wraps an interface) vs Decorator (adds behavior) vs Facade (simplifies)**
+### Adapter (wraps an interface) vs Decorator (adds behavior) vs Facade (simplifies)
 
 ```mermaid
 classDiagram
@@ -77,7 +85,7 @@ classDiagram
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 780 250" role="img" aria-label="A facade: one InvoiceFacade.send_invoice call hides five subsystems: pricing, PDF rendering, S3 storage, email and audit log" style="width:100%;max-width:780px;height:auto;font-family:inherit"><defs><marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="context-stroke"/></marker></defs><text x="390" y="22" font-size="13.5" text-anchor="middle" fill="var(--text)" font-weight="700">FACADE: one call hides many subsystems</text><rect x="250" y="36" width="280" height="44" rx="8" fill="var(--primary)" fill-opacity=".14" stroke="var(--primary)" stroke-width="1.6"/><text x="390.0" y="62.55" font-size="13" text-anchor="middle" fill="var(--text)" font-weight="600">InvoiceFacade.send_invoice(order_id)</text><line x1="390" y1="80" x2="95" y2="140" stroke="var(--text-muted)" stroke-width="1.6" marker-end="url(#ar)"/><rect x="40" y="140" width="110" height="44" rx="8" fill="var(--success)" fill-opacity=".14" stroke="var(--success)" stroke-width="1.6"/><text x="95.0" y="166.55" font-size="13" text-anchor="middle" fill="var(--text)" font-weight="600">Pricing</text><line x1="390" y1="80" x2="239" y2="140" stroke="var(--text-muted)" stroke-width="1.6" marker-end="url(#ar)"/><rect x="184" y="140" width="110" height="44" rx="8" fill="var(--success)" fill-opacity=".14" stroke="var(--success)" stroke-width="1.6"/><text x="239.0" y="166.55" font-size="13" text-anchor="middle" fill="var(--text)" font-weight="600">PdfRenderer</text><line x1="390" y1="80" x2="383" y2="140" stroke="var(--text-muted)" stroke-width="1.6" marker-end="url(#ar)"/><rect x="328" y="140" width="110" height="44" rx="8" fill="var(--success)" fill-opacity=".14" stroke="var(--success)" stroke-width="1.6"/><text x="383.0" y="166.55" font-size="13" text-anchor="middle" fill="var(--text)" font-weight="600">S3Store</text><line x1="390" y1="80" x2="527" y2="140" stroke="var(--text-muted)" stroke-width="1.6" marker-end="url(#ar)"/><rect x="472" y="140" width="110" height="44" rx="8" fill="var(--success)" fill-opacity=".14" stroke="var(--success)" stroke-width="1.6"/><text x="527.0" y="166.55" font-size="13" text-anchor="middle" fill="var(--text)" font-weight="600">EmailApi</text><line x1="390" y1="80" x2="671" y2="140" stroke="var(--text-muted)" stroke-width="1.6" marker-end="url(#ar)"/><rect x="616" y="140" width="110" height="44" rx="8" fill="var(--success)" fill-opacity=".14" stroke="var(--success)" stroke-width="1.6"/><text x="671.0" y="166.55" font-size="13" text-anchor="middle" fill="var(--text)" font-weight="600">AuditLog</text><text x="390" y="224" font-size="12.5" text-anchor="middle" fill="var(--text-muted)">the client knows ONE method; the subsystems stay available for power users</text></svg>
 </div>
 
-**Stacking decorators**
+### Stacking decorators
 
 ```mermaid
 flowchart LR
@@ -86,7 +94,7 @@ flowchart LR
 
 The same `PriceService` interface is used at every layer. The order is a choice: **Cache outside Retry** means cached failures skip retries; **inside**, each retry checks the cache.
 
-**Composite: a tree treated as one**
+### Composite: a tree treated as one
 
 ```mermaid
 graph TD
@@ -200,7 +208,7 @@ print(StripeAdapter(FakeStripeSDK()).charge(500, "tok_visa"))   # pi_500
 
 ## Mini project
 
-**A facade over a messy subsystem + a caching decorator.**
+### A facade over a messy subsystem + a caching decorator
 
 ```mermaid
 flowchart LR
@@ -213,7 +221,7 @@ flowchart LR
     CD["CachingCarrier (decorator)<br/>quotes cached 10 min per route+weight"] -. wraps .-> A1 & A2 & A3
 ```
 
-**Steps**
+### Steps
 
 1. Simulate three "carriers" with ugly, different APIs (units, formats, error styles).
 2. Write one `CarrierPort` and an adapter per carrier that normalizes units and errors.

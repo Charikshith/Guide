@@ -10,9 +10,11 @@ GPU serving infrastructure, model deployment, and integrating every prior chapte
 
 **In one sentence:** serving models at scale means fitting weights and KV cache into GPU memory, keeping GPUs busy with batching, scaling replicas to demand behind a gateway — and an "AI OS" is the platform layer on top that gives every agent the same models, tools, memory, protocols, observability, evals, and security, the way an operating system gives every program the same CPU, files, and network.
 
-**Mental model — a power plant and a city grid.** GPUs are the power plant: expensive, and wasted if idle. The serving layer (vLLM behind a gateway) is the grid that delivers power where it's needed. The AI OS is the city's utilities: water (models), roads (tools via MCP), mail (A2A), records office (memory), inspectors (evals, security), and meters (observability). Apps — your agents — just plug in.
+### Mental model — a power plant and a city grid
 
-**GPU memory: what has to fit**
+GPUs are the power plant: expensive, and wasted if idle. The serving layer (vLLM behind a gateway) is the grid that delivers power where it's needed. The AI OS is the city's utilities: water (models), roads (tools via MCP), mail (A2A), records office (memory), inspectors (evals, security), and meters (observability). Apps — your agents — just plug in.
+
+### GPU memory: what has to fit
 
 | Item | Formula (rough) | 70B model example |
 |------|-----------------|-------------------|
@@ -23,8 +25,12 @@ GPU serving infrastructure, model deployment, and integrating every prior chapte
 
 **Sizing a serving workload (worked example — estimates; validate with a real benchmark)**
 
-**Workload:** peak 20 requests/s, average 1,500 input + 300 output tokens.
-**Model:** 70B, FP8 weights, on 2 × H100 80 GB per replica (tensor parallel = 2).
+### Workload
+
+Peak 20 requests/s, average 1,500 input + 300 output tokens.
+### Model
+
+70B, FP8 weights, on 2 × H100 80 GB per replica (tensor parallel = 2).
 
 | Step | Working |
 |---|---|
@@ -36,7 +42,7 @@ GPU serving infrastructure, model deployment, and integrating every prior chapte
 
 (Throughput per sequence and batch limits depend on the model, GPU, and engine — measure tokens/s at your target latency with a load test before buying.)
 
-**Serving stack**
+### Serving stack
 
 | Layer | Job | Tools |
 |-------|-----|-------|
@@ -46,7 +52,9 @@ GPU serving infrastructure, model deployment, and integrating every prior chapte
 | Autoscaling | scale on queue depth / KV-cache usage / TTFT, not CPU | KEDA, HPA with custom metrics |
 | Model storage | fast loading of big weights | object storage + local NVMe cache, pre-pulled images |
 
-**Deployment practices** — pin model versions and engine images; warm up replicas before they take traffic (loading 70 GB takes minutes); canary new models with evals as the gate ([Ch 17](ch17-evaluation.md)); keep a fallback provider for overload; separate interactive and batch traffic (priority queues); watch GPU utilization, KV-cache usage, queue time, TTFT, and tokens/s.
+### Deployment practices
+
+Pin model versions and engine images; warm up replicas before they take traffic (loading 70 GB takes minutes); canary new models with evals as the gate ([Ch 17](ch17-evaluation.md)); keep a fallback provider for overload; separate interactive and batch traffic (priority queues); watch GPU utilization, KV-cache usage, queue time, TTFT, and tokens/s.
 
 **What is an "AI OS"?** Not a kernel — a platform layer that provides shared, governed services to every AI application:
 
@@ -73,7 +81,7 @@ GPU serving infrastructure, model deployment, and integrating every prior chapte
 
 ## Diagram
 
-**A full AI platform architecture**
+### A full AI platform architecture
 
 ```mermaid
 flowchart TB
@@ -98,7 +106,7 @@ flowchart TB
     EV -.-> AR
 ```
 
-**The GPU pool**
+### The GPU pool
 
 ```mermaid
 flowchart LR
@@ -112,7 +120,7 @@ flowchart LR
     S3[("model weights<br/>object store → NVMe cache")] --> R1 & R2 & R3 & R4
 ```
 
-**Where GPU memory goes (one replica, 2 × 80 GB)**
+### Where GPU memory goes (one replica, 2 × 80 GB)
 
 <div class="fig">
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 160" role="img" aria-label="GPU memory per replica: 70 GB of FP8 weights, about 74 GB of KV cache for roughly 125 sequences of 1.8k tokens, and about 10 percent reserve" style="width:100%;max-width:800px;height:auto;font-family:inherit"><defs><marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="context-stroke"/></marker></defs><text x="400" y="22" font-size="13.5" text-anchor="middle" fill="var(--text)" font-weight="700">160 GB</text><rect x="20" y="36" width="332.5" height="50" rx="4" fill="var(--primary)" fill-opacity=".35" stroke="var(--primary)" stroke-width="1.6"/><text x="186.25" y="66" font-size="13" text-anchor="middle" fill="var(--text)" font-weight="600">weights FP8 70 GB</text><rect x="352.5" y="36" width="351.5" height="50" rx="4" fill="var(--success)" fill-opacity=".35" stroke="var(--success)" stroke-width="1.6"/><text x="528.25" y="66" font-size="13" text-anchor="middle" fill="var(--text)" font-weight="600">KV cache ~74 GB (≈125 × 1.8k-token seqs)</text><rect x="704.0" y="36" width="76.0" height="50" rx="4" fill="var(--accent)" fill-opacity=".35" stroke="var(--accent)" stroke-width="1.6"/><line x1="742.0" y1="90" x2="742.0" y2="118" stroke="var(--accent)" stroke-width="1.6"/><text x="780" y="134" font-size="12.5" text-anchor="end" fill="var(--accent)" font-weight="700">reserve ~10%</text></svg>
@@ -210,7 +218,7 @@ print(round(seqs_per_replica), round(concurrency / (seqs_per_replica * 0.7), 1))
 
 ## Mini project
 
-**A deployment manifest + capacity plan for a serving cluster.**
+### A deployment manifest + capacity plan for a serving cluster
 
 ```mermaid
 flowchart LR
@@ -221,7 +229,7 @@ flowchart LR
     K8S --> KIND["dry-run on kind (small model on CPU)<br/>or a real GPU node"]
 ```
 
-**Steps**
+### Steps
 
 1. Write `capacity.py`: inputs (model config, precision, GPU type, traffic, token lengths, target utilization) → weights, KV per token, sequences per replica, replicas, GPUs, and monthly cost.
 2. Benchmark one replica (a small model is fine if you lack GPUs) to measure tokens/s and TTFT at different concurrencies; feed the numbers back into the plan.
@@ -258,7 +266,7 @@ flowchart TD
     ADMIN["admin console: agents, tools,<br/>models, budgets, audit log"] --> API
 ```
 
-**Steps**
+### Steps
 
 1. **Kernel services first:** a unified API with identity and tenants; per-tenant quotas and budgets; an audit log of every agent action.
 2. **Model layer:** the gateway with routing, caching, and fallback in front of a self-hosted model (vLLM, even a small one) and a hosted model.

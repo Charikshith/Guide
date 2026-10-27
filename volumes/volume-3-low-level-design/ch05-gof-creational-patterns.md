@@ -10,9 +10,11 @@ Factory Method, Abstract Factory, Builder, Singleton, Prototype — intent, stru
 
 **In one sentence:** creational patterns move the decision of *which* object to create and *how* to assemble it out of the code that uses it, so callers can depend on an interface while the creation logic lives in one place.
 
-**Mental model — ordering at a restaurant.** You say "a coffee" (Factory Method) and the barista decides which machine and beans. You pick "the Italian menu" (Abstract Factory), and every dish that arrives matches that style. You build a custom burger step by step — bun, patty, no onions, extra cheese — and then say "done" (Builder). The restaurant has exactly one head chef (Singleton). A chef makes a new dish by copying yesterday's special and changing one thing (Prototype).
+### Mental model — ordering at a restaurant
 
-**The five patterns**
+You say "a coffee" (Factory Method) and the barista decides which machine and beans. You pick "the Italian menu" (Abstract Factory), and every dish that arrives matches that style. You build a custom burger step by step — bun, patty, no onions, extra cheese — and then say "done" (Builder). The restaurant has exactly one head chef (Singleton). A chef makes a new dish by copying yesterday's special and changing one thing (Prototype).
+
+### The five patterns
 
 | Pattern | Intent | Reach for it when | Pythonic / modern form |
 |---------|--------|-------------------|------------------------|
@@ -22,7 +24,7 @@ Factory Method, Abstract Factory, Builder, Singleton, Prototype — intent, stru
 | **Singleton** | ensure one instance and a global access point | almost never; genuinely one shared resource (a process-wide registry) | a module-level instance, or better, create one at the composition root and inject it |
 | **Prototype** | create objects by copying an existing instance | construction is expensive or configured at runtime; many near-identical variants | `copy.deepcopy`, `dataclasses.replace` |
 
-**Builder vs Factory**
+### Builder vs Factory
 
 | | Factory | Builder |
 |-|---------|---------|
@@ -40,7 +42,9 @@ Factory Method, Abstract Factory, Builder, Singleton, Prototype — intent, stru
 
 The better alternative: create one instance in `main()` and **pass it in** ([Vol 2 Ch 4](../volume-2-software-engineering/ch04-dependency-injection-and-inversion-of-control.md)) — "single instance" without "global access".
 
-**Avoid over-applying patterns.** A factory with one product, a builder for a 3-field object, or an abstract factory with one family is ceremony. Use a pattern when it removes real duplication or decouples a real seam.
+### Avoid over-applying patterns
+
+A factory with one product, a builder for a 3-field object, or an abstract factory with one family is ceremony. Use a pattern when it removes real duplication or decouples a real seam.
 
 ---
 
@@ -52,7 +56,7 @@ The better alternative: create one instance in `main()` and **pass it in** ([Vol
 
 ## Diagram
 
-**Factory Method**
+### Factory Method
 
 ```mermaid
 classDiagram
@@ -74,7 +78,7 @@ classDiagram
     Importer --> Parser : uses
 ```
 
-**Abstract Factory — families that must match**
+### Abstract Factory — families that must match
 
 ```mermaid
 classDiagram
@@ -103,7 +107,7 @@ classDiagram
     PubSubQueue ..|> Queue
 ```
 
-**Builder — participants**
+### Builder — participants
 
 ```mermaid
 sequenceDiagram
@@ -120,7 +124,7 @@ sequenceDiagram
     B-->>Client: HttpRequest
 ```
 
-**Singleton vs an injected single instance; Prototype**
+### Singleton vs an injected single instance; Prototype
 
 ```
  SINGLETON (global access)               INJECTED (one instance, explicit)       PROTOTYPE
@@ -232,7 +236,7 @@ def main():
 
 ## Mini project
 
-**A config/request builder library used across multiple handlers.**
+### A config/request builder library used across multiple handlers
 
 ```mermaid
 flowchart LR
@@ -245,7 +249,7 @@ flowchart LR
     TESTS["tests: FakeClient via the factory,<br/>builder validation cases"] --> LIB
 ```
 
-**Steps**
+### Steps
 
 1. `RequestBuilder` with defaults, fluent methods, cross-field validation, and an immutable `HttpRequest`.
 2. Prototype presets: a `JSON_API` base request (headers, timeout) that services copy and adjust with `replace`.

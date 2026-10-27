@@ -10,9 +10,11 @@ Layered models, IP addressing/subnets, ports, DNS resolution, and NAT.
 
 **In one sentence:** networks are built in layers — each layer wraps the one above it in its own envelope — IP addresses find the machine, ports find the program on it, DNS turns names into addresses, and NAT lets a whole house share one public address.
 
-**Mental model — sending a letter.** Your letter (data) goes in an envelope addressed to an apartment number (the port) in a building (the IP address). The post office (routers) reads only the building address and forwards it hop by hop. The phone book (DNS) turns "Alice's Bakery" into a street address. Your building's front desk (NAT) sends all residents' mail out under the building's single address and routes replies back to the right apartment.
+### Mental model — sending a letter
 
-**OSI vs TCP/IP**
+Your letter (data) goes in an envelope addressed to an apartment number (the port) in a building (the IP address). The post office (routers) reads only the building address and forwards it hop by hop. The phone book (DNS) turns "Alice's Bakery" into a street address. Your building's front desk (NAT) sends all residents' mail out under the building's single address and routes replies back to the right apartment.
+
+### OSI vs TCP/IP
 
 | OSI # | OSI layer | TCP/IP layer | Unit | Examples | Job |
 |:-:|-----------|--------------|------|----------|-----|
@@ -26,7 +28,7 @@ Layered models, IP addressing/subnets, ports, DNS resolution, and NAT.
 
 "L4 load balancer" and "L7 firewall" refer to these OSI numbers.
 
-**IP addressing**
+### IP addressing
 
 | Concept | Example | Meaning |
 |---------|---------|---------|
@@ -38,11 +40,15 @@ Layered models, IP addressing/subnets, ports, DNS resolution, and NAT.
 | Loopback | `127.0.0.1`, `::1` | this machine |
 | Socket | `192.168.1.10:443` | IP + port = one endpoint |
 
-**Ports:** 16-bit numbers (0–65535). Well-known: 22 SSH, 53 DNS, 80 HTTP, 443 HTTPS, 5432 Postgres, 6379 Redis. Clients use *ephemeral* ports (Linux default 32768–60999). A TCP connection is identified by the **4-tuple** (src IP, src port, dst IP, dst port).
+### Ports
 
-**Port exhaustion** — one client IP talking to one server IP:port has only ~28k ephemeral ports. Short-lived connections sit in `TIME_WAIT` for up to 60 s, so a busy proxy can run out and fail to connect. Fixes: connection pooling / keep-alive, more source IPs, widen `ip_local_port_range`, reuse `TIME_WAIT` sockets safely.
+16-bit numbers (0–65535). Well-known: 22 SSH, 53 DNS, 80 HTTP, 443 HTTPS, 5432 Postgres, 6379 Redis. Clients use *ephemeral* ports (Linux default 32768–60999). A TCP connection is identified by the **4-tuple** (src IP, src port, dst IP, dst port).
 
-**DNS record types**
+### Port exhaustion
+
+One client IP talking to one server IP:port has only ~28k ephemeral ports. Short-lived connections sit in `TIME_WAIT` for up to 60 s, so a busy proxy can run out and fail to connect. Fixes: connection pooling / keep-alive, more source IPs, widen `ip_local_port_range`, reuse `TIME_WAIT` sockets safely.
+
+### DNS record types
 
 | Type | Maps | Example |
 |------|------|---------|
@@ -53,7 +59,7 @@ Layered models, IP addressing/subnets, ports, DNS resolution, and NAT.
 | NS | zone → authoritative servers | |
 | TTL | how long resolvers may cache it | 300 s |
 
-**DNS as a dependency — and a single point of failure**
+### DNS as a dependency — and a single point of failure
 
 - **Choosing a TTL is a trade-off.** Long TTLs mean fewer lookups and less load on name servers, but a changed record (a failover, a migration) takes that long to reach everyone. Short TTLs make changes fast but add lookup latency and load — and the shorter the TTL, the more clients break immediately if your name servers go down.
 - **Not every client respects the TTL.** Some resolvers and long-running clients cache longer, so expect a trickle of traffic to old addresses well after a change; keep old endpoints alive for a while.
@@ -61,7 +67,9 @@ Layered models, IP addressing/subnets, ports, DNS resolution, and NAT.
 - **Serve stale rather than fail.** A resolver that can't reach the authoritative servers can keep answering with an *expired* cached record (standardized as "serve-stale", RFC 8767) — the address almost never changed, so a stale answer beats no answer. The general principle — keep working with the last known good data when a dependency is down — is called *static stability*.
 - **Privacy.** Classic DNS is plain text over UDP, visible to anyone on the path; **DNS over TLS (DoT)** and **DNS over HTTPS (DoH)** encrypt it.
 
-**NAT** — a router rewrites private source addresses and ports to its public address and keeps a table to map replies back. It stretches IPv4 and blocks *unsolicited* inbound connections, but it is **not a firewall**, it breaks peer-to-peer (needing STUN/TURN), and it complicates logs and rate limiting (many users share one IP).
+### NAT
+
+A router rewrites private source addresses and ports to its public address and keeps a table to map replies back. It stretches IPv4 and blocks *unsolicited* inbound connections, but it is **not a firewall**, it breaks peer-to-peer (needing STUN/TURN), and it complicates logs and rate limiting (many users share one IP).
 
 ---
 
@@ -73,7 +81,7 @@ None.
 
 ## Diagram
 
-**OSI 7 layers next to TCP/IP 4 layers, with encapsulation**
+### OSI 7 layers next to TCP/IP 4 layers, with encapsulation
 
 <div class="fig">
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 612" role="img" aria-label="OSI seven layers next to the TCP/IP four layers, with the headers each layer adds" style="width:100%;max-width:900px;height:auto;font-family:inherit">
@@ -164,7 +172,7 @@ None.
 
 *Reading it left to right: the OSI layers 7–5 collapse into TCP/IP's Application layer and OSI layers 2–1 into its Link layer. On the way down each layer wraps what it receives in its own header (and the link layer adds a trailer); on the way up the receiver strips them in reverse order.*
 
-**A DNS resolution chain for `www.example.com`**
+### A DNS resolution chain for `www.example.com`
 
 ```mermaid
 sequenceDiagram
@@ -184,7 +192,7 @@ sequenceDiagram
     R-->>B: 93.184.215.14 (cached for 300 s)
 ```
 
-**A NAT table mapping private → public**
+### A NAT table mapping private → public
 
 ```mermaid
 flowchart LR
@@ -197,7 +205,7 @@ flowchart LR
     nat --> net(("internet"))
 ```
 
-**NAT table**
+### NAT table
 
 | inside | outside | remote |
 |---|---|---|
@@ -250,14 +258,14 @@ print(socket.getaddrinfo("example.com", 443, proto=socket.IPPROTO_TCP)[0][4])
 
 ## Mini project
 
-**A small DNS client that resolves A/AAAA records over UDP.**
+### A small DNS client that resolves A/AAAA records over UDP
 
 ```mermaid
 flowchart LR
     Q["build query:<br/>12-byte header (id, flags RD=1, qdcount=1)<br/>+ QNAME 3www7example3com0 + QTYPE + QCLASS"] --> S["UDP sendto 1.1.1.1:53"] --> R["recv ≤ 512 bytes"] --> P["parse header, skip the question,<br/>parse answers (handle name compression 0xC0 pointers)"] --> O["print: name TTL type address"]
 ```
 
-**Steps**
+### Steps
 
 1. Encode the query with `struct.pack("!HHHHHH", id, 0x0100, 1, 0, 0, 0)` plus labels.
 2. Send over UDP with a 2-second timeout; retry once.

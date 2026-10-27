@@ -10,9 +10,11 @@ Defining and calling functions; parameters vs arguments; pass-by-value vs pass-b
 
 **In one sentence:** a function is a named, reusable recipe; parameters are its ingredients; scope decides which names the recipe can see; and a closure is a recipe that remembers the kitchen it was written in.
 
-**Mental model — a stack of sticky notes.** Each call puts a new sticky note on top of a pile. The note holds that call's parameters and local variables. When the function returns, its note is thrown away and control goes back to the note underneath. That pile is the *call stack*.
+### Mental model — a stack of sticky notes
 
-**Terms**
+Each call puts a new sticky note on top of a pile. The note holds that call's parameters and local variables. When the function returns, its note is thrown away and control goes back to the note underneath. That pile is the *call stack*.
+
+### Terms
 
 | Term | Meaning | Example |
 |------|---------|---------|
@@ -23,7 +25,7 @@ Defining and calling functions; parameters vs arguments; pass-by-value vs pass-b
 | Return value | what the call evaluates to | `return a + b` |
 | Multiple returns | usually a tuple | `return q, r` → `q, r = divmod(7, 2)` |
 
-**Passing arguments — three models**
+### Passing arguments — three models
 
 | Model | What the callee gets | Can it change the caller's variable? | Languages |
 |-------|---------------------|:-:|-----------|
@@ -31,7 +33,9 @@ Defining and calling functions; parameters vs arguments; pass-by-value vs pass-b
 | Pass by reference | an alias to the caller's variable | yes | C++ `int&`, Rust `&mut`, C# `ref` |
 | Pass by object reference ("sharing") | a copy of the *pointer* | can mutate the object, cannot rebind the caller's name | Python, Java, JS |
 
-**Scope: the LEGB rule (Python)** — names are looked up in this order:
+### Scope: the LEGB rule (Python)
+
+Names are looked up in this order:
 
 1. **L**ocal — inside the current function.
 2. **E**nclosing — inside any outer function.
@@ -40,9 +44,13 @@ Defining and calling functions; parameters vs arguments; pass-by-value vs pass-b
 
 **Lexical scope** means what a function can see is fixed by *where it is written*, not by where it is called from.
 
-**Closure** — a function plus the variables from its enclosing scope that it uses. Those variables stay alive as long as the function does.
+### Closure
 
-**Namespace** — a mapping from names to objects. Every module, class, and function call has its own, which is why two modules can each define `load()` without clashing.
+A function plus the variables from its enclosing scope that it uses. Those variables stay alive as long as the function does.
+
+### Namespace
+
+A mapping from names to objects. Every module, class, and function call has its own, which is why two modules can each define `load()` without clashing.
 
 ---
 
@@ -54,7 +62,7 @@ Defining and calling functions; parameters vs arguments; pass-by-value vs pass-b
 
 ## Diagram
 
-**The call stack for `main() → total(xs) → add(a, b)`**
+### The call stack for `main() → total(xs) → add(a, b)`
 
 <div class="fig">
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 300" role="img" aria-label="Call stack with three frames: add on top, total below it, main at the bottom" style="width:100%;max-width:640px;height:auto;font-family:inherit"><defs><marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="context-stroke"/></marker></defs><rect x="120" y="30" width="330" height="78" rx="6" fill="var(--accent)" fill-opacity=".16" stroke="var(--accent)" stroke-width="1.6"/><text x="136" y="52" font-size="14" text-anchor="start" fill="var(--text)" font-weight="700">add</text><text x="150" y="72" font-size="12.5" text-anchor="start" fill="var(--text-muted)">a = 3, b = 4</text><text x="150" y="90" font-size="12.5" text-anchor="start" fill="var(--text-muted)">return address → total</text><rect x="120" y="108" width="330" height="78" rx="6" fill="var(--primary)" fill-opacity=".16" stroke="var(--primary)" stroke-width="1.6"/><text x="136" y="130" font-size="14" text-anchor="start" fill="var(--text)" font-weight="700">total</text><text x="150" y="150" font-size="12.5" text-anchor="start" fill="var(--text-muted)">xs = [3, 4], acc = 3</text><text x="150" y="168" font-size="12.5" text-anchor="start" fill="var(--text-muted)">return address → main</text><rect x="120" y="186" width="330" height="52" rx="6" fill="var(--success)" fill-opacity=".16" stroke="var(--success)" stroke-width="1.6"/><text x="136" y="208" font-size="14" text-anchor="start" fill="var(--text)" font-weight="700">main</text><text x="150" y="228" font-size="12.5" text-anchor="start" fill="var(--text-muted)">result = ?</text><text x="466" y="52" font-size="12.5" text-anchor="start" fill="var(--accent)" font-weight="600">← top (running now)</text><text x="466" y="218" font-size="12.5" text-anchor="start" fill="var(--text-muted)">← bottom</text><text x="120" y="268" font-size="13" text-anchor="start" fill="var(--text)" font-weight="600">add returns 7 → its frame is popped → total resumes with acc = 7</text></svg>
@@ -71,7 +79,7 @@ sequenceDiagram
     total-->>main: 7
 ```
 
-**A closure keeps its enclosing variable alive**
+### A closure keeps its enclosing variable alive
 
 <div class="fig">
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 700 150" role="img" aria-label="A closure keeps its captured variable alive in a cell after the outer function has returned" style="width:100%;max-width:700px;height:auto;font-family:inherit"><defs><marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="context-stroke"/></marker></defs><text x="20" y="62" font-size="13" text-anchor="start" fill="var(--text)" font-weight="600">make_counter() returns</text><line x1="190" y1="58" x2="250" y2="58" stroke="var(--text-muted)" stroke-width="1.6" marker-end="url(#ar)"/><rect x="250" y="28" width="230" height="62" rx="8" fill="var(--primary)" fill-opacity=".16" stroke="var(--primary)" stroke-width="1.6"/><text x="365" y="52" font-size="13" text-anchor="middle" fill="var(--text)" font-weight="700">function increment</text><text x="268" y="76" font-size="12.5" text-anchor="start" fill="var(--text-muted)" font-style="italic">__closure__</text><line x1="340" y1="72" x2="500" y2="72" stroke="var(--text-muted)" stroke-width="1.6" marker-end="url(#ar)"/><rect x="500" y="52" width="170" height="40" rx="8" fill="var(--accent)" fill-opacity=".18" stroke="var(--accent)" stroke-width="1.6"/><text x="585" y="77" font-size="13" text-anchor="middle" fill="var(--text)" font-weight="600">cell: count = 2</text><text x="20" y="130" font-size="13" text-anchor="start" fill="var(--text)">make_counter's frame is gone, but count lives on in the cell.</text></svg>
@@ -163,7 +171,7 @@ def good(x, acc=None):
 
 ## Mini project
 
-**A memoizing `fib(n)` that demonstrates parameter passing and closure state.**
+### A memoizing `fib(n)` that demonstrates parameter passing and closure state
 
 ```mermaid
 flowchart LR
@@ -172,7 +180,7 @@ flowchart LR
     CHK -- no --> REC["fib(4) + fib(3)"] --> STORE["cache[5] = result"] --> RET
 ```
 
-**Steps**
+### Steps
 
 1. Write `make_memo(f)` that returns a wrapper holding a private `cache` dict in its closure.
 2. Apply it to a naive recursive `fib`, and count calls with and without memoization.

@@ -10,9 +10,11 @@ Depth-first and breadth-first traversal, cycle detection, topological order, and
 
 **In one sentence:** BFS explores a graph in rings of increasing distance, DFS dives as deep as it can before backing up, topological sort orders tasks so every dependency comes first, and backtracking is DFS over the tree of *choices* that prunes dead ends early.
 
-**Mental model — exploring a maze.** BFS is water poured at the entrance: it spreads to every corridor one step at a time, so it reaches each spot by the shortest route. DFS is one explorer with a ball of string: follow one corridor to its end, then back up to the last junction and try the next. Backtracking is the same explorer solving a puzzle, who turns back the moment a path breaks a rule.
+### Mental model — exploring a maze
 
-**BFS vs DFS**
+BFS is water poured at the entrance: it spreads to every corridor one step at a time, so it reaches each spot by the shortest route. DFS is one explorer with a ball of string: follow one corridor to its end, then back up to the last junction and try the next. Backtracking is the same explorer solving a puzzle, who turns back the moment a path breaks a rule.
+
+### BFS vs DFS
 
 | | BFS | DFS |
 |-|-----|-----|
@@ -23,7 +25,7 @@ Depth-first and breadth-first traversal, cycle detection, topological order, and
 | Good for | shortest hops, nearest neighbors, level order, web crawling by depth | cycle detection, topological sort, connected components, mazes, backtracking |
 | Time | O(V + E) | O(V + E) |
 
-**Cycle detection**
+### Cycle detection
 
 * **Undirected:** during DFS, reaching an already-visited vertex that isn't your parent means a cycle (or use union-find, [Ch 32](ch32-advanced-structures-segment-tree-fenwick-tree-and.md)).
 * **Directed:** three colors — white (unvisited), gray (on the current path), black (finished). Meeting a **gray** vertex means a back edge, so a cycle.
@@ -35,7 +37,7 @@ Depth-first and breadth-first traversal, cycle detection, topological order, and
 | Kahn's algorithm (BFS) | repeatedly remove a node with in-degree 0; if nodes remain at the end, there is a cycle |
 | DFS post-order | output each node after all its descendants finish; reverse the list |
 
-**Backtracking template**
+### Backtracking template
 
 ```python
 solve(state):
@@ -57,7 +59,7 @@ solve(state):
 
 ## Diagram
 
-**BFS level-by-level expansion from A**
+### BFS level-by-level expansion from A
 
 ```mermaid
 graph LR
@@ -78,7 +80,7 @@ graph LR
  levels:           0: A   1: B C   2: D E   3: F        (number = hops from A)
 ```
 
-**The DFS recursion tree for the same graph**
+### The DFS recursion tree for the same graph
 
 ```mermaid
 flowchart TD
@@ -90,7 +92,7 @@ flowchart TD
 
 Visit order: **A B D F C E**
 
-**A DAG and a topological order (Kahn's algorithm)**
+### A DAG and a topological order (Kahn's algorithm)
 
 ```mermaid
 graph LR
@@ -107,7 +109,7 @@ graph LR
  one valid order:    shop, chop, boil, cook, pasta, serve
 ```
 
-**Backtracking on 4-queens — pruned branches**
+### Backtracking on 4-queens — pruned branches
 
 - **row 0:** Q at col 0
   - **row 1:** col 0 ✗ (same column) · col 1 ✗ (diagonal) · col 2 ✓
@@ -216,7 +218,7 @@ print(len(n_queens(8)))                    # 92
 
 ## Mini project
 
-**A course-scheduler (topo sort) + a Sudoku solver (backtracking).**
+### A course-scheduler (topo sort) + a Sudoku solver (backtracking)
 
 ```mermaid
 flowchart LR
@@ -229,7 +231,7 @@ flowchart LR
     end
 ```
 
-**Steps**
+### Steps
 
 1. Scheduler: parse prerequisites, run Kahn's by levels, pack each level into semesters of ≤ 3 courses.
 2. On a cycle, print it (`A → B → C → A`) — a useful error beats "invalid".

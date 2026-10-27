@@ -10,9 +10,11 @@ Log levels, structured logging, correlation IDs, and log hygiene (never leak sec
 
 **In one sentence:** logs are the diary your program keeps for the person debugging it at 3 a.m., so they must be leveled, machine-parseable, linked by a request ID, and free of secrets.
 
-**Mental model — a ship's logbook.** Every entry has a time, a severity ("routine", "warning", "emergency"), and facts in fixed fields (position, speed, crew). A voyage number on every page lets you follow one trip across many pages. You never write the safe combination in the logbook.
+### Mental model — a ship's logbook
 
-**Log levels**
+Every entry has a time, a severity ("routine", "warning", "emergency"), and facts in fixed fields (position, speed, crew). A voyage number on every page lets you follow one trip across many pages. You never write the safe combination in the logbook.
+
+### Log levels
 
 | Level | Use for | Example | Pages someone? |
 |-------|---------|---------|:-:|
@@ -24,7 +26,7 @@ Log levels, structured logging, correlation IDs, and log hygiene (never leak sec
 
 **Rule of thumb:** a *recoverable* failure you retried successfully is `WARNING`; a failure that surfaces to the caller is `ERROR`.
 
-**Structured vs free-text**
+### Structured vs free-text
 
 | Free text | Structured (JSON) |
 |-----------|-------------------|
@@ -32,9 +34,13 @@ Log levels, structured logging, correlation IDs, and log hygiene (never leak sec
 | easy for humans, hard to query | trivially filterable: `order_id=123`, `sum(amount_cents)` |
 | message format drifts | stable field names become a contract |
 
-**Correlation IDs** — generate an ID at the edge (or accept `traceparent` / `X-Request-ID`), attach it to every log line, and pass it to every downstream call. One search then shows the full story of one request across services. This is the logging half of distributed tracing ([Ch 58](ch58-observability-logs-metrics-traces-and-opentelemetry.md)).
+### Correlation IDs
 
-**Hygiene — never log:** passwords, tokens, API keys, session cookies, full card numbers, secrets in URLs, or personal data you don't need (emails, addresses, health data). Redact by *field name* in the logger itself, so one careless `log.info(request)` can't leak.
+Generate an ID at the edge (or accept `traceparent` / `X-Request-ID`), attach it to every log line, and pass it to every downstream call. One search then shows the full story of one request across services. This is the logging half of distributed tracing ([Ch 58](ch58-observability-logs-metrics-traces-and-opentelemetry.md)).
+
+### Hygiene — never log
+
+Passwords, tokens, API keys, session cookies, full card numbers, secrets in URLs, or personal data you don't need (emails, addresses, health data). Redact by *field name* in the logger itself, so one careless `log.info(request)` can't leak.
 
 ---
 
@@ -46,7 +52,7 @@ Log levels, structured logging, correlation IDs, and log hygiene (never leak sec
 
 ## Diagram
 
-**A correlation ID threaded through services into one log stream**
+### A correlation ID threaded through services into one log stream
 
 ```mermaid
 sequenceDiagram
@@ -72,7 +78,7 @@ sequenceDiagram
  10:02:11.330  order    INFO  order_placed       order_id=123
 ```
 
-**Where logs go**
+### Where logs go
 
 ```mermaid
 flowchart LR
@@ -146,7 +152,7 @@ log.info("order_placed", order_id=123, user_id=7, trace_id="t-91c")
 
 ## Mini project
 
-**A structured logger that emits JSON and injects a trace ID into every line.**
+### A structured logger that emits JSON and injects a trace ID into every line
 
 ```mermaid
 flowchart LR
@@ -157,7 +163,7 @@ flowchart LR
     OUT --> Q["jq: select one trace_id"]
 ```
 
-**Steps**
+### Steps
 
 1. A tiny logger API: `log.info(event, **fields)` that validates `event` is `snake_case`.
 2. Formatter: ISO timestamp, level, event, trace ID from a ContextVar, fields, and exception info.

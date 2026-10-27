@@ -10,9 +10,11 @@ Caching (semantic + exact), batching, streaming, model routing, and reducing tok
 
 **In one sentence:** you make LLM apps cheaper and faster by not calling the model when you don't have to (caching), sending fewer tokens when you do (prompt trimming and prompt caching), sending easy work to small models (routing), doing work in bulk (batching), and showing output as soon as it exists (streaming) — each verified against your evals so quality doesn't silently drop.
 
-**Mental model — a busy café.** Pre-made popular drinks sit ready on the counter (cache). Simple orders go to the junior barista; complex ones to the head barista (routing). Ten identical orders are made in one go (batching). You hand over the coffee while the pastry is still warming (streaming). And you don't read the customer their whole order history before every cup (fewer tokens).
+### Mental model — a busy café
 
-**Where cost and latency come from**
+Pre-made popular drinks sit ready on the counter (cache). Simple orders go to the junior barista; complex ones to the head barista (routing). Ten identical orders are made in one go (batching). You hand over the coffee while the pastry is still warming (streaming). And you don't read the customer their whole order history before every cup (fewer tokens).
+
+### Where cost and latency come from
 
 | Driver | Cost | Latency |
 |--------|------|---------|
@@ -22,7 +24,7 @@ Caching (semantic + exact), batching, streaming, model routing, and reducing tok
 | number of calls (agents, chains) | multiplies everything | sequential calls add up |
 | network / queueing | — | TTFT under load |
 
-**The toolbox**
+### The toolbox
 
 | Technique | How | Typical effect | Risk |
 |-----------|-----|----------------|------|
@@ -37,7 +39,9 @@ Caching (semantic + exact), batching, streaming, model routing, and reducing tok
 | Parallelize | independent calls concurrently (`asyncio.gather`) | latency = the slowest call, not the sum | rate limits |
 | Structured, short outputs | JSON with only needed fields | fewer output tokens | — |
 
-**Measure first** — use the traces from [Ch 16](ch16-ai-observability.md): cost per request by route, tokens per step, cache hit rates, TTFT and total latency. Optimize the biggest line item, and re-run the eval ([Ch 17](ch17-evaluation.md)) after each change.
+### Measure first
+
+Use the traces from [Ch 16](ch16-ai-observability.md): cost per request by route, tokens per step, cache hit rates, TTFT and total latency. Optimize the biggest line item, and re-run the eval ([Ch 17](ch17-evaluation.md)) after each change.
 
 ---
 
@@ -49,7 +53,7 @@ Caching (semantic + exact), batching, streaming, model routing, and reducing tok
 
 ## Diagram
 
-**A request path with cache hits, batching, and a small/large model router**
+### A request path with cache hits, batching, and a small/large model router
 
 ```mermaid
 flowchart TD
@@ -66,7 +70,7 @@ flowchart TD
     OFF["offline jobs (nightly tagging)"] --> BA["Batch API<br/>(discounted, async)"]
 ```
 
-**Before and after (example numbers from one workload)**
+### Before and after (example numbers from one workload)
 
 ```
                          before      after       change
@@ -80,7 +84,7 @@ flowchart TD
  eval score              8.4         8.3         within the noise band ✅
 ```
 
-**Semantic cache danger zone**
+### Semantic cache danger zone
 
 Cached query: `"cancel order 1234"`
 
@@ -169,7 +173,7 @@ batch = client.messages.batches.create(requests=[
 
 ## Mini project
 
-**An optimized pipeline with cache + routing, showing cost/latency before/after.**
+### An optimized pipeline with cache + routing, showing cost/latency before/after
 
 ```mermaid
 flowchart LR
@@ -182,7 +186,7 @@ flowchart LR
     M & Q --> T["results table + chart"]
 ```
 
-**Steps**
+### Steps
 
 1. Build a replayable request set from real or synthetic traffic, including paraphrases and near-miss queries.
 2. Measure v0 (baseline) for cost, latency, and eval score.

@@ -10,9 +10,11 @@ The three pillars, instrumentation, and OpenTelemetry as the standard for collec
 
 **In one sentence:** metrics tell you *that* something is wrong, traces tell you *where* in a chain of services it's wrong, logs tell you *why* — and OpenTelemetry is the vendor-neutral standard for producing all three with shared IDs so you can jump between them.
 
-**Mental model — a hospital patient.** Metrics are the vital-signs monitor: heart rate and temperature over time, cheap to record, great for alarms. A trace is the patient's journey through the hospital: reception → triage → X-ray → surgery, with the time spent at each step. Logs are the doctors' detailed notes at each step. The patient ID wristband (trace ID) links all three.
+### Mental model — a hospital patient
 
-**The three signals**
+Metrics are the vital-signs monitor: heart rate and temperature over time, cheap to record, great for alarms. A trace is the patient's journey through the hospital: reception → triage → X-ray → surgery, with the time spent at each step. Logs are the doctors' detailed notes at each step. The patient ID wristband (trace ID) links all three.
+
+### The three signals
 
 | | Metrics | Traces | Logs |
 |-|---------|--------|------|
@@ -22,7 +24,7 @@ The three pillars, instrumentation, and OpenTelemetry as the standard for collec
 | Cardinality | must be **low** (no user IDs as labels!) | high is fine (attributes per span) | high is fine |
 | Tools | Prometheus, Grafana Mimir, Datadog | Jaeger, Tempo, Zipkin, Honeycomb | Loki, Elasticsearch, CloudWatch |
 
-**Metric types**
+### Metric types
 
 | Type | Example | Query |
 |------|---------|-------|
@@ -30,7 +32,7 @@ The three pillars, instrumentation, and OpenTelemetry as the standard for collec
 | Gauge (up and down) | `queue_depth`, `memory_bytes` | the current value |
 | Histogram (bucketed distribution) | `http_request_duration_seconds` | `histogram_quantile(0.99, …)` → p99 |
 
-**Golden signals / RED / USE**
+### Golden signals / RED / USE
 
 | Method | For | Measure |
 |--------|-----|---------|
@@ -38,9 +40,11 @@ The three pillars, instrumentation, and OpenTelemetry as the standard for collec
 | **USE** | resources (CPU, disk, pools) | **U**tilization, **S**aturation, **E**rrors |
 | Four golden signals (Google SRE) | any user-facing service | latency, traffic, errors, saturation |
 
-**Traces** — a *trace* is one request; a *span* is one operation within it (an HTTP call, a DB query) with a start, a duration, attributes, and a parent. Context is propagated between services in the W3C `traceparent` header: `00-<trace_id>-<span_id>-01`.
+### Traces
 
-**What OpenTelemetry standardizes**
+A *trace* is one request; a *span* is one operation within it (an HTTP call, a DB query) with a start, a duration, attributes, and a parent. Context is propagated between services in the W3C `traceparent` header: `00-<trace_id>-<span_id>-01`.
+
+### What OpenTelemetry standardizes
 
 | Piece | Role |
 |-------|------|
@@ -53,7 +57,9 @@ The three pillars, instrumentation, and OpenTelemetry as the standard for collec
 
 OTel standardizes *collection*, not storage or UI — you can switch vendors without re-instrumenting.
 
-**Alert on symptoms, not causes** — page on what users feel (error rate, latency SLO burn), not on "CPU at 80%". Use causes (CPU, GC, queue depth) on dashboards for diagnosis.
+### Alert on symptoms, not causes
+
+Page on what users feel (error rate, latency SLO burn), not on "CPU at 80%". Use causes (CPU, GC, queue depth) on dashboards for diagnosis.
 
 ---
 
@@ -65,7 +71,7 @@ OTel standardizes *collection*, not storage or UI — you can switch vendors wit
 
 ## Diagram
 
-**App emitting logs/metrics/traces → collector → backends**
+### App emitting logs/metrics/traces → collector → backends
 
 ```mermaid
 flowchart LR
@@ -82,13 +88,13 @@ flowchart LR
     PROM --> AM["Alertmanager → on-call"]
 ```
 
-**One trace across services**
+### One trace across services
 
 <div class="fig">
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 300" role="img" aria-label="Trace waterfall: checkout takes 812 ms, of which payments 701 ms and the provider charge call 672 ms is the root cause" style="width:100%;max-width:820px;height:auto;font-family:inherit"><defs><marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="context-stroke"/></marker></defs><text x="20" y="24" font-size="13" text-anchor="start" fill="var(--text)" font-weight="600">trace 4bf92f3577b34da6a3ce929d0e0e4736</text><text x="800" y="24" font-size="13" text-anchor="end" fill="var(--text-muted)">total 812 ms</text><text x="20" y="61" font-size="12" text-anchor="start" fill="var(--text)">checkout   POST /checkout</text><rect x="330.0" y="48" width="380.0" height="20" rx="3" fill="var(--primary)" fill-opacity=".45" stroke="var(--primary)" stroke-width="1"/><text x="722" y="62" font-size="12" text-anchor="start" fill="var(--text-muted)">812 ms</text><text x="40" y="97" font-size="12" text-anchor="start" fill="var(--text)">inventory   GET /reserve</text><rect x="330.0" y="84" width="29.950738916256157" height="20" rx="3" fill="var(--success)" fill-opacity=".45" stroke="var(--success)" stroke-width="1"/><text x="722" y="98" font-size="12" text-anchor="start" fill="var(--text-muted)">64 ms</text><text x="40" y="133" font-size="12" text-anchor="start" fill="var(--text)">payments   POST /charge</text><rect x="359.95073891625617" y="120" width="328.0541871921182" height="20" rx="3" fill="var(--danger)" fill-opacity=".45" stroke="var(--danger)" stroke-width="1"/><text x="722" y="134" font-size="12" text-anchor="start" fill="var(--danger)" font-weight="600">701 ms   ← slow</text><text x="60" y="169" font-size="12" text-anchor="start" fill="var(--text)">db   SELECT … FROM cards</text><rect x="362.7586206896552" y="156" width="4.211822660098522" height="20" rx="3" fill="#8b5cf6" fill-opacity=".45" stroke="#8b5cf6" stroke-width="1"/><text x="722" y="170" font-size="12" text-anchor="start" fill="var(--text-muted)">9 ms</text><text x="60" y="205" font-size="12" text-anchor="start" fill="var(--text)">http   POST provider.com/v1/charges</text><rect x="372.1182266009852" y="192" width="314.48275862068965" height="20" rx="3" fill="var(--danger)" fill-opacity=".45" stroke="var(--danger)" stroke-width="1"/><text x="722" y="206" font-size="12" text-anchor="start" fill="var(--danger)" font-weight="600">672 ms   ← root cause</text><text x="40" y="241" font-size="12" text-anchor="start" fill="var(--text)">db   INSERT INTO orders</text><rect x="704.8522167487686" y="228" width="5.147783251231528" height="20" rx="3" fill="#8b5cf6" fill-opacity=".45" stroke="#8b5cf6" stroke-width="1"/><text x="722" y="242" font-size="12" text-anchor="start" fill="var(--text-muted)">11 ms</text><text x="20" y="278" font-size="12.5" text-anchor="start" fill="var(--text-muted)">logs with trace_id=4bf92f… show: "provider latency spike, retry 1/3"</text></svg>
 </div>
 
-**From an alert to a root cause**
+### From an alert to a root cause
 
 ```mermaid
 flowchart LR
@@ -165,7 +171,7 @@ histogram_quantile(0.99, sum by (le, route) (rate(http_request_duration_seconds_
 
 ## Mini project
 
-**Add OpenTelemetry to a service and view a trace across two services.**
+### Add OpenTelemetry to a service and view a trace across two services
 
 ```mermaid
 flowchart LR
@@ -176,7 +182,7 @@ flowchart LR
     C --> L["Loki (logs with trace_id)"]
 ```
 
-**Steps**
+### Steps
 
 1. Two small services; one calls the other, and the second uses Redis.
 2. docker-compose with the Collector, Jaeger, Prometheus, Grafana, and Loki.

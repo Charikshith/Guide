@@ -10,9 +10,11 @@ Process lifecycle, signals (SIGTERM/SIGKILL/SIGINT), systemd units, remote acces
 
 **In one sentence:** every running program is a process with an ID; the kernel talks to processes through signals; systemd keeps long-running services alive; SSH lets you do all of this on another machine; and cron runs jobs on a timetable.
 
-**Mental model — a hospital.** Processes are patients with a chart number (PID). Each was admitted by a parent process. Signals are messages from the front desk: "please get ready to leave" (SIGTERM), "you're out now" (SIGKILL). systemd is the head nurse who restarts anyone who collapses. SSH is the secure phone line to another hospital. Cron is the ward's daily schedule.
+### Mental model — a hospital
 
-**Process basics**
+Processes are patients with a chart number (PID). Each was admitted by a parent process. Signals are messages from the front desk: "please get ready to leave" (SIGTERM), "you're out now" (SIGKILL). systemd is the head nurse who restarts anyone who collapses. SSH is the secure phone line to another hospital. Cron is the ward's daily schedule.
+
+### Process basics
 
 | Term | Meaning |
 |------|---------|
@@ -23,7 +25,7 @@ Process lifecycle, signals (SIGTERM/SIGKILL/SIGINT), systemd units, remote acces
 | Orphan | parent died first; adopted by PID 1 |
 | Daemon | a background process with no terminal |
 
-**Signals you must know**
+### Signals you must know
 
 | Signal | # | Default | Can be caught? | Sent by |
 |--------|:-:|---------|:-:|---------|
@@ -34,9 +36,11 @@ Process lifecycle, signals (SIGTERM/SIGKILL/SIGINT), systemd units, remote acces
 | `SIGSTOP` / `SIGCONT` | 19 / 18 | pause / resume | no / yes | Ctrl+Z, `fg` |
 | `SIGCHLD` | 17 | ignore | yes | a child exited |
 
-**Graceful shutdown:** on SIGTERM, stop accepting new work, finish in-flight work, flush, close, and exit 0 — within the grace period (systemd defaults to 90 s, Kubernetes to 30 s) before SIGKILL arrives.
+### Graceful shutdown
 
-**Cron syntax**
+On SIGTERM, stop accepting new work, finish in-flight work, flush, close, and exit 0 — within the grace period (systemd defaults to 90 s, Kubernetes to 30 s) before SIGKILL arrives.
+
+### Cron syntax
 
 | minute (0–59) | hour (0–23) | day of month (1–31) | month (1–12) | day of week (0–6, Sun = 0) | command | runs |
 |---|---|---|---|---|---|---|
@@ -44,7 +48,7 @@ Process lifecycle, signals (SIGTERM/SIGKILL/SIGINT), systemd units, remote acces
 | `*/15` | `*` | `*` | `*` | `*` | `/usr/local/bin/poll.sh` | every 15 minutes |
 | `0` | `9` | `*` | `*` | `1-5` | `/usr/local/bin/report.sh` | 09:00 on weekdays |
 
-**Networking commands**
+### Networking commands
 
 | Task | Command |
 |------|---------|
@@ -65,7 +69,7 @@ Process lifecycle, signals (SIGTERM/SIGKILL/SIGINT), systemd units, remote acces
 
 ## Diagram
 
-**Process state machine**
+### Process state machine
 
 ```mermaid
 stateDiagram-v2
@@ -80,7 +84,7 @@ stateDiagram-v2
     Zombie --> [*]: parent calls wait()
 ```
 
-**Signal delivery**
+### Signal delivery
 
 ```mermaid
 sequenceDiagram
@@ -95,7 +99,7 @@ sequenceDiagram
     K->>App: SIGKILL (cannot be caught)
 ```
 
-**SSH key authentication**
+### SSH key authentication
 
 ```mermaid
 sequenceDiagram
@@ -182,7 +186,7 @@ ssh -L 5432:localhost:5432 alice@db-host      # tunnel: local 5432 → the serve
 
 ## Mini project
 
-**A daemon with a systemd unit, a signal handler, and SSH remote logs.**
+### A daemon with a systemd unit, a signal handler, and SSH remote logs
 
 ```mermaid
 flowchart LR
@@ -193,7 +197,7 @@ flowchart LR
     DEV["your laptop"] -->|"ssh host journalctl -u worker -f"| J
 ```
 
-**Steps**
+### Steps
 
 1. A Python worker that processes jobs from a directory in a loop.
 2. `signal.signal(SIGTERM, …)` sets a `stopping` flag; the loop finishes the current job, then exits 0.

@@ -10,7 +10,9 @@ STRIDE/attack trees, the OWASP Top 10, secure defaults, secrets handling, and su
 
 **In one sentence:** threat modeling is thinking like an attacker *before* building — draw how data flows, mark where trust changes hands, list what could go wrong at each boundary, and fix the most likely and damaging threats first — then back it up with secure defaults and a trustworthy supply chain.
 
-**Mental model — securing a house.** You don't just buy a stronger front-door lock. You walk around the house: back door, windows, garage, the spare key under the mat, the delivery person you let in (trust boundaries). For each, you ask "how could someone get in, and how bad would it be?" — then fix the cheapest big risks first. Supply-chain security is checking that the locksmith himself is trustworthy.
+### Mental model — securing a house
+
+You don't just buy a stronger front-door lock. You walk around the house: back door, windows, garage, the spare key under the mat, the delivery person you let in (trust boundaries). For each, you ask "how could someone get in, and how bad would it be?" — then fix the cheapest big risks first. Supply-chain security is checking that the locksmith himself is trustworthy.
 
 **Threat modeling in four questions** (Shostack)
 
@@ -19,7 +21,7 @@ STRIDE/attack trees, the OWASP Top 10, secure defaults, secrets handling, and su
 3. **What are we going to do about it?** — mitigate, eliminate, transfer, or accept (documented).
 4. **Did we do a good job?** — review, test, and update when the design changes.
 
-**STRIDE**
+### STRIDE
 
 | Threat | Violates | Example | Typical mitigation |
 |--------|----------|---------|--------------------|
@@ -30,9 +32,11 @@ STRIDE/attack trees, the OWASP Top 10, secure defaults, secrets handling, and su
 | **D**enial of service | availability | huge uploads, expensive queries, login floods | rate limits, size limits, timeouts, quotas |
 | **E**levation of privilege | authorization | a normal user calling an admin endpoint; injection → code execution | authz on every endpoint, deny by default, sandboxing |
 
-**Attack trees** — put the attacker's goal at the root ("take over an account") and break it into ways to reach it (phish the password AND bypass MFA; OR reset the password via email takeover; OR steal a session…). Mark the cost or likelihood on each leaf; defend the cheapest paths.
+### Attack trees
 
-**OWASP Top 10 (2021) at a glance**
+Put the attacker's goal at the root ("take over an account") and break it into ways to reach it (phish the password AND bypass MFA; OR reset the password via email takeover; OR steal a session…). Mark the cost or likelihood on each leaf; defend the cheapest paths.
+
+### OWASP Top 10 (2021) at a glance
 
 | # | Category | One-line fix |
 |:-:|----------|--------------|
@@ -47,9 +51,13 @@ STRIDE/attack trees, the OWASP Top 10, secure defaults, secrets handling, and su
 | A09 | Security logging and monitoring failures | log auth events and access denials; alert on them |
 | A10 | Server-side request forgery (SSRF) | allow-list outbound destinations; block metadata IPs |
 
-**Secure defaults** — deny by default; least privilege for every identity; secrets from a vault, rotated automatically ([Vol 1 Ch 25](../volume-1-cs-foundations/ch25-configuration-and-secrets-management.md)); validate on the server; fail closed; safe framework defaults (CSRF protection, auto-escaping templates, `HttpOnly; Secure; SameSite` cookies).
+### Secure defaults
 
-**Supply chain** — pin dependencies with a lockfile and hashes; scan (`pip-audit`, `osv-scanner`, Dependabot); watch for typosquatting; generate an SBOM; sign and verify artifacts (Sigstore/cosign); follow SLSA levels for build provenance; least-privilege CI tokens; pin actions to SHAs.
+Deny by default; least privilege for every identity; secrets from a vault, rotated automatically ([Vol 1 Ch 25](../volume-1-cs-foundations/ch25-configuration-and-secrets-management.md)); validate on the server; fail closed; safe framework defaults (CSRF protection, auto-escaping templates, `HttpOnly; Secure; SameSite` cookies).
+
+### Supply chain
+
+Pin dependencies with a lockfile and hashes; scan (`pip-audit`, `osv-scanner`, Dependabot); watch for typosquatting; generate an SBOM; sign and verify artifacts (Sigstore/cosign); follow SLSA levels for build provenance; least-privilege CI tokens; pin actions to SHAs.
 
 ---
 
@@ -62,7 +70,9 @@ STRIDE/attack trees, the OWASP Top 10, secure defaults, secrets handling, and su
 
 ## Diagram
 
-**A data-flow diagram with trust boundaries and threat annotations** — a login flow
+### A data-flow diagram with trust boundaries and threat annotations
+
+A login flow
 
 ```mermaid
 flowchart LR
@@ -90,7 +100,7 @@ flowchart LR
  5 audit log              R: "it wasn't me"                    append-only log with IP, user agent, outcome
 ```
 
-**An attack tree: "take over a user account"**
+### An attack tree: "take over a user account"
 
 ```mermaid
 flowchart TD
@@ -169,7 +179,7 @@ syft . -o spdx-json > sbom.json && cosign sign-blob sbom.json
 
 ## Mini project
 
-**A security review of a small app: threat model + fix the top 3 findings.**
+### A security review of a small app: threat model + fix the top 3 findings
 
 ```mermaid
 flowchart LR
@@ -181,7 +191,7 @@ flowchart LR
     FIX --> DOC["SECURITY.md: model, findings,<br/>accepted risks, contact"]
 ```
 
-**Steps**
+### Steps
 
 1. Draw the DFD (Mermaid is fine) with every trust boundary.
 2. Walk STRIDE over each element and boundary-crossing flow; list the threats in a table.

@@ -10,9 +10,11 @@ Sets, subsets, unions/intersections/differences, Cartesian products; relations (
 
 **In one sentence:** a set is a bag of unique things, a relation is a list of pairs saying "these two are connected", and a function is a relation where every input gets exactly one output.
 
-**Mental model — guest lists.** Two parties each have a guest list (sets). People on *both* lists are the intersection. Everyone invited *anywhere* is the union. "Who knows whom" is a relation. "Which seat each guest gets" is a function — every guest gets one seat.
+### Mental model — guest lists
 
-**Set operations**
+Two parties each have a guest list (sets). People on *both* lists are the intersection. Everyone invited *anywhere* is the union. "Who knows whom" is a relation. "Which seat each guest gets" is a function — every guest gets one seat.
+
+### Set operations
 
 | Operation | Symbol | Python | Meaning |
 |-----------|--------|--------|---------|
@@ -36,7 +38,9 @@ Sets, subsets, unions/intersections/differences, Cartesian products; relations (
 * **Equivalence relation** = reflexive + symmetric + transitive. It splits a set into groups (equivalence classes). Example: "same remainder mod 3".
 * **Partial order** = reflexive + antisymmetric + transitive. Example: `⊆` on sets, task dependencies.
 
-**Function types** — `f: A → B`
+### Function types
+
+`f: A → B`
 
 | Type | Rule | Picture |
 |------|------|---------|
@@ -54,7 +58,7 @@ Sets, subsets, unions/intersections/differences, Cartesian products; relations (
 
 ## Diagram
 
-**Two overlapping sets**
+### Two overlapping sets
 
 ```venn
 title: Two overlapping sets
@@ -69,13 +73,13 @@ label B: 5
 note: A − B = {1, 2} · A ∩ B = {3, 4} · B − A = {5} · A ∪ B = {1, 2, 3, 4, 5}
 ```
 
-**Arrow diagrams of functions**
+### Arrow diagrams of functions
 
 <div class="fig">
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 780 270" role="img" aria-label="Three mappings from A to B: injective but not surjective, surjective but not injective, and bijective" style="width:100%;max-width:780px;height:auto;font-family:inherit"><defs><marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="context-stroke"/></marker></defs><text x="110" y="24" font-size="14" text-anchor="middle" fill="var(--text)" font-weight="700">Injective, not surjective</text><text x="50" y="52" font-size="13" text-anchor="middle" fill="var(--text-muted)" font-weight="600">A</text><text x="180" y="52" font-size="13" text-anchor="middle" fill="var(--text-muted)" font-weight="600">B</text><circle cx="50" cy="80" r="16" fill=".2" fill-opacity="0.2" stroke="var(--primary)" stroke-width="1.6"/><text x="50" y="85" font-size="13" text-anchor="middle" fill="var(--text)">1</text><circle cx="50" cy="120" r="16" fill=".2" fill-opacity="0.2" stroke="var(--primary)" stroke-width="1.6"/><text x="50" y="125" font-size="13" text-anchor="middle" fill="var(--text)">2</text><circle cx="50" cy="160" r="16" fill=".2" fill-opacity="0.2" stroke="var(--primary)" stroke-width="1.6"/><text x="50" y="165" font-size="13" text-anchor="middle" fill="var(--text)">3</text><circle cx="180" cy="80" r="16" fill=".2" fill-opacity="0.2" stroke="var(--success)" stroke-width="1.6"/><text x="180" y="85" font-size="13" text-anchor="middle" fill="var(--text)">a</text><circle cx="180" cy="120" r="16" fill=".2" fill-opacity="0.2" stroke="var(--success)" stroke-width="1.6"/><text x="180" y="125" font-size="13" text-anchor="middle" fill="var(--text)">b</text><circle cx="180" cy="160" r="16" fill=".2" fill-opacity="0.2" stroke="var(--success)" stroke-width="1.6"/><text x="180" y="165" font-size="13" text-anchor="middle" fill="var(--text)">c</text><circle cx="180" cy="200" r="16" fill=".2" fill-opacity="0.2" stroke="var(--danger)" stroke-width="1.6"/><text x="180" y="205" font-size="13" text-anchor="middle" fill="var(--text)">d</text><line x1="67" y1="80" x2="162" y2="80" stroke="var(--text-muted)" stroke-width="1.6" marker-end="url(#ar)"/><line x1="67" y1="120" x2="162" y2="120" stroke="var(--text-muted)" stroke-width="1.6" marker-end="url(#ar)"/><line x1="67" y1="160" x2="162" y2="160" stroke="var(--text-muted)" stroke-width="1.6" marker-end="url(#ar)"/><text x="110" y="248" font-size="12" text-anchor="middle" fill="var(--text-muted)">d is never hit</text><text x="370" y="24" font-size="14" text-anchor="middle" fill="var(--text)" font-weight="700">Surjective, not injective</text><text x="310" y="52" font-size="13" text-anchor="middle" fill="var(--text-muted)" font-weight="600">A</text><text x="440" y="52" font-size="13" text-anchor="middle" fill="var(--text-muted)" font-weight="600">B</text><circle cx="310" cy="80" r="16" fill=".2" fill-opacity="0.2" stroke="var(--primary)" stroke-width="1.6"/><text x="310" y="85" font-size="13" text-anchor="middle" fill="var(--text)">1</text><circle cx="310" cy="120" r="16" fill=".2" fill-opacity="0.2" stroke="var(--primary)" stroke-width="1.6"/><text x="310" y="125" font-size="13" text-anchor="middle" fill="var(--text)">2</text><circle cx="310" cy="160" r="16" fill=".2" fill-opacity="0.2" stroke="var(--primary)" stroke-width="1.6"/><text x="310" y="165" font-size="13" text-anchor="middle" fill="var(--text)">3</text><circle cx="440" cy="80" r="16" fill=".2" fill-opacity="0.2" stroke="var(--success)" stroke-width="1.6"/><text x="440" y="85" font-size="13" text-anchor="middle" fill="var(--text)">a</text><circle cx="440" cy="120" r="16" fill=".2" fill-opacity="0.2" stroke="var(--success)" stroke-width="1.6"/><text x="440" y="125" font-size="13" text-anchor="middle" fill="var(--text)">b</text><line x1="327" y1="80" x2="422" y2="80" stroke="var(--text-muted)" stroke-width="1.6" marker-end="url(#ar)"/><line x1="327" y1="120" x2="422" y2="80" stroke="var(--text-muted)" stroke-width="1.6" marker-end="url(#ar)"/><line x1="327" y1="160" x2="422" y2="120" stroke="var(--text-muted)" stroke-width="1.6" marker-end="url(#ar)"/><text x="370" y="168" font-size="12" text-anchor="middle" fill="var(--text-muted)">a is shared by 1 and 2</text><text x="630" y="24" font-size="14" text-anchor="middle" fill="var(--text)" font-weight="700">Bijective</text><text x="570" y="52" font-size="13" text-anchor="middle" fill="var(--text-muted)" font-weight="600">A</text><text x="700" y="52" font-size="13" text-anchor="middle" fill="var(--text-muted)" font-weight="600">B</text><circle cx="570" cy="80" r="16" fill=".2" fill-opacity="0.2" stroke="var(--primary)" stroke-width="1.6"/><text x="570" y="85" font-size="13" text-anchor="middle" fill="var(--text)">1</text><circle cx="570" cy="120" r="16" fill=".2" fill-opacity="0.2" stroke="var(--primary)" stroke-width="1.6"/><text x="570" y="125" font-size="13" text-anchor="middle" fill="var(--text)">2</text><circle cx="570" cy="160" r="16" fill=".2" fill-opacity="0.2" stroke="var(--primary)" stroke-width="1.6"/><text x="570" y="165" font-size="13" text-anchor="middle" fill="var(--text)">3</text><circle cx="700" cy="80" r="16" fill=".2" fill-opacity="0.2" stroke="var(--success)" stroke-width="1.6"/><text x="700" y="85" font-size="13" text-anchor="middle" fill="var(--text)">a</text><circle cx="700" cy="120" r="16" fill=".2" fill-opacity="0.2" stroke="var(--success)" stroke-width="1.6"/><text x="700" y="125" font-size="13" text-anchor="middle" fill="var(--text)">b</text><circle cx="700" cy="160" r="16" fill=".2" fill-opacity="0.2" stroke="var(--success)" stroke-width="1.6"/><text x="700" y="165" font-size="13" text-anchor="middle" fill="var(--text)">c</text><line x1="587" y1="80" x2="682" y2="80" stroke="var(--text-muted)" stroke-width="1.6" marker-end="url(#ar)"/><line x1="587" y1="120" x2="682" y2="120" stroke="var(--text-muted)" stroke-width="1.6" marker-end="url(#ar)"/><line x1="587" y1="160" x2="682" y2="160" stroke="var(--text-muted)" stroke-width="1.6" marker-end="url(#ar)"/><text x="630" y="208" font-size="12" text-anchor="middle" fill="var(--text-muted)">every element used exactly once</text></svg>
 </div>
 
-**Is it a function? A decision flow**
+### Is it a function? A decision flow
 
 ```mermaid
 flowchart TD
@@ -110,7 +114,7 @@ inverse = {v: k for k, v in code.items()}
 assert len(inverse) == len(code)     # no collisions → injective, so invertible
 ```
 
-**Checking relation properties by brute force**
+### Checking relation properties by brute force
 
 ```python
 S = range(1, 7)
@@ -156,7 +160,7 @@ print(reflexive, symmetric, transitive)   # True False True → a partial order
 
 ## Mini project
 
-**A set-operations calculator with a visualization of two overlapping sets.**
+### A set-operations calculator with a visualization of two overlapping sets
 
 ```mermaid
 flowchart LR
@@ -164,7 +168,7 @@ flowchart LR
     OPS --> T[Print table]
 ```
 
-**Steps**
+### Steps
 
 1. Read two comma-separated lists from the user.
 2. Compute union, intersection, both differences, symmetric difference, and subset checks.

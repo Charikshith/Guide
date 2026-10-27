@@ -10,9 +10,11 @@ Binary and number representation (two's complement, floats); CPU registers; cach
 
 **In one sentence:** everything in a computer is bits; the CPU computes only on a handful of tiny, ultra-fast registers; and because main memory is ~100× slower than the CPU, a ladder of caches keeps recently used data close — so *how* you walk through memory often matters more than how many instructions you run.
 
-**Mental model — a chef's kitchen.** Registers are the chef's hands. L1 cache is the cutting board. L2 is the counter. L3 is the kitchen shelf. RAM is the pantry down the hall. The SSD is the grocery store across town. A good chef brings a whole crate from the pantry at once (a cache line) and uses everything in it before walking back.
+### Mental model — a chef's kitchen
 
-**Number representation**
+Registers are the chef's hands. L1 cache is the cutting board. L2 is the counter. L3 is the kitchen shelf. RAM is the pantry down the hall. The SSD is the grocery store across town. A good chef brings a whole crate from the pantry at once (a cache line) and uses everything in it before walking back.
+
+### Number representation
 
 | Format | Example | Notes |
 |--------|---------|-------|
@@ -23,7 +25,7 @@ Binary and number representation (two's complement, floats); CPU registers; cach
 | IEEE-754 float | sign, exponent, mantissa | see [Ch 15](ch15-correctness-traps.md) |
 | Endianness | `0x12345678` stored as `78 56 34 12` (little-endian, x86/ARM) | matters in network protocols and binary files |
 
-**CPU basics**
+### CPU basics
 
 | Part | Role |
 |------|------|
@@ -34,7 +36,7 @@ Binary and number representation (two's complement, floats); CPU registers; cach
 | Stack pointer (SP/RSP) | top of the current stack ([Ch 12](ch12-memory-stack-heap-ownership-and-garbage-collection.md)) |
 | Cores | independent CPUs on one chip, each with its own registers and L1/L2 |
 
-**The memory hierarchy (typical, 2020s desktop)**
+### The memory hierarchy (typical, 2020s desktop)
 
 | Level | Size | Latency | ≈ CPU cycles |
 |-------|------|---------|-------------:|
@@ -47,7 +49,9 @@ Binary and number representation (two's complement, floats); CPU registers; cach
 | HDD | TBs | ~5–10 ms | 30,000,000 |
 | Network, same datacenter | — | ~0.5 ms | 1,500,000 |
 
-**Cache lines and locality** — memory moves in **64-byte cache lines**, never single bytes.
+### Cache lines and locality
+
+Memory moves in **64-byte cache lines**, never single bytes.
 
 * **Spatial locality:** using `a[i]` makes `a[i+1]` cheap (same line).
 * **Temporal locality:** using x again soon hits the cache.
@@ -63,13 +67,13 @@ Binary and number representation (two's complement, floats); CPU registers; cach
 
 ## Diagram
 
-**The memory-hierarchy pyramid**
+### The memory-hierarchy pyramid
 
 <div class="fig">
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 780 400" role="img" aria-label="Memory hierarchy pyramid from registers at the top to SSD and network at the bottom, with latency and size" style="width:100%;max-width:780px;height:auto;font-family:inherit"><defs><marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="context-stroke"/></marker></defs><polygon points="240,30 280,30 318,80 202,80" fill="var(--danger)" fill-opacity=".28" stroke="var(--danger)" stroke-width="1.8"/><text x="260" y="60" font-size="14" text-anchor="middle" fill="var(--text)" font-weight="700">registers</text><text x="500" y="60" font-size="13.5" text-anchor="start" fill="var(--text)" font-weight="700">&lt; 1 ns</text><text x="620" y="60" font-size="13.5" text-anchor="start" fill="var(--text-muted)">bytes</text><polygon points="202,84 318,84 356,134 164,134" fill="var(--accent)" fill-opacity=".28" stroke="var(--accent)" stroke-width="1.8"/><text x="260" y="114" font-size="14" text-anchor="middle" fill="var(--text)" font-weight="700">L1</text><text x="500" y="114" font-size="13.5" text-anchor="start" fill="var(--text)" font-weight="700">~1 ns</text><text x="620" y="114" font-size="13.5" text-anchor="start" fill="var(--text-muted)">64 KB</text><polygon points="164,138 356,138 394,188 126,188" fill="var(--success)" fill-opacity=".28" stroke="var(--success)" stroke-width="1.8"/><text x="260" y="168" font-size="14" text-anchor="middle" fill="var(--text)" font-weight="700">L2</text><text x="500" y="168" font-size="13.5" text-anchor="start" fill="var(--text)" font-weight="700">~4 ns</text><text x="620" y="168" font-size="13.5" text-anchor="start" fill="var(--text-muted)">1 MB</text><polygon points="126,192 394,192 432,242 88,242" fill="var(--primary)" fill-opacity=".28" stroke="var(--primary)" stroke-width="1.8"/><text x="260" y="222" font-size="14" text-anchor="middle" fill="var(--text)" font-weight="700">L3</text><text x="500" y="222" font-size="13.5" text-anchor="start" fill="var(--text)" font-weight="700">~12 ns</text><text x="620" y="222" font-size="13.5" text-anchor="start" fill="var(--text-muted)">32 MB</text><polygon points="88,246 432,246 470,296 50,296" fill="#8b5cf6" fill-opacity=".28" stroke="#8b5cf6" stroke-width="1.8"/><text x="260" y="276" font-size="14" text-anchor="middle" fill="var(--text)" font-weight="700">RAM</text><text x="500" y="276" font-size="13.5" text-anchor="start" fill="var(--text)" font-weight="700">~100 ns</text><text x="620" y="276" font-size="13.5" text-anchor="start" fill="var(--text-muted)">64 GB</text><polygon points="50,300 470,300 508,350 12,350" fill="#64748b" fill-opacity=".28" stroke="#64748b" stroke-width="1.8"/><text x="260" y="330" font-size="14" text-anchor="middle" fill="var(--text)" font-weight="700">SSD / network</text><text x="500" y="330" font-size="13.5" text-anchor="start" fill="var(--text)" font-weight="700">~50 µs+</text><text x="620" y="330" font-size="13.5" text-anchor="start" fill="var(--text-muted)">TBs</text><text x="500" y="22" font-size="12" text-anchor="start" fill="var(--text-muted)" font-weight="600">latency</text><text x="620" y="22" font-size="12" text-anchor="start" fill="var(--text-muted)" font-weight="600">size</text><text x="260" y="376" font-size="13" text-anchor="middle" fill="var(--text-muted)" font-weight="600">▲ faster, smaller, costlier        ▼ slower, bigger, cheaper</text></svg>
 </div>
 
-**A cache hit vs a miss**
+### A cache hit vs a miss
 
 ```mermaid
 sequenceDiagram
@@ -88,7 +92,7 @@ sequenceDiagram
     L1-->>CPU: HIT (~1 ns) — already in the same line
 ```
 
-**Row-major vs column-major traversal of a 2D array**
+### Row-major vs column-major traversal of a 2D array
 
 Memory layout is **row-major** (as in C and NumPy): `[r0c0 r0c1 r0c2 r0c3 | r1c0 r1c1 …]`
 
@@ -97,7 +101,7 @@ Memory layout is **row-major** (as in C and NumPy): `[r0c0 r0c1 r0c2 r0c3 | r1c0
 | row by row →→→→ | sequential | 1 miss per 16 ints ✅ fast |
 | column by column ↓↓↓↓ | jumps a full row each step | a miss almost every access ❌ slow |
 
-**Two's complement on an 8-bit wheel**
+### Two's complement on an 8-bit wheel
 
 ```
             0000 0000 = 0
@@ -161,7 +165,7 @@ for (int j = 0; j < N; j++)          // slow: strides N*4 bytes per step
 
 ## Mini project
 
-**A tiny instruction-set simulator with registers and a simulated cache.**
+### A tiny instruction-set simulator with registers and a simulated cache
 
 ```mermaid
 flowchart LR
@@ -172,7 +176,7 @@ flowchart LR
     C --> ST["stats: hits, misses, hit rate"]
 ```
 
-**Steps**
+### Steps
 
 1. Define ~8 instructions (`LOAD`, `STORE`, `ADD`, `SUB`, `MOV`, `JMP`, `JNZ`, `HALT`) and a tiny assembler from text.
 2. A CPU loop with 8 registers, a PC, and a zero flag.

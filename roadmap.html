@@ -12,6 +12,11 @@ m.querySelectorAll(":scope > h2").forEach(function(hd){
  var n=hd.nextElementSibling;
  while(n&&n.tagName!=="H2"&&n!==nav){var x=n.nextElementSibling;n.remove();n=x;}
  var p=hd.previousElementSibling;if(p&&p.tagName==="HR")p.remove();hd.remove();});
+var s2=0,s3=0,pre=typeof CH!=="undefined"?CH+".":"";
+m.querySelectorAll(":scope > h2, :scope > h3").forEach(function(hd){
+ var num;if(hd.tagName==="H2"){s2++;s3=0;num=pre+s2;}else{if(!s2)return;s3++;num=pre+s2+"."+s3;}
+ var f=hd.firstChild;if(f&&f.nodeType===3)f.nodeValue=f.nodeValue.replace(/^\s*\d+(\.\d+)*[.)]?\s+/,"");
+ var k=document.createElement("span");k.className="sec-num";k.textContent=num+" ";hd.insertBefore(k,hd.firstChild);});
 var toc=document.getElementById("tocList");
 m.querySelectorAll(m.querySelector(":scope > h2")?":scope > h2, :scope > h3":":scope > h1").forEach(function(hd){
  var li=document.createElement("li"),a=document.createElement("a");if(hd.tagName==="H3")li.className="toc-sub";

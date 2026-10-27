@@ -10,9 +10,11 @@ Base case + inductive step; strong induction; using induction to prove loop inva
 
 **In one sentence:** show it works for the first case, show that "works for k" forces "works for k + 1", and you have shown it works for every case.
 
-**Mental model — dominoes.** You don't need to watch every domino fall. You need two facts: (1) the first one gets pushed, and (2) each one, if it falls, knocks over the next.
+### Mental model — dominoes
 
-**The template**
+You don't need to watch every domino fall. You need two facts: (1) the first one gets pushed, and (2) each one, if it falls, knocks over the next.
+
+### The template
 
 | Step | What you write |
 |------|----------------|
@@ -22,7 +24,7 @@ Base case + inductive step; strong induction; using induction to prove loop inva
 | 4. Inductive step | Using the IH, prove P(k + 1). Point to where you use it. |
 | 5. Conclude | "By induction, P(n) holds for all n ≥ n₀." |
 
-**Weak vs strong induction**
+### Weak vs strong induction
 
 | | Weak | Strong |
 |-|------|--------|
@@ -45,7 +47,7 @@ Base case + inductive step; strong induction; using induction to prove loop inva
 
 ## Diagram
 
-**The domino chain**
+### The domino chain
 
 ```mermaid
 flowchart LR
@@ -54,14 +56,16 @@ flowchart LR
 
 Each falling domino topples the next: that is the **inductive step**, P(k) ⇒ P(k+1).
 
-**Induction as a proof pipeline**
+### Induction as a proof pipeline
 
 ```mermaid
 flowchart LR
     B["Base: P(1) ✓"] --> S1["P(1) ⇒ P(2)"] --> S2["P(2) ⇒ P(3)"] --> S3["…"] --> SK["P(k) ⇒ P(k+1)"] --> ALL["P(n) for all n"]
 ```
 
-**Visual proof of `1 + 2 + … + n = n(n+1)/2`** — two staircases fill an `n × (n+1)` rectangle.
+### Visual proof of `1 + 2 + … + n = n(n+1)/2`
+
+Two staircases fill an `n × (n+1)` rectangle.
 
 ```
  n = 4:   ■ □ □ □ □
@@ -70,7 +74,7 @@ flowchart LR
           ■ ■ ■ ■ □      total = 4 × 5 = 20, so ■ = 20 / 2 = 10
 ```
 
-**Loop invariant as induction**
+### Loop invariant as induction
 
 ```mermaid
 flowchart TD
@@ -83,13 +87,13 @@ flowchart TD
 
 ## Example
 
-**Prove `1 + 2 + … + n = n(n+1)/2` for all n ≥ 1.**
+### Prove `1 + 2 + … + n = n(n+1)/2` for all n ≥ 1
 
 * **Base (n = 1):** left side is 1. Right side is `1·2/2 = 1`. ✓
 * **IH:** assume `1 + … + k = k(k+1)/2`.
 * **Step:** `1 + … + k + (k+1) = k(k+1)/2 + (k+1)` (by IH) `= (k+1)(k/2 + 1) = (k+1)(k+2)/2`. That is the formula with n = k + 1. ✓
 
-**A loop invariant, made checkable**
+### A loop invariant, made checkable
 
 ```python
 def total(xs):
@@ -103,7 +107,7 @@ def total(xs):
     return s
 ```
 
-**Recursion correctness is induction**
+### Recursion correctness is induction
 
 ```python
 def power(x, n):
@@ -138,7 +142,7 @@ Proof sketch (strong induction on n): n = 0 is correct. For n > 0, `n // 2 < n`,
 
 **A recursive factorial/power function with a written inductive proof of correctness.**
 
-**Steps**
+### Steps
 
 1. Implement `factorial(n)` and fast `power(x, n)` recursively.
 2. In the docstring, write the claim, base case, IH, and step.

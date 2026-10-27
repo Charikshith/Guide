@@ -10,9 +10,11 @@ Embeddings as semantic vectors, retrieval-augmented generation, chunking, rerank
 
 **In one sentence:** an embedding model turns text into a vector where similar meanings land close together, and retrieval-augmented generation (RAG) uses those vectors to find the few passages relevant to a question and hands them to the LLM, so its answer is grounded in *your* data — with citations — instead of in its memory.
 
-**Mental model — an open-book exam.** A closed-book student (a plain LLM) answers from memory and sometimes invents things confidently. RAG makes it an open-book exam: a librarian (the retriever) quickly finds the three most relevant pages, and the student must answer *from those pages* and say which page each claim came from.
+### Mental model — an open-book exam
 
-**Embeddings**
+A closed-book student (a plain LLM) answers from memory and sometimes invents things confidently. RAG makes it an open-book exam: a librarian (the retriever) quickly finds the three most relevant pages, and the student must answer *from those pages* and say which page each claim came from.
+
+### Embeddings
 
 | Fact | Meaning |
 |------|---------|
@@ -22,7 +24,7 @@ Embeddings as semantic vectors, retrieval-augmented generation, chunking, rerank
 | Some models need prefixes | e.g. `"query: …"` / `"passage: …"` (E5), or instructions for query embeddings |
 | Bi-encoder vs cross-encoder | bi-encoder: embed query and doc separately (fast, indexable). Cross-encoder: score (query, doc) together (slow, accurate) → used for **reranking** |
 
-**The RAG pipeline**
+### The RAG pipeline
 
 | Stage | Offline / online | Key decisions |
 |-------|:-:|---------------|
@@ -35,7 +37,7 @@ Embeddings as semantic vectors, retrieval-augmented generation, chunking, rerank
 | Generate | online | answer *only* from the sources; cite `[1]`, `[2]`; say "I don't know" when not found |
 | Verify | online | check citations exist and support the claims (optional judge) |
 
-**Chunking — why and how big**
+### Chunking — why and how big
 
 * **Why:** embedding models have input limits; a vector for a whole 50-page document averages away specific facts; smaller chunks let retrieval point at the exact passage and keep prompts short.
 * **Too small** (a sentence): loses context ("it increased by 20%" — what did?). **Too big** (pages): mixes topics, dilutes similarity, wastes context tokens.
@@ -43,9 +45,13 @@ Embeddings as semantic vectors, retrieval-augmented generation, chunking, rerank
 
 **Why reranking helps** — bi-encoder retrieval compresses each chunk into one vector *before* seeing the question, so it's fast but approximate. A cross-encoder reads the question and the chunk *together* and catches fine-grained relevance (negation, specific entities, which chunk actually answers). Retrieve broadly (high recall), then rerank precisely (high precision).
 
-**Context management** — put the most relevant sources first; deduplicate near-identical chunks; stay well within the context window (models use the middle of long contexts less reliably); for long conversations, summarize or rewrite the question into a standalone query before retrieval.
+### Context management
 
-**Common failures** — the answer isn't in the index (ingestion gaps); retrieval misses (vocabulary mismatch → add hybrid search, query rewriting); the right chunk is split in two (chunking); stale or conflicting docs (metadata and dates); permission leaks (filter by ACL at retrieval time, never after); the model ignores the sources (instructions, citation checks).
+Put the most relevant sources first; deduplicate near-identical chunks; stay well within the context window (models use the middle of long contexts less reliably); for long conversations, summarize or rewrite the question into a standalone query before retrieval.
+
+### Common failures
+
+The answer isn't in the index (ingestion gaps); retrieval misses (vocabulary mismatch → add hybrid search, query rewriting); the right chunk is split in two (chunking); stale or conflicting docs (metadata and dates); permission leaks (filter by ACL at retrieval time, never after); the model ignores the sources (instructions, citation checks).
 
 ---
 
@@ -58,7 +64,7 @@ Embeddings as semantic vectors, retrieval-augmented generation, chunking, rerank
 
 ## Diagram
 
-**A RAG pipeline: chunk → embed → index → retrieve → rerank → prompt → generate**
+### A RAG pipeline: chunk → embed → index → retrieve → rerank → prompt → generate
 
 ```mermaid
 flowchart LR
@@ -73,7 +79,7 @@ flowchart LR
     end
 ```
 
-**Embeddings: similar meaning → nearby vectors**
+### Embeddings: similar meaning → nearby vectors
 
 ```
              ● "reset my password"
@@ -85,7 +91,7 @@ flowchart LR
    ● "API rate limits"
 ```
 
-**Chunk size trade-off**
+### Chunk size trade-off
 
 | Chunk size | Example | Problem |
 |---|---|---|
@@ -93,7 +99,7 @@ flowchart LR
 | **good** (a section, ~500 tokens) | "## Q3 pricing change: Enterprise renewals rose 20% after …" | ✓ self-contained, specific |
 | **too big** (whole doc) | 20 topics averaged into one vector | matches everything weakly |
 
-**Retrieve broadly, then rerank precisely**
+### Retrieve broadly, then rerank precisely
 
 ```
  bi-encoder top-8 (fast)             cross-encoder rerank (accurate)
@@ -178,7 +184,7 @@ def answer(question, sources):                     # sources: list of (source_na
 
 ## Mini project
 
-**A RAG pipeline over a set of documents with a vector index.**
+### A RAG pipeline over a set of documents with a vector index
 
 ```mermaid
 flowchart LR
@@ -188,7 +194,7 @@ flowchart LR
     RET & GEN --> M
 ```
 
-**Steps**
+### Steps
 
 1. Ingest a real document set with metadata; idempotent re-ingestion keyed by content hash.
 2. Retrieval: dense top-k plus BM25, fused with Reciprocal Rank Fusion, then a cross-encoder rerank.
@@ -219,7 +225,7 @@ flowchart TB
     CITE --> FB["👍/👎 feedback + logs → eval set"]
 ```
 
-**Steps**
+### Steps
 
 1. **Ingestion service:** connectors for upload and at least one external source; async workers; per-document status (queued → parsed → indexed → failed with reason); re-ingest only changed documents (content hashes).
 2. **Multi-tenancy and permissions:** every chunk carries `tenant_id` and ACL groups; filters are applied *inside* the vector query ([Vol 4 Ch 15](../volume-4-high-level-design/ch15-multi-tenancy.md)).

@@ -10,9 +10,11 @@ Event sourcing and CQRS at the system level — event logs, projections, and rep
 
 **In one sentence:** instead of storing only the current state, you store every change as an immutable event in an ordered log, and many independent "projections" read that log to build whatever query-friendly views each part of the system needs — and can rebuild them at any time by replaying it.
 
-**Mental model — a bank statement.** Your balance isn't the source of truth; the list of transactions is. The balance is just the sum of the list. Anyone can recompute it, and different people can build different summaries from the same list (monthly spending, tax report) without touching the original.
+### Mental model — a bank statement
 
-**Terms**
+Your balance isn't the source of truth; the list of transactions is. The balance is just the sum of the list. Anyone can recompute it, and different people can build different summaries from the same list (monthly spending, tax report) without touching the original.
+
+### Terms
 
 | Term | Meaning |
 |------|---------|
@@ -28,7 +30,7 @@ Event sourcing and CQRS at the system level — event logs, projections, and rep
 
 **Why distribute it?** At system scale, the event log (Kafka, Pulsar, EventStoreDB) becomes the integration backbone: the order service writes events, and billing, shipping, search, analytics, and notifications each maintain their own projections — decoupled, independently scalable, each able to replay.
 
-**Keeping projections consistent**
+### Keeping projections consistent
 
 | Problem | Solution |
 |---------|----------|
@@ -39,7 +41,9 @@ Event sourcing and CQRS at the system level — event logs, projections, and rep
 | Bugs in a projection | fix the code, reset the offset, **replay** into a fresh table, swap |
 | Writing state + publishing events atomically | the **transactional outbox** pattern (see [Vol 4 Ch 12](../volume-4-high-level-design/ch12-event-driven-systems.md)), or make the event store the only write |
 
-**Costs** — more moving parts; eventual consistency everywhere; event schemas become a long-lived public contract; GDPR deletion needs crypto-shredding or tombstones; "current state" queries need projections. Use it where the history *is* the product: finance, orders, audits, workflows, collaboration.
+### Costs
+
+More moving parts; eventual consistency everywhere; event schemas become a long-lived public contract; GDPR deletion needs crypto-shredding or tombstones; "current state" queries need projections. Use it where the history *is* the product: finance, orders, audits, workflows, collaboration.
 
 ---
 
@@ -51,7 +55,7 @@ Event sourcing and CQRS at the system level — event logs, projections, and rep
 
 ## Diagram
 
-**A distributed event log → multiple projections → read models**
+### A distributed event log → multiple projections → read models
 
 ```mermaid
 flowchart LR
@@ -64,7 +68,7 @@ flowchart LR
     R1 --> Q["GET /orders/123"]
 ```
 
-**Folding events into state**
+### Folding events into state
 
 Stream `order-123`:
 
@@ -75,9 +79,9 @@ Stream `order-123`:
 | 3 | `PaymentCaptured` | `{amount: 3500}` | status=paid |
 | 4 | `OrderShipped` | `{carrier: DHL}` | status=shipped |
 
-**state = fold(apply, events, initial={})**
+### state = fold(apply, events, initial={})
 
-**Rebuilding a projection by replay**
+### Rebuilding a projection by replay
 
 ```mermaid
 sequenceDiagram
@@ -169,7 +173,7 @@ def project(conn, batch, partition):
 
 ## Mini project
 
-**A two-service event-sourced flow with a shared log and projections.**
+### A two-service event-sourced flow with a shared log and projections
 
 ```mermaid
 flowchart LR
@@ -182,7 +186,7 @@ flowchart LR
     TOOL["replay CLI: rebuild orders_view from offset 0"] --> PROJ
 ```
 
-**Steps**
+### Steps
 
 1. The order service stores events in a Postgres `events` table with a unique `(stream_id, seq)` constraint (optimistic concurrency).
 2. An outbox relay publishes new events to Kafka/Redpanda, keyed by `order_id`.

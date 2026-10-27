@@ -10,7 +10,7 @@ Strategy, Observer, Command, State, Template Method, Chain of Responsibility, Me
 
 **In one sentence:** behavioral patterns are about *who does what and who tells whom* — swapping algorithms, notifying listeners, turning requests into objects, changing behavior with state, and passing work along a chain — so objects can collaborate without being tightly wired together.
 
-**Mental model — running a restaurant.**
+### Mental model — running a restaurant
 
 * **Strategy** — the chef picks a cooking method (grill, bake, fry) for the same dish.
 * **Observer** — the kitchen bell: everyone who cares hears "order ready".
@@ -19,7 +19,7 @@ Strategy, Observer, Command, State, Template Method, Chain of Responsibility, Me
 * **Chain of Responsibility** — a complaint goes waiter → manager → owner until someone handles it.
 * **Mediator** — the head waiter coordinates so staff don't all shout at each other.
 
-**The nine patterns**
+### The nine patterns
 
 | Pattern | Intent | Everyday use |
 |---------|--------|--------------|
@@ -33,11 +33,17 @@ Strategy, Observer, Command, State, Template Method, Chain of Responsibility, Me
 | **Memento** | capture and restore state without exposing internals | undo snapshots, checkpoints |
 | **Visitor** | add operations over an object structure without changing its classes | compilers walking ASTs, exporters, linters |
 
-**Strategy vs State** — structurally identical (a context delegates to an interface). *Strategy*: the client chooses the algorithm, and strategies don't know each other. *State*: the object switches its own state object as events happen, and states usually know which state comes next.
+### Strategy vs State
 
-**Observer vs pub/sub** — Observer: subscribers register directly with the subject, in process, usually synchronously; the subject knows its observer list. Pub/sub: publishers and subscribers only know a *topic* on a broker in between (Kafka, Redis, SNS); fully decoupled, often async and cross-process.
+Structurally identical (a context delegates to an interface). *Strategy*: the client chooses the algorithm, and strategies don't know each other. *State*: the object switches its own state object as events happen, and states usually know which state comes next.
 
-**In Python, many patterns shrink** — a Strategy can be just a function passed as an argument; Command can be a callable plus arguments; Template Method can be a higher-order function. Use classes when the "strategy" has state or several methods.
+### Observer vs pub/sub
+
+Observer: subscribers register directly with the subject, in process, usually synchronously; the subject knows its observer list. Pub/sub: publishers and subscribers only know a *topic* on a broker in between (Kafka, Redis, SNS); fully decoupled, often async and cross-process.
+
+### In Python, many patterns shrink
+
+A Strategy can be just a function passed as an argument; Command can be a callable plus arguments; Template Method can be a higher-order function. Use classes when the "strategy" has state or several methods.
 
 ---
 
@@ -49,7 +55,7 @@ Strategy, Observer, Command, State, Template Method, Chain of Responsibility, Me
 
 ## Diagram
 
-**Strategy (interchangeable algorithms)**
+### Strategy (interchangeable algorithms)
 
 ```mermaid
 classDiagram
@@ -70,7 +76,7 @@ classDiagram
     PricingStrategy <|.. MemberPricing
 ```
 
-**Observer (publish/subscribe inside one process)**
+### Observer (publish/subscribe inside one process)
 
 ```mermaid
 sequenceDiagram
@@ -85,7 +91,7 @@ sequenceDiagram
     O->>A: notify("paid", order)
 ```
 
-**State: an order's lifecycle**
+### State: an order's lifecycle
 
 ```mermaid
 stateDiagram-v2
@@ -108,7 +114,9 @@ flowchart LR
     val -. "422" .-> stop
 ```
 
-**Chain of Responsibility (HTTP middleware):** any handler can stop the chain and respond.
+### Chain of Responsibility (HTTP middleware)
+
+Any handler can stop the chain and respond.
 
 ---
 
@@ -229,7 +237,7 @@ print(cart)                                                 # ['pen']
 
 ## Mini project
 
-**An event notification system (observer) with pluggable strategies.**
+### An event notification system (observer) with pluggable strategies
 
 ```mermaid
 flowchart LR
@@ -241,7 +249,7 @@ flowchart LR
     CMD["each delivery is a Command<br/>(retryable, loggable)"] -.-> OUT
 ```
 
-**Steps**
+### Steps
 
 1. A `NotificationHub` where handlers subscribe to event names (Observer).
 2. Pluggable strategies: routing (who), channel (how), throttle (how often), each an interface with 2–3 implementations.

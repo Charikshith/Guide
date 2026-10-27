@@ -10,11 +10,13 @@ Continuous integration (validate every change) and delivery/deployment (ship saf
 
 **In one sentence:** CI/CD is the team's safety net and conveyor belt in one — every change is automatically built and checked, and every passing change can move to production through the same repeatable, versioned pipeline, so shipping becomes boring.
 
-**Mental model — a car factory line.** Every car (commit) passes the same stations in the same order: frame (build), inspection (tests), paint check (lint), road test (staging), then delivery (deploy). The line itself is designed in a blueprint that is versioned and reviewed (pipeline as code). Nobody hand-builds a car in the parking lot.
+### Mental model — a car factory line
+
+Every car (commit) passes the same stations in the same order: frame (build), inspection (tests), paint check (lint), road test (staging), then delivery (deploy). The line itself is designed in a blueprint that is versioned and reviewed (pipeline as code). Nobody hand-builds a car in the parking lot.
 
 This chapter is about the **practice and strategy** across a team. For the GitHub Actions mechanics (YAML, caching, environments), see [Vol 1 Ch 57](../volume-1-cs-foundations/ch57-ci-cd-and-github-actions.md).
 
-**Principles**
+### Principles
 
 | Principle | Means |
 |-----------|-------|
@@ -28,7 +30,9 @@ This chapter is about the **practice and strategy** across a team. For the GitHu
 | Deploys are **repeatable and reversible** | one command/button; automatic rollback on bad health |
 | Everything auditable | who deployed what, when, from which commit |
 
-**DORA metrics** — the four numbers that measure delivery performance:
+### DORA metrics
+
+The four numbers that measure delivery performance:
 
 | Metric | Elite teams (roughly) |
 |--------|-----------------------|
@@ -39,7 +43,7 @@ This chapter is about the **practice and strategy** across a team. For the GitHu
 
 Speed and stability *improve together* with good CI/CD — small changes are easier to test, review, and roll back.
 
-**Pipeline stages and what belongs in each**
+### Pipeline stages and what belongs in each
 
 | Stage | Contents | Budget |
 |-------|----------|-------:|
@@ -50,7 +54,9 @@ Speed and stability *improve together* with good CI/CD — small changes are eas
 | Production deploy | progressive rollout (canary/blue-green, [Ch 7](ch07-packaging-and-release-engineering.md)), health checks, automatic rollback | minutes to hours |
 | Post-deploy verify | SLO watch, error budget, alerting | continuous |
 
-**Making CI fast** — caching, parallel jobs, test sharding, affected-only builds ([Ch 3](ch03-monorepos.md)), cheap checks first, flaky-test quarantine ([Ch 5](ch05-the-testing-pyramid-and-test-strategy.md)), and bigger runners for heavy builds.
+### Making CI fast
+
+Caching, parallel jobs, test sharding, affected-only builds ([Ch 3](ch03-monorepos.md)), cheap checks first, flaky-test quarantine ([Ch 5](ch05-the-testing-pyramid-and-test-strategy.md)), and bigger runners for heavy builds.
 
 ---
 
@@ -62,7 +68,7 @@ Speed and stability *improve together* with good CI/CD — small changes are eas
 
 ## Diagram
 
-**A pipeline: commit → build → test → lint → stage → deploy → verify**
+### A pipeline: commit → build → test → lint → stage → deploy → verify
 
 ```mermaid
 flowchart LR
@@ -77,7 +83,7 @@ flowchart LR
     V -- "bad" --> RB["automatic rollback"]
 ```
 
-**Build once, promote everywhere**
+### Build once, promote everywhere
 
 ```mermaid
 flowchart LR
@@ -88,7 +94,7 @@ flowchart LR
 
 ✗ **Never rebuild for prod**: a rebuild may pull different dependencies or base images.
 
-**Feedback time is the key metric**
+### Feedback time is the key metric
 
 ```mermaid
 flowchart LR
@@ -177,7 +183,7 @@ audit:       ; uv run pip-audit && gitleaks detect --no-banner
 
 ## Mini project
 
-**Full CI/CD for a toy service: automated tests + deploy to a staging environment.**
+### Full CI/CD for a toy service: automated tests + deploy to a staging environment
 
 ```mermaid
 flowchart LR
@@ -187,7 +193,7 @@ flowchart LR
     SMK --> MET["record DORA metrics:<br/>lead time, deploy count,<br/>failures, restore time"]
 ```
 
-**Steps**
+### Steps
 
 1. A small service (reuse an earlier chapter's API) with unit and integration tests.
 2. The pipeline above: PR checks, a merge queue or required up-to-date branches, and artifact build on main.

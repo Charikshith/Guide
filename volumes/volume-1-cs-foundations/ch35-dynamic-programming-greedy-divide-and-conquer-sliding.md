@@ -10,14 +10,14 @@ Overlapping subproblems + memoization (DP), local-optimal choices (greedy), spli
 
 **In one sentence:** these are five recipes for turning an obvious-but-slow brute force into a fast algorithm — remember answers you already computed (DP), commit to the best-looking choice when that's provably safe (greedy), split the problem in half (divide & conquer), or move two indices through the data instead of trying every pair (window / two pointers).
 
-**Mental model.**
+### Mental model
 
 * **DP** — a notebook: before solving a subproblem, check whether you already wrote down its answer.
 * **Greedy** — always grab the biggest coin that fits. Works for euros, fails for some odd coin systems.
 * **Divide & conquer** — split a stack of exams between two helpers, then merge their sorted piles.
 * **Sliding window** — a magnifying glass sliding along a line of text: add the character entering on the right, drop the one leaving on the left.
 
-**Recognizing the pattern**
+### Recognizing the pattern
 
 | Clue in the problem | Try |
 |---------------------|-----|
@@ -27,7 +27,7 @@ Overlapping subproblems + memoization (DP), local-optimal choices (greedy), spli
 | contiguous subarray/substring with a constraint (sum ≤ k, no repeats) | **sliding window** |
 | sorted array, pairs/triples meeting a target, partitioning in place | **two pointers** |
 
-**DP in four steps**
+### DP in four steps
 
 1. **State:** what defines a subproblem? e.g. `best(i, cap)` = best value using items `i..n` with capacity `cap`.
 2. **Transition:** how does a state depend on smaller ones? `best(i, cap) = max(skip, take)`.
@@ -36,7 +36,9 @@ Overlapping subproblems + memoization (DP), local-optimal choices (greedy), spli
 
 Time = number of states × work per state. Space can often shrink to one or two rows.
 
-**Greedy needs a proof.** The usual one is an *exchange argument*: take any optimal solution, swap in the greedy choice, and show it's no worse. Example that works: activity selection by earliest finish time. Example that fails: coins {1, 3, 4} for amount 6 — greedy gives 4+1+1 (3 coins), optimal is 3+3 (2 coins).
+### Greedy needs a proof
+
+The usual one is an *exchange argument*: take any optimal solution, swap in the greedy choice, and show it's no worse. Example that works: activity selection by earliest finish time. Example that fails: coins {1, 3, 4} for amount 6 — greedy gives 4+1+1 (3 coins), optimal is 3+3 (2 coins).
 
 ---
 
@@ -64,7 +66,9 @@ graph TD
 
 Red nodes are repeats. With a memo, each `fib(k)` is computed once: O(n) instead of O(φⁿ).
 
-**A DP memo table for 0/1 knapsack** — items (weight, value): A(1, 1), B(3, 4), C(4, 5), D(5, 7); capacity 7.
+### A DP memo table for 0/1 knapsack
+
+Items (weight, value): A(1, 1), B(3, 4), C(4, 5), D(5, 7); capacity 7.
 
 ```
  dp[i][c] = best value using the first i items with capacity c
@@ -79,7 +83,9 @@ Red nodes are repeats. With a memo, each `fib(k)` is computed once: O(n) instead
              (skip the item)  (take it)
 ```
 
-**A sliding window shrinking and expanding** — longest substring without repeats in `"abcabcbb"`
+### A sliding window shrinking and expanding
+
+Longest substring without repeats in `"abcabcbb"`
 
 String `a b c a b c b b`:
 
@@ -94,7 +100,9 @@ String `a b c a b c b b`:
 
 Each index enters and leaves the window at most once → **O(n)**.
 
-**Two pointers on a sorted array** — find a pair summing to 10 in `[1, 2, 4, 6, 8, 9]`
+### Two pointers on a sorted array
+
+Find a pair summing to 10 in `[1, 2, 4, 6, 8, 9]`
 
 ```
  L=1, R=9  → 10 ✓ found in one step
@@ -180,7 +188,7 @@ print(max_sum_window([2, 1, 5, 1, 3, 2], 3), longest_unique("abcabcbb"), coin_ch
 
 ## Mini project
 
-**A coin-change solver and a longest-substring tool with visual step output.**
+### A coin-change solver and a longest-substring tool with visual step output
 
 ```mermaid
 flowchart LR
@@ -195,7 +203,7 @@ flowchart LR
     end
 ```
 
-**Steps**
+### Steps
 
 1. Coin change: DP for the minimum count, plus back-pointers to print the coins used.
 2. Run greedy alongside; search small coin systems for inputs where greedy loses, and print them.

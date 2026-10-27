@@ -10,14 +10,14 @@ Caching (Redis), full-text search (Elasticsearch), graphs (Neo4j), and vector si
 
 **In one sentence:** specialized databases each make one kind of question fast — Redis answers "what's the value for this key?" in microseconds from memory, Elasticsearch answers "which documents contain these words, best first?", Neo4j answers "who is connected to whom, through what?", and vector databases answer "what is most *similar in meaning* to this?".
 
-**Mental model.**
+### Mental model
 
 * **Redis** — a whiteboard next to your desk: tiny, instant, and wiped if you're careless.
 * **Elasticsearch** — the index at the back of a book: word → pages, with the best pages first.
 * **Neo4j** — a string-and-pins detective board: follow the strings.
 * **Vector DB** — a map where similar ideas sit close together; you ask "what's near this point?".
 
-**Redis data structures**
+### Redis data structures
 
 | Type | Commands | Use |
 |------|----------|-----|
@@ -30,7 +30,7 @@ Caching (Redis), full-text search (Elasticsearch), graphs (Neo4j), and vector si
 | HyperLogLog | `PFADD`, `PFCOUNT` | approximate unique counts in 12 KB |
 | Bitmap / geo | `SETBIT`, `GEOSEARCH` | flags per user, "stores near me" |
 
-**Redis persistence vs pure cache**
+### Redis persistence vs pure cache
 
 | Mode | Durability | Trade-off |
 |------|-----------|-----------|
@@ -40,7 +40,7 @@ Caching (Redis), full-text search (Elasticsearch), graphs (Neo4j), and vector si
 | RDB + AOF | best of both | common for Redis as a primary store |
 | Replication + Sentinel/Cluster | survives node loss | async replication can still lose recent writes |
 
-**Elasticsearch / OpenSearch — the inverted index**
+### Elasticsearch / OpenSearch — the inverted index
 
 | Step | Does |
 |------|------|
@@ -49,9 +49,13 @@ Caching (Redis), full-text search (Elasticsearch), graphs (Neo4j), and vector si
 | Scoring | **BM25**: rare terms and short fields count more |
 | Scaling | an index is split into shards (with replicas) across nodes |
 
-**Graph databases (Neo4j)** — nodes and relationships are stored as direct pointers ("index-free adjacency"), so following a hop costs O(1) instead of a join. The query language is Cypher, with ASCII-art patterns: `(a:Person)-[:FRIEND]->(b)`. They win when queries are *many hops deep* or the path itself is the answer (recommendations, fraud rings, access graphs, knowledge graphs).
+### Graph databases (Neo4j)
 
-**Vector databases** — store embeddings (vectors from an ML model, see [Vol 0 Ch 9](../volume-0-math/ch09-linear-algebra-for-ai.md)) and find nearest neighbors by cosine or dot-product similarity. Exact search is O(n·d), so they use **approximate nearest neighbor (ANN)** indexes such as **HNSW**, a layered "small-world" graph searched greedily, in about O(log n). Examples: Qdrant, Milvus, Weaviate, pgvector (Postgres), and Elasticsearch/OpenSearch k-NN. More in [Vol 5 Ch 10](../volume-5-ai-systems/ch10-vector-databases.md).
+Nodes and relationships are stored as direct pointers ("index-free adjacency"), so following a hop costs O(1) instead of a join. The query language is Cypher, with ASCII-art patterns: `(a:Person)-[:FRIEND]->(b)`. They win when queries are *many hops deep* or the path itself is the answer (recommendations, fraud rings, access graphs, knowledge graphs).
+
+### Vector databases
+
+Store embeddings (vectors from an ML model, see [Vol 0 Ch 9](../volume-0-math/ch09-linear-algebra-for-ai.md)) and find nearest neighbors by cosine or dot-product similarity. Exact search is O(n·d), so they use **approximate nearest neighbor (ANN)** indexes such as **HNSW**, a layered "small-world" graph searched greedily, in about O(log n). Examples: Qdrant, Milvus, Weaviate, pgvector (Postgres), and Elasticsearch/OpenSearch k-NN. More in [Vol 5 Ch 10](../volume-5-ai-systems/ch10-vector-databases.md).
 
 ---
 
@@ -64,7 +68,7 @@ Caching (Redis), full-text search (Elasticsearch), graphs (Neo4j), and vector si
 
 ## Diagram
 
-**An inverted index**
+### An inverted index
 
 | doc | text |
 |---|---|
@@ -85,7 +89,7 @@ Caching (Redis), full-text search (Elasticsearch), graphs (Neo4j), and vector si
 
 **Query** `"red shoe"`: red → {1, 3}, shoe → {1, 2}. BM25 ranks doc 1 first (it matches both terms), then 2 and 3.
 
-**A graph of nodes and edges: friends-of-friends**
+### A graph of nodes and edges: friends-of-friends
 
 ```mermaid
 graph LR
@@ -101,7 +105,7 @@ graph LR
 
 Ada's friends-of-friends who aren't already friends: Dee (via Bob and Cy) and Eve.
 
-**Vector nearest neighbors and an HNSW graph**
+### Vector nearest neighbors and an HNSW graph
 
 <div class="fig">
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 820 300" role="img" aria-label="Embeddings projected to 2-D with a query near canoe, kayak and paddle; HNSW searches layers from the sparse top down to all points" style="width:100%;max-width:820px;height:auto;font-family:inherit"><defs><marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="context-stroke"/></marker></defs><text x="190" y="24" font-size="13.5" text-anchor="middle" fill="var(--text)" font-weight="700">2-D projection of embeddings</text><text x="620" y="24" font-size="13.5" text-anchor="middle" fill="var(--text)" font-weight="700">HNSW layers (search from the top down)</text><circle cx="190" cy="70" r="7" fill="var(--primary)" fill-opacity="1" stroke="var(--primary)" stroke-width="1.6"/><text x="202" y="74" font-size="12.5" text-anchor="start" fill="var(--text)">"kayak"</text><circle cx="140" cy="100" r="7" fill="var(--primary)" fill-opacity="1" stroke="var(--primary)" stroke-width="1.6"/><text x="152" y="104" font-size="12.5" text-anchor="start" fill="var(--text)">"canoe"</text><circle cx="250" cy="100" r="7" fill="var(--primary)" fill-opacity="1" stroke="var(--primary)" stroke-width="1.6"/><text x="262" y="104" font-size="12.5" text-anchor="start" fill="var(--text)">"paddle"</text><circle cx="160" cy="215" r="7" fill="var(--danger)" fill-opacity="1" stroke="var(--danger)" stroke-width="1.6"/><text x="172" y="219" font-size="12.5" text-anchor="start" fill="var(--text)">"invoice"</text><circle cx="270" cy="235" r="7" fill="var(--danger)" fill-opacity="1" stroke="var(--danger)" stroke-width="1.6"/><text x="282" y="239" font-size="12.5" text-anchor="start" fill="var(--text)">"tax"</text><text x="200" y="150" font-size="18" text-anchor="middle" fill="var(--accent)" font-weight="700">✚</text><text x="222" y="152" font-size="12.5" text-anchor="start" fill="var(--accent)" font-weight="600">query: "boat for rivers"</text><ellipse cx="190" cy="90" rx="90" ry="38" fill="var(--accent)" fill-opacity=".06" stroke="var(--accent)" stroke-width="1.6" stroke-dasharray="4 3"/><text x="190" y="280" font-size="12.5" text-anchor="middle" fill="var(--text-muted)" font-weight="600">nearest 3 by cosine: canoe, kayak, paddle</text><line x1="440.0" y1="70" x2="610.0" y2="70" stroke="var(--text-muted)" stroke-width="1.6"/><line x1="610.0" y1="70" x2="780.0" y2="70" stroke="var(--text-muted)" stroke-width="1.6"/><circle cx="440.0" cy="70" r="6" fill="#8b5cf6" fill-opacity="1" stroke="#8b5cf6" stroke-width="1.6"/><circle cx="610.0" cy="70" r="6" fill="#8b5cf6" fill-opacity="1" stroke="#8b5cf6" stroke-width="1.6"/><circle cx="780.0" cy="70" r="6" fill="#8b5cf6" fill-opacity="1" stroke="#8b5cf6" stroke-width="1.6"/><text x="440" y="54" font-size="12" text-anchor="start" fill="var(--text-muted)">layer 2: few long links</text><line x1="440.0" y1="140" x2="508.0" y2="140" stroke="var(--text-muted)" stroke-width="1.6"/><line x1="508.0" y1="140" x2="576.0" y2="140" stroke="var(--text-muted)" stroke-width="1.6"/><line x1="576.0" y1="140" x2="644.0" y2="140" stroke="var(--text-muted)" stroke-width="1.6"/><line x1="644.0" y1="140" x2="712.0" y2="140" stroke="var(--text-muted)" stroke-width="1.6"/><line x1="712.0" y1="140" x2="780.0" y2="140" stroke="var(--text-muted)" stroke-width="1.6"/><circle cx="440.0" cy="140" r="6" fill="var(--primary)" fill-opacity="1" stroke="var(--primary)" stroke-width="1.6"/><circle cx="508.0" cy="140" r="6" fill="var(--primary)" fill-opacity="1" stroke="var(--primary)" stroke-width="1.6"/><circle cx="576.0" cy="140" r="6" fill="var(--primary)" fill-opacity="1" stroke="var(--primary)" stroke-width="1.6"/><circle cx="644.0" cy="140" r="6" fill="var(--primary)" fill-opacity="1" stroke="var(--primary)" stroke-width="1.6"/><circle cx="712.0" cy="140" r="6" fill="var(--primary)" fill-opacity="1" stroke="var(--primary)" stroke-width="1.6"/><circle cx="780.0" cy="140" r="6" fill="var(--primary)" fill-opacity="1" stroke="var(--primary)" stroke-width="1.6"/><text x="440" y="124" font-size="12" text-anchor="start" fill="var(--text-muted)">layer 1</text><line x1="440.0" y1="210" x2="474.0" y2="210" stroke="var(--text-muted)" stroke-width="1.6"/><line x1="474.0" y1="210" x2="508.0" y2="210" stroke="var(--text-muted)" stroke-width="1.6"/><line x1="508.0" y1="210" x2="542.0" y2="210" stroke="var(--text-muted)" stroke-width="1.6"/><line x1="542.0" y1="210" x2="576.0" y2="210" stroke="var(--text-muted)" stroke-width="1.6"/><line x1="576.0" y1="210" x2="610.0" y2="210" stroke="var(--text-muted)" stroke-width="1.6"/><line x1="610.0" y1="210" x2="644.0" y2="210" stroke="var(--text-muted)" stroke-width="1.6"/><line x1="644.0" y1="210" x2="678.0" y2="210" stroke="var(--text-muted)" stroke-width="1.6"/><line x1="678.0" y1="210" x2="712.0" y2="210" stroke="var(--text-muted)" stroke-width="1.6"/><line x1="712.0" y1="210" x2="746.0" y2="210" stroke="var(--text-muted)" stroke-width="1.6"/><line x1="746.0" y1="210" x2="780.0" y2="210" stroke="var(--text-muted)" stroke-width="1.6"/><circle cx="440.0" cy="210" r="6" fill="var(--success)" fill-opacity="1" stroke="var(--success)" stroke-width="1.6"/><circle cx="474.0" cy="210" r="6" fill="var(--success)" fill-opacity="1" stroke="var(--success)" stroke-width="1.6"/><circle cx="508.0" cy="210" r="6" fill="var(--success)" fill-opacity="1" stroke="var(--success)" stroke-width="1.6"/><circle cx="542.0" cy="210" r="6" fill="var(--success)" fill-opacity="1" stroke="var(--success)" stroke-width="1.6"/><circle cx="576.0" cy="210" r="6" fill="var(--success)" fill-opacity="1" stroke="var(--success)" stroke-width="1.6"/><circle cx="610.0" cy="210" r="6" fill="var(--success)" fill-opacity="1" stroke="var(--success)" stroke-width="1.6"/><circle cx="644.0" cy="210" r="6" fill="var(--success)" fill-opacity="1" stroke="var(--success)" stroke-width="1.6"/><circle cx="678.0" cy="210" r="6" fill="var(--success)" fill-opacity="1" stroke="var(--success)" stroke-width="1.6"/><circle cx="712.0" cy="210" r="6" fill="var(--success)" fill-opacity="1" stroke="var(--success)" stroke-width="1.6"/><circle cx="746.0" cy="210" r="6" fill="var(--success)" fill-opacity="1" stroke="var(--success)" stroke-width="1.6"/><circle cx="780.0" cy="210" r="6" fill="var(--success)" fill-opacity="1" stroke="var(--success)" stroke-width="1.6"/><text x="440" y="194" font-size="12" text-anchor="start" fill="var(--text-muted)">layer 0: all points</text><text x="610" y="262" font-size="12.5" text-anchor="middle" fill="var(--text)" font-weight="600">greedy: jump far on top, refine below</text></svg>
@@ -185,7 +189,7 @@ print(hits[0].payload)                         # {'t': 'canoe'}
 
 ## Mini project
 
-**A hybrid search endpoint combining full-text + vector ranking.**
+### A hybrid search endpoint combining full-text + vector ranking
 
 ```mermaid
 flowchart LR
@@ -195,7 +199,7 @@ flowchart LR
     TOP --> CACHE[("Redis: cache query → results, 5 min")]
 ```
 
-**Steps**
+### Steps
 
 1. Index ~5k product descriptions in both a keyword engine and a vector store.
 2. `/search` runs both in parallel and merges them with Reciprocal Rank Fusion.

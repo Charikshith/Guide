@@ -10,9 +10,11 @@ ASCII, Unicode, UTF-8 vs UTF-16 vs UTF-32; encoding/decoding; binary formats: Pr
 
 **In one sentence:** computers store only bytes, so text needs an agreed mapping from characters to numbers (Unicode) and from numbers to bytes (UTF-8), and structured data can skip text entirely with compact binary formats.
 
-**Mental model — two dictionaries.** Unicode is a giant phone book giving every character a number (a *code point*): `A` = U+0041, `é` = U+00E9, `😀` = U+1F600. An *encoding* such as UTF-8 is the rule for writing that number as bytes. Decoding with the wrong rule gives mojibake: `cafÃ©` instead of `café`.
+### Mental model — two dictionaries
 
-**Encodings**
+Unicode is a giant phone book giving every character a number (a *code point*): `A` = U+0041, `é` = U+00E9, `😀` = U+1F600. An *encoding* such as UTF-8 is the rule for writing that number as bytes. Decoding with the wrong rule gives mojibake: `cafÃ©` instead of `café`.
+
+### Encodings
 
 | Encoding | Bytes per character | ASCII-compatible? | Used by |
 |----------|--------------------:|:-:|---------|
@@ -21,7 +23,7 @@ ASCII, Unicode, UTF-8 vs UTF-16 vs UTF-32; encoding/decoding; binary formats: Pr
 | UTF-16 | 2 or 4 (surrogate pairs) | no | Windows APIs, Java, JavaScript strings |
 | UTF-32 | always 4 | no | internal fixed-width processing |
 
-**UTF-8 layout**
+### UTF-8 layout
 
 | Code point range | Bytes | Bit pattern |
 |------------------|:-:|-------------|
@@ -34,7 +36,7 @@ The leading bits say how long a sequence is, and continuation bytes always start
 
 **"Length" has four meanings** for `"é👍🏽"`: bytes in UTF-8 (10), UTF-16 code units (5), code points (3, or 4 if `é` is stored as `e` + a combining accent), and user-visible characters, called *grapheme clusters* (2).
 
-**Binary serialization formats**
+### Binary serialization formats
 
 | Format | Schema | Self-describing? | Strengths |
 |--------|--------|:-:|-----------|
@@ -54,7 +56,7 @@ The leading bits say how long a sequence is, and continuation bytes always start
 
 ## Diagram
 
-**UTF-8 multibyte encoding of `é` (U+00E9)**
+### UTF-8 multibyte encoding of `é` (U+00E9)
 
 | Step | Value |
 |---|---|
@@ -66,7 +68,7 @@ The leading bits say how long a sequence is, and continuation bytes always start
 
 So `"é".encode("utf-8") == b"\xc3\xa9"`.
 
-**Same text, three encodings**
+### Same text, three encodings
 
 ```
  text:     A        é            😀
@@ -75,7 +77,7 @@ So `"é".encode("utf-8") == b"\xc3\xa9"`.
  UTF-32:   00000041 000000E9     0001F600
 ```
 
-**Protobuf varint for field `id = 300`**
+### Protobuf varint for field `id = 300`
 
 | Step | Value |
 |---|---|
@@ -149,7 +151,7 @@ message User {
 
 ## Mini project
 
-**A tiny Protobuf-like varint encoder/decoder.**
+### A tiny Protobuf-like varint encoder/decoder
 
 ```mermaid
 flowchart LR
@@ -157,7 +159,7 @@ flowchart LR
     MSG["{1: 300, 2: 'Ada'}"] --> ENC["encode_message<br/>tag + varint / length-delimited"] --> WIRE[bytes]
 ```
 
-**Steps**
+### Steps
 
 1. `encode_varint(n)`: emit 7 bits at a time with the high bit as the "more" flag.
 2. `decode_varint(buf, pos)`: return `(value, new_pos)`; reject varints longer than 10 bytes.

@@ -10,9 +10,11 @@ A collection-like abstraction over persistence; mapping domain objects to storag
 
 **In one sentence:** a repository lets domain code treat stored aggregates like an in-memory collection (`orders.get(id)`, `orders.add(order)`), a data mapper translates between domain objects and table rows so neither knows the other's shape, and a unit of work groups all changes of one business operation into a single commit.
 
-**Mental model — a library's front desk.** You ask the librarian for "book 42" and get the book; you hand it back and it's shelved. You don't know whether it lives in the basement, a warehouse, or on microfilm (repository). The cataloguer translates between the physical book and the catalogue card (data mapper). When you check out three books at once, either all three are recorded or none are (unit of work).
+### Mental model — a library's front desk
 
-**Patterns compared**
+You ask the librarian for "book 42" and get the book; you hand it back and it's shelved. You don't know whether it lives in the basement, a warehouse, or on microfilm (repository). The cataloguer translates between the physical book and the catalogue card (data mapper). When you check out three books at once, either all three are recorded or none are (unit of work).
+
+### Patterns compared
 
 | Pattern | Shape | Who knows SQL? | Good for |
 |---------|-------|----------------|----------|
@@ -22,9 +24,11 @@ A collection-like abstraction over persistence; mapping domain objects to storag
 | **Data Mapper** | a separate object maps domain ↔ rows | the mapper | keeping domain classes plain (SQLAlchemy's imperative mapping, MyBatis) |
 | **Unit of Work** | tracks changed objects; commits them in one transaction | the UoW | multi-aggregate operations, consistency |
 
-**Repository vs DAO** — a DAO is organized around *tables* and exposes data-access operations; a repository is organized around *aggregates* and speaks the domain language, returning fully built domain objects. A repository may use several DAOs or tables inside.
+### Repository vs DAO
 
-**Rules for repositories**
+A DAO is organized around *tables* and exposes data-access operations; a repository is organized around *aggregates* and speaks the domain language, returning fully built domain objects. A repository may use several DAOs or tables inside.
+
+### Rules for repositories
 
 * **One repository per aggregate root** — `OrderRepository`, not `OrderLineRepository`.
 * Load and save the **whole aggregate**, so invariants hold.
@@ -32,7 +36,9 @@ A collection-like abstraction over persistence; mapping domain objects to storag
 * Query methods use domain language (`overdue_loans(today)`), not generic SQL builders.
 * Complex read-only queries for screens/reports can bypass repositories and use a query service or read model (CQRS, [Ch 12](ch12-event-bus-cqrs-and-event-sourcing.md)).
 
-**Unit of Work** — begin → load aggregates through repositories → change them → **commit once** (or roll back everything). It also collects domain events to publish after commit, and often gives an *identity map* (the same row loaded twice returns the same object).
+### Unit of Work
+
+Begin → load aggregates through repositories → change them → **commit once** (or roll back everything). It also collects domain events to publish after commit, and often gives an *identity map* (the same row loaded twice returns the same object).
 
 **Why keep persistence out of the domain?** Domain tests run without a database; storage can change (SQL → document store) without touching business rules; the domain model is designed for behavior, not for table layout; and ORM concerns (lazy loading, sessions) don't leak into business logic.
 
@@ -46,7 +52,7 @@ A collection-like abstraction over persistence; mapping domain objects to storag
 
 ## Diagram
 
-**A repository interface between the domain and the data mapper/ORM**
+### A repository interface between the domain and the data mapper/ORM
 
 ```mermaid
 flowchart LR
@@ -58,9 +64,9 @@ flowchart LR
     MAP --> DB[("Postgres")]
 ```
 
-**Mapping one aggregate to two tables**
+### Mapping one aggregate to two tables
 
-**Domain object**
+### Domain object
 
 ```python
 Order(id="o-1", customer="c-7", status="placed",
@@ -68,9 +74,9 @@ Order(id="o-1", customer="c-7", status="placed",
              OrderLine(pad, 1, €4.00)])
 ```
 
-**⇅ mapper**
+### ⇅ mapper
 
-**Tables**
+### Tables
 
 `orders`
 
@@ -85,7 +91,7 @@ Order(id="o-1", customer="c-7", status="placed",
 | o-1 | pen | 2 | 150 |
 | o-1 | pad | 1 | 400 |
 
-**Unit of work: all or nothing**
+### Unit of work: all or nothing
 
 ```mermaid
 sequenceDiagram
@@ -219,7 +225,7 @@ flowchart LR
     UT["use-case tests: FakeUnitOfWork only"] --> UC
 ```
 
-**Steps**
+### Steps
 
 1. Use the `Order` aggregate from [Ch 10](ch10-domain-driven-design-tactical.md) unchanged (no ORM base class).
 2. Map it with SQLAlchemy's imperative mapping (`registry.map_imperatively`), so the domain classes stay plain.

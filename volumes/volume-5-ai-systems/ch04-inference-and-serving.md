@@ -10,16 +10,20 @@ Autoregressive decoding, KV cache, batching, sampling (temperature/top-p/top-k),
 
 **In one sentence:** an LLM generates text one token at a time, each step feeding everything so far back in; serving it well means caching past work (the KV cache), choosing each token with the right sampling rule, and batching many users' requests together so the expensive GPU stays busy — while still answering each user fast.
 
-**Mental model — a storyteller who can't skip ahead.** They say one word, then re-read the story so far to pick the next. The KV cache is their notes on everything already said, so they don't re-read the whole story from scratch each time. Batching is telling 64 stories at once, one word per story per breath. Sampling is how adventurous the storyteller is: always the most obvious next word (greedy), or sometimes a surprising one (temperature).
+### Mental model — a storyteller who can't skip ahead
 
-**Two phases of generation**
+They say one word, then re-read the story so far to pick the next. The KV cache is their notes on everything already said, so they don't re-read the whole story from scratch each time. Batching is telling 64 stories at once, one word per story per breath. Sampling is how adventurous the storyteller is: always the most obvious next word (greedy), or sometimes a surprising one (temperature).
+
+### Two phases of generation
 
 | Phase | What happens | Bound by | Metric |
 |-------|--------------|----------|--------|
 | **Prefill** | process the whole prompt in one parallel forward pass; fill the KV cache | compute (big matrix multiplies) | **TTFT** — time to first token |
 | **Decode** | one forward pass per new token, reusing the cache | **memory bandwidth** (reading all weights + the KV cache for each token) | **TPOT / ITL** — time per output token; tokens/s |
 
-**The KV cache** — in attention, each new token needs the keys and values of *all previous* tokens. Without a cache, generating token t recomputes K and V for tokens 1…t−1 every step (total O(n²) extra work). With a cache, each step computes K, V only for the new token and appends them. The price is memory:
+### The KV cache
+
+In attention, each new token needs the keys and values of *all previous* tokens. Without a cache, generating token t recomputes K and V for tokens 1…t−1 every step (total O(n²) extra work). With a cache, each step computes K, V only for the new token and appends them. The price is memory:
 
 ```
  KV bytes per token = 2 (K and V) × layers × kv_heads × head_dim × bytes_per_value
@@ -27,7 +31,7 @@ Autoregressive decoding, KV cache, batching, sampling (temperature/top-p/top-k),
  → a 4,096-token context ≈ 2.1 GB per sequence. Grouped-query attention (8 KV heads) cuts it 4×.
 ```
 
-**Sampling**
+### Sampling
 
 | Strategy | Rule | Effect |
 |----------|------|--------|
@@ -41,7 +45,7 @@ Autoregressive decoding, KV cache, batching, sampling (temperature/top-p/top-k),
 
 With logits `[2.0, 1.0, 0.1]`: T = 0.5 → `[0.864, 0.117, 0.019]`; T = 1 → `[0.659, 0.242, 0.099]`; T = 2 → `[0.502, 0.304, 0.194]`.
 
-**Batching**
+### Batching
 
 | Kind | How | Problem |
 |------|-----|---------|
@@ -52,7 +56,9 @@ With logits `[2.0, 1.0, 0.1]`: T = 0.5 → `[0.864, 0.117, 0.019]`; T = 1 → `[
 
 Other speedups: prefix caching (reuse the KV cache of a shared system prompt), speculative decoding (a small draft model proposes several tokens; the big one verifies them in one pass), quantization ([Ch 5](ch05-quantization-and-efficiency.md)), tensor parallelism across GPUs.
 
-**Throughput vs latency** — bigger batches raise total tokens/s (throughput) but make each user's step slower (latency). Serving is a trade-off set by your SLO: interactive chat wants low TTFT (< ~500 ms) and steady streaming (> ~20 tokens/s per user); offline batch jobs want maximum tokens per dollar.
+### Throughput vs latency
+
+Bigger batches raise total tokens/s (throughput) but make each user's step slower (latency). Serving is a trade-off set by your SLO: interactive chat wants low TTFT (< ~500 ms) and steady streaming (> ~20 tokens/s per user); offline batch jobs want maximum tokens per dollar.
 
 ---
 
@@ -64,7 +70,7 @@ Other speedups: prefix caching (reuse the KV cache of a shared system prompt), s
 
 ## Diagram
 
-**An autoregressive decode loop with the KV cache**
+### An autoregressive decode loop with the KV cache
 
 ```mermaid
 flowchart TB
@@ -79,7 +85,7 @@ flowchart TB
     S -- yes --> DONE["return / close the stream"]
 ```
 
-**Continuous batching vs static batching**
+### Continuous batching vs static batching
 
 ```
  STATIC (batch waits for its longest request)          CONTINUOUS (join and leave every step)
@@ -89,7 +95,7 @@ flowchart TB
  new requests D, E, F wait until A finishes            D, E, F start as soon as a slot frees up
 ```
 
-**The latency/throughput knob**
+### The latency/throughput knob
 
 ```mermaid
 xychart-beta
@@ -186,7 +192,7 @@ with client.messages.stream(
 
 ## Mini project
 
-**A minimal inference server with a REST endpoint and batching.**
+### A minimal inference server with a REST endpoint and batching
 
 ```mermaid
 flowchart LR
@@ -198,7 +204,7 @@ flowchart LR
     LOOP --> MET["metrics: TTFT, tokens/s, batch size"]
 ```
 
-**Steps**
+### Steps
 
 1. Load a small model (e.g. `Qwen2.5-0.5B` or `gpt2`) once at startup.
 2. Requests go into an `asyncio.Queue`; one background loop does the scheduling.
@@ -212,7 +218,7 @@ flowchart LR
 
 ## Build #1
 
-**An AI Chatbot — a chat endpoint with history, streaming, and sampling controls.**
+### An AI Chatbot — a chat endpoint with history, streaming, and sampling controls
 
 ```mermaid
 flowchart LR
@@ -226,7 +232,7 @@ flowchart LR
     STREAM --> SAVE["save the assistant message<br/>+ usage (tokens, latency)"] --> CONV
 ```
 
-**Steps**
+### Steps
 
 1. Data model: `conversations(id, title, settings)`, `messages(conversation_id, role, content, tokens, created_at)`.
 2. `/chat` takes a conversation ID and a new user message; builds `[system, …history, user]`; counts tokens and drops the oldest turns (or summarizes them) to fit the context budget.

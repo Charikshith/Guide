@@ -10,9 +10,11 @@ The Unix filesystem tree, shell basics, Bash scripting, file permissions, users 
 
 **In one sentence:** in Linux everything hangs off one tree starting at `/`, you drive it by typing commands into a shell, and every file says which user, which group, and everyone else may read, write, or run it.
 
-**Mental model — an office building.** `/` is the lobby. Each folder is a room. Your *user* is your badge; *groups* are departments. Each door (file) has a sign with three rows: what the owner may do, what the owner's department may do, and what anyone else may do.
+### Mental model — an office building
 
-**The filesystem tree**
+`/` is the lobby. Each folder is a room. Your *user* is your badge; *groups* are departments. Each door (file) has a sign with three rows: what the owner may do, what the owner's department may do, and what anyone else may do.
+
+### The filesystem tree
 
 | Path | Holds |
 |------|-------|
@@ -27,7 +29,7 @@ The Unix filesystem tree, shell basics, Bash scripting, file permissions, users 
 | `/proc`, `/sys` | live kernel and process info as virtual files |
 | `/opt`, `/srv` | add-on software, served data |
 
-**Permissions**
+### Permissions
 
 <div class="fig">
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 700 240" role="img" aria-label="Reading ls -l output: type, owner, group and others permission triplets" style="width:100%;max-width:700px;height:auto;font-family:inherit"><defs><marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="context-stroke"/></marker></defs><text x="30" y="40" font-size="17" font-family="ui-monospace,Menlo,Consolas,monospace" fill="var(--text)" xml:space="preserve">-rwxr-x---  1  alice  devs  4096  script.sh</text><text x="149.4" y="62" font-size="1" text-anchor="middle" fill="var(--text)"></text><line x1="35.2" y1="48" x2="35.2" y2="80" stroke="var(--text-muted)" stroke-width="1.4"/><line x1="35.2" y1="80" x2="330" y2="80" stroke="var(--text-muted)" stroke-width="1.4"/><text x="338" y="84" font-size="12.5" text-anchor="start" fill="var(--text)">type: - file, d directory, l symlink</text><line x1="56.0" y1="48" x2="56.0" y2="108" stroke="var(--primary)" stroke-width="1.4"/><line x1="56.0" y1="108" x2="330" y2="108" stroke="var(--primary)" stroke-width="1.4"/><text x="338" y="112" font-size="12.5" text-anchor="start" fill="var(--text)">owner:  rwx  = 4+2+1 = 7</text><line x1="87.2" y1="48" x2="87.2" y2="136" stroke="var(--success)" stroke-width="1.4"/><line x1="87.2" y1="136" x2="330" y2="136" stroke="var(--success)" stroke-width="1.4"/><text x="338" y="140" font-size="12.5" text-anchor="start" fill="var(--text)">group:  r-x  = 4+0+1 = 5</text><line x1="118.4" y1="48" x2="118.4" y2="164" stroke="var(--danger)" stroke-width="1.4"/><line x1="118.4" y1="164" x2="330" y2="164" stroke="var(--danger)" stroke-width="1.4"/><text x="338" y="168" font-size="12.5" text-anchor="start" fill="var(--text)">others: ---  = 0</text><text x="206.8" y="62" font-size="11.5" text-anchor="start" fill="var(--text-muted)">owner</text><text x="279.6" y="62" font-size="11.5" text-anchor="start" fill="var(--text-muted)">group</text></svg>
@@ -41,7 +43,7 @@ The Unix filesystem tree, shell basics, Bash scripting, file permissions, users 
 
 Common modes: `644` (files: owner writes, all read), `755` (programs and dirs), `600` (secrets: owner only), `700` (private dirs). Special bits: **setuid** (runs as the file's owner — how `passwd` works), **setgid**, and the **sticky bit** on `/tmp` (only the owner can delete their own files).
 
-**Shell essentials**
+### Shell essentials
 
 | Concept | Syntax |
 |---------|--------|
@@ -52,7 +54,9 @@ Common modes: `644` (files: owner writes, all read), `755` (programs and dirs), 
 | Exit status | `$?`; 0 = success; `&&` runs next on success, `\|\|` on failure |
 | Globs | `*.txt`, `file?.log`, `{a,b}.conf` |
 
-**Safe Bash header:** `set -euo pipefail` — exit on errors (`-e`), fail on unset variables (`-u`), and fail a pipeline if any part fails (`pipefail`).
+### Safe Bash header
+
+`set -euo pipefail` — exit on errors (`-e`), fail on unset variables (`-u`), and fail a pipeline if any part fails (`pipefail`).
 
 ---
 
@@ -64,13 +68,13 @@ None.
 
 ## Diagram
 
-**Filesystem tree with permission annotations**
+### Filesystem tree with permission annotations
 
 <div class="fig">
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 306" role="img" aria-label="A Linux directory tree with each entry's permissions, owner and group" style="width:100%;max-width:900px;height:auto;font-family:inherit"><defs><marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="context-stroke"/></marker></defs><text x="14" y="20" font-size="13" font-family="ui-monospace,Menlo,Consolas,monospace" fill="var(--primary)" font-weight="600">📁 /</text><text x="250" y="20" font-size="12.5" text-anchor="start" fill="var(--text-muted)">← drwxr-xr-x  root  root</text><line x1="24" y1="32" x2="24" y2="44" stroke="var(--border)" stroke-width="1.4"/><line x1="24" y1="44" x2="34" y2="44" stroke="var(--border)" stroke-width="1.4"/><text x="38" y="46" font-size="13" font-family="ui-monospace,Menlo,Consolas,monospace" fill="var(--primary)" font-weight="600">📁 etc/</text><text x="250" y="46" font-size="12.5" text-anchor="start" fill="var(--text-muted)">← drwxr-xr-x  root  root</text><line x1="48" y1="58" x2="48" y2="70" stroke="var(--border)" stroke-width="1.4"/><line x1="48" y1="70" x2="58" y2="70" stroke="var(--border)" stroke-width="1.4"/><text x="62" y="72" font-size="13" font-family="ui-monospace,Menlo,Consolas,monospace" fill="var(--text)" font-weight="400">📄 passwd</text><text x="250" y="72" font-size="12.5" text-anchor="start" fill="var(--text-muted)">← -rw-r--r--  root  root    (everyone may read)</text><line x1="48" y1="84" x2="48" y2="96" stroke="var(--border)" stroke-width="1.4"/><line x1="48" y1="96" x2="58" y2="96" stroke="var(--border)" stroke-width="1.4"/><text x="62" y="98" font-size="13" font-family="ui-monospace,Menlo,Consolas,monospace" fill="var(--text)" font-weight="400">📄 shadow</text><text x="250" y="98" font-size="12.5" text-anchor="start" fill="var(--text-muted)">← -rw-r-----  root  shadow  (password hashes: locked)</text><line x1="24" y1="110" x2="24" y2="122" stroke="var(--border)" stroke-width="1.4"/><line x1="24" y1="122" x2="34" y2="122" stroke="var(--border)" stroke-width="1.4"/><text x="38" y="124" font-size="13" font-family="ui-monospace,Menlo,Consolas,monospace" fill="var(--primary)" font-weight="600">📁 home/</text><line x1="48" y1="136" x2="48" y2="148" stroke="var(--border)" stroke-width="1.4"/><line x1="48" y1="148" x2="58" y2="148" stroke="var(--border)" stroke-width="1.4"/><text x="62" y="150" font-size="13" font-family="ui-monospace,Menlo,Consolas,monospace" fill="var(--primary)" font-weight="600">📁 alice/</text><text x="250" y="150" font-size="12.5" text-anchor="start" fill="var(--text-muted)">← drwx------  alice  alice   (private)</text><line x1="72" y1="162" x2="72" y2="174" stroke="var(--border)" stroke-width="1.4"/><line x1="72" y1="174" x2="82" y2="174" stroke="var(--border)" stroke-width="1.4"/><text x="86" y="176" font-size="13" font-family="ui-monospace,Menlo,Consolas,monospace" fill="var(--text)" font-weight="400">📄 notes.txt</text><text x="250" y="176" font-size="12.5" text-anchor="start" fill="var(--text-muted)">← -rw-r--r--  alice  alice</text><line x1="72" y1="188" x2="72" y2="200" stroke="var(--border)" stroke-width="1.4"/><line x1="72" y1="200" x2="82" y2="200" stroke="var(--border)" stroke-width="1.4"/><text x="86" y="202" font-size="13" font-family="ui-monospace,Menlo,Consolas,monospace" fill="var(--text)" font-weight="400">📄 deploy.sh</text><text x="250" y="202" font-size="12.5" text-anchor="start" fill="var(--text-muted)">← -rwxr-x---  alice  devs    (750)</text><line x1="24" y1="214" x2="24" y2="226" stroke="var(--border)" stroke-width="1.4"/><line x1="24" y1="226" x2="34" y2="226" stroke="var(--border)" stroke-width="1.4"/><text x="38" y="228" font-size="13" font-family="ui-monospace,Menlo,Consolas,monospace" fill="var(--primary)" font-weight="600">📁 tmp/</text><text x="250" y="228" font-size="12.5" text-anchor="start" fill="var(--text-muted)">← drwxrwxrwt  root  root    (t = sticky bit)</text><line x1="24" y1="240" x2="24" y2="252" stroke="var(--border)" stroke-width="1.4"/><line x1="24" y1="252" x2="34" y2="252" stroke="var(--border)" stroke-width="1.4"/><text x="38" y="254" font-size="13" font-family="ui-monospace,Menlo,Consolas,monospace" fill="var(--text)" font-weight="400">📄 usr/bin/passwd</text><text x="250" y="254" font-size="12.5" text-anchor="start" fill="var(--text-muted)">← -rwsr-xr-x  root  root    (s = setuid)</text><line x1="24" y1="266" x2="24" y2="278" stroke="var(--border)" stroke-width="1.4"/><line x1="24" y1="278" x2="34" y2="278" stroke="var(--border)" stroke-width="1.4"/><text x="38" y="280" font-size="13" font-family="ui-monospace,Menlo,Consolas,monospace" fill="var(--primary)" font-weight="600">📁 var/log/</text><text x="250" y="280" font-size="12.5" text-anchor="start" fill="var(--text-muted)">← drwxr-xr-x  root  root</text></svg>
 </div>
 
-**How the kernel checks access**
+### How the kernel checks access
 
 ```mermaid
 flowchart TD
@@ -149,7 +153,7 @@ backup notes.txt /tmp/notes.bak && echo "ok"
 
 ## Mini project
 
-**A Bash backup script with permission handling and a cron entry.**
+### A Bash backup script with permission handling and a cron entry
 
 ```mermaid
 flowchart LR
@@ -158,7 +162,7 @@ flowchart LR
     L -- yes --> T["tar + gzip ~/projects<br/>→ /backups/2024-05-01.tgz"] --> P["chmod 600, chown backup:backup"] --> R["delete archives older than 14 days"] --> LOG["append to /var/log/backup.log"]
 ```
 
-**Steps**
+### Steps
 
 1. `set -euo pipefail`; take the source and destination as arguments with defaults.
 2. Use `flock` so two runs never overlap.

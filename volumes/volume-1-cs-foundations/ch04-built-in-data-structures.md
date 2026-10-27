@@ -10,7 +10,7 @@ Arrays, lists, tuples, dictionaries/hashmaps, sets, queues, stacks — operation
 
 **In one sentence:** each data structure is a trade-off between how fast you can find, add, and remove things, and choosing the right one is often the whole optimization.
 
-**Mental model — storage in a house.**
+### Mental model — storage in a house
 
 * **Array/list** — a row of numbered lockers. Jump to locker 57 at once; inserting in the middle means shifting everyone.
 * **Tuple** — a sealed, labeled box. You can read it, not change it.
@@ -19,7 +19,7 @@ Arrays, lists, tuples, dictionaries/hashmaps, sets, queues, stacks — operation
 * **Stack** — a pile of plates. Last on, first off (LIFO).
 * **Queue** — a line at a shop. First in, first out (FIFO).
 
-**Big-O cheat sheet (Python, average case)**
+### Big-O cheat sheet (Python, average case)
 
 | Structure | Index `x[i]` | Search `in` | Append / push | Insert at front | Delete by key | Ordered? |
 |-----------|:-:|:-:|:-:|:-:|:-:|:-:|
@@ -32,7 +32,7 @@ Arrays, lists, tuples, dictionaries/hashmaps, sets, queues, stacks — operation
 
 \* amortized — see [Vol 0 Ch 7](../volume-0-math/ch07-time-space-complexity-and-amortized-analysis.md).
 
-**Which one should I use?**
+### Which one should I use?
 
 | Need | Use |
 |------|-----|
@@ -55,7 +55,7 @@ Arrays, lists, tuples, dictionaries/hashmaps, sets, queues, stacks — operation
 
 ## Diagram
 
-**A hashmap with buckets and chaining**
+### A hashmap with buckets and chaining
 
 | Key | hash(key) | hash % 8 | |
 |---|---|---|---|
@@ -69,7 +69,7 @@ Arrays, lists, tuples, dictionaries/hashmaps, sets, queues, stacks — operation
 
 When the table gets too full (load factor above ~⅔), it doubles and every key is re-placed. Python actually uses *open addressing* (probe the next slot) rather than chains, but the idea is the same.
 
-**Stack (LIFO) vs queue (FIFO)**
+### Stack (LIFO) vs queue (FIFO)
 
 <div class="fig">
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 700 280" role="img" aria-label="A stack pushes and pops at the top; a queue enqueues at the back and dequeues from the front" style="width:100%;max-width:700px;height:auto;font-family:inherit"><defs><marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="context-stroke"/></marker></defs><text x="120" y="26" font-size="15" text-anchor="middle" fill="var(--text)" font-weight="700">STACK</text><text x="120" y="46" font-size="12.5" text-anchor="middle" fill="var(--text-muted)">push 1, push 2, push 3</text><rect x="80" y="64" width="80" height="44" rx="4" fill="var(--primary)" fill-opacity=".18" stroke="var(--primary)" stroke-width="1.6"/><text x="120" y="92" font-size="15" text-anchor="middle" fill="var(--text)" font-weight="700">3</text><rect x="80" y="108" width="80" height="44" rx="4" fill="var(--primary)" fill-opacity=".18" stroke="var(--primary)" stroke-width="1.6"/><text x="120" y="136" font-size="15" text-anchor="middle" fill="var(--text)" font-weight="700">2</text><rect x="80" y="152" width="80" height="44" rx="4" fill="var(--primary)" fill-opacity=".18" stroke="var(--primary)" stroke-width="1.6"/><text x="120" y="180" font-size="15" text-anchor="middle" fill="var(--text)" font-weight="700">1</text><line x1="170" y1="76" x2="170" y2="94" stroke="var(--accent)" stroke-width="1.6" marker-end="url(#ar)" marker-start="url(#ar)"/><text x="184" y="90" font-size="12.5" text-anchor="start" fill="var(--accent)" font-weight="600">push / pop</text><text x="184" y="108" font-size="12.5" text-anchor="start" fill="var(--text-muted)">pop → 3</text><text x="480" y="26" font-size="15" text-anchor="middle" fill="var(--text)" font-weight="700">QUEUE</text><text x="480" y="46" font-size="12.5" text-anchor="middle" fill="var(--text-muted)">enqueue 1, 2, 3</text><rect x="400" y="96" width="60" height="44" rx="4" fill="var(--success)" fill-opacity=".18" stroke="var(--success)" stroke-width="1.6"/><text x="430" y="124" font-size="15" text-anchor="middle" fill="var(--text)" font-weight="700">1</text><rect x="460" y="96" width="60" height="44" rx="4" fill="var(--success)" fill-opacity=".18" stroke="var(--success)" stroke-width="1.6"/><text x="490" y="124" font-size="15" text-anchor="middle" fill="var(--text)" font-weight="700">2</text><rect x="520" y="96" width="60" height="44" rx="4" fill="var(--success)" fill-opacity=".18" stroke="var(--success)" stroke-width="1.6"/><text x="550" y="124" font-size="15" text-anchor="middle" fill="var(--text)" font-weight="700">3</text><line x1="340" y1="118" x2="396" y2="118" stroke="var(--accent)" stroke-width="1.6" marker-end="url(#ar)"/><text x="368" y="92" font-size="12.5" text-anchor="middle" fill="var(--accent)" font-weight="600">out</text><text x="368" y="156" font-size="12.5" text-anchor="middle" fill="var(--text-muted)">dequeue → 1</text><line x1="584" y1="118" x2="640" y2="118" stroke="var(--accent)" stroke-width="1.6" marker-start="url(#ar)"/><text x="612" y="92" font-size="12.5" text-anchor="middle" fill="var(--accent)" font-weight="600">in</text></svg>
@@ -153,7 +153,7 @@ seen = {point}                               # can be a set member or dict key
 
 ## Mini project
 
-**A task scheduler using a priority queue and a simple FIFO queue.**
+### A task scheduler using a priority queue and a simple FIFO queue
 
 ```mermaid
 flowchart LR
@@ -165,7 +165,7 @@ flowchart LR
     W -->|"every 3rd pick comes from FIFO<br/>so normal tasks never starve"| W
 ```
 
-**Steps**
+### Steps
 
 1. `add(task, priority=None)`: urgent tasks go to a heap as `(priority, counter, task)`; the counter breaks ties in arrival order.
 2. Normal tasks go to a `deque`.

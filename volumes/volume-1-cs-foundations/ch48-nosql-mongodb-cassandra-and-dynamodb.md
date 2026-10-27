@@ -10,13 +10,13 @@ Document, wide-column, and key-value/Dynamo-style stores; consistency models; wh
 
 **In one sentence:** NoSQL databases give up some of SQL's flexibility — ad-hoc joins, multi-row transactions, a fixed schema — to gain easy horizontal scaling, flexible documents, or predictable single-digit-millisecond access at any size, and you design their data around your *queries* instead of around your entities.
 
-**Mental model — storage units.**
+### Mental model — storage units
 
 * **Document store (MongoDB)** — a folder per customer holding everything about them in one file. Easy to read whole; awkward to cross-reference.
 * **Wide-column (Cassandra, ScyllaDB)** — a huge filing cabinet where each drawer (partition) holds rows sorted by a key. Opening one drawer and reading a sorted slice is instant; searching every drawer is not allowed.
 * **Key-value (DynamoDB, Redis)** — a coat check: give the ticket, get the coat. Nothing else.
 
-**The families**
+### The families
 
 | | Document | Wide-column | Key-value / Dynamo-style |
 |-|----------|-------------|--------------------------|
@@ -27,9 +27,11 @@ Document, wide-column, and key-value/Dynamo-style stores; consistency models; wh
 | Transactions | multi-document ACID (since 4.0), costlier | lightweight transactions (Paxos) per partition | `TransactWriteItems` (up to 100 items) |
 | Sweet spot | varied, nested data; fast iteration; catalogs; CMS | write-heavy time series, feeds, messaging, IoT at huge scale | sessions, carts, user profiles, and any access pattern known in advance |
 
-**Query-first modeling (Cassandra/DynamoDB)** — list your access patterns *first*, then design one table (or item layout) per pattern. Denormalize and duplicate freely; joins don't exist.
+### Query-first modeling (Cassandra/DynamoDB)
 
-**Partition key design — the most important decision**
+List your access patterns *first*, then design one table (or item layout) per pattern. Denormalize and duplicate freely; joins don't exist.
+
+### Partition key design — the most important decision
 
 | Good partition key | Bad partition key |
 |--------------------|-------------------|
@@ -37,7 +39,7 @@ Document, wide-column, and key-value/Dynamo-style stores; consistency models; wh
 | spreads writes evenly | one celebrity user → a **hot partition** |
 | bounded partition size (add a time bucket: `(user_id, month)`) | unbounded growth (all events for one sensor forever) |
 
-**Consistency knobs**
+### Consistency knobs
 
 | Store | Knob |
 |-------|------|
@@ -57,9 +59,11 @@ Document, wide-column, and key-value/Dynamo-style stores; consistency models; wh
 
 ## Diagram
 
-**Document vs wide-column vs key-value layout**
+### Document vs wide-column vs key-value layout
 
-**Document (MongoDB):** the whole aggregate in one read.
+### Document (MongoDB)
+
+The whole aggregate in one read.
 
 ```json
 {
@@ -72,7 +76,9 @@ Document, wide-column, and key-value/Dynamo-style stores; consistency models; wh
 }
 ```
 
-**Wide-column (Cassandra):** partition key `user_id`; `posted_at` is the clustering key, sorted DESC. One partition = one node set, read as a sorted slice.
+### Wide-column (Cassandra)
+
+Partition key `user_id`; `posted_at` is the clustering key, sorted DESC. One partition = one node set, read as a sorted slice.
 
 | partition | posted_at ↓ | post_id | text |
 |---|---|---|---|
@@ -80,7 +86,7 @@ Document, wide-column, and key-value/Dynamo-style stores; consistency models; wh
 | u42 | 2024-05-01 18:40 | p7 | "hi" |
 | u42 | 2024-04-28 07:05 | p3 | "first!" |
 
-**Key-value / DynamoDB (single table):**
+### Key-value / DynamoDB (single table)
 
 | PK | SK | attributes |
 |---|---|---|
@@ -90,7 +96,7 @@ Document, wide-column, and key-value/Dynamo-style stores; consistency models; wh
 
 Query `PK = USER#42 AND SK begins_with "ORDER#"` → the user's orders, sorted by date.
 
-**Cassandra's ring: partitions and replicas (RF = 3)**
+### Cassandra's ring: partitions and replicas (RF = 3)
 
 ```mermaid
 flowchart LR
@@ -105,7 +111,7 @@ flowchart LR
 
 With QUORUM (2 of 3), a write is acknowledged when 2 replicas have it; a QUORUM read asks 2 replicas, so it always overlaps the write.
 
-**A hot partition**
+### A hot partition
 
 ```
  partition key = country
@@ -178,7 +184,7 @@ orders = table.query(KeyConditionExpression=Key("PK").eq("USER#42") &
 
 ## Mini project
 
-**A session store on DynamoDB and a product catalog on MongoDB.**
+### A session store on DynamoDB and a product catalog on MongoDB
 
 ```mermaid
 flowchart LR
@@ -188,7 +194,7 @@ flowchart LR
     AP["access-patterns.md<br/>written FIRST"] --> DDB & MDB
 ```
 
-**Steps**
+### Steps
 
 1. Write the access patterns first (e.g. "get session by ID", "list a user's sessions", "search products by tag + price", "facet counts by brand").
 2. DynamoDB Local: a single table with `PK/SK`, a TTL attribute, and a GSI for "sessions by user"; conditional writes to prevent overwriting a session.

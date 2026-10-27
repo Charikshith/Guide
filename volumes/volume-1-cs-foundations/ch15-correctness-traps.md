@@ -10,9 +10,11 @@ IEEE-754 floating point, integer overflow/signedness, and date/time/timezone bug
 
 **In one sentence:** computers approximate real numbers, cap integers at fixed sizes, and live in a world of time zones and daylight saving — and each of these produces wrong answers without any error message.
 
-**Mental model — rulers with limits.** A float is a ruler with fine marks near zero and coarse marks far away: most numbers fall *between* marks and get rounded. An integer is a car odometer: past 999,999 it rolls over to 000,000. Local time is a wall clock that someone moves forward and back twice a year.
+### Mental model — rulers with limits
 
-**Floating point (IEEE-754 double)**
+A float is a ruler with fine marks near zero and coarse marks far away: most numbers fall *between* marks and get rounded. An integer is a car odometer: past 999,999 it rolls over to 000,000. Local time is a wall clock that someone moves forward and back twice a year.
+
+### Floating point (IEEE-754 double)
 
 | Fact | Consequence |
 |------|------------|
@@ -22,9 +24,11 @@ IEEE-754 floating point, integer overflow/signedness, and date/time/timezone bug
 | Special values | `inf`, `-inf`, `nan`; `nan != nan` |
 | Not associative | `(a + b) + c` may differ from `a + (b + c)` |
 
-**Rule:** never compare floats with `==`. Use `math.isclose(a, b, rel_tol=1e-9, abs_tol=…)`. For money, use integers (cents) or `Decimal`.
+### Rule
 
-**Integers**
+Never compare floats with `==`. Use `math.isclose(a, b, rel_tol=1e-9, abs_tol=…)`. For money, use integers (cents) or `Decimal`.
+
+### Integers
 
 | Type | Range | Overflow behavior |
 |------|-------|-------------------|
@@ -36,7 +40,7 @@ IEEE-754 floating point, integer overflow/signedness, and date/time/timezone bug
 
 Famous failures: the Ariane 5 rocket (a 64-bit float converted to a 16-bit int overflowed), YouTube's view counter (Gangnam Style passed 2³¹ − 1), and the Year 2038 problem (32-bit Unix time).
 
-**Date and time**
+### Date and time
 
 | Trap | Example |
 |------|---------|
@@ -47,7 +51,9 @@ Famous failures: the Ariane 5 rocket (a 64-bit float converted to a 16-bit int o
 | Naive datetimes | Python `datetime.now()` has no zone; comparing naive and aware values raises an error |
 | Zone rules change | governments change DST rules; keep `tzdata` updated |
 
-**Rule:** store and compute in **UTC**, keep the **IANA zone name** (`America/New_York`) next to user-facing times, and convert to local time only for display.
+### Rule
+
+Store and compute in **UTC**, keep the **IANA zone name** (`America/New_York`) next to user-facing times, and convert to local time only for display.
 
 ---
 
@@ -59,13 +65,13 @@ Famous failures: the Ariane 5 rocket (a 64-bit float converted to a 16-bit int o
 
 ## Diagram
 
-**IEEE-754 double: 64 bits**
+### IEEE-754 double: 64 bits
 
 <div class="fig">
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 820 250" role="img" aria-label="IEEE 754 double: 1 sign bit, 11 exponent bits, 52 mantissa bits; 0.1 repeats forever in binary and is rounded" style="width:100%;max-width:820px;height:auto;font-family:inherit"><defs><marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="context-stroke"/></marker></defs><rect x="20" y="50" width="40" height="40" rx="2" fill="var(--danger)" fill-opacity=".25" stroke="var(--danger)" stroke-width="1.6"/><text x="40.0" y="76" font-size="14" text-anchor="middle" fill="var(--text)" font-weight="700">S</text><rect x="60" y="50" width="220" height="40" rx="2" fill="var(--accent)" fill-opacity=".25" stroke="var(--accent)" stroke-width="1.6"/><text x="170.0" y="76" font-size="14" text-anchor="middle" fill="var(--text)" font-weight="700">exponent</text><rect x="280" y="50" width="520" height="40" rx="2" fill="var(--primary)" fill-opacity=".2" stroke="var(--primary)" stroke-width="1.6"/><text x="540.0" y="76" font-size="14" text-anchor="middle" fill="var(--text)" font-weight="700">mantissa (fraction)</text><text x="40.0" y="40" font-size="12" text-anchor="middle" fill="var(--text-muted)">1 bit</text><text x="170.0" y="40" font-size="12" text-anchor="middle" fill="var(--text-muted)">11 bits</text><text x="540.0" y="40" font-size="12" text-anchor="middle" fill="var(--text-muted)">52 bits</text><text x="20" y="124" font-size="14" text-anchor="start" fill="var(--text)" font-weight="600">value = (−1)^S × 1.mantissa × 2^(exponent − 1023)</text><text x="20" y="168" font-size="12.5" font-family="ui-monospace,Menlo,Consolas,monospace" fill="var(--text)">0.1 = 0  01111111011  1001100110011001100110011001100110011001100110011010</text><text x="40" y="196" font-size="12.5" text-anchor="start" fill="var(--danger)">└── 1001 repeats forever, so it is cut off and rounded</text></svg>
 </div>
 
-**Float precision gets coarser as numbers grow**
+### Float precision gets coarser as numbers grow
 
 ```
  near 1:      |‖‖‖‖‖‖‖‖‖‖‖‖‖‖‖‖‖‖|   gap ≈ 2.2e-16
@@ -73,13 +79,13 @@ Famous failures: the Ariane 5 rocket (a 64-bit float converted to a 16-bit int o
  near 1e16:   |    |    |    |       gap = 2   → 1e16 + 1 rounds back to 1e16
 ```
 
-**Two's-complement wrap-around (8-bit)**
+### Two's-complement wrap-around (8-bit)
 
 <div class="fig">
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 230" role="img" aria-label="Adding 1 to the largest signed 8-bit value flips the sign bit and wraps to the smallest" style="width:100%;max-width:760px;height:auto;font-family:inherit"><defs><marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="context-stroke"/></marker></defs><text x="30" y="40" font-size="14" font-family="ui-monospace,Menlo,Consolas,monospace" fill="var(--text)" xml:space="preserve">  0111 1111  = 127   (i8::MAX)</text><text x="30" y="64" font-size="14" font-family="ui-monospace,Menlo,Consolas,monospace" fill="var(--text)" xml:space="preserve">+         1</text><text x="30" y="90" font-size="14" font-family="ui-monospace,Menlo,Consolas,monospace" fill="var(--danger)" xml:space="preserve">  1000 0000  = −128  (i8::MIN)   the sign bit flipped</text><line x1="30" y1="74" x2="220" y2="74" stroke="var(--text-muted)" stroke-width="1.2"/><text x="30" y="140" font-size="13" text-anchor="start" fill="var(--text-muted)" font-weight="600">number circle:</text><rect x="60" y="156" width="60" height="32" rx="8" fill="var(--success)" fill-opacity=".14" stroke="var(--success)" stroke-width="1.6"/><text x="90.0" y="176.55" font-size="13" text-anchor="middle" fill="var(--text)" font-weight="600">125</text><rect x="140" y="156" width="60" height="32" rx="8" fill="var(--success)" fill-opacity=".14" stroke="var(--success)" stroke-width="1.6"/><text x="170.0" y="176.55" font-size="13" text-anchor="middle" fill="var(--text)" font-weight="600">126</text><rect x="220" y="156" width="60" height="32" rx="8" fill="var(--success)" fill-opacity=".14" stroke="var(--success)" stroke-width="1.6"/><text x="250.0" y="176.55" font-size="13" text-anchor="middle" fill="var(--text)" font-weight="600">127</text><rect x="330" y="156" width="60" height="32" rx="8" fill="var(--accent)" fill-opacity=".14" stroke="var(--accent)" stroke-width="1.6"/><text x="360.0" y="176.55" font-size="13" text-anchor="middle" fill="var(--text)" font-weight="600">−128</text><rect x="410" y="156" width="60" height="32" rx="8" fill="var(--accent)" fill-opacity=".14" stroke="var(--accent)" stroke-width="1.6"/><text x="440.0" y="176.55" font-size="13" text-anchor="middle" fill="var(--text)" font-weight="600">−127</text><rect x="490" y="156" width="60" height="32" rx="8" fill="var(--accent)" fill-opacity=".14" stroke="var(--accent)" stroke-width="1.6"/><text x="520.0" y="176.55" font-size="13" text-anchor="middle" fill="var(--text)" font-weight="600">−126</text><text x="42" y="176" font-size="14" text-anchor="middle" fill="var(--text-muted)">…</text><text x="568" y="176" font-size="14" text-anchor="middle" fill="var(--text-muted)">…</text><line x1="315" y1="150" x2="315" y2="198" stroke="var(--danger)" stroke-width="1.6" stroke-dasharray="4 3"/><text x="315" y="216" font-size="12.5" text-anchor="middle" fill="var(--danger)" font-weight="600">wraps here</text></svg>
 </div>
 
-**A DST boundary (US, second Sunday of March)**
+### A DST boundary (US, second Sunday of March)
 
 ```mermaid
 gantt
@@ -162,7 +168,7 @@ print(start + timedelta(days=1))                    # 2024-03-10 12:00-04:00 (wa
 
 ## Mini project
 
-**A money class using integers (cents) and a DST-aware event scheduler.**
+### A money class using integers (cents) and a DST-aware event scheduler
 
 ```mermaid
 flowchart LR
@@ -176,7 +182,7 @@ flowchart LR
     end
 ```
 
-**Steps**
+### Steps
 
 1. `Money` stores an integer count of minor units plus a currency code; refuse to add different currencies.
 2. `allocate([1, 1, 1])` splits $100.00 into 33.34 / 33.33 / 33.33 — no cent lost.

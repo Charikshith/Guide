@@ -10,9 +10,11 @@ CAP theorem, consistency models, the need for consensus, and how systems trade a
 
 **In one sentence:** when the network splits a replicated system in two, each side must choose between refusing requests (staying consistent) and answering with possibly stale or conflicting data (staying available), and consensus algorithms are how nodes agree on one truth despite failures.
 
-**Mental model — two bank branches with a broken phone line.** A customer withdraws money at branch A. Branch B hasn't heard about it because the line is down. If B lets the customer withdraw again, the bank stays *available* but becomes *inconsistent*. If B refuses until the line is back, the bank stays *consistent* but becomes *unavailable*. There is no third choice while the line is down.
+### Mental model — two bank branches with a broken phone line
 
-**CAP, stated precisely**
+A customer withdraws money at branch A. Branch B hasn't heard about it because the line is down. If B lets the customer withdraw again, the bank stays *available* but becomes *inconsistent*. If B refuses until the line is back, the bank stays *consistent* but becomes *unavailable*. There is no third choice while the line is down.
+
+### CAP, stated precisely
 
 | Letter | Means (in the theorem) |
 |--------|------------------------|
@@ -22,7 +24,7 @@ CAP theorem, consistency models, the need for consensus, and how systems trade a
 
 Networks *do* partition, so P isn't optional. CAP really says: **during a partition, choose C or A.** When there's no partition, you can have both — but then the trade-off is latency (**PACELC**: if Partition, A or C; Else, Latency or Consistency).
 
-**The consistency spectrum (strongest → weakest)**
+### The consistency spectrum (strongest → weakest)
 
 | Model | Guarantee | Example systems |
 |-------|-----------|-----------------|
@@ -34,9 +36,11 @@ Networks *do* partition, so P isn't optional. CAP really says: **during a partit
 
 **Why consensus?** Leader election, distributed locks, configuration, and replicated logs all need nodes to agree on *one* value even if some crash. The FLP result says that with fully asynchronous networks, no deterministic algorithm can guarantee agreement if even one node may fail — so real algorithms (Paxos, Raft) are always *safe* and make progress when the network is "stable enough", using timeouts. They need a **majority (quorum)**: 3 nodes tolerate 1 failure; 5 tolerate 2.
 
-**Safety and liveness** — every distributed algorithm promises two kinds of things. *Safety*: nothing bad ever happens (never two leaders in one term, never two different committed values). *Liveness*: something good eventually happens (an election eventually finishes, a write is eventually committed). FLP says you can't guarantee both in a fully asynchronous network, so Raft and Paxos never give up safety and only promise liveness when the network behaves.
+### Safety and liveness
 
-**System models — the assumptions behind every algorithm**
+Every distributed algorithm promises two kinds of things. *Safety*: nothing bad ever happens (never two leaders in one term, never two different committed values). *Liveness*: something good eventually happens (an election eventually finishes, a write is eventually committed). FLP says you can't guarantee both in a fully asynchronous network, so Raft and Paxos never give up safety and only promise liveness when the network behaves.
+
+### System models — the assumptions behind every algorithm
 
 An algorithm is only correct *under a model* of what can go wrong. Three dimensions:
 
@@ -48,9 +52,11 @@ An algorithm is only correct *under a model* of what can go wrong. Three dimensi
 
 When you read about an algorithm, ask which model it assumes — then imagine how a real network, disk or GC pause could violate it.
 
-**The two generals problem — why "just confirm it" never ends** — two armies on opposite hills must attack at the same time, and can only talk through messengers who may be captured. General 1 sends "attack at dawn", but can't know it arrived. General 2 sends back a confirmation, but can't know *that* arrived — so it would need a confirmation of the confirmation, and so on forever. No finite number of messages over an unreliable channel guarantees both sides are certain. Real systems live with this: they make operations idempotent and retry, use timeouts, and settle agreement with protocols like 2PC and consensus that tolerate uncertainty instead of eliminating it.
+### The two generals problem — why "just confirm it" never ends
 
-**Failure detection: slow and dead look the same**
+Two armies on opposite hills must attack at the same time, and can only talk through messengers who may be captured. General 1 sends "attack at dawn", but can't know it arrived. General 2 sends back a confirmation, but can't know *that* arrived — so it would need a confirmation of the confirmation, and so on forever. No finite number of messages over an unreliable channel guarantees both sides are certain. Real systems live with this: they make operations idempotent and retry, use timeouts, and settle agreement with protocols like 2PC and consensus that tolerate uncertainty instead of eliminating it.
+
+### Failure detection: slow and dead look the same
 
 When a request gets no reply, the caller cannot tell a crashed server from a slow one or from a lost message. A timeout is therefore a *guess*: too short and you declare healthy nodes dead (and trigger needless failovers); too long and you wait on corpses. No failure detector can be both always-accurate and always-fast. Two ways to watch peers proactively:
 
@@ -59,7 +65,7 @@ When a request gets no reply, the caller cannot tell a crashed server from a slo
 
 Use them when you must react quickly to a peer vanishing (leader liveness, cluster membership); otherwise detecting failure when you next call is enough. Adaptive detectors such as *phi-accrual* (Cassandra, Akka) output a suspicion level from the observed heartbeat-interval distribution instead of a fixed timeout.
 
-**Time and ordering**
+### Time and ordering
 
 *Physical clocks lie.* A machine's quartz clock runs slightly fast or slow (**drift**, tens of ppm), so two clocks disagree at any instant (**skew**). **NTP** corrects the clock by comparing it with a server, estimating the network delay — and the correction can make the clock **jump backwards**, so an event that happened later can carry an earlier timestamp. Rules of thumb:
 
@@ -76,7 +82,7 @@ Use them when you must react quickly to a peer vanishing (leader liveness, clust
 
 Dynamo-style stores use vector-style versions to spot concurrent writes to the same key and return both siblings or merge them; CockroachDB and MongoDB use HLCs.
 
-**Broadcast: from best-effort to total order**
+### Broadcast: from best-effort to total order
 
 Delivering one message to a whole group must be built from point-to-point links:
 
@@ -89,13 +95,13 @@ Delivering one message to a whole group must be built from point-to-point links:
 
 Raft's log replication is total-order broadcast. Give that up and any replica can accept writes — at the price of replicas temporarily diverging.
 
-**Coordination avoidance: strong eventual consistency and CALM**
+### Coordination avoidance: strong eventual consistency and CALM
 
 - **Strong eventual consistency** = every update eventually reaches every replica, *and* any two replicas that have received the same set of updates are in the same state, regardless of order. No consensus, no conflicts — if the data type's merge is commutative, associative and idempotent. Those data types are **CRDTs** (counters, sets, last-writer-wins and multi-value registers, maps); see [Volume 4, Ch 50 — Collaborative Docs](../volume-4-high-level-design/ch50-library-28-collaborative-docs.md). A periodic full-state exchange (*anti-entropy*) lets even an unreliable broadcast converge.
 - **The CALM theorem** (Consistency As Logical Monotonicity) tells you *when* you can skip coordination: a program can be consistent without coordination **if and only if it is monotonic** — new inputs only add to the output and never retract it. Adding to a set, taking a max, incrementing a counter: monotonic, coordination-free. Overwriting a value, deleting, or answering "is X absent?": not monotonic, so it needs coordination, or a redesign (e.g. tombstones plus version numbers turn a delete into an addition).
 - **Causal consistency** is the strongest model that stays available during partitions. A typical implementation (as in COPS): every client records the versions it has read; a write carries those dependencies; a replica receiving a replicated write *waits to apply it until its dependencies are applied locally*. Wrapping values in last-writer-wins registers (*causal+*) makes replicas converge even on concurrent writes. Example: a photo upload and the gallery post that references it — a replica will never show the post before the photo exists.
 
-**Classifying real systems (roughly)**
+### Classifying real systems (roughly)
 
 | System | Under a partition | Notes |
 |--------|------------------|-------|
@@ -116,13 +122,13 @@ Raft's log replication is total-order broadcast. Give that up and any replica ca
 
 ## Diagram
 
-**The CAP triangle with a partition**
+### The CAP triangle with a partition
 
 <div class="fig">
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 360" role="img" aria-label="CAP triangle: consistency at the top, partition tolerance and availability at the bottom; CP, AP and CA sit on its edges" style="width:100%;max-width:760px;height:auto;font-family:inherit"><defs><marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="context-stroke"/></marker></defs><polygon points="380,40 120,300 640,300" fill="var(--primary)" fill-opacity=".08" stroke="var(--primary)" stroke-width="2"/><text x="380" y="28" font-size="14" text-anchor="middle" fill="var(--text)" font-weight="700">Consistency (linearizable)</text><text x="120" y="322" font-size="14" text-anchor="middle" fill="var(--text)" font-weight="700">Partition tolerance</text><text x="640" y="322" font-size="14" text-anchor="middle" fill="var(--text)" font-weight="700">Availability</text><text x="190" y="160" font-size="16" text-anchor="middle" fill="var(--success)" font-weight="700">CP</text><text x="190" y="180.0" font-size="12.5" text-anchor="middle" fill="var(--text)">etcd, ZooKeeper,</text><text x="190" y="196.5" font-size="12.5" text-anchor="middle" fill="var(--text)">Spanner</text><text x="590" y="160" font-size="16" text-anchor="middle" fill="var(--accent)" font-weight="700">CA</text><text x="590" y="180.0" font-size="12.5" text-anchor="middle" fill="var(--text)">only without partitions</text><text x="590" y="196.5" font-size="12.5" text-anchor="middle" fill="var(--text)">(a single-node database)</text><text x="380" y="275" font-size="16" text-anchor="middle" fill="var(--danger)" font-weight="700">AP</text><text x="380" y="292" font-size="12.5" text-anchor="middle" fill="var(--text)">Cassandra, DynamoDB (default), DNS</text></svg>
 </div>
 
-**What happens during a partition**
+### What happens during a partition
 
 ```mermaid
 sequenceDiagram
@@ -141,19 +147,19 @@ sequenceDiagram
     end
 ```
 
-**Majority quorums always overlap**
+### Majority quorums always overlap
 
 <div class="fig">
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 250" role="img" aria-label="Five replicas with write and read quorums of 3 overlap in at least one replica, so a read sees the latest write" style="width:100%;max-width:760px;height:auto;font-family:inherit"><defs><marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="context-stroke"/></marker></defs><text x="20" y="22" font-size="13.5" text-anchor="start" fill="var(--text)" font-weight="700">5 replicas, write quorum W = 3, read quorum R = 3   (R + W &gt; N)</text><text x="180" y="62" font-size="14" text-anchor="middle" fill="var(--text-muted)" font-weight="700">A</text><rect x="150" y="70" width="60" height="34" rx="8" fill="var(--success)" fill-opacity=".3" stroke="var(--success)" stroke-width="1.6"/><text x="180.0" y="91.2" font-size="12" text-anchor="middle" fill="var(--text)" font-weight="600">write</text><rect x="150" y="112" width="60" height="34" rx="8" fill="var(--border)" fill-opacity=".05" stroke="var(--border)" stroke-width="1.6"/><text x="180.0" y="133.2" font-size="12" text-anchor="middle" fill="var(--text)" font-weight="600"></text><text x="270" y="62" font-size="14" text-anchor="middle" fill="var(--text-muted)" font-weight="700">B</text><rect x="240" y="70" width="60" height="34" rx="8" fill="var(--success)" fill-opacity=".3" stroke="var(--success)" stroke-width="1.6"/><text x="270.0" y="91.2" font-size="12" text-anchor="middle" fill="var(--text)" font-weight="600">write</text><rect x="240" y="112" width="60" height="34" rx="8" fill="var(--border)" fill-opacity=".05" stroke="var(--border)" stroke-width="1.6"/><text x="270.0" y="133.2" font-size="12" text-anchor="middle" fill="var(--text)" font-weight="600"></text><text x="360" y="62" font-size="14" text-anchor="middle" fill="var(--text-muted)" font-weight="700">C</text><rect x="330" y="70" width="60" height="34" rx="8" fill="var(--success)" fill-opacity=".3" stroke="var(--success)" stroke-width="1.6"/><text x="360.0" y="91.2" font-size="12" text-anchor="middle" fill="var(--text)" font-weight="600">write</text><rect x="330" y="112" width="60" height="34" rx="8" fill="var(--primary)" fill-opacity=".3" stroke="var(--primary)" stroke-width="1.6"/><text x="360.0" y="133.2" font-size="12" text-anchor="middle" fill="var(--text)" font-weight="600">read</text><text x="450" y="62" font-size="14" text-anchor="middle" fill="var(--text-muted)" font-weight="700">D</text><rect x="420" y="70" width="60" height="34" rx="8" fill="var(--border)" fill-opacity=".05" stroke="var(--border)" stroke-width="1.6"/><text x="450.0" y="91.2" font-size="12" text-anchor="middle" fill="var(--text)" font-weight="600"></text><rect x="420" y="112" width="60" height="34" rx="8" fill="var(--primary)" fill-opacity=".3" stroke="var(--primary)" stroke-width="1.6"/><text x="450.0" y="133.2" font-size="12" text-anchor="middle" fill="var(--text)" font-weight="600">read</text><text x="540" y="62" font-size="14" text-anchor="middle" fill="var(--text-muted)" font-weight="700">E</text><rect x="510" y="70" width="60" height="34" rx="8" fill="var(--border)" fill-opacity=".05" stroke="var(--border)" stroke-width="1.6"/><text x="540.0" y="91.2" font-size="12" text-anchor="middle" fill="var(--text)" font-weight="600"></text><rect x="510" y="112" width="60" height="34" rx="8" fill="var(--primary)" fill-opacity=".3" stroke="var(--primary)" stroke-width="1.6"/><text x="540.0" y="133.2" font-size="12" text-anchor="middle" fill="var(--text)" font-weight="600">read</text><text x="130" y="92" font-size="12.5" text-anchor="end" fill="var(--text)">write lands on</text><text x="130" y="134" font-size="12.5" text-anchor="end" fill="var(--text)">read asks</text><rect x="325" y="64" width="70" height="88" rx="8" fill="none" stroke="var(--accent)" stroke-width="2.4"/><text x="360" y="176" font-size="12.5" text-anchor="start" fill="var(--accent)" font-weight="600">▲ at least one replica saw the latest write</text><text x="20" y="222" font-size="12.5" text-anchor="start" fill="var(--text)">a partition {A, B} | {C, D, E}: only the 3-node side can form a quorum and accept writes</text></svg>
 </div>
 
-**The consistency spectrum**
+### The consistency spectrum
 
 <div class="fig">
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 160" role="img" aria-label="Consistency spectrum from strong to weak: linearizable, sequential, causal, read-your-writes, eventual" style="width:100%;max-width:800px;height:auto;font-family:inherit"><defs><marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="context-stroke"/></marker></defs><line x1="40" y1="56" x2="760" y2="56" stroke="var(--text-muted)" stroke-width="1.6" marker-end="url(#ar)" marker-start="url(#ar)"/><text x="40" y="34" font-size="13" text-anchor="start" fill="var(--success)" font-weight="700">strong</text><text x="760" y="34" font-size="13" text-anchor="end" fill="var(--danger)" font-weight="700">weak</text><circle cx="100" cy="56" r="7" fill="var(--success)" fill-opacity="1" stroke="var(--success)" stroke-width="1.6"/><text x="100" y="86" font-size="13" text-anchor="middle" fill="var(--text)" font-weight="600">linearizable</text><circle cx="250" cy="56" r="7" fill="var(--success)" fill-opacity="1" stroke="var(--success)" stroke-width="1.6"/><text x="250" y="86" font-size="13" text-anchor="middle" fill="var(--text)" font-weight="600">sequential</text><circle cx="400" cy="56" r="7" fill="var(--accent)" fill-opacity="1" stroke="var(--accent)" stroke-width="1.6"/><text x="400" y="86" font-size="13" text-anchor="middle" fill="var(--text)" font-weight="600">causal</text><circle cx="550" cy="56" r="7" fill="var(--accent)" fill-opacity="1" stroke="var(--accent)" stroke-width="1.6"/><text x="550" y="86" font-size="13" text-anchor="middle" fill="var(--text)" font-weight="600">read-your-writes</text><circle cx="700" cy="56" r="7" fill="var(--danger)" fill-opacity="1" stroke="var(--danger)" stroke-width="1.6"/><text x="700" y="86" font-size="13" text-anchor="middle" fill="var(--text)" font-weight="600">eventual</text><text x="40" y="130" font-size="12.5" text-anchor="start" fill="var(--text-muted)">slower, less available under partitions</text><text x="760" y="130" font-size="12.5" text-anchor="end" fill="var(--text-muted)">faster, always answers</text></svg>
 </div>
 
-**Lamport clocks: causality gives order, but not the reverse**
+### Lamport clocks: causality gives order, but not the reverse
 
 ```mermaid
 sequenceDiagram
@@ -169,7 +175,7 @@ sequenceDiagram
     Note over P1,P3: a → receive-on-P3, so 1 < 5 ✓<br/>a and e both have L=1 yet are concurrent — Lamport can't tell
 ```
 
-**Vector clocks detect concurrency**
+### Vector clocks detect concurrency
 
 ```mermaid
 flowchart LR
@@ -180,7 +186,7 @@ flowchart LR
     D --> E["neither ≤ the other →<br/>concurrent: keep both siblings or merge"]
 ```
 
-**Broadcast guarantees, weakest to strongest**
+### Broadcast guarantees, weakest to strongest
 
 ```mermaid
 flowchart LR
@@ -208,7 +214,7 @@ sequenceDiagram
     L-->>B: must be 3 — never 1 again
 ```
 
-**Sequential: everyone sees the same order, but not at the same time**
+### Sequential: everyone sees the same order, but not at the same time
 
 ```mermaid
 sequenceDiagram
@@ -223,7 +229,7 @@ sequenceDiagram
     Note over F1,F2: both followers apply 1 → 3 → 4 in the same order —<br/>a client hopping between them could go back in time (eventual)
 ```
 
-**Concurrent writes: last-writer-wins vs multi-value register**
+### Concurrent writes: last-writer-wins vs multi-value register
 
 ```mermaid
 flowchart LR
@@ -233,7 +239,7 @@ flowchart LR
     M -->|"multi-value: vectors are concurrent"| R2["x = {44, 48}<br/>the application resolves"]
 ```
 
-**Causal consistency: a replica waits for a write's dependencies**
+### Causal consistency: a replica waits for a write's dependencies
 
 ```mermaid
 sequenceDiagram
@@ -249,7 +255,7 @@ sequenceDiagram
     Note over R2: dependency met → apply photo, then post<br/>(no reader ever sees the post without the photo)
 ```
 
-**A missing reply has three possible causes the caller can't tell apart**
+### A missing reply has three possible causes the caller can't tell apart
 
 ```mermaid
 flowchart LR
@@ -325,7 +331,7 @@ flowchart LR
     SIM --> CHK["history checker:<br/>availability %, stale reads,<br/>lost writes, linearizability violations"]
 ```
 
-**Steps**
+### Steps
 
 1. Three node objects with a dict store; messages go through a controller that can drop messages between groups.
 2. CP mode: a write succeeds only if a majority acknowledges; reads go through the majority too.

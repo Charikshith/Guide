@@ -10,9 +10,11 @@ Orchestration vs choreography, agent roles, shared state, and coordination patte
 
 **In one sentence:** a multi-agent system splits a big task among several LLM "agents" with focused roles and tools — coordinated either by a central orchestrator or by agents reacting to each other's events — and it only pays off when the parallelism or specialization is worth the extra tokens, latency, and failure modes.
 
-**Mental model — a newsroom.** The editor (orchestrator) assigns stories to a researcher, a writer, and a fact-checker, then assembles the paper. That's orchestration. Alternatively, reporters post finished pieces to a shared board and whoever is responsible for the next step picks them up — choreography. Either way, too many people passing notes means nothing gets printed.
+### Mental model — a newsroom
 
-**Orchestration vs choreography**
+The editor (orchestrator) assigns stories to a researcher, a writer, and a fact-checker, then assembles the paper. That's orchestration. Alternatively, reporters post finished pieces to a shared board and whoever is responsible for the next step picks them up — choreography. Either way, too many people passing notes means nothing gets printed.
+
+### Orchestration vs choreography
 
 | | Orchestration | Choreography |
 |-|---------------|--------------|
@@ -22,7 +24,7 @@ Orchestration vs choreography, agent roles, shared state, and coordination patte
 | Failure handling | central retries, timeouts, fallbacks | each agent handles its own; needs good monitoring |
 | Fits | most LLM systems today | event-driven pipelines, loosely coupled teams (see [Vol 4 Ch 12](../volume-4-high-level-design/ch12-event-driven-systems.md)) |
 
-**Coordination patterns**
+### Coordination patterns
 
 | Pattern | Shape | Example |
 |---------|-------|---------|
@@ -33,9 +35,11 @@ Orchestration vs choreography, agent roles, shared state, and coordination patte
 | Debate / voting | several agents answer; a judge or majority picks | high-stakes classification |
 | Blackboard | agents read and write a shared structured state | planning with many constraints |
 
-**Roles** — give each agent a narrow job, its own system prompt, and *only* the tools it needs (least privilege). Clear output contracts (JSON schemas) between agents make aggregation reliable.
+### Roles
 
-**Sharing context**
+Give each agent a narrow job, its own system prompt, and *only* the tools it needs (least privilege). Clear output contracts (JSON schemas) between agents make aggregation reliable.
+
+### Sharing context
 
 | Method | Pros | Cons |
 |--------|------|------|
@@ -44,7 +48,9 @@ Orchestration vs choreography, agent roles, shared state, and coordination patte
 | Shared state object (LangGraph state, a blackboard) | one source of truth | concurrent writes need rules |
 | Shared memory store / files | persistent, large | retrieval quality matters ([Ch 12](ch12-agent-memory.md)) |
 
-**Costs to bound** — tokens multiply (each agent re-reads context), latency adds up in sequential chains, errors compound (5 agents at 95% each ≈ 77% end to end), and agents can loop by delegating back and forth. Rules: start with one agent and add more only when evals show a gain; cap rounds and total budget; keep a single owner of the final answer; trace every hand-off ([Ch 16](ch16-ai-observability.md)).
+### Costs to bound
+
+Tokens multiply (each agent re-reads context), latency adds up in sequential chains, errors compound (5 agents at 95% each ≈ 77% end to end), and agents can loop by delegating back and forth. Rules: start with one agent and add more only when evals show a gain; cap rounds and total budget; keep a single owner of the final answer; trace every hand-off ([Ch 16](ch16-ai-observability.md)).
 
 ---
 
@@ -57,7 +63,7 @@ Orchestration vs choreography, agent roles, shared state, and coordination patte
 
 ## Diagram
 
-**An orchestrator fanning out to specialist agents, then aggregating**
+### An orchestrator fanning out to specialist agents, then aggregating
 
 ```mermaid
 flowchart TD
@@ -71,9 +77,9 @@ flowchart TD
     C -- pass --> OUT["final brief"]
 ```
 
-**Orchestration vs choreography**
+### Orchestration vs choreography
 
-**ORCHESTRATION**
+### ORCHESTRATION
 
 ```mermaid
 flowchart TD
@@ -82,7 +88,7 @@ flowchart TD
     lead --> c["agent C"]
 ```
 
-**CHOREOGRAPHY**
+### CHOREOGRAPHY
 
 ```mermaid
 flowchart LR
@@ -168,7 +174,7 @@ print(asyncio.run(run("Write a brief on heat pumps for a city council")))
 
 ## Mini project
 
-**A small multi-agent system with defined roles and a coordinator.**
+### A small multi-agent system with defined roles and a coordinator
 
 ```mermaid
 flowchart LR
@@ -183,7 +189,7 @@ flowchart LR
     CO --> TR["trace of every hand-off<br/>(tokens, time per agent)"]
 ```
 
-**Steps**
+### Steps
 
 1. Three roles with separate system prompts, tools, and JSON output schemas.
 2. A coordinator that plans, calls roles, passes *structured summaries* (not full transcripts), and owns the final answer.
@@ -197,7 +203,7 @@ flowchart LR
 
 ## Build #4
 
-**An AI Workflow Engine — DAG-based task graphs with agents at each node.**
+### An AI Workflow Engine — DAG-based task graphs with agents at each node
 
 ```mermaid
 flowchart TD
@@ -212,7 +218,7 @@ flowchart TD
     SCH --> OBS["traces + cost per node"]
 ```
 
-**Steps**
+### Steps
 
 1. A YAML format: each node has an `agent` (prompt, model, tools) or a plain `tool`, `needs:` dependencies, input/output JSON Schemas, `retries`, and `timeout`.
 2. Validate the graph (no cycles, with the topological sort from [Vol 1 Ch 34](../volume-1-cs-foundations/ch34-graph-algorithms-dfs-bfs-topological-sort-and.md)) and schema compatibility between connected nodes.

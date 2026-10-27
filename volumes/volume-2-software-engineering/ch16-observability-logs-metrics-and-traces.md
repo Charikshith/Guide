@@ -10,11 +10,13 @@ The three pillars, instrumentation, dashboards, SLOs/SLIs, and debugging with tr
 
 **In one sentence:** observability is being able to answer new questions about your running system without shipping new code — and at team scale that means agreeing on what "working" means (SLIs and SLOs), alerting only when users are actually hurt (error-budget burn), and building dashboards and traces that lead from a symptom to a cause in minutes.
 
-**Mental model — a car's dashboard and a mechanic's toolkit.** The speedometer and fuel gauge (SLIs) tell you what you care about while driving. The "check engine" light should come on only when something needs attention (SLO-based alerts), not every time you brake. When it does come on, the mechanic plugs in a diagnostic tool (traces, logs) to find the exact failing part.
+### Mental model — a car's dashboard and a mechanic's toolkit
+
+The speedometer and fuel gauge (SLIs) tell you what you care about while driving. The "check engine" light should come on only when something needs attention (SLO-based alerts), not every time you brake. When it does come on, the mechanic plugs in a diagnostic tool (traces, logs) to find the exact failing part.
 
 The mechanics of emitting the three signals with OpenTelemetry are in [Vol 1 Ch 58](../volume-1-cs-foundations/ch58-observability-logs-metrics-traces-and-opentelemetry.md). This chapter is about **using** them: SLOs, dashboards, alerting, and debugging practice.
 
-**SLI, SLO, SLA, error budget**
+### SLI, SLO, SLA, error budget
 
 | Term | Meaning | Example |
 |------|---------|---------|
@@ -23,7 +25,7 @@ The mechanics of emitting the three signals with OpenTelemetry are in [Vol 1 Ch 
 | **Error budget** | `1 − SLO` — how much failure is allowed | 0.1% of requests ≈ 43 minutes of full outage per 30 days |
 | **SLA** (agreement) | a contract with customers, with penalties | 99.5% monthly, or service credits — always *looser* than the SLO |
 
-**How many nines?**
+### How many nines?
 
 | SLO | Allowed downtime per 30 days |
 |-----|-----------------------------:|
@@ -35,9 +37,13 @@ The mechanics of emitting the three signals with OpenTelemetry are in [Vol 1 Ch 
 
 Each extra nine costs a lot more engineering. Choose the SLO from what users need, not from pride.
 
-**Error budget policy** — if the budget is healthy, ship faster and take risks; if it's burning fast, freeze risky changes and prioritize reliability work. This turns "reliability vs features" arguments into a number.
+### Error budget policy
 
-**Alert on burn rate, not on every blip** — *burn rate* = how fast you consume the budget (1× = exactly on budget over the window). Multi-window, multi-burn-rate alerts (Google SRE Workbook):
+If the budget is healthy, ship faster and take risks; if it's burning fast, freeze risky changes and prioritize reliability work. This turns "reliability vs features" arguments into a number.
+
+### Alert on burn rate, not on every blip
+
+*burn rate* = how fast you consume the budget (1× = exactly on budget over the window). Multi-window, multi-burn-rate alerts (Google SRE Workbook):
 
 | Severity | Burn rate | Long window | Short window | Budget spent when it fires |
 |----------|:-:|:-:|:-:|:-:|
@@ -47,7 +53,7 @@ Each extra nine costs a lot more engineering. Choose the SLO from what users nee
 
 The short window makes the alert stop quickly once the problem is fixed.
 
-**Dashboards that work**
+### Dashboards that work
 
 | Dashboard | For | Contents |
 |-----------|-----|----------|
@@ -58,17 +64,25 @@ The short window makes the alert stop quickly once the problem is fixed.
 
 Put SLO status at the top, show deploys as annotations, and keep the same layout for every service.
 
-**Black-box and white-box monitoring** — *white-box* metrics come from inside the service (instrumented code: cache hits, queue depth, dependency latency) and help find causes. *Black-box* checks look from outside: **synthetic** probes run on a schedule from the regions your users are in and call your public endpoints like a user would. They catch what the service can't see about itself — a DNS outage or broken certificate looks, from inside, like "slightly fewer requests than usual" — and they exercise endpoints real users hit rarely. Measure each SLI as close to the user as you can afford: client-side timings include every hop, load-balancer metrics most of them, service metrics the least.
+### Black-box and white-box monitoring
 
-**Events vs pre-aggregated metrics** — you can ship one event per occurrence (`{failure: 1, region: "eu-west"}`) and aggregate at query time, which is flexible but expensive to ingest and slow to query over months of data. Or **pre-aggregate**: the telemetry service, and even the local agent, sums counts into fixed periods (1 min, 5 min, 1 h) as data arrives. That cuts bandwidth, storage and query time by orders of magnitude, but you can never re-slice below the period you kept (a 1-hour rollup can't become 5-minute data) — so keep fine-grained data for a short time and coarse rollups for long.
+*white-box* metrics come from inside the service (instrumented code: cache hits, queue depth, dependency latency) and help find causes. *Black-box* checks look from outside: **synthetic** probes run on a schedule from the regions your users are in and call your public endpoints like a user would. They catch what the service can't see about itself — a DNS outage or broken certificate looks, from inside, like "slightly fewer requests than usual" — and they exercise endpoints real users hit rarely. Measure each SLI as close to the user as you can afford: client-side timings include every hop, load-balancer metrics most of them, service metrics the least.
+
+### Events vs pre-aggregated metrics
+
+You can ship one event per occurrence (`{failure: 1, region: "eu-west"}`) and aggregate at query time, which is flexible but expensive to ingest and slow to query over months of data. Or **pre-aggregate**: the telemetry service, and even the local agent, sums counts into fixed periods (1 min, 5 min, 1 h) as data arrives. That cuts bandwidth, storage and query time by orders of magnitude, but you can never re-slice below the period you kept (a 1-hour rollup can't become 5-minute data) — so keep fine-grained data for a short time and coarse rollups for long.
 
 **Why the tail matters, in numbers (Little's law)** — the number of requests in flight = arrival rate × time each spends in the system. A service handling 10,000 req/s at 200 ms average needs about 10,000 × 0.2 = 2,000 concurrent workers (threads, connections). If just 1% of requests start taking 20 s (a congested switch, a lax timeout), those 100 req/s × 20 s add *another* 2,000 in flight — the service needs twice the threads to stand still. That's why you track p99/p99.9 and cap them with timeouts: the slow 1% can exhaust the pools that serve the other 99%.
 
-**Logs worth keeping: one wide event per unit of work** — instead of scattering dozens of log lines per request, build *one* structured event per request or message as it is processed (pass a context object down the call path) and emit it at the end: who and what, the outcome, durations of each step, and every downstream call's status and latency, plus the request/trace ID to join with other services' events. Strip personal data before logging. Control cost with dynamic log levels, **sampling** (keep every failure, sample successes), and rate limits on the log collector so one buggy deploy can't flood it.
+### Logs worth keeping: one wide event per unit of work
+
+Instead of scattering dozens of log lines per request, build *one* structured event per request or message as it is processed (pass a context object down the call path) and emit it at the end: who and what, the outcome, durations of each step, and every downstream call's status and latency, plus the request/trace ID to join with other services' events. Strip personal data before logging. Control cost with dynamic log levels, **sampling** (keep every failure, sample successes), and rate limits on the log collector so one buggy deploy can't flood it.
 
 Metrics and traces can be seen as **views derived from these events**: a metric rolls counters from many events into a time series; a trace stitches together the span events that share a trace ID. Traces also give **resource attribution** — which customers drive load on which downstream services — useful for capacity planning, rate limits and billing.
 
-**Debugging with traces** — start from the symptom (an SLO alert or a slow p99), use an *exemplar* to jump from the latency histogram to a real slow trace, find the span that dominates (critical path), then read that span's logs via the trace ID. Compare slow traces with normal ones: what attribute is different (a tenant, a region, a payload size, a cache miss)?
+### Debugging with traces
+
+Start from the symptom (an SLO alert or a slow p99), use an *exemplar* to jump from the latency histogram to a real slow trace, find the span that dominates (critical path), then read that span's logs via the trace ID. Compare slow traces with normal ones: what attribute is different (a tenant, a region, a payload size, a cache miss)?
 
 ---
 
@@ -80,7 +94,7 @@ Metrics and traces can be seen as **views derived from these events**: a metric 
 
 ## Diagram
 
-**A trace spanning services with spans**
+### A trace spanning services with spans
 
 <div class="fig">
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 280" role="img" aria-label="Trace waterfall: the provider API call at 465 ms is the critical path inside payments, inside a 640 ms checkout" style="width:100%;max-width:840px;height:auto;font-family:inherit"><defs><marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="context-stroke"/></marker></defs><text x="20" y="22" font-size="13" text-anchor="start" fill="var(--text)" font-weight="600">trace 7f3a… POST /checkout</text><text x="820" y="22" font-size="12.5" text-anchor="end" fill="var(--text-muted)">0 ms ────── 640 ms</text><text x="20" y="57" font-size="12" text-anchor="start" fill="var(--text)">gateway   POST /checkout</text><rect x="360.0" y="44" width="360.0" height="20" rx="3" fill="var(--primary)" fill-opacity=".45" stroke="var(--primary)" stroke-width="1"/><text x="732" y="58" font-size="12" text-anchor="start" fill="var(--text-muted)">640 ms</text><text x="38" y="93" font-size="12" text-anchor="start" fill="var(--text)">orders   create_order</text><rect x="371.25" y="80" width="342.0" height="20" rx="3" fill="var(--primary)" fill-opacity=".45" stroke="var(--primary)" stroke-width="1"/><text x="732" y="94" font-size="12" text-anchor="start" fill="var(--text-muted)">608 ms</text><text x="56" y="129" font-size="12" text-anchor="start" fill="var(--text)">orders   SELECT cart (db)</text><rect x="372.375" y="116" width="11.25" height="20" rx="3" fill="#8b5cf6" fill-opacity=".45" stroke="#8b5cf6" stroke-width="1"/><text x="732" y="130" font-size="12" text-anchor="start" fill="var(--text-muted)">20 ms</text><text x="56" y="165" font-size="12" text-anchor="start" fill="var(--text)">payments   POST /charge</text><rect x="399.375" y="152" width="281.25" height="20" rx="3" fill="var(--danger)" fill-opacity=".45" stroke="var(--danger)" stroke-width="1"/><text x="732" y="166" font-size="12" text-anchor="start" fill="var(--text-muted)">500 ms</text><text x="74" y="201" font-size="12" text-anchor="start" fill="var(--text)">payments   provider API call</text><rect x="416.25" y="188" width="261.5625" height="20" rx="3" fill="var(--danger)" fill-opacity=".45" stroke="var(--danger)" stroke-width="1"/><text x="732" y="202" font-size="12" text-anchor="start" fill="var(--danger)" font-weight="600">465 ms   ← critical path</text><text x="56" y="237" font-size="12" text-anchor="start" fill="var(--text)">inventory   reserve stock</text><rect x="691.875" y="224" width="22.5" height="20" rx="3" fill="var(--success)" fill-opacity=".45" stroke="var(--success)" stroke-width="1"/><text x="732" y="238" font-size="12" text-anchor="start" fill="var(--text-muted)">40 ms</text></svg>
@@ -88,13 +102,13 @@ Metrics and traces can be seen as **views derived from these events**: a metric 
 
 The critical path is `payments → provider API call` (465 ms of 640 ms).
 
-**A RED/USE dashboard layout**
+### A RED/USE dashboard layout
 
 <div class="fig">
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 820 360" role="img" aria-label="Service dashboard for checkout-api: SLO budget, request rate, errors, latency, resource USE metrics and dependency latency" style="width:100%;max-width:820px;height:auto;font-family:inherit"><defs><marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="context-stroke"/></marker></defs><rect x="10" y="10" width="800" height="340" rx="10" fill="var(--border)" fill-opacity=".15" stroke="var(--border)" stroke-width="1.4"/><text x="30" y="36" font-size="14" text-anchor="start" fill="var(--text)" font-weight="700">checkout-api</text><text x="30" y="62" font-size="12.5" text-anchor="start" fill="var(--text)">SLO 99.9% good (30d)    current 99.93%    budget left</text><rect x="380" y="50" width="200" height="16" rx="4" fill="var(--border)" fill-opacity=".3" stroke="var(--border)" stroke-width="1"/><rect x="380" y="50" width="142" height="16" rx="4" fill="var(--success)" fill-opacity=".7" stroke="var(--success)" stroke-width="0"/><text x="592" y="63" font-size="12.5" text-anchor="start" fill="var(--success)" font-weight="700">71%</text><rect x="30.0" y="148" width="20.0" height="12" rx="1" fill="var(--primary)" fill-opacity=".6" stroke="var(--primary)" stroke-width="0"/><rect x="53.0" y="142" width="20.0" height="18" rx="1" fill="var(--primary)" fill-opacity=".6" stroke="var(--primary)" stroke-width="0"/><rect x="76.0" y="130" width="20.0" height="30" rx="1" fill="var(--primary)" fill-opacity=".6" stroke="var(--primary)" stroke-width="0"/><rect x="99.0" y="124" width="20.0" height="36" rx="1" fill="var(--primary)" fill-opacity=".6" stroke="var(--primary)" stroke-width="0"/><rect x="122.0" y="124" width="20.0" height="36" rx="1" fill="var(--primary)" fill-opacity=".6" stroke="var(--primary)" stroke-width="0"/><rect x="145.0" y="130" width="20.0" height="30" rx="1" fill="var(--primary)" fill-opacity=".6" stroke="var(--primary)" stroke-width="0"/><rect x="168.0" y="124" width="20.0" height="36" rx="1" fill="var(--primary)" fill-opacity=".6" stroke="var(--primary)" stroke-width="0"/><rect x="191.0" y="118" width="20.0" height="42" rx="1" fill="var(--primary)" fill-opacity=".6" stroke="var(--primary)" stroke-width="0"/><rect x="214.0" y="124" width="20.0" height="36" rx="1" fill="var(--primary)" fill-opacity=".6" stroke="var(--primary)" stroke-width="0"/><rect x="237.0" y="130" width="20.0" height="30" rx="1" fill="var(--primary)" fill-opacity=".6" stroke="var(--primary)" stroke-width="0"/><text x="30" y="102" font-size="12.5" text-anchor="start" fill="var(--text)" font-weight="600">Rate (rps)</text><text x="122.0" y="176" font-size="11.5" text-anchor="start" fill="var(--danger)" font-weight="600">▲ deploy</text><rect x="300.0" y="154" width="20.0" height="6" rx="1" fill="var(--danger)" fill-opacity=".6" stroke="var(--danger)" stroke-width="0"/><rect x="323.0" y="154" width="20.0" height="6" rx="1" fill="var(--danger)" fill-opacity=".6" stroke="var(--danger)" stroke-width="0"/><rect x="346.0" y="154" width="20.0" height="6" rx="1" fill="var(--danger)" fill-opacity=".6" stroke="var(--danger)" stroke-width="0"/><rect x="369.0" y="154" width="20.0" height="6" rx="1" fill="var(--danger)" fill-opacity=".6" stroke="var(--danger)" stroke-width="0"/><rect x="392.0" y="154" width="20.0" height="6" rx="1" fill="var(--danger)" fill-opacity=".6" stroke="var(--danger)" stroke-width="0"/><rect x="415.0" y="124" width="20.0" height="36" rx="1" fill="var(--danger)" fill-opacity=".6" stroke="var(--danger)" stroke-width="0"/><rect x="438.0" y="154" width="20.0" height="6" rx="1" fill="var(--danger)" fill-opacity=".6" stroke="var(--danger)" stroke-width="0"/><rect x="461.0" y="154" width="20.0" height="6" rx="1" fill="var(--danger)" fill-opacity=".6" stroke="var(--danger)" stroke-width="0"/><rect x="484.0" y="154" width="20.0" height="6" rx="1" fill="var(--danger)" fill-opacity=".6" stroke="var(--danger)" stroke-width="0"/><rect x="507.0" y="154" width="20.0" height="6" rx="1" fill="var(--danger)" fill-opacity=".6" stroke="var(--danger)" stroke-width="0"/><text x="300" y="102" font-size="12.5" text-anchor="start" fill="var(--text)" font-weight="600">Errors (%)</text><text x="415.0" y="176" font-size="11.5" text-anchor="start" fill="var(--danger)" font-weight="600">▲ spike</text><rect x="570.0" y="154" width="22.555555555555557" height="6" rx="1" fill="var(--accent)" fill-opacity=".6" stroke="var(--accent)" stroke-width="0"/><rect x="595.5555555555555" y="154" width="22.555555555555557" height="6" rx="1" fill="var(--accent)" fill-opacity=".6" stroke="var(--accent)" stroke-width="0"/><rect x="621.1111111111111" y="154" width="22.555555555555557" height="6" rx="1" fill="var(--accent)" fill-opacity=".6" stroke="var(--accent)" stroke-width="0"/><rect x="646.6666666666666" y="148" width="22.555555555555557" height="12" rx="1" fill="var(--accent)" fill-opacity=".6" stroke="var(--accent)" stroke-width="0"/><rect x="672.2222222222222" y="148" width="22.555555555555557" height="12" rx="1" fill="var(--accent)" fill-opacity=".6" stroke="var(--accent)" stroke-width="0"/><rect x="697.7777777777778" y="130" width="22.555555555555557" height="30" rx="1" fill="var(--accent)" fill-opacity=".6" stroke="var(--accent)" stroke-width="0"/><rect x="723.3333333333334" y="148" width="22.555555555555557" height="12" rx="1" fill="var(--accent)" fill-opacity=".6" stroke="var(--accent)" stroke-width="0"/><rect x="748.8888888888889" y="148" width="22.555555555555557" height="12" rx="1" fill="var(--accent)" fill-opacity=".6" stroke="var(--accent)" stroke-width="0"/><rect x="774.4444444444445" y="148" width="22.555555555555557" height="12" rx="1" fill="var(--accent)" fill-opacity=".6" stroke="var(--accent)" stroke-width="0"/><text x="570" y="102" font-size="12.5" text-anchor="start" fill="var(--text)" font-weight="600">Duration p50 / p95 / p99  (p99 shown)</text><line x1="20" y1="196" x2="800" y2="196" stroke="var(--border)" stroke-width="1"/><text x="30" y="224" font-size="12.5" text-anchor="start" fill="var(--text)">USE:  CPU 45%  ·  memory 60%  ·  DB pool waits ▁▁▅▁  ·  queue depth ▁▁▂▁</text><line x1="20" y1="244" x2="800" y2="244" stroke="var(--border)" stroke-width="1"/><text x="30" y="272" font-size="12.5" text-anchor="start" fill="var(--text)">Dependencies:  payments p99 ▁▁▇▁  ·  inventory p99 ▁▁▁▁  ·  redis ▁▁▁▁</text></svg>
 </div>
 
-**Error budget over a 30-day window**
+### Error budget over a 30-day window
 
 ```mermaid
 xychart-beta
@@ -179,7 +193,7 @@ def observe(route, seconds):
 
 ## Mini project
 
-**Add OpenTelemetry to a service and produce a trace view + a latency dashboard.**
+### Add OpenTelemetry to a service and produce a trace view + a latency dashboard
 
 ```mermaid
 flowchart LR
@@ -190,7 +204,7 @@ flowchart LR
     CHAOS["fault injection:<br/>+300 ms, 5% errors"] --> SVC
 ```
 
-**Steps**
+### Steps
 
 1. Instrument the service and its dependencies; docker-compose for the Collector, Prometheus, Tempo/Jaeger, and Grafana.
 2. Define one availability SLI and one latency SLI with recording rules.

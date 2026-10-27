@@ -10,9 +10,11 @@ Speech-to-text, LLM turn-taking, text-to-speech, latency budgets, and interrupti
 
 **In one sentence:** a voice agent is a real-time pipeline — listen, detect when the person has finished speaking, transcribe, think, and speak back — where every stage must stream so the reply starts within about a second, and where the user can interrupt at any moment.
 
-**Mental model — a phone call with a very fast interpreter.** Humans leave only ~200–300 ms between turns in conversation. Anything over ~1 second feels laggy; over 2 seconds, people start repeating themselves. So the agent can't wait for a whole paragraph: it must start speaking the first sentence while still "thinking" about the rest — and stop instantly if you cut in.
+### Mental model — a phone call with a very fast interpreter
 
-**The pipeline**
+Humans leave only ~200–300 ms between turns in conversation. Anything over ~1 second feels laggy; over 2 seconds, people start repeating themselves. So the agent can't wait for a whole paragraph: it must start speaking the first sentence while still "thinking" about the rest — and stop instantly if you cut in.
+
+### The pipeline
 
 | Stage | Job | Tools / models | Streaming? |
 |-------|-----|----------------|:-:|
@@ -24,7 +26,7 @@ Speech-to-text, LLM turn-taking, text-to-speech, latency budgets, and interrupti
 | **TTS** (text-to-speech) | text → audio | ElevenLabs, Cartesia, OpenAI, Piper (local) | start from the first sentence |
 | Alternative: speech-to-speech | one model hears and speaks | realtime speech models | yes |
 
-**A latency budget (voice-to-voice, target < 1 s)**
+### A latency budget (voice-to-voice, target < 1 s)
 
 | Step | Budget |
 |------|-------:|
@@ -35,11 +37,17 @@ Speech-to-text, LLM turn-taking, text-to-speech, latency budgets, and interrupti
 | network + audio buffering | 50–150 ms |
 | **total** | **~0.8–1.4 s** |
 
-**How to hit low latency** — stream every stage and *overlap* them; send the LLM output to TTS sentence by sentence; use a fast model for conversation (and a bigger one only via tools when needed); keep prompts short; colocate services in one region; reuse warm connections; prefer WebRTC over plain HTTP; say a short filler ("let me check…") before slow tool calls.
+### How to hit low latency
 
-**Barge-in (interruption)** — when VAD detects the user speaking while the agent is talking: stop TTS playback immediately, cancel in-flight LLM and TTS generation, **truncate the conversation history** to what was actually spoken (the model shouldn't believe it said the unheard part), then listen. Tune it so coughs, "mm-hm", and the agent's own echo (use echo cancellation) don't trigger it.
+Stream every stage and *overlap* them; send the LLM output to TTS sentence by sentence; use a fast model for conversation (and a bigger one only via tools when needed); keep prompts short; colocate services in one region; reuse warm connections; prefer WebRTC over plain HTTP; say a short filler ("let me check…") before slow tool calls.
 
-**Voice-specific prompting** — no markdown, lists, or URLs (they sound terrible); short sentences; spell out numbers the way people say them; confirm important details back ("that's May third, right?"); handle mis-transcriptions gracefully.
+### Barge-in (interruption)
+
+When VAD detects the user speaking while the agent is talking: stop TTS playback immediately, cancel in-flight LLM and TTS generation, **truncate the conversation history** to what was actually spoken (the model shouldn't believe it said the unheard part), then listen. Tune it so coughs, "mm-hm", and the agent's own echo (use echo cancellation) don't trigger it.
+
+### Voice-specific prompting
+
+No markdown, lists, or URLs (they sound terrible); short sentences; spell out numbers the way people say them; confirm important details back ("that's May third, right?"); handle mis-transcriptions gracefully.
 
 ---
 
@@ -51,7 +59,7 @@ Speech-to-text, LLM turn-taking, text-to-speech, latency budgets, and interrupti
 
 ## Diagram
 
-**The audio pipeline with a turn-taking loop**
+### The audio pipeline with a turn-taking loop
 
 ```mermaid
 flowchart LR
@@ -66,13 +74,13 @@ flowchart LR
     VAD -. "user speaks while the agent talks<br/>= BARGE-IN: stop TTS, cancel LLM,<br/>truncate history" .-> TTS
 ```
 
-**Where the time goes — sequential vs overlapped**
+### Where the time goes — sequential vs overlapped
 
 <div class="fig">
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 250" role="img" aria-label="Voice pipeline latency: sequential takes about 3.2 seconds, while streaming with overlap reaches first audio in about 0.9 seconds" style="width:100%;max-width:860px;height:auto;font-family:inherit"><defs><marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="context-stroke"/></marker></defs><text x="20" y="32" font-size="13.5" text-anchor="start" fill="var(--text)" font-weight="700">SEQUENTIAL (feels slow: ~3.2 s)</text><rect x="20" y="40" width="127.0" height="34" rx="4" fill="var(--text-muted)" fill-opacity=".35" stroke="var(--text-muted)" stroke-width="1.6"/><text x="83.5" y="61" font-size="11.5" text-anchor="middle" fill="var(--text)">end silence 500</text><rect x="150.0" y="40" width="153.0" height="34" rx="4" fill="var(--primary)" fill-opacity=".35" stroke="var(--primary)" stroke-width="1.6"/><text x="226.5" y="61" font-size="11.5" text-anchor="middle" fill="var(--text)">full STT 600</text><rect x="306.0" y="40" width="387.0" height="34" rx="4" fill="var(--accent)" fill-opacity=".35" stroke="var(--accent)" stroke-width="1.6"/><text x="499.5" y="61" font-size="11.5" text-anchor="middle" fill="var(--text)">full LLM reply 1500</text><rect x="696.0" y="40" width="153.0" height="34" rx="4" fill="var(--success)" fill-opacity=".35" stroke="var(--success)" stroke-width="1.6"/><text x="772.5" y="61" font-size="11.5" text-anchor="middle" fill="var(--text)">full TTS 600</text><text x="860.0" y="62" font-size="13" text-anchor="start" fill="var(--text)" font-weight="700">🔊 </text><text x="20" y="142" font-size="13.5" text-anchor="start" fill="var(--text)" font-weight="700">STREAMING + OVERLAP (~0.9 s to first audio)</text><rect x="20" y="150" width="101.0" height="34" rx="4" fill="var(--text-muted)" fill-opacity=".35" stroke="var(--text-muted)" stroke-width="1.6"/><text x="70.5" y="171" font-size="11.5" text-anchor="middle" fill="var(--text)">silence 400</text><rect x="124.0" y="150" width="36.0" height="34" rx="4" fill="var(--primary)" fill-opacity=".35" stroke="var(--primary)" stroke-width="1.6"/><text x="142.0" y="165" font-size="10" text-anchor="middle" fill="var(--text)">STT</text><text x="142.0" y="178" font-size="10.5" text-anchor="middle" fill="var(--text)" font-weight="700">150</text><rect x="163.0" y="150" width="62.0" height="34" rx="4" fill="var(--accent)" fill-opacity=".35" stroke="var(--accent)" stroke-width="1.6"/><text x="194.0" y="165" font-size="10" text-anchor="middle" fill="var(--text)">LLM sentence</text><text x="194.0" y="178" font-size="10.5" text-anchor="middle" fill="var(--text)" font-weight="700">250</text><rect x="228.0" y="150" width="28.200000000000003" height="34" rx="4" fill="var(--success)" fill-opacity=".35" stroke="var(--success)" stroke-width="1.6"/><text x="242.1" y="165" font-size="10" text-anchor="middle" fill="var(--text)">TTS</text><text x="242.1" y="178" font-size="10.5" text-anchor="middle" fill="var(--text)" font-weight="700">120</text><text x="267.2" y="172" font-size="13" text-anchor="start" fill="var(--text)" font-weight="700">🔊 …</text><text x="20" y="220" font-size="12.5" text-anchor="start" fill="var(--text-muted)">└ the LLM keeps generating while sentence 1 plays</text></svg>
 </div>
 
-**Barge-in**
+### Barge-in
 
 ```mermaid
 sequenceDiagram
@@ -161,7 +169,7 @@ async def conversation(mic, stt, tts, player, vad):
 
 ## Mini project
 
-**A voice assistant with low-latency turn-taking.**
+### A voice assistant with low-latency turn-taking
 
 ```mermaid
 flowchart LR
@@ -170,7 +178,7 @@ flowchart LR
     SRV --> M["metrics per turn:<br/>stt, ttft, tts first audio,<br/>voice-to-voice (p50/p95)"]
 ```
 
-**Steps**
+### Steps
 
 1. A browser page that streams mic audio to a server and plays audio back.
 2. VAD + endpointing; streaming STT; streaming LLM; sentence-chunked streaming TTS.
@@ -184,7 +192,7 @@ flowchart LR
 
 ## Build #5
 
-**A Voice Agent — full STT/LLM/TTS with interruptions and conversation state.**
+### A Voice Agent — full STT/LLM/TTS with interruptions and conversation state
 
 ```mermaid
 flowchart TD
@@ -198,7 +206,7 @@ flowchart TD
     ST --> HO["handoff to a human<br/>on request or low confidence"]
 ```
 
-**Steps**
+### Steps
 
 1. Pick a use case, e.g. a restaurant booking line; define the state machine (greet → collect date, time, party size → check availability → confirm → close).
 2. Build the pipeline with streaming stages and barge-in that truncates history correctly.

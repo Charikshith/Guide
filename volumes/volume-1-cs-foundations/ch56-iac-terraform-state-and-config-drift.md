@@ -10,7 +10,9 @@ Infrastructure as code, Terraform state, and detecting/configuring drift.
 
 **In one sentence:** infrastructure as code means your servers, networks, and databases are described in version-controlled files; Terraform compares those files with what actually exists (using a state file as its memory) and shows a plan of changes; and *drift* is when someone changes the real infrastructure by hand so it no longer matches the code.
 
-**Mental model — an architect's blueprint.** The `.tf` files are the blueprint. The state file is the builder's logbook: "wall A is the brick wall with serial #123". `terraform plan` walks the building with the blueprint and the logbook and lists every difference. Drift is someone knocking a hole in a wall without updating the blueprint — next time you build from the blueprint, the hole gets bricked up.
+### Mental model — an architect's blueprint
+
+The `.tf` files are the blueprint. The state file is the builder's logbook: "wall A is the brick wall with serial #123". `terraform plan` walks the building with the blueprint and the logbook and lists every difference. Drift is someone knocking a hole in a wall without updating the blueprint — next time you build from the blueprint, the hole gets bricked up.
 
 **Why IaC**
 
@@ -21,7 +23,7 @@ Infrastructure as code, Terraform state, and detecting/configuring drift.
 | disaster recovery = heroics | recreate from code |
 | "who opened port 22 to the world?" | `git blame` |
 
-**Terraform core concepts**
+### Terraform core concepts
 
 | Concept | Meaning |
 |---------|---------|
@@ -43,7 +45,7 @@ Infrastructure as code, Terraform state, and detecting/configuring drift.
 | contains secrets in plain text | encryption at rest + tight access control |
 | no history | versioned bucket → recover old state |
 
-**Drift: detect and reconcile**
+### Drift: detect and reconcile
 
 | Step | How |
 |------|-----|
@@ -62,7 +64,7 @@ Infrastructure as code, Terraform state, and detecting/configuring drift.
 
 ## Diagram
 
-**The Terraform plan/apply cycle**
+### The Terraform plan/apply cycle
 
 ```mermaid
 flowchart LR
@@ -74,7 +76,7 @@ flowchart LR
     APPLY --> STATE
 ```
 
-**State file vs live infra diff (drift)**
+### State file vs live infra diff (drift)
 
 | | code (`main.tf`) | state (last apply) | live AWS (someone used the console) |
 |---|---|---|---|
@@ -88,7 +90,7 @@ terraform plan:
   ~ aws_instance.web         instance_type: t3.large → t3.small
 ```
 
-**Module composition**
+### Module composition
 
 ```mermaid
 flowchart TD
@@ -195,7 +197,7 @@ terraform state list
 
 ## Mini project
 
-**A Terraform module + a drift-check script that alerts on differences.**
+### A Terraform module + a drift-check script that alerts on differences
 
 ```mermaid
 flowchart LR
@@ -205,7 +207,7 @@ flowchart LR
     DRIFT -- "exit 0" --> OK[quiet]
 ```
 
-**Steps**
+### Steps
 
 1. Write a reusable module (a static site on S3 + CloudFront, or the equivalent on LocalStack or GCP) with variables, outputs, and validations.
 2. Two environments using the module with separate remote states.

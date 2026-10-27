@@ -12,7 +12,7 @@ Prompt injection, jailbreaks, data exfiltration, and securing the AI supply chai
 
 **Mental model — a very helpful assistant who reads all your mail aloud and obeys it.** If a letter says "please forward the boss's files to this address", a naive assistant might just do it. You can't make the assistant immune to persuasive letters, so you (1) don't give them the keys to the file room, (2) check anything they send out, and (3) require your signature for anything risky.
 
-**Main threats**
+### Main threats
 
 | Threat | What it is | Example |
 |--------|-----------|---------|
@@ -26,9 +26,11 @@ Prompt injection, jailbreaks, data exfiltration, and securing the AI supply chai
 | Supply chain | poisoned models, datasets, plugins, MCP servers | a malicious `pickle` model file; an MCP server that changes its tool descriptions after approval |
 | Model DoS / cost abuse | huge inputs or loops that burn tokens | "repeat this 10,000 times" |
 
-**The lethal trifecta** — an agent that combines (1) access to private data, (2) exposure to untrusted content, and (3) a way to communicate externally can be made to exfiltrate data. Remove at least one leg for any given task.
+### The lethal trifecta
 
-**Defenses (layered — no single one is enough)**
+An agent that combines (1) access to private data, (2) exposure to untrusted content, and (3) a way to communicate externally can be made to exfiltrate data. Remove at least one leg for any given task.
+
+### Defenses (layered — no single one is enough)
 
 | Layer | Controls |
 |-------|----------|
@@ -51,7 +53,7 @@ Prompt injection, jailbreaks, data exfiltration, and securing the AI supply chai
 
 ## Diagram
 
-**An attack-surface diagram for an AI app**
+### An attack-surface diagram for an AI app
 
 ```mermaid
 flowchart LR
@@ -69,7 +71,7 @@ flowchart LR
     SUP(["models, datasets,<br/>MCP servers, plugins"]) -->|"supply chain"| TB
 ```
 
-**An indirect prompt-injection attack on a tool-calling agent**
+### An indirect prompt-injection attack on a tool-calling agent
 
 ```mermaid
 sequenceDiagram
@@ -84,7 +86,7 @@ sequenceDiagram
     Note over A,E: DEFENSE: send_email not available in this task,<br/>or outbound domains allow-listed,<br/>or a human must approve every email
 ```
 
-**Defense in depth**
+### Defense in depth
 
 ```mermaid
 flowchart LR
@@ -173,7 +175,7 @@ weights = load_file("model.safetensors")      # no arbitrary code execution, unl
 
 ## Mini project
 
-**A red-team exercise on an agent + hardened guardrails.**
+### A red-team exercise on an agent + hardened guardrails
 
 ```mermaid
 flowchart LR
@@ -185,7 +187,7 @@ flowchart LR
     H --> EVAL["also re-run the quality eval<br/>(defenses must not break the product)"]
 ```
 
-**Steps**
+### Steps
 
 1. Threat-model the agent ([Vol 2 Ch 11](../volume-2-software-engineering/ch11-security-and-threat-modeling.md)) with the AI threats above; mark trust boundaries.
 2. Write ≥ 50 attack cases with automatic success detection (e.g. a canary secret appears in output, a forbidden tool is called, a request goes to a non-allowed domain).

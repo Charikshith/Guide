@@ -27,6 +27,19 @@ After reading this chapter, you'll be able to:
 
 *This section is in [Chapter 13 — Cloud Design Patterns](ch13-cloud-design-patterns.md), next to that chapter's practice material, so it is not repeated here.*
 
+### The seven patterns to learn first, by the problem they solve
+
+```mermaid
+flowchart LR
+  P1["A dependency is failing<br/>and calls pile up"] --> CB[Circuit Breaker]
+  P2["A call fails now and then<br/>for a short time"] --> RT[Retry with backoff]
+  P3["The same data is read<br/>far more than it changes"] --> CA[Cache-Aside]
+  P4["Reads and writes need<br/>different models or scale"] --> CQ[CQRS]
+  P5["One event must reach<br/>many independent consumers"] --> PS[Publisher / Subscriber]
+  P6["A legacy system must be<br/>replaced piece by piece"] --> SF[Strangler Fig]
+  P7["Every service needs the same<br/>logging, TLS or proxying"] --> SC[Sidecar]
+```
+
 ### Key Takeaways
 
 - Learn Circuit Breaker, Retry, Cache-Aside, CQRS, Publisher/Subscriber, Strangler Fig and Sidecar first.

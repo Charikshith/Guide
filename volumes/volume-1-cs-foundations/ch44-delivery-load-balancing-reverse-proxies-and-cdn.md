@@ -10,9 +10,11 @@ L4 vs L7 load balancing, reverse proxies (nginx), and CDN/edge caching.
 
 **In one sentence:** a reverse proxy stands in front of your servers and accepts every request for them; a load balancer is a reverse proxy that spreads requests across many healthy servers; and a CDN is thousands of caching reverse proxies placed near users around the world.
 
-**Mental model — a restaurant host.** Guests never walk straight into the kitchen. The host (reverse proxy) greets them at the door, checks the reservation (TLS, auth), and seats them at whichever waiter has the fewest tables (load balancing). A waiter who is sick gets skipped (health checks). A CDN is a chain of take-away counters across the city that hold the most popular dishes ready, so most people never reach the main kitchen at all.
+### Mental model — a restaurant host
 
-**L4 vs L7**
+Guests never walk straight into the kitchen. The host (reverse proxy) greets them at the door, checks the reservation (TLS, auth), and seats them at whichever waiter has the fewest tables (load balancing). A waiter who is sick gets skipped (health checks). A CDN is a chain of take-away counters across the city that hold the most popular dishes ready, so most people never reach the main kitchen at all.
+
+### L4 vs L7
 
 | | L4 (transport) | L7 (application) |
 |-|----------------|------------------|
@@ -22,7 +24,7 @@ L4 vs L7 load balancing, reverse proxies (nginx), and CDN/edge caching.
 | Features | very fast, protocol-agnostic, millions of connections | retries, rewrites, auth, rate limits, caching, compression, canary splits |
 | Examples | AWS NLB, LVS/IPVS, Maglev, Katran | nginx, Envoy, HAProxy (both modes), AWS ALB, Traefik |
 
-**Load-balancing algorithms**
+### Load-balancing algorithms
 
 | Algorithm | Picks | Good for |
 |-----------|-------|----------|
@@ -33,11 +35,17 @@ L4 vs L7 load balancing, reverse proxies (nginx), and CDN/edge caching.
 | Power of two choices | 2 random servers, then the less loaded | near-optimal and cheap at scale |
 | IP / consistent hash | the same client or key → the same server | sticky sessions, cache affinity |
 
-**Health checks** — *active*: the LB polls `GET /healthz` every few seconds, and a server is marked down after N failures and back up after M successes. *Passive* (outlier detection): eject servers that return errors to real traffic. Separate **liveness** ("the process is alive") from **readiness** ("it can serve now").
+### Health checks
 
-**What a reverse proxy gives you:** TLS termination, one public entry point, compression, static-file serving, buffering slow clients, request IDs, rate limiting, caching, and hiding backend topology.
+*active*: the LB polls `GET /healthz` every few seconds, and a server is marked down after N failures and back up after M successes. *Passive* (outlier detection): eject servers that return errors to real traffic. Separate **liveness** ("the process is alive") from **readiness** ("it can serve now").
 
-**CDN** — edge PoPs (points of presence) cache responses by URL plus the `Vary` headers. A **hit** is served from a nearby edge (~10–30 ms); a **miss** goes to the origin, and the edge caches the result per `Cache-Control`. **Origin shielding** adds a regional mid-tier so a thousand edges don't all miss to the origin at once.
+### What a reverse proxy gives you
+
+TLS termination, one public entry point, compression, static-file serving, buffering slow clients, request IDs, rate limiting, caching, and hiding backend topology.
+
+### CDN
+
+Edge PoPs (points of presence) cache responses by URL plus the `Vary` headers. A **hit** is served from a nearby edge (~10–30 ms); a **miss** goes to the origin, and the edge caches the result per `Cache-Control`. **Origin shielding** adds a regional mid-tier so a thousand edges don't all miss to the origin at once.
 
 ---
 
@@ -49,7 +57,7 @@ L4 vs L7 load balancing, reverse proxies (nginx), and CDN/edge caching.
 
 ## Diagram
 
-**Client → CDN → LB → backend pool, with the L4/L7 split**
+### Client → CDN → LB → backend pool, with the L4/L7 split
 
 ```mermaid
 flowchart LR
@@ -62,7 +70,7 @@ flowchart LR
     HC["health checks<br/>GET /readyz every 5 s"] -.-> API
 ```
 
-**Round robin skipping an unhealthy backend**
+### Round robin skipping an unhealthy backend
 
 ```
  requests:  r1   r2   r3   r4   r5   r6
@@ -70,7 +78,7 @@ flowchart LR
  after api3 passes 2 checks → rejoins:  r7 api3, r8 api1, …
 ```
 
-**CDN hit vs origin fetch**
+### CDN hit vs origin fetch
 
 ```mermaid
 sequenceDiagram
@@ -167,7 +175,7 @@ Cloudflare cache rule (conceptual)
 
 ## Mini project
 
-**A load balancer simulator that round-robins and removes unhealthy backends.**
+### A load balancer simulator that round-robins and removes unhealthy backends
 
 ```mermaid
 flowchart LR
@@ -177,7 +185,7 @@ flowchart LR
     LB --> M["metrics: per-backend count,<br/>error rate, p50/p99 latency"]
 ```
 
-**Steps**
+### Steps
 
 1. Three tiny backends with switches for "healthy", "slow" (adds 500 ms), and "broken" (returns 500).
 2. A proxy with a pluggable picker: round robin, least connections, power of two choices.

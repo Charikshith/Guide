@@ -10,9 +10,11 @@ TCP (handshake, reliability, flow/congestion control), UDP, QUIC; TLS handshake 
 
 **In one sentence:** TCP turns an unreliable network into a reliable, ordered byte stream; UDP just sends datagrams and hopes; QUIC rebuilds TCP's reliability plus TLS encryption on top of UDP so connections start faster; and TLS makes any of them private and authenticated.
 
-**Mental model — phone call vs postcards vs sealed courier.** TCP is a phone call: you dial and confirm ("hello?" "hello!"), then talk, and if something is garbled you ask again. UDP is postcards: fast and cheap, no confirmation, some get lost. TLS is a sealed envelope with a notarized ID card, so only the right person can read it, and you know who sent it.
+### Mental model — phone call vs postcards vs sealed courier
 
-**TCP vs UDP vs QUIC**
+TCP is a phone call: you dial and confirm ("hello?" "hello!"), then talk, and if something is garbled you ask again. UDP is postcards: fast and cheap, no confirmation, some get lost. TLS is a sealed envelope with a notarized ID card, so only the right person can read it, and you know who sent it.
+
+### TCP vs UDP vs QUIC
 
 | | TCP | UDP | QUIC (HTTP/3) |
 |-|-----|-----|---------------|
@@ -24,7 +26,7 @@ TCP (handshake, reliability, flow/congestion control), UDP, QUIC; TLS handshake 
 | Implemented in | the kernel | the kernel | user space libraries |
 | Use for | web (HTTP/1.1, /2), databases, SSH | DNS, VoIP, games, video, metrics | HTTP/3, modern mobile and web |
 
-**How TCP achieves reliability**
+### How TCP achieves reliability
 
 | Mechanism | Purpose |
 |-----------|---------|
@@ -35,9 +37,11 @@ TCP (handshake, reliability, flow/congestion control), UDP, QUIC; TLS handshake 
 | **Flow control** (receive window) | don't overwhelm the *receiver* |
 | **Congestion control** (cwnd: slow start, AIMD, CUBIC, BBR) | don't overwhelm the *network* |
 
-**Congestion control in one picture:** start small and double each RTT (slow start) until loss or a threshold; then grow by 1 per RTT; on loss, cut sharply. BBR instead models bottleneck bandwidth and RTT directly.
+### Congestion control in one picture
 
-**What TLS guarantees**
+Start small and double each RTT (slow start) until loss or a threshold; then grow by 1 per RTT; on loss, cut sharply. BBR instead models bottleneck bandwidth and RTT directly.
+
+### What TLS guarantees
 
 | Guarantee | How |
 |-----------|-----|
@@ -48,7 +52,9 @@ TCP (handshake, reliability, flow/congestion control), UDP, QUIC; TLS handshake 
 
 **Why TLS integrity matters even though TCP has a checksum** — TCP's 16-bit checksum is weak: studies of real traffic found it misses roughly 1 in 16 million to 1 in 10 billion corrupted packets. With 1 KB packets that is one undetected error somewhere between every 16 GB and every 10 TB transferred — routine at scale. TLS's authentication tag (an AEAD tag in TLS 1.3, an HMAC in older versions) rejects any record whose bits changed, whether by an attacker or a faulty router or NIC, so encrypting even internal traffic also buys end-to-end corruption detection. The CPU cost is small on modern processors with AES instructions — one more reason to use TLS everywhere, not only on the public internet.
 
-**Abstractions leak.** Libraries make a remote call look like a local function call, but the layers underneath show through when things go wrong: exhausted connection pools, sockets stuck in `TIME_WAIT`, expired certificates, DNS failures, congested routers dropping packets, retried non-idempotent requests. Knowing how TCP, TLS and DNS behave is what lets you debug those — and the fastest, most reliable network call is the one you don't make.
+### Abstractions leak
+
+Libraries make a remote call look like a local function call, but the layers underneath show through when things go wrong: exhausted connection pools, sockets stuck in `TIME_WAIT`, expired certificates, DNS failures, congested routers dropping packets, retried non-idempotent requests. Knowing how TCP, TLS and DNS behave is what lets you debug those — and the fastest, most reliable network call is the one you don't make.
 
 ---
 
@@ -60,7 +66,7 @@ TCP (handshake, reliability, flow/congestion control), UDP, QUIC; TLS handshake 
 
 ## Diagram
 
-**TCP 3-way handshake and TLS 1.3 handshake**
+### TCP 3-way handshake and TLS 1.3 handshake
 
 ```mermaid
 sequenceDiagram
@@ -77,20 +83,20 @@ sequenceDiagram
     S-->>C: HTTP response
 ```
 
-**Round trips before the first byte of data**
+### Round trips before the first byte of data
 
 <div class="fig">
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 270" role="img" aria-label="Connection setup cost: TCP plus TLS 1.2 takes 3 round trips, TLS 1.3 takes 2, QUIC takes 1 and QUIC 0-RTT takes 0" style="width:100%;max-width:800px;height:auto;font-family:inherit"><defs><marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="context-stroke"/></marker></defs><text x="120" y="53" font-size="13" text-anchor="end" fill="var(--text)" font-weight="600">TCP + TLS 1.2</text><rect x="130" y="30" width="96" height="36" rx="4" fill="var(--primary)" fill-opacity=".3" stroke="var(--primary)" stroke-width="1.6"/><text x="178.0" y="53" font-size="12.5" text-anchor="middle" fill="var(--text)" font-weight="600">TCP</text><rect x="230" y="30" width="96" height="36" rx="4" fill="var(--accent)" fill-opacity=".3" stroke="var(--accent)" stroke-width="1.6"/><text x="278.0" y="53" font-size="12.5" text-anchor="middle" fill="var(--text)" font-weight="600">TLS</text><rect x="330" y="30" width="96" height="36" rx="4" fill="var(--accent)" fill-opacity=".3" stroke="var(--accent)" stroke-width="1.6"/><text x="378.0" y="53" font-size="12.5" text-anchor="middle" fill="var(--text)" font-weight="600">TLS</text><rect x="430" y="30" width="96" height="36" rx="4" fill="var(--success)" fill-opacity=".3" stroke="var(--success)" stroke-width="1.6"/><text x="478.0" y="53" font-size="12.5" text-anchor="middle" fill="var(--text)" font-weight="600">data</text><text x="680" y="53" font-size="14" text-anchor="start" fill="var(--danger)" font-weight="700">3 RTT</text><text x="120" y="105" font-size="13" text-anchor="end" fill="var(--text)" font-weight="600">TCP + TLS 1.3</text><rect x="130" y="82" width="96" height="36" rx="4" fill="var(--primary)" fill-opacity=".3" stroke="var(--primary)" stroke-width="1.6"/><text x="178.0" y="105" font-size="12.5" text-anchor="middle" fill="var(--text)" font-weight="600">TCP</text><rect x="230" y="82" width="96" height="36" rx="4" fill="var(--accent)" fill-opacity=".3" stroke="var(--accent)" stroke-width="1.6"/><text x="278.0" y="105" font-size="12.5" text-anchor="middle" fill="var(--text)" font-weight="600">TLS</text><rect x="330" y="82" width="96" height="36" rx="4" fill="var(--success)" fill-opacity=".3" stroke="var(--success)" stroke-width="1.6"/><text x="378.0" y="105" font-size="12.5" text-anchor="middle" fill="var(--text)" font-weight="600">data</text><text x="680" y="105" font-size="14" text-anchor="start" fill="var(--text)" font-weight="700">2 RTT</text><text x="120" y="157" font-size="13" text-anchor="end" fill="var(--text)" font-weight="600">QUIC</text><rect x="130" y="134" width="146.0" height="36" rx="4" fill="#8b5cf6" fill-opacity=".3" stroke="#8b5cf6" stroke-width="1.6"/><text x="203.0" y="157" font-size="12.5" text-anchor="middle" fill="var(--text)" font-weight="600">QUIC + TLS</text><rect x="280.0" y="134" width="96" height="36" rx="4" fill="var(--success)" fill-opacity=".3" stroke="var(--success)" stroke-width="1.6"/><text x="328.0" y="157" font-size="12.5" text-anchor="middle" fill="var(--text)" font-weight="600">data</text><text x="680" y="157" font-size="14" text-anchor="start" fill="var(--text)" font-weight="700">1 RTT</text><text x="120" y="209" font-size="13" text-anchor="end" fill="var(--text)" font-weight="600">QUIC 0-RTT</text><rect x="130" y="186" width="96" height="36" rx="4" fill="var(--success)" fill-opacity=".3" stroke="var(--success)" stroke-width="1.6"/><text x="178.0" y="209" font-size="12.5" text-anchor="middle" fill="var(--text)" font-weight="600">data (on resume)</text><text x="680" y="209" font-size="14" text-anchor="start" fill="var(--text)" font-weight="700">0 RTT</text><line x1="130" y1="244" x2="530" y2="244" stroke="var(--text-muted)" stroke-width="1.6" marker-end="url(#ar)"/><text x="130" y="262" font-size="12" text-anchor="start" fill="var(--text-muted)">time (1 box width ≈ 1 RTT)</text><text x="790" y="262" font-size="12.5" text-anchor="end" fill="var(--text)" font-weight="600">at 100 ms RTT, 3 RTT → 1 RTT saves 200 ms on every new connection</text></svg>
 </div>
 
-**Head-of-line blocking**
+### Head-of-line blocking
 
 ```
  TCP (HTTP/2): one byte stream   [s1][s2][s3 LOST][s1][s2] → everything waits for s3's resend
  QUIC:         separate streams  s1: ■■■■  s2: ■■■■  s3: ■ ✗ ■ (only s3 waits)
 ```
 
-**Flow control: the receiver advertises how much room it has left**
+### Flow control: the receiver advertises how much room it has left
 
 ```mermaid
 sequenceDiagram
@@ -117,7 +123,7 @@ flowchart LR
 
 This is why connections are reused (keep-alive, pools), why servers and CDN PoPs are placed near users, and why TCP's reliability costs throughput compared with raw UDP.
 
-**A certificate chain**
+### A certificate chain
 
 ```mermaid
 flowchart TD
@@ -177,7 +183,7 @@ with socket.create_connection(("example.com", 443)) as raw:
 
 ## Mini project
 
-**A minimal TCP echo server and a TLS-terminating proxy.**
+### A minimal TCP echo server and a TLS-terminating proxy
 
 ```mermaid
 flowchart LR
@@ -186,7 +192,7 @@ flowchart LR
     PX --> LOG["log: client IP, TLS version,<br/>cipher, bytes each way"]
 ```
 
-**Steps**
+### Steps
 
 1. Echo server with `asyncio.start_server`: read a line, write it back; handle many clients.
 2. Generate a local CA and certificate with `mkcert` (or `openssl`).

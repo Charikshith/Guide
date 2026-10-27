@@ -10,9 +10,11 @@ Opening, reading, writing, appending; text vs binary mode; buffering; atomic wri
 
 **In one sentence:** a file is a numbered handle (file descriptor) to bytes on disk; you open it, move bytes through a buffer, and close it — and if you care about crashes, you write to a temp file and rename.
 
-**Mental model — a library loan desk.** `open()` asks the desk for a book and gets a ticket number (the file descriptor). Reading and writing go through a small tray (the buffer) so you don't walk to the shelf for every letter. `close()` returns the ticket. Tickets are limited — lose too many and the desk refuses you (`Too many open files`).
+### Mental model — a library loan desk
 
-**Modes**
+`open()` asks the desk for a book and gets a ticket number (the file descriptor). Reading and writing go through a small tray (the buffer) so you don't walk to the shelf for every letter. `close()` returns the ticket. Tickets are limited — lose too many and the desk refuses you (`Too many open files`).
+
+### Modes
 
 | Mode | Meaning | If file exists | If missing |
 |------|---------|----------------|-----------|
@@ -24,7 +26,7 @@ Opening, reading, writing, appending; text vs binary mode; buffering; atomic wri
 | add `b` | binary: bytes in/out, no decoding | | |
 | add `t` (default) | text: decode with an encoding, translate newlines | | |
 
-**Text vs binary**
+### Text vs binary
 
 | | Text mode | Binary mode |
 |-|-----------|-------------|
@@ -33,7 +35,7 @@ Opening, reading, writing, appending; text vs binary mode; buffering; atomic wri
 | Newlines | `\r\n` ↔ `\n` translated on Windows | untouched |
 | Use for | logs, CSV, JSON, source code | images, archives, hashes, protocols |
 
-**Buffering layers**
+### Buffering layers
 
 | Layer | Where | Flushed by |
 |-------|-------|------------|
@@ -43,7 +45,9 @@ Opening, reading, writing, appending; text vs binary mode; buffering; atomic wri
 
 Only after `fsync` is data reasonably safe from a power loss.
 
-**Atomic write** — write the full new content to a temp file in the *same directory*, `fsync` it, then `os.replace(tmp, path)`. A rename on the same filesystem is atomic: readers see either the old file or the new one, never half of each.
+### Atomic write
+
+Write the full new content to a temp file in the *same directory*, `fsync` it, then `os.replace(tmp, path)`. A rename on the same filesystem is atomic: readers see either the old file or the new one, never half of each.
 
 ---
 
@@ -55,7 +59,7 @@ Only after `fsync` is data reasonably safe from a power loss.
 
 ## Diagram
 
-**File-handle lifecycle**
+### File-handle lifecycle
 
 ```mermaid
 stateDiagram-v2
@@ -71,7 +75,7 @@ stateDiagram-v2
     Closed --> [*]
 ```
 
-**Where bytes travel**
+### Where bytes travel
 
 ```mermaid
 flowchart LR
@@ -81,7 +85,7 @@ flowchart LR
     disk -.-> n3["survives power loss"]
 ```
 
-**Atomic replace**
+### Atomic replace
 
 1. **write** `config.json.tmp` (the full new content)
 2. **fsync** `config.json.tmp`
@@ -150,7 +154,7 @@ write_atomic("config.json", '{"port": 8080}')
 
 ## Mini project
 
-**A log-rotating file writer that splits files by size.**
+### A log-rotating file writer that splits files by size
 
 ```mermaid
 flowchart LR
@@ -159,7 +163,7 @@ flowchart LR
     S -- yes --> R["rotate:<br/>app.log.2 → app.log.3<br/>app.log.1 → app.log.2<br/>app.log → app.log.1"] --> N["open new app.log"] --> A
 ```
 
-**Steps**
+### Steps
 
 1. `RotatingWriter(path, max_bytes=1_000_000, backups=5)` keeps one open handle in append mode.
 2. Track the current size; before a write that would exceed the limit, rotate.

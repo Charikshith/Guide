@@ -10,9 +10,11 @@ Images and containers, Kubernetes orchestration (pods, deployments, services), a
 
 **In one sentence:** a container image packages your app with everything it needs so it runs the same everywhere; Kubernetes runs many containers across many machines and keeps them in the state you declared; and Helm packages the Kubernetes files so you can install and configure an app with one command.
 
-**Mental model — shipping containers and a port.** Before standard shipping containers, every cargo was loaded differently. A Docker image is a standard box: the crane doesn't care what's inside. Kubernetes is the port authority: you say "keep 5 boxes of type X running, reachable at this address", and it places them on ships (nodes), replaces broken ones, and redirects traffic. Helm is the shipping manifest template you fill in per customer.
+### Mental model — shipping containers and a port
 
-**Container vs VM**
+Before standard shipping containers, every cargo was loaded differently. A Docker image is a standard box: the crane doesn't care what's inside. Kubernetes is the port authority: you say "keep 5 boxes of type X running, reachable at this address", and it places them on ships (nodes), replaces broken ones, and redirects traffic. Helm is the shipping manifest template you fill in per customer.
+
+### Container vs VM
 
 | | Container | Virtual machine |
 |-|-----------|-----------------|
@@ -22,7 +24,7 @@ Images and containers, Kubernetes orchestration (pods, deployments, services), a
 | Size | MBs | GBs |
 | Security boundary | weaker (kernel shared); harden with seccomp, rootless, gVisor, Kata | stronger |
 
-**Docker vocabulary**
+### Docker vocabulary
 
 | Term | Meaning |
 |------|---------|
@@ -32,7 +34,7 @@ Images and containers, Kubernetes orchestration (pods, deployments, services), a
 | Registry | stores images: Docker Hub, GHCR, ECR |
 | Tag vs digest | `app:1.4` (movable) vs `app@sha256:…` (immutable) — deploy by digest |
 
-**Kubernetes objects you'll use daily**
+### Kubernetes objects you'll use daily
 
 | Object | Purpose |
 |--------|---------|
@@ -47,9 +49,13 @@ Images and containers, Kubernetes orchestration (pods, deployments, services), a
 | Requests / limits | the resources the scheduler reserves / the ceiling (exceeding memory → OOMKilled) |
 | StatefulSet, DaemonSet, Job, CronJob | stable identity + storage / one pod per node / run to completion / scheduled |
 
-**Rolling updates** — a Deployment creates new pods (`maxSurge`), waits until they are *ready*, then removes old ones (`maxUnavailable`), step by step. Bad readiness → the rollout stalls instead of taking the service down; `kubectl rollout undo` reverts.
+### Rolling updates
 
-**The declarative loop** — you declare *desired state* (YAML); controllers keep comparing it with *actual state* and act to close the gap. You never "start a container on node 7".
+A Deployment creates new pods (`maxSurge`), waits until they are *ready*, then removes old ones (`maxUnavailable`), step by step. Bad readiness → the rollout stalls instead of taking the service down; `kubectl rollout undo` reverts.
+
+### The declarative loop
+
+You declare *desired state* (YAML); controllers keep comparing it with *actual state* and act to close the gap. You never "start a container on node 7".
 
 ---
 
@@ -61,7 +67,7 @@ Images and containers, Kubernetes orchestration (pods, deployments, services), a
 
 ## Diagram
 
-**Docker image → container**
+### Docker image → container
 
 | Dockerfile instruction | Image layer (cached, shared) | Size | |
 |---|---|---|---|
@@ -73,7 +79,7 @@ Images and containers, Kubernetes orchestration (pods, deployments, services), a
 
 Change only `src/` and only the last layer rebuilds (seconds, not minutes).
 
-**A K8s cluster with pods behind a service**
+### A K8s cluster with pods behind a service
 
 ```mermaid
 flowchart TB
@@ -92,7 +98,7 @@ flowchart TB
     CP["control plane: API server, scheduler,<br/>controllers, etcd"] -.-> Node1 & Node2
 ```
 
-**A rolling update (replicas 3, maxSurge 1, maxUnavailable 0)**
+### A rolling update (replicas 3, maxSurge 1, maxUnavailable 0)
 
 ```
  step 0:  v1 v1 v1
@@ -186,7 +192,7 @@ helm upgrade api ./chart -f values-prod.yaml --atomic   # rolls back automatical
 
 ## Mini project
 
-**A Helm chart deploying a stateless service with probes and autoscaling.**
+### A Helm chart deploying a stateless service with probes and autoscaling
 
 ```mermaid
 flowchart LR
@@ -197,7 +203,7 @@ flowchart LR
     K --> LT["load test (k6/hey)<br/>→ watch the HPA scale"]
 ```
 
-**Steps**
+### Steps
 
 1. `helm create`, then trim: a Deployment, Service, HPA, PodDisruptionBudget, and ConfigMap, driven by `values.yaml`.
 2. Templated probes, resources, image digest, and env; `helm lint` and `helm template` in CI.

@@ -10,9 +10,11 @@ Quicksort/mergesort/heapsort, stability, and binary search on sorted data and mo
 
 **In one sentence:** sorting puts data in order so that later questions become cheap, and binary search answers "where does this go?" or "what's the smallest value that works?" by halving the candidates each step.
 
-**Mental model — a phone book.** Nobody reads a phone book from page 1. You open it in the middle, see "M", and throw away half. Twenty halvings find any name among a million. Binary search works on *anything* where the answer flips once from "no" to "yes" — not just sorted arrays.
+### Mental model — a phone book
 
-**The main sorts**
+Nobody reads a phone book from page 1. You open it in the middle, see "M", and throw away half. Twenty halvings find any name among a million. Binary search works on *anything* where the answer flips once from "no" to "yes" — not just sorted arrays.
+
+### The main sorts
 
 | Algorithm | Best | Average | Worst | Extra space | Stable? | Notes |
 |-----------|:-:|:-:|:-:|:-:|:-:|-------|
@@ -26,9 +28,11 @@ Quicksort/mergesort/heapsort, stability, and binary search on sorted data and mo
 
 Comparison sorts can't beat **Ω(n log n)** in the worst case: there are n! orderings, and each comparison gives one bit, so you need log₂(n!) ≈ n log n comparisons.
 
-**Stability** — a stable sort keeps equal elements in their original order. It matters when you sort by several keys: sort by name, then *stably* by department, and names stay alphabetical inside each department.
+### Stability
 
-**Binary search patterns**
+A stable sort keeps equal elements in their original order. It matters when you sort by several keys: sort by name, then *stably* by department, and names stay alphabetical inside each department.
+
+### Binary search patterns
 
 | Pattern | Question | Tool |
 |---------|----------|------|
@@ -50,7 +54,7 @@ Search-on-the-answer examples: minimum eating speed to finish in h hours, minimu
 
 ## Diagram
 
-**One quicksort partition step (Lomuto, pivot = last)**
+### One quicksort partition step (Lomuto, pivot = last)
 
 Array `[7, 2, 9, 4, 3, 8, 5]`, pivot = 5. `i` marks the end of the "< pivot" zone.
 
@@ -64,7 +68,7 @@ Array `[7, 2, 9, 4, 3, 8, 5]`, pivot = 5. `i` marks the end of the "< pivot" zon
 
 Then recurse on the left and right parts.
 
-**Merge sort: split, then merge**
+### Merge sort: split, then merge
 
 ```mermaid
 graph TD
@@ -76,11 +80,11 @@ graph TD
     M1 & M2 --> F["[3, 9, 10, 27, 38, 43, 82]"]
 ```
 
-**Binary search halving**
+### Binary search halving
 
 **Find 23** in `[2, 5, 8, 12, 16, 23, 38, 56, 72, 91]`: `lo=0 hi=10 mid=5`, so `23 == 23` ✓ (found in 1 step here; at most ⌈log₂ 11⌉ = 4 in general).
 
-**Find 60:**
+### Find 60
 
 | Search window | Step |
 |---|---|
@@ -89,7 +93,7 @@ graph TD
 | `[72 \| 91]` | mid=8 (72) ≥ 60 → go left |
 | `lo = hi = 8` | insertion point 8, not found |
 
-**Search on a monotonic predicate**
+### Search on a monotonic predicate
 
 | speed | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 |
 |---|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|
@@ -173,7 +177,7 @@ print(speed)                                    # 4 — minimum bananas/hour
 
 ## Mini project
 
-**A sort visualizer plus a "first bad version" binary-search solver.**
+### A sort visualizer plus a "first bad version" binary-search solver
 
 ```mermaid
 flowchart LR
@@ -186,7 +190,7 @@ flowchart LR
     end
 ```
 
-**Steps**
+### Steps
 
 1. Write insertion, merge, quick, and heap sort as *generators* that `yield` the array state after each compare or swap.
 2. Render each step as bars (Unicode blocks in the terminal, or `matplotlib.animation`); highlight the compared indices.

@@ -10,9 +10,11 @@ ANN indexes (HNSW/IVF), similarity metrics, hybrid search, and Qdrant/Milvus ope
 
 **In one sentence:** a vector database stores millions of embeddings with their metadata and answers "which stored vectors are closest to this one?" in milliseconds by using approximate nearest-neighbor (ANN) indexes — trading a sliver of accuracy for enormous speed — while also filtering by metadata and combining with keyword search.
 
-**Mental model — finding a restaurant in a huge city.** Checking every restaurant (exact search) is slow. HNSW is a set of maps at different zoom levels: on the country map you jump to the right city, on the city map to the right district, then walk street by street to the closest match. IVF is dividing the city into neighborhoods and only searching the few neighborhoods nearest to you.
+### Mental model — finding a restaurant in a huge city
 
-**Exact vs approximate search**
+Checking every restaurant (exact search) is slow. HNSW is a set of maps at different zoom levels: on the country map you jump to the right city, on the city map to the right district, then walk street by street to the closest match. IVF is dividing the city into neighborhoods and only searching the few neighborhoods nearest to you.
+
+### Exact vs approximate search
 
 | | Exact (flat / brute force) | ANN |
 |-|----------------------------|-----|
@@ -21,7 +23,7 @@ ANN indexes (HNSW/IVF), similarity metrics, hybrid search, and Qdrant/Milvus ope
 | 1M × 768 dims | ~0.77 GFLOP/query — fine for small sets | milliseconds at millions to billions |
 | Use | < ~100k vectors, or as ground truth for evaluation | production scale |
 
-**Index types**
+### Index types
 
 | Index | How | Pros | Cons | Tuning knobs |
 |-------|-----|------|------|--------------|
@@ -31,7 +33,7 @@ ANN indexes (HNSW/IVF), similarity metrics, hybrid search, and Qdrant/Milvus ope
 | IVF-PQ, HNSW+SQ | combinations | billion-scale on modest hardware | complexity | |
 | DiskANN | a graph index on SSD | huge datasets with little RAM | SSD latency | |
 
-**Similarity metrics**
+### Similarity metrics
 
 | Metric | Formula | Use when |
 |--------|---------|----------|
@@ -39,13 +41,19 @@ ANN indexes (HNSW/IVF), similarity metrics, hybrid search, and Qdrant/Milvus ope
 | Dot product | `a·b` | the model was trained for it, or vectors are normalized (then it equals cosine and is faster) |
 | Euclidean (L2) | `‖a − b‖` | image/geometry features; on normalized vectors it ranks the same as cosine |
 
-**Rule:** use the metric the embedding model was trained with (check its model card). Normalize once, and cosine = dot product.
+### Rule
 
-**Filtering** — real queries are "nearest vectors *where* tenant = 42 AND lang = 'en' AND date > …". Post-filtering (search, then drop non-matching) can return too few results; good engines filter *during* graph traversal (Qdrant's filterable HNSW, Milvus partitions and scalar indexes). Index your payload fields.
+Use the metric the embedding model was trained with (check its model card). Normalize once, and cosine = dot product.
 
-**Hybrid search: when and why** — dense vectors capture meaning ("can't sign in" ≈ "login problem") but miss exact tokens: product codes, error IDs, names, rare terms. Sparse / keyword methods (BM25, SPLADE) nail exact terms but miss synonyms. **Hybrid** runs both and fuses the results (Reciprocal Rank Fusion, or weighted scores). Use it whenever queries contain identifiers, jargon, or rare words — i.e. most enterprise search.
+### Filtering
 
-**Operating a vector DB**
+Real queries are "nearest vectors *where* tenant = 42 AND lang = 'en' AND date > …". Post-filtering (search, then drop non-matching) can return too few results; good engines filter *during* graph traversal (Qdrant's filterable HNSW, Milvus partitions and scalar indexes). Index your payload fields.
+
+### Hybrid search: when and why
+
+Dense vectors capture meaning ("can't sign in" ≈ "login problem") but miss exact tokens: product codes, error IDs, names, rare terms. Sparse / keyword methods (BM25, SPLADE) nail exact terms but miss synonyms. **Hybrid** runs both and fuses the results (Reciprocal Rank Fusion, or weighted scores). Use it whenever queries contain identifiers, jargon, or rare words — i.e. most enterprise search.
+
+### Operating a vector DB
 
 | Concern | Practice |
 |---------|----------|
@@ -66,7 +74,7 @@ ANN indexes (HNSW/IVF), similarity metrics, hybrid search, and Qdrant/Milvus ope
 
 ## Diagram
 
-**An HNSW graph (layers + nearest-neighbor hops)**
+### An HNSW graph (layers + nearest-neighbor hops)
 
 ```mermaid
 flowchart TB
@@ -94,13 +102,13 @@ Search for a query ✚ (the nearest point is G):
 
 Visited about 6 nodes instead of all 8 (or all 10 million).
 
-**IVF: search only the nearest clusters**
+### IVF: search only the nearest clusters
 
 <div class="fig">
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 330" role="img" aria-label="IVF index: nine k-means clusters; with nprobe 2 only clusters c5 and c6 are searched, so a true neighbor in c8 would be missed" style="width:100%;max-width:800px;height:auto;font-family:inherit"><defs><marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="context-stroke"/></marker></defs><rect x="20" y="20" width="154" height="94" rx="8" fill="var(--border)" fill-opacity=".08" stroke="var(--border)" stroke-width="1.2"/><text x="32" y="40" font-size="13" text-anchor="start" fill="var(--text)" font-weight="700">c1</text><circle cx="40" cy="56" r="3.2" fill="var(--text-muted)" fill-opacity="1" stroke="var(--text-muted)" stroke-width="1.6"/><circle cx="77" cy="79" r="3.2" fill="var(--text-muted)" fill-opacity="1" stroke="var(--text-muted)" stroke-width="1.6"/><circle cx="114" cy="58" r="3.2" fill="var(--text-muted)" fill-opacity="1" stroke="var(--text-muted)" stroke-width="1.6"/><circle cx="51" cy="81" r="3.2" fill="var(--text-muted)" fill-opacity="1" stroke="var(--text-muted)" stroke-width="1.6"/><circle cx="88" cy="60" r="3.2" fill="var(--text-muted)" fill-opacity="1" stroke="var(--text-muted)" stroke-width="1.6"/><rect x="180" y="20" width="154" height="94" rx="8" fill="var(--border)" fill-opacity=".08" stroke="var(--border)" stroke-width="1.2"/><text x="192" y="40" font-size="13" text-anchor="start" fill="var(--text)" font-weight="700">c2</text><circle cx="219" cy="67" r="3.2" fill="var(--text-muted)" fill-opacity="1" stroke="var(--text-muted)" stroke-width="1.6"/><circle cx="256" cy="90" r="3.2" fill="var(--text-muted)" fill-opacity="1" stroke="var(--text-muted)" stroke-width="1.6"/><circle cx="293" cy="69" r="3.2" fill="var(--text-muted)" fill-opacity="1" stroke="var(--text-muted)" stroke-width="1.6"/><circle cx="230" cy="92" r="3.2" fill="var(--text-muted)" fill-opacity="1" stroke="var(--text-muted)" stroke-width="1.6"/><circle cx="267" cy="71" r="3.2" fill="var(--text-muted)" fill-opacity="1" stroke="var(--text-muted)" stroke-width="1.6"/><rect x="340" y="20" width="154" height="94" rx="8" fill="var(--border)" fill-opacity=".08" stroke="var(--border)" stroke-width="1.2"/><text x="352" y="40" font-size="13" text-anchor="start" fill="var(--text)" font-weight="700">c3</text><circle cx="398" cy="78" r="3.2" fill="var(--text-muted)" fill-opacity="1" stroke="var(--text-muted)" stroke-width="1.6"/><circle cx="435" cy="57" r="3.2" fill="var(--text-muted)" fill-opacity="1" stroke="var(--text-muted)" stroke-width="1.6"/><circle cx="372" cy="80" r="3.2" fill="var(--text-muted)" fill-opacity="1" stroke="var(--text-muted)" stroke-width="1.6"/><circle cx="409" cy="59" r="3.2" fill="var(--text-muted)" fill-opacity="1" stroke="var(--text-muted)" stroke-width="1.6"/><circle cx="446" cy="82" r="3.2" fill="var(--text-muted)" fill-opacity="1" stroke="var(--text-muted)" stroke-width="1.6"/><rect x="20" y="120" width="154" height="94" rx="8" fill="var(--border)" fill-opacity=".08" stroke="var(--border)" stroke-width="1.2"/><text x="32" y="140" font-size="13" text-anchor="start" fill="var(--text)" font-weight="700">c4</text><circle cx="97" cy="189" r="3.2" fill="var(--text-muted)" fill-opacity="1" stroke="var(--text-muted)" stroke-width="1.6"/><circle cx="134" cy="168" r="3.2" fill="var(--text-muted)" fill-opacity="1" stroke="var(--text-muted)" stroke-width="1.6"/><circle cx="71" cy="191" r="3.2" fill="var(--text-muted)" fill-opacity="1" stroke="var(--text-muted)" stroke-width="1.6"/><circle cx="108" cy="170" r="3.2" fill="var(--text-muted)" fill-opacity="1" stroke="var(--text-muted)" stroke-width="1.6"/><circle cx="45" cy="193" r="3.2" fill="var(--text-muted)" fill-opacity="1" stroke="var(--text-muted)" stroke-width="1.6"/><rect x="180" y="120" width="154" height="94" rx="8" fill="var(--accent)" fill-opacity=".2" stroke="var(--accent)" stroke-width="2.2"/><text x="192" y="140" font-size="13" text-anchor="start" fill="var(--text)" font-weight="700">c5</text><circle cx="276" cy="156" r="3.2" fill="var(--accent)" fill-opacity="1" stroke="var(--accent)" stroke-width="1.6"/><circle cx="213" cy="179" r="3.2" fill="var(--accent)" fill-opacity="1" stroke="var(--accent)" stroke-width="1.6"/><circle cx="250" cy="158" r="3.2" fill="var(--accent)" fill-opacity="1" stroke="var(--accent)" stroke-width="1.6"/><circle cx="287" cy="181" r="3.2" fill="var(--accent)" fill-opacity="1" stroke="var(--accent)" stroke-width="1.6"/><circle cx="224" cy="160" r="3.2" fill="var(--accent)" fill-opacity="1" stroke="var(--accent)" stroke-width="1.6"/><rect x="340" y="120" width="154" height="94" rx="8" fill="var(--accent)" fill-opacity=".2" stroke="var(--accent)" stroke-width="2.2"/><text x="352" y="140" font-size="13" text-anchor="start" fill="var(--text)" font-weight="700">c6</text><circle cx="455" cy="167" r="3.2" fill="var(--accent)" fill-opacity="1" stroke="var(--accent)" stroke-width="1.6"/><circle cx="392" cy="190" r="3.2" fill="var(--accent)" fill-opacity="1" stroke="var(--accent)" stroke-width="1.6"/><circle cx="429" cy="169" r="3.2" fill="var(--accent)" fill-opacity="1" stroke="var(--accent)" stroke-width="1.6"/><circle cx="366" cy="192" r="3.2" fill="var(--accent)" fill-opacity="1" stroke="var(--accent)" stroke-width="1.6"/><circle cx="403" cy="171" r="3.2" fill="var(--accent)" fill-opacity="1" stroke="var(--accent)" stroke-width="1.6"/><rect x="20" y="220" width="154" height="94" rx="8" fill="var(--border)" fill-opacity=".08" stroke="var(--border)" stroke-width="1.2"/><text x="32" y="240" font-size="13" text-anchor="start" fill="var(--text)" font-weight="700">c7</text><circle cx="54" cy="278" r="3.2" fill="var(--text-muted)" fill-opacity="1" stroke="var(--text-muted)" stroke-width="1.6"/><circle cx="91" cy="257" r="3.2" fill="var(--text-muted)" fill-opacity="1" stroke="var(--text-muted)" stroke-width="1.6"/><circle cx="128" cy="280" r="3.2" fill="var(--text-muted)" fill-opacity="1" stroke="var(--text-muted)" stroke-width="1.6"/><circle cx="65" cy="259" r="3.2" fill="var(--text-muted)" fill-opacity="1" stroke="var(--text-muted)" stroke-width="1.6"/><circle cx="102" cy="282" r="3.2" fill="var(--text-muted)" fill-opacity="1" stroke="var(--text-muted)" stroke-width="1.6"/><rect x="180" y="220" width="154" height="94" rx="8" fill="var(--border)" fill-opacity=".08" stroke="var(--border)" stroke-width="1.2"/><text x="192" y="240" font-size="13" text-anchor="start" fill="var(--text)" font-weight="700">c8</text><circle cx="233" cy="289" r="3.2" fill="var(--text-muted)" fill-opacity="1" stroke="var(--text-muted)" stroke-width="1.6"/><circle cx="270" cy="268" r="3.2" fill="var(--text-muted)" fill-opacity="1" stroke="var(--text-muted)" stroke-width="1.6"/><circle cx="207" cy="291" r="3.2" fill="var(--text-muted)" fill-opacity="1" stroke="var(--text-muted)" stroke-width="1.6"/><circle cx="244" cy="270" r="3.2" fill="var(--text-muted)" fill-opacity="1" stroke="var(--text-muted)" stroke-width="1.6"/><circle cx="281" cy="293" r="3.2" fill="var(--text-muted)" fill-opacity="1" stroke="var(--text-muted)" stroke-width="1.6"/><rect x="340" y="220" width="154" height="94" rx="8" fill="var(--border)" fill-opacity=".08" stroke="var(--border)" stroke-width="1.2"/><text x="352" y="240" font-size="13" text-anchor="start" fill="var(--text)" font-weight="700">c9</text><circle cx="412" cy="256" r="3.2" fill="var(--text-muted)" fill-opacity="1" stroke="var(--text-muted)" stroke-width="1.6"/><circle cx="449" cy="279" r="3.2" fill="var(--text-muted)" fill-opacity="1" stroke="var(--text-muted)" stroke-width="1.6"/><circle cx="386" cy="258" r="3.2" fill="var(--text-muted)" fill-opacity="1" stroke="var(--text-muted)" stroke-width="1.6"/><circle cx="423" cy="281" r="3.2" fill="var(--text-muted)" fill-opacity="1" stroke="var(--text-muted)" stroke-width="1.6"/><circle cx="360" cy="260" r="3.2" fill="var(--text-muted)" fill-opacity="1" stroke="var(--text-muted)" stroke-width="1.6"/><text x="256" y="168" font-size="18" text-anchor="middle" fill="var(--danger)" font-weight="700">✚</text><text x="520" y="36" font-size="13" text-anchor="start" fill="var(--text)" font-weight="700">nlist = 9 clusters (k-means)</text><text x="520" y="66" font-size="13" text-anchor="start" fill="var(--accent)" font-weight="700">nprobe = 2 → search c5 and c6 only</text><text x="520" y="92" font-size="12.5" text-anchor="start" fill="var(--text-muted)">≈ 2/9 of the vectors scanned</text><text x="520" y="128" font-size="12.5" text-anchor="start" fill="var(--danger)" font-weight="600">a true neighbor in c8 would be missed</text><text x="520" y="154" font-size="12.5" text-anchor="start" fill="var(--text-muted)">→ raise nprobe for recall,</text><text x="520" y="172" font-size="12.5" text-anchor="start" fill="var(--text-muted)">lower it for speed</text></svg>
 </div>
 
-**Hybrid search with Reciprocal Rank Fusion**
+### Hybrid search with Reciprocal Rank Fusion
 
 ```mermaid
 flowchart LR
@@ -197,7 +205,7 @@ print(np.array_equal(np.argsort(-cos)[:10], np.argsort(-dot)[:10]),
 
 ## Mini project
 
-**A hybrid search service (dense vectors + keyword) on Qdrant.**
+### A hybrid search service (dense vectors + keyword) on Qdrant
 
 ```mermaid
 flowchart LR
@@ -208,7 +216,7 @@ flowchart LR
     EV["golden set: 100 queries,<br/>incl. IDs / error codes"] --> CMP["recall@10 · MRR · p95 latency<br/>dense vs sparse vs hybrid"]
 ```
 
-**Steps**
+### Steps
 
 1. Run Qdrant in Docker; create a collection with a dense vector and a sparse vector (Qdrant supports both as named vectors).
 2. Ingest a corpus with realistic identifiers (error codes, SKUs, names) plus ordinary prose.

@@ -10,9 +10,11 @@ Trunk-based vs GitFlow, PRs, code review flow, conventional commits, and recover
 
 **In one sentence:** a professional Git workflow is a team agreement about how changes travel from a laptop to production — small branches, reviewed pull requests, readable commit messages, and safe ways to undo mistakes without rewriting anyone else's history.
 
-**Mental model — a river and its streams.** Trunk-based development is one wide river (`main`) with short streams that flow back in within a day or two. GitFlow is a canal system with locks: `develop`, `release/*`, and `hotfix/*` branches, each with rules about what may enter. Rivers move fast; canals move carefully. Most modern teams that deploy often choose the river.
+### Mental model — a river and its streams
 
-**Trunk-based vs GitFlow**
+Trunk-based development is one wide river (`main`) with short streams that flow back in within a day or two. GitFlow is a canal system with locks: `develop`, `release/*`, and `hotfix/*` branches, each with rules about what may enter. Rivers move fast; canals move carefully. Most modern teams that deploy often choose the river.
+
+### Trunk-based vs GitFlow
 
 | | Trunk-based | GitFlow |
 |-|-------------|---------|
@@ -23,7 +25,7 @@ Trunk-based vs GitFlow, PRs, code review flow, conventional commits, and recover
 | Release cadence | continuous; any green commit | scheduled release trains |
 | Fits | web services, SaaS, CD | versioned products, several supported versions, mobile apps with store review |
 
-**The PR flow**
+### The PR flow
 
 1. `git switch -c feat/checkout-coupons` from an up-to-date `main`.
 2. Small, focused commits; push early; open a *draft* PR for feedback.
@@ -32,7 +34,9 @@ Trunk-based vs GitFlow, PRs, code review flow, conventional commits, and recover
 5. **Squash-merge** (one clean commit on `main`) or rebase-merge (keep the curated commits).
 6. Delete the branch; deploy; tag if it's a release.
 
-**Conventional Commits** — `type(scope)!: summary`
+### Conventional Commits
+
+`type(scope)!: summary`
 
 | Type | Meaning | SemVer effect (in release tooling) |
 |------|---------|--------------------------------|
@@ -43,7 +47,7 @@ Trunk-based vs GitFlow, PRs, code review flow, conventional commits, and recover
 
 A good message: summary ≤ 72 characters in the imperative ("add", not "added"); a body explaining *why*; footers such as `Refs: #123`.
 
-**Undoing mistakes — pick the right tool**
+### Undoing mistakes — pick the right tool
 
 | Situation | Tool | Rewrites history? |
 |-----------|------|:-:|
@@ -68,7 +72,7 @@ A good message: summary ≤ 72 characters in the imperative ("add", not "added")
 
 ## Diagram
 
-**Trunk-based flow: short-lived branches → PR → review → squash-merge → tag**
+### Trunk-based flow: short-lived branches → PR → review → squash-merge → tag
 
 ```mermaid
 gitGraph
@@ -90,7 +94,7 @@ gitGraph
     commit id: "v1.4.0" tag: "v1.4.0"
 ```
 
-**GitFlow, for comparison**
+### GitFlow, for comparison
 
 ```mermaid
 gitGraph
@@ -120,7 +124,7 @@ gitGraph
 
 Branches: `main` (tags: releases only), `develop`, long-lived `feature` branches, `release/1.4`, and `hotfix/1.4.1`.
 
-**Choosing an undo**
+### Choosing an undo
 
 ```mermaid
 flowchart TD
@@ -190,7 +194,7 @@ Branch protection for main (repository settings):
 
 ## Mini project
 
-**Script a release: bump version → changelog → tag → signed push.**
+### Script a release: bump version → changelog → tag → signed push
 
 ```mermaid
 flowchart LR
@@ -201,7 +205,7 @@ flowchart LR
     PUSH --> GH["gh release create v1.4.0 --notes-file"]
 ```
 
-**Steps**
+### Steps
 
 1. Parse `git log $(git describe --tags --abbrev=0)..HEAD --pretty=%s` with a regex for conventional types.
 2. Pick the bump: any `!` or `BREAKING CHANGE` → major; any `feat` → minor; else patch.

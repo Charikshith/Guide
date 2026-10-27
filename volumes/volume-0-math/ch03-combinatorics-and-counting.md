@@ -10,9 +10,11 @@ Permutations, combinations, the multiplication/addition rules, binomial coeffici
 
 **In one sentence:** combinatorics is counting without listing — it tells you how big a search space is before you try to search it.
 
-**Mental model — the ice-cream shop.** 3 cones × 5 flavors = 15 single scoops (multiply: you choose *both*). Cone *or* cup, where there are 3 cones and 2 cups = 5 holders (add: you choose *one of*).
+### Mental model — the ice-cream shop
 
-**The four core formulas**
+3 cones × 5 flavors = 15 single scoops (multiply: you choose *both*). Cone *or* cup, where there are 3 cones and 2 cups = 5 holders (add: you choose *one of*).
+
+### The four core formulas
 
 | Question | Order matters? | Repeats allowed? | Formula | Example |
 |----------|:-:|:-:|---------|---------|
@@ -22,14 +24,16 @@ Permutations, combinations, the multiplication/addition rules, binomial coeffici
 | k slots, n choices each | yes | yes | `nᵏ` | 4-digit PIN: `10⁴ = 10,000` |
 | Arrange with duplicates | yes | — | `n! / (n₁! n₂! …)` | letters of "BANANA": `60` |
 
-**Rules**
+### Rules
 
 * **Multiplication rule** — a task done in step 1 (a ways) *and then* step 2 (b ways) has `a · b` ways.
 * **Addition rule** — a task done *either* way 1 (a ways) *or* way 2 (b ways, no overlap) has `a + b` ways.
 * **Complement trick** — count what you *don't* want and subtract: "at least one" = total − "none".
 * **Pigeonhole principle** — put `n + 1` pigeons into `n` holes, and some hole has at least 2. General form: some hole has at least `⌈n/k⌉` items.
 
-**Binomial coefficients** — `C(n, k)` is also the k-th number in row n of Pascal's triangle, and the coefficient in `(x + y)ⁿ`. Key identity: `C(n, k) = C(n−1, k−1) + C(n−1, k)` (either the item is picked, or it isn't).
+### Binomial coefficients
+
+`C(n, k)` is also the k-th number in row n of Pascal's triangle, and the coefficient in `(x + y)ⁿ`. Key identity: `C(n, k) = C(n−1, k−1) + C(n−1, k)` (either the item is picked, or it isn't).
 
 ---
 
@@ -41,7 +45,9 @@ Permutations, combinations, the multiplication/addition rules, binomial coeffici
 
 ## Diagram
 
-**Decision tree for permutations of {A, B, C}** — 3 choices, then 2, then 1: `3 · 2 · 1 = 6` leaves.
+### Decision tree for permutations of {A, B, C}
+
+3 choices, then 2, then 1: `3 · 2 · 1 = 6` leaves.
 
 ```mermaid
 flowchart LR
@@ -62,7 +68,9 @@ flowchart LR
 | Group the same team | {AB, BA} · {AC, CA} · {BC, CB} |
 | Each team is counted 2! = 2 times | → C(3,2) = 6 / 2 = 3 |
 
-**Pascal's triangle** — each number is the sum of the two above it.
+### Pascal's triangle
+
+Each number is the sum of the two above it.
 
 ```
  n=0            1
@@ -73,7 +81,9 @@ flowchart LR
  n=5  1   5  10  10   5   1
 ```
 
-**Pigeonhole** — 13 people, 12 months:
+### Pigeonhole
+
+13 people, 12 months:
 
 ```
  Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec
@@ -109,7 +119,7 @@ assert n == len(set(permutations(word)))
 print(1 - (5/6)**4)                # ≈ 0.518
 ```
 
-**Search-space sizing — why password length beats complexity**
+### Search-space sizing — why password length beats complexity
 
 | Password type | Alphabet | Length | Space | log₂ (bits) |
 |---------------|---------:|-------:|------:|-----:|
@@ -142,7 +152,7 @@ print(1 - (5/6)**4)                # ≈ 0.518
 
 ## Mini project
 
-**A password-strength estimator that computes the size of the search space.**
+### A password-strength estimator that computes the size of the search space
 
 ```mermaid
 flowchart LR
@@ -153,7 +163,7 @@ flowchart LR
     S --> T["Time to crack at<br/>10^10 guesses/s"]
 ```
 
-**Steps**
+### Steps
 
 1. Detect which character classes appear and sum their sizes (26, 26, 10, 32).
 2. Compute `space = N ** L` and `bits = L * log2(N)`.

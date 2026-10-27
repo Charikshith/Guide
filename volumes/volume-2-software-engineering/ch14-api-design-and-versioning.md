@@ -10,9 +10,11 @@ Designing clean, evolvable APIs; naming, error contracts, pagination, idempotenc
 
 **In one sentence:** an API is a promise to people you may never meet, so design it to be predictable (consistent names, errors, and pagination), safe to retry (idempotency), and able to grow without breaking anyone (additive changes, explicit versions, and a deprecation policy).
 
-**Mental model — a power socket standard.** Once millions of plugs exist, you can't move the pins. You *can* add a USB port next to them (an additive change). If you truly need a new shape, you ship a new socket type (a new version) and support the old one for years, with plenty of notice before removal.
+### Mental model — a power socket standard
 
-**Design rules that age well**
+Once millions of plugs exist, you can't move the pins. You *can* add a USB port next to them (an additive change). If you truly need a new shape, you ship a new socket type (a new version) and support the old one for years, with plenty of notice before removal.
+
+### Design rules that age well
 
 | Area | Rule | Example |
 |------|------|---------|
@@ -26,7 +28,7 @@ Designing clean, evolvable APIs; naming, error contracts, pagination, idempotenc
 | Expansion | let clients opt into nested objects | `?expand[]=customer` |
 | Evolution | clients must ignore unknown fields; servers add, never remove or rename | |
 
-**Offset vs cursor pagination**
+### Offset vs cursor pagination
 
 | | Offset (`?page=3`) | Cursor (`?after=<opaque>`) |
 |-|-------------------|---------------------------|
@@ -35,9 +37,11 @@ Designing clean, evolvable APIs; naming, error contracts, pagination, idempotenc
 | Jump to page 57 | yes | no |
 | Use for | small admin tables | feeds, large lists, public APIs |
 
-**What makes a write idempotent** — the same request applied twice has the same effect as once. `PUT` and `DELETE` are idempotent by definition; `POST` isn't, so you add a client-generated **idempotency key**: the server stores `key → (request hash, response)`; a repeat with the same key and body returns the stored response; the same key with a different body is a `422`/`409`. Keys expire (e.g. after 24 h). The key must be recorded in the **same transaction** as the side effect.
+### What makes a write idempotent
 
-**Additive (safe) vs breaking changes**
+The same request applied twice has the same effect as once. `PUT` and `DELETE` are idempotent by definition; `POST` isn't, so you add a client-generated **idempotency key**: the server stores `key → (request hash, response)`; a repeat with the same key and body returns the stored response; the same key with a different body is a `422`/`409`. Keys expire (e.g. after 24 h). The key must be recorded in the **same transaction** as the side effect.
+
+### Additive (safe) vs breaking changes
 
 | Safe | Breaking |
 |------|----------|
@@ -47,7 +51,7 @@ Designing clean, evolvable APIs; naming, error contracts, pagination, idempotenc
 | add a new enum value — *if* clients were told to expect unknown values | change the meaning of an existing value |
 | relax validation | tighten validation, change defaults, change error codes |
 
-**Versioning strategies**
+### Versioning strategies
 
 | Strategy | Example | Pros | Cons |
 |----------|---------|------|------|
@@ -68,7 +72,7 @@ Whatever you choose: publish a **deprecation policy** (announce → `Deprecation
 
 ## Diagram
 
-**An API evolution timeline showing additive vs breaking changes**
+### An API evolution timeline showing additive vs breaking changes
 
 | Date | Change | What it looks like |
 |---|---|---|
@@ -88,7 +92,7 @@ flowchart LR
     T1 --> RESP["response in the client's pinned version"]
 ```
 
-**An idempotent POST with a retry**
+### An idempotent POST with a retry
 
 ```mermaid
 sequenceDiagram
@@ -103,7 +107,7 @@ sequenceDiagram
     API-->>C: 201 (the stored response) — no second charge
 ```
 
-**Cursor pagination**
+### Cursor pagination
 
 | Page | Request | Result |
 |---|---|---|
@@ -199,7 +203,7 @@ Link: <https://docs.acme.dev/migrate-v2>; rel="deprecation"
 
 ## Mini project
 
-**A versioned REST API with a documented deprecation policy and a test matrix.**
+### A versioned REST API with a documented deprecation policy and a test matrix
 
 ```mermaid
 flowchart LR
@@ -211,7 +215,7 @@ flowchart LR
     POL["DEPRECATION.md:<br/>6-month notice, Sunset headers,<br/>usage dashboard"] -.-> V1
 ```
 
-**Steps**
+### Steps
 
 1. One core model and two thin versioned adapters (URI or header — pick one and justify it in an ADR).
 2. The standard error shape, cursor pagination, and idempotency keys on every POST.

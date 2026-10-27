@@ -10,9 +10,11 @@ Exceptions, panics, `Result`/`Option` types, error propagation (`?`), and custom
 
 **In one sentence:** errors are part of your function's real return type, and good error handling means every failure is either handled on purpose or reported clearly — never silently swallowed.
 
-**Mental model — a relay race.** When a runner trips, they must pass along a note: what went wrong and where. Each runner either fixes the problem (handles it) or adds a line to the note and passes it on (propagates with context). The worst runner hides the note in their pocket (`except: pass`).
+### Mental model — a relay race
 
-**Two styles**
+When a runner trips, they must pass along a note: what went wrong and where. Each runner either fixes the problem (handles it) or adds a line to the note and passes it on (propagates with context). The worst runner hides the note in their pocket (`except: pass`).
+
+### Two styles
 
 | | Exceptions | Error values (`Result`, `Option`, `err`) |
 |-|------------|----------------------------------------|
@@ -22,7 +24,7 @@ Exceptions, panics, `Result`/`Option` types, error propagation (`?`), and custom
 | Cost | cheap when not thrown; slow when thrown | ordinary return value |
 | Risk | forgetting a failure path exists | verbose; ignoring a returned error |
 
-**Recoverable vs fatal**
+### Recoverable vs fatal
 
 | Kind | Examples | What to do |
 |------|----------|------------|
@@ -30,7 +32,7 @@ Exceptions, panics, `Result`/`Option` types, error propagation (`?`), and custom
 | Bug / invariant broken | index out of range, `None` where impossible | fail fast: `panic!`, `assert`, crash with a stack trace |
 | Environmental / fatal | out of memory, disk full | log clearly, exit, let the supervisor restart |
 
-**Rules of thumb**
+### Rules of thumb
 
 1. Catch the *narrowest* exception type you can actually handle.
 2. Add context when you re-raise: *what* you were doing and *with which input*.
@@ -48,7 +50,7 @@ Exceptions, panics, `Result`/`Option` types, error propagation (`?`), and custom
 
 ## Diagram
 
-**Python try / except / else / finally**
+### Python try / except / else / finally
 
 ```mermaid
 flowchart TD
@@ -61,7 +63,7 @@ flowchart TD
     F --> NEXT[continue]
 ```
 
-**Rust `Result<T, E>` propagation with `?`**
+### Rust `Result<T, E>` propagation with `?`
 
 ```mermaid
 flowchart TD
@@ -178,7 +180,7 @@ fn load_port(path: &str) -> Result<u16, ConfigError> {
 
 ## Mini project
 
-**A config loader that surfaces precise, actionable errors with file/line context.**
+### A config loader that surfaces precise, actionable errors with file/line context
 
 ```mermaid
 flowchart LR
@@ -188,7 +190,7 @@ flowchart LR
     V -->|type| E3["app.toml:7: 'port' must be 1–65535, got 70000"]
 ```
 
-**Steps**
+### Steps
 
 1. Load TOML with `tomllib`; convert its errors into your own `ConfigError(path, line, col, message, hint)`.
 2. Validate required keys, types, and ranges; collect *all* errors, not just the first.

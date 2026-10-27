@@ -10,9 +10,11 @@ Process/thread lifecycle, CPU scheduling algorithms, synchronization primitives 
 
 **In one sentence:** the OS scheduler shares a few CPU cores among thousands of threads by switching quickly between them, and synchronization primitives stop threads from corrupting shared data — at the risk of deadlock if they wait on each other in a circle.
 
-**Mental model — a single-lane bridge.** Cars (threads) take turns crossing (CPU time). A traffic light (the scheduler) decides who goes next. A toll booth that admits one car at a time is a mutex; a parking lot with 10 spaces is a semaphore. Deadlock is four cars at a four-way stop, each waiting for the car on its right.
+### Mental model — a single-lane bridge
 
-**Thread states**
+Cars (threads) take turns crossing (CPU time). A traffic light (the scheduler) decides who goes next. A toll booth that admits one car at a time is a mutex; a parking lot with 10 spaces is a semaphore. Deadlock is four cars at a four-way stop, each waiting for the car on its right.
+
+### Thread states
 
 | State | Meaning |
 |-------|---------|
@@ -22,7 +24,7 @@ Process/thread lifecycle, CPU scheduling algorithms, synchronization primitives 
 | Blocked / waiting | waiting for I/O, a lock, a timer, or a condition |
 | Terminated | finished |
 
-**Scheduling algorithms**
+### Scheduling algorithms
 
 | Algorithm | Idea | Good | Bad |
 |-----------|------|------|-----|
@@ -36,7 +38,7 @@ Process/thread lifecycle, CPU scheduling algorithms, synchronization primitives 
 
 A **context switch** saves one thread's registers and loads another's: ~1–5 µs direct cost, plus cache and TLB pollution.
 
-**Synchronization primitives**
+### Synchronization primitives
 
 | Primitive | Semantics | Use |
 |-----------|-----------|-----|
@@ -47,7 +49,9 @@ A **context switch** saves one thread's registers and loads another's: ~1–5 µ
 | Atomic ops | CPU-level indivisible read-modify-write (CAS, fetch-add) | counters, lock-free structures |
 | Spinlock | busy-wait loop | very short sections in kernels; avoid in user code |
 
-**Deadlock: the four Coffman conditions** — all four must hold, so break any one:
+### Deadlock: the four Coffman conditions
+
+All four must hold, so break any one:
 
 | Condition | Meaning | How to break it |
 |-----------|---------|-----------------|
@@ -67,7 +71,7 @@ A **context switch** saves one thread's registers and loads another's: ~1–5 µ
 
 ## Diagram
 
-**Ready / running / blocked state machine**
+### Ready / running / blocked state machine
 
 ```mermaid
 stateDiagram-v2
@@ -80,7 +84,7 @@ stateDiagram-v2
     Terminated --> [*]
 ```
 
-**Round robin, time slice = 2**
+### Round robin, time slice = 2
 
 ```
  jobs: A needs 5, B needs 3, C needs 1
@@ -89,7 +93,7 @@ stateDiagram-v2
  finish: C at 5, B at 8, A at 9
 ```
 
-**A deadlock wait-for cycle**
+### A deadlock wait-for cycle
 
 ```mermaid
 graph LR
@@ -106,9 +110,11 @@ graph LR
 
 Each thread waits for the other: **forever**.
 
-**Fix:** both threads lock A before B (a global order), so no cycle is possible.
+### Fix
 
-**Dining philosophers**
+Both threads lock A before B (a global order), so no cycle is possible.
+
+### Dining philosophers
 
 ```mermaid
 flowchart LR
@@ -190,7 +196,7 @@ with sem:
 
 ## Mini project
 
-**A simulator of the dining philosophers with deadlock vs a lock-ordering fix.**
+### A simulator of the dining philosophers with deadlock vs a lock-ordering fix
 
 ```mermaid
 flowchart LR
@@ -199,7 +205,7 @@ flowchart LR
     SIM --> STATS["meals per philosopher,<br/>max wait (fairness)"]
 ```
 
-**Steps**
+### Steps
 
 1. Forks are `threading.Lock`s; a philosopher loops think → pick left → pick right → eat → release.
 2. Add a small `sleep` between picking forks so the naive version deadlocks reliably.

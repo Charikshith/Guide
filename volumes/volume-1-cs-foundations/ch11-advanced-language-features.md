@@ -10,9 +10,11 @@ Reflection, metaprogramming, decorators, context managers, closures, lambdas, it
 
 **In one sentence:** these features let code wrap, inspect, generate, or lazily produce other code and data, so you can remove repetition — at the price of making things harder to follow if overused.
 
-**Mental model — kitchen gadgets.** A decorator is a gift wrapper: same present, extra layer. A context manager is an automatic door that always closes behind you. A generator is a tap: water flows only when you open it, instead of filling a swimming pool first. A regex is a stencil you slide over text to find shapes.
+### Mental model — kitchen gadgets
 
-**The toolbox (Python names; most languages have equivalents)**
+A decorator is a gift wrapper: same present, extra layer. A context manager is an automatic door that always closes behind you. A generator is a tap: water flows only when you open it, instead of filling a swimming pool first. A regex is a stencil you slide over text to find shapes.
+
+### The toolbox (Python names; most languages have equivalents)
 
 | Feature | What it does | Typical use |
 |---------|-------------|-------------|
@@ -26,7 +28,7 @@ Reflection, metaprogramming, decorators, context managers, closures, lambdas, it
 | Metaprogramming | code that writes or changes code | `dataclasses`, metaclasses, Rust macros, codegen |
 | Regular expression | a pattern language for text | validation, parsing logs, search/replace |
 
-**Regex quick reference**
+### Regex quick reference
 
 | Pattern | Matches |
 |---------|---------|
@@ -39,7 +41,9 @@ Reflection, metaprogramming, decorators, context managers, closures, lambdas, it
 | `(…)` `(?P<name>…)` `(?:…)` | capture group, named group, non-capturing |
 | `a\|b` | alternation |
 
-**Use with restraint.** Every layer of magic is one more thing a reader must understand. Reach for these when they remove *real* duplication or leaks.
+### Use with restraint
+
+Every layer of magic is one more thing a reader must understand. Reach for these when they remove *real* duplication or leaks.
 
 ---
 
@@ -52,13 +56,13 @@ Reflection, metaprogramming, decorators, context managers, closures, lambdas, it
 
 ## Diagram
 
-**A decorator wrapping a function**
+### A decorator wrapping a function
 
 <div class="fig">
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 270" role="img" aria-label="A decorator wraps the original function: extra behaviour before and after the original call" style="width:100%;max-width:720px;height:auto;font-family:inherit"><defs><marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="context-stroke"/></marker></defs><text x="20" y="24" font-size="13" text-anchor="start" fill="#8b5cf6" font-weight="700">@timed</text><text x="20" y="44" font-size="13" text-anchor="start" fill="var(--text)">def fetch(url): ...</text><text x="250" y="34" font-size="13" text-anchor="start" fill="var(--text-muted)">is the same as:   fetch = timed(fetch)</text><text x="130" y="84" font-size="13" text-anchor="middle" fill="var(--text)" font-weight="600">call fetch("x")</text><line x1="130" y1="90" x2="130" y2="108" stroke="var(--text-muted)" stroke-width="1.6" marker-end="url(#ar)"/><rect x="20" y="108" width="440" height="148" rx="10" fill="#8b5cf6" fill-opacity=".10" stroke="#8b5cf6" stroke-width="1.6"/><text x="36" y="130" font-size="13" text-anchor="start" fill="#8b5cf6" font-weight="700">wrapper (from timed)</text><text x="36" y="152" font-size="13" text-anchor="start" fill="var(--text)">start = now()</text><text x="480" y="152" font-size="12.5" text-anchor="start" fill="var(--text-muted)">← extra behavior before</text><rect x="36" y="164" width="400" height="36" rx="6" fill="var(--primary)" fill-opacity=".18" stroke="var(--primary)" stroke-width="1.6"/><text x="236" y="187" font-size="13" text-anchor="middle" fill="var(--text)" font-weight="600">original fetch("x")</text><text x="36" y="224" font-size="13" text-anchor="start" fill="var(--text)">print(now() - start)</text><text x="480" y="224" font-size="12.5" text-anchor="start" fill="var(--text-muted)">← extra behavior after</text><text x="36" y="244" font-size="13" text-anchor="start" fill="var(--text)">return result</text></svg>
 </div>
 
-**A generator's yield / pause / resume cycle**
+### A generator's yield / pause / resume cycle
 
 ```mermaid
 sequenceDiagram
@@ -73,7 +77,7 @@ sequenceDiagram
     Note over Caller,Gen: nothing is computed until asked — O(1) memory
 ```
 
-**A lazy pipeline — each line flows through all stages before the next is read**
+### A lazy pipeline — each line flows through all stages before the next is read
 
 ```mermaid
 flowchart LR
@@ -154,7 +158,7 @@ print(getattr(m, "group")(0))                  # call a method by name
 
 ## Mini project
 
-**A retry decorator + a streaming log-line regex parser.**
+### A retry decorator + a streaming log-line regex parser
 
 ```mermaid
 flowchart LR
@@ -169,7 +173,7 @@ flowchart LR
     end
 ```
 
-**Steps**
+### Steps
 
 1. `@retry(times, backoff, on=(ExceptionTypes,))` — a decorator *factory*: a function that returns a decorator.
 2. Retry only the listed exceptions; add exponential backoff with jitter; log each attempt.

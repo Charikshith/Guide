@@ -10,9 +10,11 @@ Tags (releases), stash (temporary WIP), hooks (automation), and Git's object mod
 
 **In one sentence:** under the hood Git is a key–value store where the key is the hash of the content, and tags, stashes, branches, and hooks are small conveniences built on top of it.
 
-**Mental model — a library of sealed envelopes.** Every file version, folder listing, and commit is sealed in an envelope labeled with the fingerprint (hash) of its contents. The same content always gets the same label, so it is stored once. Change one byte and you get a new envelope with a new label. Branches and tags are bookmarks pointing at envelopes.
+### Mental model — a library of sealed envelopes
 
-**The four object types**
+Every file version, folder listing, and commit is sealed in an envelope labeled with the fingerprint (hash) of its contents. The same content always gets the same label, so it is stored once. Change one byte and you get a new envelope with a new label. Branches and tags are bookmarks pointing at envelopes.
+
+### The four object types
 
 | Object | Stores | Points to |
 |--------|--------|-----------|
@@ -21,11 +23,13 @@ Tags (releases), stash (temporary WIP), hooks (automation), and Git's object mod
 | **commit** | author, committer, date, message | one tree (the snapshot) + parent commit(s) |
 | **tag** (annotated) | tagger, date, message, optional signature | usually a commit |
 
-**Content addressing:** `id = SHA-1("blob <size>\0<content>")` (SHA-256 in newer repos). Consequences: identical files are stored once; any change to any file changes its tree, every parent tree, and the commit ID — so a commit ID fingerprints the *entire* history behind it.
+### Content addressing
+
+`id = SHA-1("blob <size>\0<content>")` (SHA-256 in newer repos). Consequences: identical files are stored once; any change to any file changes its tree, every parent tree, and the commit ID — so a commit ID fingerprints the *entire* history behind it.
 
 **Refs** are just files holding a hash: `.git/refs/heads/main`, `.git/refs/tags/v1.0.0`. `HEAD` usually holds `ref: refs/heads/main`.
 
-**Tags**
+### Tags
 
 | | Lightweight | Annotated |
 |-|-------------|-----------|
@@ -34,9 +38,13 @@ Tags (releases), stash (temporary WIP), hooks (automation), and Git's object mod
 | Use for | private bookmarks | **releases** (shown by `git describe`) |
 | Pushed by default? | no — `git push origin v1.0.0` or `--follow-tags` | same |
 
-**Stash** — a stack of temporary commits for work-in-progress: `git stash push -m "wip"` saves and cleans the working tree; `git stash pop` re-applies it.
+### Stash
 
-**Hooks** — scripts in `.git/hooks/` that Git runs at set moments. They aren't versioned by default, so teams share them with the `pre-commit` framework or `core.hooksPath`.
+A stack of temporary commits for work-in-progress: `git stash push -m "wip"` saves and cleans the working tree; `git stash pop` re-applies it.
+
+### Hooks
+
+Scripts in `.git/hooks/` that Git runs at set moments. They aren't versioned by default, so teams share them with the `pre-commit` framework or `core.hooksPath`.
 
 | Hook | When | Typical use |
 |------|------|-------------|
@@ -56,7 +64,7 @@ Tags (releases), stash (temporary WIP), hooks (automation), and Git's object mod
 
 ## Diagram
 
-**Git's object database**
+### Git's object database
 
 ```mermaid
 flowchart TD
@@ -74,7 +82,7 @@ flowchart TD
 
 `README.md` didn't change, so both trees point to the **same** blob — stored once.
 
-**How a change ripples up**
+### How a change ripples up
 
 ```mermaid
 flowchart TD
@@ -83,7 +91,7 @@ flowchart TD
 
 Unchanged files and folders are reused as-is.
 
-**Hook timeline for one commit and push**
+### Hook timeline for one commit and push
 
 ```mermaid
 sequenceDiagram
@@ -179,7 +187,7 @@ flowchart LR
     P --> H["pre-push hook: pytest -q"]
 ```
 
-**Steps**
+### Steps
 
 1. Refuse to run with uncommitted changes, off `main`, or behind `origin/main`.
 2. Validate the version (SemVer regex) and check it is greater than `git describe --tags --abbrev=0`.

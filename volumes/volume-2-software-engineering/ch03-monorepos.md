@@ -10,9 +10,11 @@ One repo, many projects — benefits (atomic changes, shared code) and costs (sc
 
 **In one sentence:** a monorepo keeps many projects in one repository so a change to shared code and all its users can land in a single reviewed commit — at the cost of needing tooling that builds and tests only what actually changed.
 
-**Mental model — one big kitchen vs many food trucks.** Polyrepo is a fleet of food trucks: each is independent and fast to change, but sharing a new sauce recipe means visiting every truck, and they drift apart. A monorepo is one big restaurant kitchen: the sauce is changed once and every dish gets it immediately — but you need a good head chef (build tooling) so that changing the sauce doesn't mean re-cooking the entire menu.
+### Mental model — one big kitchen vs many food trucks
 
-**Monorepo vs polyrepo**
+Polyrepo is a fleet of food trucks: each is independent and fast to change, but sharing a new sauce recipe means visiting every truck, and they drift apart. A monorepo is one big restaurant kitchen: the sauce is changed once and every dish gets it immediately — but you need a good head chef (build tooling) so that changing the sauce doesn't mean re-cooking the entire menu.
+
+### Monorepo vs polyrepo
 
 | | Monorepo | Polyrepo |
 |-|----------|----------|
@@ -25,9 +27,11 @@ One repo, many projects — benefits (atomic changes, shared code) and costs (sc
 | Scaling Git itself | large repos need sparse checkout, partial clone | not an issue |
 | Tooling | Cargo/pnpm/uv workspaces; Nx, Turborepo; Bazel, Pants, Buck2 | standard |
 
-**Workspace basics** — a *workspace* is a root manifest that lists member packages which share one lockfile, and internal dependencies refer to each other **by path** (or `workspace:*`), so a change is picked up immediately without publishing.
+### Workspace basics
 
-**Keeping CI fast in a monorepo**
+A *workspace* is a root manifest that lists member packages which share one lockfile, and internal dependencies refer to each other **by path** (or `workspace:*`), so a change is picked up immediately without publishing.
+
+### Keeping CI fast in a monorepo
 
 | Technique | How |
 |-----------|-----|
@@ -48,13 +52,13 @@ One repo, many projects — benefits (atomic changes, shared code) and costs (sc
 
 ## Diagram
 
-**A monorepo tree with shared packages**
+### A monorepo tree with shared packages
 
 <div class="fig">
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 358" role="img" aria-label="Monorepo layout: libs, services and apps with their dependencies and one workspace root" style="width:100%;max-width:900px;height:auto;font-family:inherit"><defs><marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="context-stroke"/></marker></defs><text x="14" y="20" font-size="13" font-family="ui-monospace,Menlo,Consolas,monospace" fill="var(--primary)" font-weight="600">📁 acme/</text><line x1="24" y1="32" x2="24" y2="44" stroke="var(--border)" stroke-width="1.4"/><line x1="24" y1="44" x2="34" y2="44" stroke="var(--border)" stroke-width="1.4"/><text x="38" y="46" font-size="13" font-family="ui-monospace,Menlo,Consolas,monospace" fill="var(--text)" font-weight="400">📄 Cargo.toml / package.json / pyproject.toml</text><text x="360" y="46" font-size="12.5" text-anchor="start" fill="var(--text-muted)">← workspace root, ONE lockfile</text><line x1="24" y1="58" x2="24" y2="70" stroke="var(--border)" stroke-width="1.4"/><line x1="24" y1="70" x2="34" y2="70" stroke="var(--border)" stroke-width="1.4"/><text x="38" y="72" font-size="13" font-family="ui-monospace,Menlo,Consolas,monospace" fill="var(--primary)" font-weight="600">📁 libs/</text><line x1="48" y1="84" x2="48" y2="96" stroke="var(--border)" stroke-width="1.4"/><line x1="48" y1="96" x2="58" y2="96" stroke="var(--border)" stroke-width="1.4"/><text x="62" y="98" font-size="13" font-family="ui-monospace,Menlo,Consolas,monospace" fill="var(--primary)" font-weight="600">📁 core/</text><text x="360" y="98" font-size="12.5" text-anchor="start" fill="var(--text-muted)">← shared domain types, validation</text><line x1="48" y1="110" x2="48" y2="122" stroke="var(--border)" stroke-width="1.4"/><line x1="48" y1="122" x2="58" y2="122" stroke="var(--border)" stroke-width="1.4"/><text x="62" y="124" font-size="13" font-family="ui-monospace,Menlo,Consolas,monospace" fill="var(--primary)" font-weight="600">📁 db/</text><text x="360" y="124" font-size="12.5" text-anchor="start" fill="var(--text-muted)">← database access (depends on core)</text><line x1="48" y1="136" x2="48" y2="148" stroke="var(--border)" stroke-width="1.4"/><line x1="48" y1="148" x2="58" y2="148" stroke="var(--border)" stroke-width="1.4"/><text x="62" y="150" font-size="13" font-family="ui-monospace,Menlo,Consolas,monospace" fill="var(--primary)" font-weight="600">📁 ui-kit/</text><text x="360" y="150" font-size="12.5" text-anchor="start" fill="var(--text-muted)">← shared React components</text><line x1="24" y1="162" x2="24" y2="174" stroke="var(--border)" stroke-width="1.4"/><line x1="24" y1="174" x2="34" y2="174" stroke="var(--border)" stroke-width="1.4"/><text x="38" y="176" font-size="13" font-family="ui-monospace,Menlo,Consolas,monospace" fill="var(--primary)" font-weight="600">📁 services/</text><line x1="48" y1="188" x2="48" y2="200" stroke="var(--border)" stroke-width="1.4"/><line x1="48" y1="200" x2="58" y2="200" stroke="var(--border)" stroke-width="1.4"/><text x="62" y="202" font-size="13" font-family="ui-monospace,Menlo,Consolas,monospace" fill="var(--primary)" font-weight="600">📁 api/</text><text x="360" y="202" font-size="12.5" text-anchor="start" fill="var(--text-muted)">← depends on core, db</text><line x1="48" y1="214" x2="48" y2="226" stroke="var(--border)" stroke-width="1.4"/><line x1="48" y1="226" x2="58" y2="226" stroke="var(--border)" stroke-width="1.4"/><text x="62" y="228" font-size="13" font-family="ui-monospace,Menlo,Consolas,monospace" fill="var(--primary)" font-weight="600">📁 worker/</text><text x="360" y="228" font-size="12.5" text-anchor="start" fill="var(--text-muted)">← depends on core, db</text><line x1="24" y1="240" x2="24" y2="252" stroke="var(--border)" stroke-width="1.4"/><line x1="24" y1="252" x2="34" y2="252" stroke="var(--border)" stroke-width="1.4"/><text x="38" y="254" font-size="13" font-family="ui-monospace,Menlo,Consolas,monospace" fill="var(--primary)" font-weight="600">📁 apps/</text><line x1="48" y1="266" x2="48" y2="278" stroke="var(--border)" stroke-width="1.4"/><line x1="48" y1="278" x2="58" y2="278" stroke="var(--border)" stroke-width="1.4"/><text x="62" y="280" font-size="13" font-family="ui-monospace,Menlo,Consolas,monospace" fill="var(--primary)" font-weight="600">📁 web/</text><text x="360" y="280" font-size="12.5" text-anchor="start" fill="var(--text-muted)">← depends on ui-kit (+ core types)</text><line x1="24" y1="292" x2="24" y2="304" stroke="var(--border)" stroke-width="1.4"/><line x1="24" y1="304" x2="34" y2="304" stroke="var(--border)" stroke-width="1.4"/><text x="38" y="306" font-size="13" font-family="ui-monospace,Menlo,Consolas,monospace" fill="var(--primary)" font-weight="600">📁 tools/</text><text x="360" y="306" font-size="12.5" text-anchor="start" fill="var(--text-muted)">← scripts, codegen</text><line x1="24" y1="318" x2="24" y2="330" stroke="var(--border)" stroke-width="1.4"/><line x1="24" y1="330" x2="34" y2="330" stroke="var(--border)" stroke-width="1.4"/><text x="38" y="332" font-size="13" font-family="ui-monospace,Menlo,Consolas,monospace" fill="var(--text)" font-weight="400">📄 .github/CODEOWNERS</text></svg>
 </div>
 
-**The dependency graph across packages, and "affected" by a change**
+### The dependency graph across packages, and "affected" by a change
 
 ```mermaid
 graph LR
@@ -71,7 +75,7 @@ graph LR
 
 Change `libs/db` → affected: `db`, `api`, `worker`. `core`, `ui-kit`, and `web` are skipped.
 
-**Task caching**
+### Task caching
 
 Task: `test services/api`. The inputs hash is `hash(source files, deps' outputs, lockfile, env, command)`.
 
@@ -147,7 +151,7 @@ npx turbo run test --filter="...[origin/main]"
 
 ## Mini project
 
-**A small monorepo with a shared library + two apps built by one command.**
+### A small monorepo with a shared library + two apps built by one command
 
 ```mermaid
 flowchart LR
@@ -158,7 +162,7 @@ flowchart LR
     CI["GitHub Actions:<br/>same command"] --> RUN
 ```
 
-**Steps**
+### Steps
 
 1. Pick one ecosystem (uv workspace, pnpm, or Cargo); create `libs/shared`, `apps/cli`, and `apps/api`, using path/workspace dependencies.
 2. `task ci` (or `turbo run`) runs lint, test, and build across all packages in dependency order.

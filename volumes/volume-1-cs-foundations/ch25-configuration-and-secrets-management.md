@@ -10,9 +10,11 @@ Environment variables, dotenv, YAML/TOML/JSON config, and keeping secrets out of
 
 **In one sentence:** configuration is everything that changes between environments (dev, staging, prod), so it belongs outside the code; secrets are the dangerous subset of configuration that must never be committed, printed, or shared in plain text.
 
-**Mental model — a hotel room.** The building (your code) is identical everywhere. Each guest's room settings — temperature, wake-up call (config) — are set at check-in. The room safe's code (a secret) is never written on the door, never photocopied, and changed when a guest leaves.
+### Mental model — a hotel room
 
-**Where config comes from, lowest to highest precedence**
+The building (your code) is identical everywhere. Each guest's room settings — temperature, wake-up call (config) — are set at check-in. The room safe's code (a secret) is never written on the door, never photocopied, and changed when a guest leaves.
+
+### Where config comes from, lowest to highest precedence
 
 | Layer | Example | Good for |
 |-------|---------|----------|
@@ -24,7 +26,7 @@ Environment variables, dotenv, YAML/TOML/JSON config, and keeping secrets out of
 
 Later layers override earlier ones. **Make the precedence explicit and document it.**
 
-**Config file vs env var**
+### Config file vs env var
 
 | | Config file | Environment variable |
 |-|-------------|----------------------|
@@ -33,7 +35,7 @@ Later layers override earlier ones. **Make the precedence explicit and document 
 | Changes per deploy? | rarely | often |
 | Visible to | anyone with the repo | the process (and its children, `/proc/<pid>/environ`, crash dumps) |
 
-**Secrets rules**
+### Secrets rules
 
 1. Never in git — not even in "private" repos. History is forever; rotate if leaked.
 2. Commit a `.env.example` with fake values; add `.env` to `.gitignore`.
@@ -42,7 +44,9 @@ Later layers override earlier ones. **Make the precedence explicit and document 
 5. Least privilege: each service gets only the secrets it needs.
 6. Keep secrets out of logs, error messages, and URLs.
 
-**Fail fast** — validate all config at startup: required keys present, types right, values in range. A service that starts with a broken config fails later, at the worst moment.
+### Fail fast
+
+Validate all config at startup: required keys present, types right, values in range. A service that starts with a broken config fails later, at the worst moment.
 
 ---
 
@@ -55,7 +59,7 @@ Later layers override earlier ones. **Make the precedence explicit and document 
 
 ## Diagram
 
-**A 12-factor config flow**
+### A 12-factor config flow
 
 ```mermaid
 flowchart LR
@@ -69,7 +73,7 @@ flowchart LR
     VAL -- valid --> CFG["typed, immutable Config object"] --> APP[application]
 ```
 
-**Precedence as layers**
+### Precedence as layers
 
 | Priority | Source | Example |
 |---|---|---|
@@ -79,7 +83,7 @@ flowchart LR
 | 4 (**loses**) | defaults | `port = 8080` |
 | | **effective** | **`port = 9001`** |
 
-**Secret rotation**
+### Secret rotation
 
 ```mermaid
 sequenceDiagram
@@ -183,7 +187,7 @@ flowchart TD
     O --> SHOW["--print-config shows effective values<br/>with secrets masked and the source of each"]
 ```
 
-**Steps**
+### Steps
 
 1. Schema as a frozen dataclass or pydantic model with types, defaults, and required fields.
 2. Merge layers; `__` in env var names maps to nesting (`APP_DB__HOST`).

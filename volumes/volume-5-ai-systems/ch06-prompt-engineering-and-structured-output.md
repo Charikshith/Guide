@@ -10,9 +10,11 @@ Instruction design, few-shot, chain-of-thought, system/user roles, and constrain
 
 **In one sentence:** prompt engineering is writing clear, testable instructions for a very capable but context-blind reader, and structured output is making sure the reply comes back in a shape your code can trust — validated against a schema, never just "hopefully JSON".
 
-**Mental model — briefing a brilliant new contractor.** They're smart and fast but know nothing about your company. A good brief says who they are working for (role/system), what the goal is and why, what the input is (clearly separated), what good output looks like (examples), what the constraints are, and exactly what format to hand back. A vague brief gets a confident guess.
+### Mental model — briefing a brilliant new contractor
 
-**Roles**
+They're smart and fast but know nothing about your company. A good brief says who they are working for (role/system), what the goal is and why, what the input is (clearly separated), what good output looks like (examples), what the constraints are, and exactly what format to hand back. A vague brief gets a confident guess.
+
+### Roles
 
 | Role | Contains | Tips |
 |------|----------|------|
@@ -21,7 +23,7 @@ Instruction design, few-shot, chain-of-thought, system/user roles, and constrain
 | **Assistant** | model replies (and prefill: text you start the reply with) | prior turns form the conversation history |
 | **Tool** | results of function calls | returned to the model as structured data |
 
-**Techniques**
+### Techniques
 
 | Technique | What | When it helps |
 |-----------|------|---------------|
@@ -34,9 +36,11 @@ Instruction design, few-shot, chain-of-thought, system/user roles, and constrain
 | Prefill | start the assistant reply (e.g. with `{`) | steering format (where supported) |
 | Self-check | "verify the answer against the rules before finalizing" | catching slips; better done as a separate call |
 
-**Few-shot vs fine-tuning** — few-shot is instant, cheap to change, and needs no training data pipeline, but it costs tokens on every call and has limited capacity. Fine-tuning ([Ch 7](ch07-fine-tuning-lora-and-peft.md)) bakes in behavior (style, format, domain patterns) for shorter prompts and lower latency, but needs hundreds to thousands of good examples and retraining when things change. Try prompting (and RAG for knowledge) first; fine-tune when the prompt is at its limit.
+### Few-shot vs fine-tuning
 
-**Getting valid structured output — strongest to weakest**
+Few-shot is instant, cheap to change, and needs no training data pipeline, but it costs tokens on every call and has limited capacity. Fine-tuning ([Ch 7](ch07-fine-tuning-lora-and-peft.md)) bakes in behavior (style, format, domain patterns) for shorter prompts and lower latency, but needs hundreds to thousands of good examples and retraining when things change. Try prompting (and RAG for knowledge) first; fine-tune when the prompt is at its limit.
+
+### Getting valid structured output — strongest to weakest
 
 | Method | How | Guarantee |
 |--------|-----|-----------|
@@ -57,7 +61,7 @@ Even with guarantees, validate semantically (with Pydantic): ranges, enums, cros
 
 ## Diagram
 
-**A prompt template with system/user/assistant roles and a few-shot block**
+### A prompt template with system/user/assistant roles and a few-shot block
 
 | Part | Content |
 |---|---|
@@ -65,7 +69,7 @@ Even with guarantees, validate semantically (with Pydantic): ranges, enums, cros
 | **FEW-SHOT** (as prior user/assistant turns) | USER: `<ticket>Invoices charged twice for all customers today</ticket>`<br>ASSISTANT: `{"team":"billing","priority":"P1","reason":"duplicate charges"}`<br>USER: `<ticket>How do I export to CSV?</ticket>`<br>ASSISTANT: `{"team":"other","priority":"P3","reason":"how-to question"}` |
 | **USER** (the real input, untrusted) | `<ticket>{{ticket_text}}</ticket>` |
 
-**Constrained decoding: invalid tokens are masked at each step**
+### Constrained decoding: invalid tokens are masked at each step
 
 ```mermaid
 flowchart LR
@@ -74,7 +78,7 @@ flowchart LR
     V --> M --> P["sample from the allowed set"] --> N["'billing'"]
 ```
 
-**Structured output with validation and retry**
+### Structured output with validation and retry
 
 ```mermaid
 flowchart TD
@@ -164,7 +168,7 @@ result = Triage.model_validate_json(generator("<ticket>Card declined on renewal<
 
 ## Mini project
 
-**A prompt templating + structured-output library with validation.**
+### A prompt templating + structured-output library with validation
 
 ```mermaid
 flowchart LR
@@ -176,7 +180,7 @@ flowchart LR
     TESTS["golden test set per prompt:<br/>pytest -k triage (accuracy ≥ 95%)"] --> LIB
 ```
 
-**Steps**
+### Steps
 
 1. Prompts live in versioned YAML files: system text, few-shot pairs, a user template (Jinja2 with auto-escaping), and the name of an output Pydantic model.
 2. `render()` wraps variables in delimiters and refuses to render missing variables.

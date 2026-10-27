@@ -10,7 +10,7 @@ Single responsibility, Open/closed, Liskov substitution, Interface segregation, 
 
 **In one sentence:** SOLID is five guidelines for arranging classes so that each change touches as little code as possible — one reason to change per class, new behavior added rather than edited in, subtypes that truly substitute, small focused interfaces, and business logic that depends on abstractions it owns.
 
-**Mental model — a well-run kitchen.**
+### Mental model — a well-run kitchen
 
 * **S** — the baker bakes, the cashier takes money. A new payment system doesn't retrain the baker.
 * **O** — adding a new pizza means adding a new recipe card, not rewriting the oven's manual.
@@ -18,7 +18,7 @@ Single responsibility, Open/closed, Liskov substitution, Interface segregation, 
 * **I** — the dishwasher's checklist doesn't include "create the tasting menu".
 * **D** — the head chef orders "10 kg of flour" from *a* supplier contract, not from one specific farmer's truck.
 
-**The five principles**
+### The five principles
 
 | Letter | Principle | Smell (violation) | Fix |
 |:-:|-----------|-------------------|-----|
@@ -28,7 +28,9 @@ Single responsibility, Open/closed, Liskov substitution, Interface segregation, 
 | **I** | **Interface Segregation**: clients shouldn't depend on methods they don't use | a fat `Machine` interface with `print`, `scan`, `fax`; `SimplePrinter` must stub `fax` | small role interfaces: `Printer`, `Scanner`, `Fax` |
 | **D** | **Dependency Inversion**: high-level policy depends on abstractions; details implement them | `OrderService` imports and constructs `MySQLOrderTable` and `StripeClient` | `OrderService(repo: OrderRepo, payments: PaymentGateway)`; adapters implement them ([Vol 2 Ch 4](../volume-2-software-engineering/ch04-dependency-injection-and-inversion-of-control.md)) |
 
-**LSP in detail — the contract rules.** A subtype may:
+### LSP in detail — the contract rules
+
+A subtype may:
 
 | May | May not |
 |-----|---------|
@@ -37,7 +39,9 @@ Single responsibility, Open/closed, Liskov substitution, Interface segregation, 
 | keep all the parent's invariants | break an invariant the parent guaranteed |
 | raise the same kinds of errors | raise new, unexpected ones |
 
-**Don't over-apply.** SOLID is a tool for managing *change*. Applying OCP to code that will never get a second variant creates needless indirection (see YAGNI in [Ch 3](ch03-design-principles-cohesion-coupling-yagni-dry-kiss.md)). Refactor toward SOLID when change actually starts to hurt.
+### Don't over-apply
+
+SOLID is a tool for managing *change*. Applying OCP to code that will never get a second variant creates needless indirection (see YAGNI in [Ch 3](ch03-design-principles-cohesion-coupling-yagni-dry-kiss.md)). Refactor toward SOLID when change actually starts to hurt.
 
 ---
 
@@ -49,7 +53,7 @@ Single responsibility, Open/closed, Liskov substitution, Interface segregation, 
 
 ## Diagram
 
-**S — splitting a god class**
+### S — splitting a god class
 
 ```mermaid
 flowchart LR
@@ -65,7 +69,7 @@ flowchart LR
     end
 ```
 
-**O — replace a switch with strategies**
+### O — replace a switch with strategies
 
 **BEFORE**: edit this function for every new shipping method.
 
@@ -86,7 +90,7 @@ class Drone:     …                     # ← new file, new test
 SHIPPING = {"standard": Standard(), …}
 ```
 
-**L — the classic `Square(Rectangle)` violation**
+### L — the classic `Square(Rectangle)` violation
 
 ```
  def stretch(r: Rectangle):
@@ -96,7 +100,7 @@ SHIPPING = {"standard": Standard(), …}
  fix: make them siblings under an immutable Shape with area(), or don't allow mutation.
 ```
 
-**I and D together**
+### I and D together
 
 ```mermaid
 classDiagram
@@ -216,7 +220,7 @@ class OrderService:
 
 ## Mini project
 
-**Refactor a small codebase until all five principles hold and explain each fix.**
+### Refactor a small codebase until all five principles hold and explain each fix
 
 ```mermaid
 flowchart LR
@@ -229,7 +233,7 @@ flowchart LR
     D1 --> DOC["REFACTOR.md: before/after + which letter each change fixes"]
 ```
 
-**Steps**
+### Steps
 
 1. Write (or take) a tangled notifications module that does everything with `if channel == ...`.
 2. Lock the behavior in with characterization tests.

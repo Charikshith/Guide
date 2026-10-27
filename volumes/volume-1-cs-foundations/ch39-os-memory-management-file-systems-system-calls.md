@@ -10,9 +10,11 @@ Address spaces and paging; file systems (inodes, journals); the syscall boundary
 
 **In one sentence:** the kernel owns the hardware, so programs ask it for everything — memory, files, network, other processes — through system calls, and it answers with abstractions: virtual address spaces, files made of inodes and blocks, and pipes and sockets for processes to talk.
 
-**Mental model — a government office.** User programs are citizens; the kernel is the office behind a counter. You can't walk into the vault (hardware) yourself. You fill in a form (a system call), the clerk checks your permissions, does the work, and hands back a result or an error code. File descriptors are ticket numbers. Pipes are pneumatic tubes between two desks.
+### Mental model — a government office
 
-**A process address space (x86-64 Linux, simplified)**
+User programs are citizens; the kernel is the office behind a counter. You can't walk into the vault (hardware) yourself. You fill in a form (a system call), the clerk checks your permissions, does the work, and hands back a result or an error code. File descriptors are ticket numbers. Pipes are pneumatic tubes between two desks.
+
+### A process address space (x86-64 Linux, simplified)
 
 | Region | Holds | Grows |
 |--------|-------|-------|
@@ -24,7 +26,7 @@ Address spaces and paging; file systems (inodes, journals); the syscall boundary
 | Data | initialized globals | — |
 | Text | machine code (read-only, executable) | — |
 
-**File systems**
+### File systems
 
 | Concept | Meaning |
 |---------|---------|
@@ -36,7 +38,9 @@ Address spaces and paging; file systems (inodes, journals); the syscall boundary
 | Journal | a write-ahead log of metadata (and optionally data) changes, so a crash never leaves the FS inconsistent (ext4, XFS); copy-on-write FSs (btrfs, ZFS) never overwrite in place |
 | VFS | a kernel layer giving every FS the same `open/read/write` interface |
 
-**System calls** — the only door from user mode to kernel mode. The CPU switches privilege level (`syscall` instruction), the kernel runs, and control returns with a result (negative = `errno`). Cost: ~100 ns to ~1 µs, so batch work (buffered I/O, `readv`, `io_uring`).
+### System calls
+
+The only door from user mode to kernel mode. The CPU switches privilege level (`syscall` instruction), the kernel runs, and control returns with a result (negative = `errno`). Cost: ~100 ns to ~1 µs, so batch work (buffered I/O, `readv`, `io_uring`).
 
 | Category | Syscalls |
 |----------|----------|
@@ -46,7 +50,7 @@ Address spaces and paging; file systems (inodes, journals); the syscall boundary
 | Network | `socket`, `bind`, `listen`, `accept`, `connect`, `sendto`, `recvfrom` |
 | Events | `poll`, `epoll_wait`, `io_uring_enter` |
 
-**IPC options**
+### IPC options
 
 | Mechanism | Direction | Between | Speed | Use |
 |-----------|-----------|---------|-------|-----|
@@ -68,13 +72,13 @@ Address spaces and paging; file systems (inodes, journals); the syscall boundary
 
 ## Diagram
 
-**Process address-space layout**
+### Process address-space layout
 
 <div class="fig">
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 420" role="img" aria-label="Virtual address space from kernel space at the top, through the stack, mmap, heap, BSS, data and text, down to unmapped address zero" style="width:100%;max-width:760px;height:auto;font-family:inherit"><defs><marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="context-stroke"/></marker></defs><text x="236" y="38" font-size="12" text-anchor="end" fill="var(--text-muted)">0xFFFF_FFFF_FFFF_FFFF</text><rect x="250" y="30" width="330" height="40" rx="0" fill="var(--danger)" fill-opacity=".2" stroke="var(--danger)" stroke-width="1.6"/><text x="415.0" y="55.0" font-size="13.5" text-anchor="middle" fill="var(--text)" font-weight="600">kernel space</text><text x="594" y="55.0" font-size="12.5" text-anchor="start" fill="var(--text-muted)">(no access from user mode)</text><text x="236" y="74" font-size="12" text-anchor="end" fill="var(--text-muted)">0x7FFF_FFFF_FFFF</text><rect x="250" y="70" width="330" height="60" rx="0" fill="var(--primary)" fill-opacity=".2" stroke="var(--primary)" stroke-width="1.6"/><text x="415.0" y="105.0" font-size="13.5" text-anchor="middle" fill="var(--text)" font-weight="600">stack  ↓</text><text x="594" y="105.0" font-size="12.5" text-anchor="start" fill="var(--text-muted)">main → f → g frames</text><rect x="250" y="130" width="330" height="50" rx="0" fill="#8b5cf6" fill-opacity=".2" stroke="#8b5cf6" stroke-width="1.6"/><text x="415.0" y="160.0" font-size="13.5" text-anchor="middle" fill="var(--text)" font-weight="600">mmap: libc.so, files …</text><rect x="250" y="180" width="330" height="60" rx="0" fill="var(--success)" fill-opacity=".2" stroke="var(--success)" stroke-width="1.6"/><text x="415.0" y="215.0" font-size="13.5" text-anchor="middle" fill="var(--text)" font-weight="600">heap  ↑</text><text x="594" y="215.0" font-size="12.5" text-anchor="start" fill="var(--text-muted)">malloc'd objects</text><rect x="250" y="240" width="330" height="30" rx="0" fill="var(--accent)" fill-opacity=".2" stroke="var(--accent)" stroke-width="1.6"/><text x="415.0" y="260.0" font-size="13.5" text-anchor="middle" fill="var(--text)" font-weight="600">BSS (zeroed globals)</text><rect x="250" y="270" width="330" height="30" rx="0" fill="var(--accent)" fill-opacity=".2" stroke="var(--accent)" stroke-width="1.6"/><text x="415.0" y="290.0" font-size="13.5" text-anchor="middle" fill="var(--text)" font-weight="600">data (initialized)</text><rect x="250" y="300" width="330" height="30" rx="0" fill="var(--accent)" fill-opacity=".2" stroke="var(--accent)" stroke-width="1.6"/><text x="415.0" y="320.0" font-size="13.5" text-anchor="middle" fill="var(--text)" font-weight="600">text (code, r-x)</text><text x="236" y="334" font-size="12" text-anchor="end" fill="var(--text-muted)">0x0000_0040_0000</text><text x="236" y="364" font-size="12" text-anchor="end" fill="var(--text-muted)">0x0</text><text x="250" y="364" font-size="12.5" text-anchor="start" fill="var(--danger)" font-weight="600">unmapped, so a NULL dereference segfaults</text></svg>
 </div>
 
-**Inode → blocks mapping**
+### Inode → blocks mapping
 
 ```mermaid
 flowchart LR
@@ -85,7 +89,7 @@ flowchart LR
     HL["hard link 'backup.txt' → inode 4721"] --> INO
 ```
 
-**What happens on `write(fd, buf, n)`**
+### What happens on `write(fd, buf, n)`
 
 ```mermaid
 sequenceDiagram
@@ -103,7 +107,7 @@ sequenceDiagram
     FS->>D: I/O request
 ```
 
-**A pipe between two processes: `ls | wc -l`**
+### A pipe between two processes: `ls | wc -l`
 
 ```mermaid
 flowchart LR
@@ -176,7 +180,7 @@ shm.close(); shm.unlink()
 
 ## Mini project
 
-**A mini shell that forks, pipes, and redirects I/O.**
+### A mini shell that forks, pipes, and redirects I/O
 
 ```mermaid
 flowchart TD
@@ -188,7 +192,7 @@ flowchart TD
     PARENT --> BUILTIN["builtins in the parent: cd, exit, export"]
 ```
 
-**Steps**
+### Steps
 
 1. Read a line, split on `|`, and parse `<`, `>`, `>>` per command (use `shlex.split` for quoting).
 2. Create pipes; fork each stage; in the child, `os.dup2` the right fds onto stdin/stdout, close the rest, and `os.execvp`.

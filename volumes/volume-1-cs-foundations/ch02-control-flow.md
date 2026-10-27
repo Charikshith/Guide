@@ -10,9 +10,11 @@
 
 **In one sentence:** control flow decides *which* line runs next — branch on a condition, repeat while a condition holds, or jump out early.
 
-**Mental model — a train on tracks.** The program is a train running straight down the track. An `if` is a switch point that sends it left or right. A loop is a circular siding it goes around until a signal turns green. `break` is an emergency exit off the loop. `continue` skips the rest of this lap.
+### Mental model — a train on tracks
 
-**The building blocks**
+The program is a train running straight down the track. An `if` is a switch point that sends it left or right. A loop is a circular siding it goes around until a signal turns green. `break` is an emergency exit off the loop. `continue` skips the rest of this lap.
+
+### The building blocks
 
 | Construct | Use when | Notes |
 |-----------|----------|-------|
@@ -39,7 +41,9 @@ match command.split():
         print("unknown")
 ```
 
-**Off-by-one errors** — the most common loop bug. Use half-open ranges `[start, end)`: `range(0, n)` runs n times, and `range(a, b)` has `b − a` items.
+### Off-by-one errors
+
+The most common loop bug. Use half-open ranges `[start, end)`: `range(0, n)` runs n times, and `range(a, b)` has `b − a` items.
 
 ---
 
@@ -51,7 +55,7 @@ match command.split():
 
 ## Diagram
 
-**if / else branching**
+### if / else branching
 
 ```mermaid
 flowchart TD
@@ -63,7 +67,7 @@ flowchart TD
     A & B & F --> E([end])
 ```
 
-**A loop with its exit condition, break, and continue**
+### A loop with its exit condition, break, and continue
 
 ```mermaid
 flowchart TD
@@ -76,7 +80,7 @@ flowchart TD
     Z -- no --> BODY["total += xs[i]"] --> INC["i += 1"] --> T
 ```
 
-**C-style switch fallthrough**
+### C-style switch fallthrough
 
 ```
  switch (n) {            n = 1 runs:
@@ -180,7 +184,7 @@ def shipping_cost(order):
 
 ## Mini project
 
-**A number-guessing game with input validation and a retry loop.**
+### A number-guessing game with input validation and a retry loop
 
 ```mermaid
 stateDiagram-v2
@@ -197,7 +201,7 @@ stateDiagram-v2
     Lost --> [*]
 ```
 
-**Steps**
+### Steps
 
 1. Pick a secret number with `random.randint(1, 100)`.
 2. Loop: read input, reject non-numbers and out-of-range values *without* using up an attempt.

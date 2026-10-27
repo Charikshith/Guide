@@ -10,9 +10,11 @@ Splitting code into modules, bundling into packages/libraries, importing, and pi
 
 **In one sentence:** modules split your code into files, packages group files into a folder others can install, and a lockfile freezes the exact versions so every machine builds the same thing.
 
-**Mental model — LEGO sets.** A module is one bag of bricks. A package is the whole box with instructions. Dependencies are other boxes you need. The lockfile is a receipt listing the *exact* box editions you bought, so a friend can rebuild the same model.
+### Mental model — LEGO sets
 
-**Levels**
+A module is one bag of bricks. A package is the whole box with instructions. Dependencies are other boxes you need. The lockfile is a receipt listing the *exact* box editions you bought, so a friend can rebuild the same model.
+
+### Levels
 
 | Level | Python | Rust | JavaScript |
 |-------|--------|------|------------|
@@ -22,7 +24,7 @@ Splitting code into modules, bundling into packages/libraries, importing, and pi
 | Manifest | `pyproject.toml` | `Cargo.toml` | `package.json` |
 | Lockfile | `uv.lock` / `poetry.lock` / `requirements.txt` (pinned) | `Cargo.lock` | `package-lock.json` / `pnpm-lock.yaml` |
 
-**Version specifiers (Semantic Versioning `MAJOR.MINOR.PATCH`)**
+### Version specifiers (Semantic Versioning `MAJOR.MINOR.PATCH`)
 
 | Spec | Meaning | Allows |
 |------|---------|--------|
@@ -33,9 +35,13 @@ Splitting code into modules, bundling into packages/libraries, importing, and pi
 | `^0.4.2` | 0.x is unstable, so minor acts as major | `>=0.4.2, <0.5.0` |
 | `~1.4.2` (npm) | same minor | `>=1.4.2, <1.5.0` |
 
-**Manifest vs lockfile** — the manifest states *ranges* you accept (`requests>=2.31`). The lockfile records the *exact* resolved versions and hashes of every direct and transitive dependency. Libraries publish ranges; applications commit lockfiles.
+### Manifest vs lockfile
 
-**How Python finds an import** — `import foo` checks `sys.modules` (already loaded?), then searches each directory in `sys.path` in order: the script's directory, `PYTHONPATH`, then site-packages. The first match wins. A local file named `json.py` will shadow the standard library.
+The manifest states *ranges* you accept (`requests>=2.31`). The lockfile records the *exact* resolved versions and hashes of every direct and transitive dependency. Libraries publish ranges; applications commit lockfiles.
+
+### How Python finds an import
+
+`import foo` checks `sys.modules` (already loaded?), then searches each directory in `sys.path` in order: the script's directory, `PYTHONPATH`, then site-packages. The first match wins. A local file named `json.py` will shadow the standard library.
 
 ---
 
@@ -47,13 +53,15 @@ Splitting code into modules, bundling into packages/libraries, importing, and pi
 
 ## Diagram
 
-**Modules → package → library**
+### Modules → package → library
 
 <div class="fig">
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 860 358" role="img" aria-label="textkit project layout with its package, modules and tests" style="width:100%;max-width:860px;height:auto;font-family:inherit"><defs><marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="context-stroke"/></marker></defs><text x="14" y="20" font-size="13" font-family="ui-monospace,Menlo,Consolas,monospace" fill="var(--primary)" font-weight="600">📁 textkit/</text><text x="330" y="20" font-size="12.5" text-anchor="start" fill="var(--text-muted)">← project root</text><line x1="24" y1="32" x2="24" y2="44" stroke="var(--border)" stroke-width="1.4"/><line x1="24" y1="44" x2="34" y2="44" stroke="var(--border)" stroke-width="1.4"/><text x="38" y="46" font-size="13" font-family="ui-monospace,Menlo,Consolas,monospace" fill="var(--text)" font-weight="400">📄 pyproject.toml</text><text x="330" y="46" font-size="12.5" text-anchor="start" fill="var(--text-muted)">← manifest: name, version, dependencies</text><line x1="24" y1="58" x2="24" y2="70" stroke="var(--border)" stroke-width="1.4"/><line x1="24" y1="70" x2="34" y2="70" stroke="var(--border)" stroke-width="1.4"/><text x="38" y="72" font-size="13" font-family="ui-monospace,Menlo,Consolas,monospace" fill="var(--text)" font-weight="400">📄 uv.lock</text><text x="330" y="72" font-size="12.5" text-anchor="start" fill="var(--text-muted)">← lockfile: exact versions + hashes</text><line x1="24" y1="84" x2="24" y2="96" stroke="var(--border)" stroke-width="1.4"/><line x1="24" y1="96" x2="34" y2="96" stroke="var(--border)" stroke-width="1.4"/><text x="38" y="98" font-size="13" font-family="ui-monospace,Menlo,Consolas,monospace" fill="var(--primary)" font-weight="600">📁 src/</text><line x1="48" y1="110" x2="48" y2="122" stroke="var(--border)" stroke-width="1.4"/><line x1="48" y1="122" x2="58" y2="122" stroke="var(--border)" stroke-width="1.4"/><text x="62" y="124" font-size="13" font-family="ui-monospace,Menlo,Consolas,monospace" fill="var(--primary)" font-weight="600">📁 textkit/</text><text x="330" y="124" font-size="12.5" text-anchor="start" fill="var(--text-muted)">← the package (import textkit)</text><line x1="72" y1="136" x2="72" y2="148" stroke="var(--border)" stroke-width="1.4"/><line x1="72" y1="148" x2="82" y2="148" stroke="var(--border)" stroke-width="1.4"/><text x="86" y="150" font-size="13" font-family="ui-monospace,Menlo,Consolas,monospace" fill="var(--text)" font-weight="400">📄 __init__.py</text><text x="330" y="150" font-size="12.5" text-anchor="start" fill="var(--text-muted)">← runs on import; defines the public API</text><line x1="72" y1="162" x2="72" y2="174" stroke="var(--border)" stroke-width="1.4"/><line x1="72" y1="174" x2="82" y2="174" stroke="var(--border)" stroke-width="1.4"/><text x="86" y="176" font-size="13" font-family="ui-monospace,Menlo,Consolas,monospace" fill="var(--text)" font-weight="400">📄 tokenize.py</text><text x="330" y="176" font-size="12.5" text-anchor="start" fill="var(--text-muted)">← module: textkit.tokenize</text><line x1="72" y1="188" x2="72" y2="200" stroke="var(--border)" stroke-width="1.4"/><line x1="72" y1="200" x2="82" y2="200" stroke="var(--border)" stroke-width="1.4"/><text x="86" y="202" font-size="13" font-family="ui-monospace,Menlo,Consolas,monospace" fill="var(--text)" font-weight="400">📄 stats.py</text><text x="330" y="202" font-size="12.5" text-anchor="start" fill="var(--text-muted)">← module: textkit.stats</text><line x1="72" y1="214" x2="72" y2="226" stroke="var(--border)" stroke-width="1.4"/><line x1="72" y1="226" x2="82" y2="226" stroke="var(--border)" stroke-width="1.4"/><text x="86" y="228" font-size="13" font-family="ui-monospace,Menlo,Consolas,monospace" fill="var(--primary)" font-weight="600">📁 formats/</text><text x="330" y="228" font-size="12.5" text-anchor="start" fill="var(--text-muted)">← subpackage</text><line x1="96" y1="240" x2="96" y2="252" stroke="var(--border)" stroke-width="1.4"/><line x1="96" y1="252" x2="106" y2="252" stroke="var(--border)" stroke-width="1.4"/><text x="110" y="254" font-size="13" font-family="ui-monospace,Menlo,Consolas,monospace" fill="var(--text)" font-weight="400">📄 __init__.py</text><line x1="96" y1="266" x2="96" y2="278" stroke="var(--border)" stroke-width="1.4"/><line x1="96" y1="278" x2="106" y2="278" stroke="var(--border)" stroke-width="1.4"/><text x="110" y="280" font-size="13" font-family="ui-monospace,Menlo,Consolas,monospace" fill="var(--text)" font-weight="400">📄 csv_io.py</text><text x="330" y="280" font-size="12.5" text-anchor="start" fill="var(--text-muted)">← textkit.formats.csv_io</text><line x1="24" y1="292" x2="24" y2="304" stroke="var(--border)" stroke-width="1.4"/><line x1="24" y1="304" x2="34" y2="304" stroke="var(--border)" stroke-width="1.4"/><text x="38" y="306" font-size="13" font-family="ui-monospace,Menlo,Consolas,monospace" fill="var(--primary)" font-weight="600">📁 tests/</text><line x1="48" y1="318" x2="48" y2="330" stroke="var(--border)" stroke-width="1.4"/><line x1="48" y1="330" x2="58" y2="330" stroke="var(--border)" stroke-width="1.4"/><text x="62" y="332" font-size="13" font-family="ui-monospace,Menlo,Consolas,monospace" fill="var(--text)" font-weight="400">📄 test_stats.py</text></svg>
 </div>
 
-**The dependency graph** — you list 2; you get 6.
+### The dependency graph
+
+You list 2; you get 6.
 
 ```mermaid
 graph LR
@@ -68,7 +76,7 @@ graph LR
     markdown-it-py --> mdurl
 ```
 
-**A circular import**
+### A circular import
 
 ```mermaid
 graph LR
@@ -149,7 +157,7 @@ tokio = "=1.38.0"                                    # exact pin
 
 ## Mini project
 
-**A small reusable library published locally with a lockfile.**
+### A small reusable library published locally with a lockfile
 
 ```mermaid
 flowchart LR
@@ -158,7 +166,7 @@ flowchart LR
     APP --> L["commit the lockfile"]
 ```
 
-**Steps**
+### Steps
 
 1. Create `textkit` with a `src/` layout, two modules, and a clean public API in `__init__.py` (`__all__`).
 2. Add one third-party dependency with a compatible-release range.

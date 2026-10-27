@@ -10,11 +10,13 @@ Docs that stay current — doc-as-code, API references, runbooks, ADRs, and onbo
 
 **In one sentence:** documentation stays alive only when it's treated like code — it lives in the repo, is reviewed in the same PRs, is generated from the source wherever possible, is organized by what the reader is trying to do, and is tested so it can't silently rot.
 
-**Mental model — a city's signage system.** Street maps (reference), guided tours (tutorials), "how to get to the airport" signs (how-to guides), and the history plaques explaining why the old bridge is there (explanation). One kind of sign can't do every job. And signs that nobody maintains end up pointing to roads that no longer exist.
+### Mental model — a city's signage system
+
+Street maps (reference), guided tours (tutorials), "how to get to the airport" signs (how-to guides), and the history plaques explaining why the old bridge is there (explanation). One kind of sign can't do every job. And signs that nobody maintains end up pointing to roads that no longer exist.
 
 For the basics of READMEs, docstrings, and ADRs, see [Vol 1 Ch 23](../volume-1-cs-foundations/ch23-documentation-adrs-and-readmes.md). This chapter is about running docs as a **system** across a team.
 
-**Diátaxis: the four documentation types**
+### Diátaxis: the four documentation types
 
 | Type | Reader's need | Oriented to | Example | Tone |
 |------|---------------|-------------|---------|------|
@@ -25,7 +27,7 @@ For the basics of READMEs, docstrings, and ADRs, see [Vol 1 Ch 23](../volume-1-c
 
 Mixing them is the most common reason docs feel "bad": a tutorial full of reference tables, a reference page that rambles.
 
-**Keeping docs from rotting**
+### Keeping docs from rotting
 
 | Practice | How |
 |----------|-----|
@@ -36,7 +38,9 @@ Mixing them is the most common reason docs feel "bad": a tutorial full of refere
 | Ownership and freshness | each page has an owner and a `last reviewed` date; flag stale pages |
 | Measure | search queries with no results, page feedback, support tickets that docs should have answered |
 
-**Runbooks** — step-by-step instructions for operating the system, especially when an alert fires. A good runbook entry:
+### Runbooks
+
+Step-by-step instructions for operating the system, especially when an alert fires. A good runbook entry:
 
 1. **Alert name and meaning** — what triggered, what users feel.
 2. **Severity and who to page.**
@@ -47,7 +51,9 @@ Mixing them is the most common reason docs feel "bad": a tutorial full of refere
 
 Every alert should link to its runbook section.
 
-**Onboarding guide** — day-1 setup (one script), a system map, "your first PR" task, who owns what, glossary.
+### Onboarding guide
+
+Day-1 setup (one script), a system map, "your first PR" task, who owns what, glossary.
 
 ---
 
@@ -59,13 +65,13 @@ Every alert should link to its runbook section.
 
 ## Diagram
 
-**A documentation site architecture (Diátaxis)**
+### A documentation site architecture (Diátaxis)
 
 <div class="fig">
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 740 420" role="img" aria-label="The four kinds of documentation: tutorials, how-to guides, explanation and reference, arranged by study vs work and practical vs theoretical" style="width:100%;max-width:740px;height:auto;font-family:inherit"><defs><marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="context-stroke"/></marker></defs><text x="370" y="24" font-size="13.5" text-anchor="middle" fill="var(--text)" font-weight="700">PRACTICAL (doing)</text><text x="370" y="410" font-size="13.5" text-anchor="middle" fill="var(--text)" font-weight="700">THEORETICAL (knowing)</text><text x="60" y="214" font-size="13" text-anchor="middle" fill="var(--text)" font-weight="700">STUDY</text><text x="60" y="232" font-size="12" text-anchor="middle" fill="var(--text-muted)">(acquire)</text><text x="680" y="214" font-size="13" text-anchor="middle" fill="var(--text)" font-weight="700">WORK</text><text x="680" y="232" font-size="12" text-anchor="middle" fill="var(--text-muted)">(apply)</text><rect x="120" y="40" width="240" height="170" rx="10" fill="var(--success)" fill-opacity=".14" stroke="var(--success)" stroke-width="1.6"/><text x="240" y="110" font-size="16" text-anchor="middle" fill="var(--text)" font-weight="700">TUTORIALS</text><text x="240" y="140" font-size="13" text-anchor="middle" fill="var(--text-muted)">learning-</text><text x="240" y="158" font-size="13" text-anchor="middle" fill="var(--text-muted)">oriented</text><rect x="380" y="40" width="240" height="170" rx="10" fill="var(--primary)" fill-opacity=".14" stroke="var(--primary)" stroke-width="1.6"/><text x="500" y="110" font-size="16" text-anchor="middle" fill="var(--text)" font-weight="700">HOW-TO GUIDES</text><text x="500" y="140" font-size="13" text-anchor="middle" fill="var(--text-muted)">task-</text><text x="500" y="158" font-size="13" text-anchor="middle" fill="var(--text-muted)">oriented</text><rect x="120" y="220" width="240" height="170" rx="10" fill="#8b5cf6" fill-opacity=".14" stroke="#8b5cf6" stroke-width="1.6"/><text x="240" y="290" font-size="16" text-anchor="middle" fill="var(--text)" font-weight="700">EXPLANATION</text><text x="240" y="320" font-size="13" text-anchor="middle" fill="var(--text-muted)">understanding-</text><text x="240" y="338" font-size="13" text-anchor="middle" fill="var(--text-muted)">oriented (ADRs)</text><rect x="380" y="220" width="240" height="170" rx="10" fill="var(--accent)" fill-opacity=".14" stroke="var(--accent)" stroke-width="1.6"/><text x="500" y="290" font-size="16" text-anchor="middle" fill="var(--text)" font-weight="700">REFERENCE</text><text x="500" y="320" font-size="13" text-anchor="middle" fill="var(--text-muted)">information-</text><text x="500" y="338" font-size="13" text-anchor="middle" fill="var(--text-muted)">oriented (generated)</text></svg>
 </div>
 
-**The docs pipeline**
+### The docs pipeline
 
 ```mermaid
 flowchart LR
@@ -77,7 +83,7 @@ flowchart LR
     ALERT["alert rules"] -->|"runbook_url"| SITE
 ```
 
-**From alert to runbook**
+### From alert to runbook
 
 ```mermaid
 sequenceDiagram
@@ -175,7 +181,7 @@ Open an incident doc; link it here under *Past incidents*.
 
 ## Mini project
 
-**A doc site with generated API docs, a runbook, and a contribution guide.**
+### A doc site with generated API docs, a runbook, and a contribution guide
 
 ```mermaid
 flowchart LR
@@ -187,7 +193,7 @@ flowchart LR
     CI --> PAGES["GitHub Pages, versioned (mike)"]
 ```
 
-**Steps**
+### Steps
 
 1. Add `mkdocs-material` + `mkdocstrings` to a service from an earlier chapter; create the four Diátaxis sections.
 2. Generate the Python API, HTTP API (from OpenAPI), and configuration reference; no hand-written reference.

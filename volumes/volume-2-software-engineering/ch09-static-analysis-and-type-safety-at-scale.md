@@ -10,11 +10,13 @@ Linters/formatters/type checkers as CI gates; gradually typing a legacy codebase
 
 **In one sentence:** at team scale, static analysis stops being a personal preference and becomes infrastructure — enforced in CI, adopted gradually with baselines so legacy code doesn't block progress, and complemented by contracts that state what each function promises.
 
-**Mental model — renovating a lived-in house.** You can't close the whole house to rewire it. You rewire one room at a time (module by module), put a "new wiring only" rule on every *new* room (baseline: no new violations), and mark rooms as done so no one un-does them (a strictness ratchet). Meanwhile, building codes (contracts) say what every socket must deliver.
+### Mental model — renovating a lived-in house
+
+You can't close the whole house to rewire it. You rewire one room at a time (module by module), put a "new wiring only" rule on every *new* room (baseline: no new violations), and mark rooms as done so no one un-does them (a strictness ratchet). Meanwhile, building codes (contracts) say what every socket must deliver.
 
 This chapter covers **adoption at scale**. For the tools themselves (ruff, mypy, formatters, what each catches), see [Vol 1 Ch 28](../volume-1-cs-foundations/ch28-static-analysis-linters-formatters-and-type-checkers.md).
 
-**Gradual adoption strategies**
+### Gradual adoption strategies
 
 | Strategy | How | Good for |
 |----------|-----|----------|
@@ -25,7 +27,7 @@ This chapter covers **adoption at scale**. For the tools themselves (ruff, mypy,
 | Stubs for third-party code | `types-*` packages, `.pyi` stubs, `py.typed` | removing `Any` from dependencies |
 | Codemods / auto-annotation | `MonkeyType`, `pyannotate`, `ruff --fix` | bootstrapping types from real runs |
 
-**What static tools catch that tests don't**
+### What static tools catch that tests don't
 
 | Static analysis | Tests |
 |-----------------|-------|
@@ -37,7 +39,9 @@ This chapter covers **adoption at scale**. For the tools themselves (ruff, mypy,
 
 Use both: types prove the *shape* is right everywhere; tests prove the *behavior* is right for chosen cases.
 
-**Design by contract** — make a function's promises explicit and checked:
+### Design by contract
+
+Make a function's promises explicit and checked:
 
 | Part | Meaning | How |
 |------|---------|-----|
@@ -57,13 +61,13 @@ Use both: types prove the *shape* is right everywhere; tests prove the *behavior
 
 ## Diagram
 
-**A gradual-typing adoption map (typed core vs untyped edges)**
+### A gradual-typing adoption map (typed core vs untyped edges)
 
 <div class="fig">
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 780 340" role="img" aria-label="Type checking strictness grows from the core outward: strict domain and API, typed services, untyped legacy with a ratchet" style="width:100%;max-width:780px;height:auto;font-family:inherit"><defs><marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="context-stroke"/></marker></defs><rect x="20" y="20" width="740" height="270" rx="14" fill="var(--danger)" fill-opacity=".08" stroke="var(--danger)" stroke-width="1.6"/><text x="40" y="46" font-size="13.5" text-anchor="start" fill="var(--danger)" font-weight="700">legacy/  (untyped, baseline: 412 errors, ratchet ↓ each sprint)</text><rect x="60" y="64" width="660" height="200" rx="12" fill="var(--accent)" fill-opacity=".10" stroke="var(--accent)" stroke-width="1.6"/><text x="80" y="90" font-size="13.5" text-anchor="start" fill="var(--accent)" font-weight="700">services/  (typed signatures; mypy default)</text><rect x="100" y="108" width="580" height="130" rx="10" fill="var(--success)" fill-opacity=".14" stroke="var(--success)" stroke-width="1.6"/><text x="120" y="134" font-size="13.5" text-anchor="start" fill="var(--success)" font-weight="700">domain/ + api/  (mypy --strict ✓)</text><text x="120" y="160" font-size="13" text-anchor="start" fill="var(--text)">Money, Order, public API models</text><text x="390" y="318" font-size="13" text-anchor="middle" fill="var(--text)" font-weight="600">strictness grows from the core outward; new code is always strict</text></svg>
 </div>
 
-**The ratchet over time**
+### The ratchet over time
 
 ```mermaid
 xychart-beta
@@ -73,7 +77,7 @@ xychart-beta
     bar [412, 380, 351, 300, 262, 190, 120, 64]
 ```
 
-**Static gates in the pipeline**
+### Static gates in the pipeline
 
 ```mermaid
 flowchart LR
@@ -175,7 +179,7 @@ flowchart LR
     RAT --> DBC["contracts on 3 critical functions<br/>(icontract / pydantic types)"]
 ```
 
-**Steps**
+### Steps
 
 1. Pick a codebase; measure the starting counts per tool and module.
 2. Add the baseline mechanism to CI so the team can adopt it on day one without fixing everything.

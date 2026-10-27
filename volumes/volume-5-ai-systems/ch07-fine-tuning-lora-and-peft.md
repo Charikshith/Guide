@@ -10,9 +10,11 @@ Full fine-tuning vs parameter-efficient methods; LoRA adapters, data prep, and w
 
 **In one sentence:** fine-tuning continues training a pretrained model on your own examples so it adopts a behavior, and LoRA does this cheaply by freezing the original weights and learning tiny low-rank "correction" matrices beside them — often less than 1% of the parameters.
 
-**Mental model — sticky notes on a textbook.** Full fine-tuning rewrites the textbook: expensive, and you need a whole new copy per subject. LoRA leaves the textbook untouched and adds a small pad of sticky notes that adjust how certain pages are read. You can swap sticky-note pads per task (support tone, SQL generation, legal style) on the same book.
+### Mental model — sticky notes on a textbook
 
-**When to fine-tune at all**
+Full fine-tuning rewrites the textbook: expensive, and you need a whole new copy per subject. LoRA leaves the textbook untouched and adds a small pad of sticky notes that adjust how certain pages are read. You can swap sticky-note pads per task (support tone, SQL generation, legal style) on the same book.
+
+### When to fine-tune at all
 
 | Need | Best first tool |
 |------|-----------------|
@@ -23,7 +25,7 @@ Full fine-tuning vs parameter-efficient methods; LoRA adapters, data prep, and w
 | a new language, domain jargon, or tone the base model handles poorly | **fine-tune** (possibly continued pretraining first) |
 | safety or policy behavior | preference tuning ([Ch 8](ch08-alignment-rlhf-and-guardrails.md)) |
 
-**Full fine-tuning vs PEFT**
+### Full fine-tuning vs PEFT
 
 | | Full fine-tuning | LoRA | QLoRA |
 |-|------------------|------|-------|
@@ -36,7 +38,9 @@ Full fine-tuning vs parameter-efficient methods; LoRA adapters, data prep, and w
 
 Other PEFT methods: prefix/prompt tuning (learn virtual tokens), IA³ (learned scaling vectors), DoRA (LoRA with magnitude/direction split).
 
-**How LoRA works** — for a frozen weight matrix `W` (d × k), learn two small matrices `A` (r × k) and `B` (d × r) with rank r ≪ d, and use
+### How LoRA works
+
+For a frozen weight matrix `W` (d × k), learn two small matrices `A` (r × k) and `B` (d × r) with rank r ≪ d, and use
 
 | | |
 |---|---|
@@ -45,7 +49,7 @@ Other PEFT methods: prefix/prompt tuning (learn virtual tokens), IA³ (learned s
 | Example: d = k = 4096, r = 8 | 16.8 M → 65.5 K (**0.39%**) |
 | After training you can merge | `W' = W + (α/r)·B·A` → zero extra inference cost |
 
-**Key hyperparameters**
+### Key hyperparameters
 
 | Setting | Typical | Effect |
 |---------|---------|--------|
@@ -56,7 +60,7 @@ Other PEFT methods: prefix/prompt tuning (learn virtual tokens), IA³ (learned s
 | epochs | 1–3 | more epochs → overfitting and forgetting |
 | dropout | 0–0.1 | regularization |
 
-**Data preparation — this decides the result**
+### Data preparation — this decides the result
 
 1. **Quality over quantity**: 500–5,000 excellent examples beat 100k noisy ones.
 2. Match the *chat template* the model uses (system/user/assistant markers); train on the *assistant* tokens only (mask the prompt tokens).
@@ -75,7 +79,7 @@ Other PEFT methods: prefix/prompt tuning (learn virtual tokens), IA³ (learned s
 
 ## Diagram
 
-**LoRA: frozen weights + low-rank adapters**
+### LoRA: frozen weights + low-rank adapters
 
 ```mermaid
 flowchart LR
@@ -94,7 +98,7 @@ flowchart LR
  LoRA r = 64     ██                                             524,288   (3.1%)
 ```
 
-**A fine-tuning workflow**
+### A fine-tuning workflow
 
 ```mermaid
 flowchart LR
@@ -106,7 +110,7 @@ flowchart LR
     EVAL -- worse --> FIXDATA["fix the data (usually the problem)"] --> CLEAN
 ```
 
-**Overfitting signal**
+### Overfitting signal
 
 ```mermaid
 xychart-beta
@@ -188,7 +192,7 @@ for r in (8, 16, 64):
 
 ## Mini project
 
-**Fine-tune a small model with LoRA on a custom task.**
+### Fine-tune a small model with LoRA on a custom task
 
 ```mermaid
 flowchart LR
@@ -199,7 +203,7 @@ flowchart LR
     EV --> SERVE["serve: vLLM with --enable-lora<br/>or merge and quantize"]
 ```
 
-**Steps**
+### Steps
 
 1. Choose a task with automatic scoring (text-to-SQL, JSON extraction, classification).
 2. Build the dataset (the exercise above); freeze a test set.

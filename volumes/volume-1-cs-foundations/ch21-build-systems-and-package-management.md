@@ -10,9 +10,11 @@ Cargo, pip, uv, Poetry, npm, pnpm, Make, CMake, Taskfiles; packaging Python/Rust
 
 **In one sentence:** a package manager fetches the right versions of other people's code, a build system turns source into artifacts in the right order, and both exist so that "it works on my machine" becomes "it works on every machine".
 
-**Mental model — a recipe book and a pantry.** The package manager stocks the pantry with exactly the ingredients (dependencies) the recipe lists, at the right brand and version. The build system is the recipe's step order: you can't frost a cake before baking it, and you don't re-bake a cake that hasn't changed.
+### Mental model — a recipe book and a pantry
 
-**Tools by ecosystem**
+The package manager stocks the pantry with exactly the ingredients (dependencies) the recipe lists, at the right brand and version. The build system is the recipe's step order: you can't frost a cake before baking it, and you don't re-bake a cake that hasn't changed.
+
+### Tools by ecosystem
 
 | Ecosystem | Package manager | Manifest | Lockfile | Build / task runner |
 |-----------|-----------------|----------|----------|---------------------|
@@ -22,7 +24,7 @@ Cargo, pip, uv, Poetry, npm, pnpm, Make, CMake, Taskfiles; packaging Python/Rust
 | C/C++ | vcpkg, Conan | `CMakeLists.txt`, `conanfile` | | CMake + Ninja/Make |
 | Any | — | — | — | Make, Just, Taskfile, Bazel |
 
-**Semantic Versioning: `MAJOR.MINOR.PATCH`**
+### Semantic Versioning: `MAJOR.MINOR.PATCH`
 
 | Bump | When | Example |
 |------|------|---------|
@@ -33,9 +35,13 @@ Cargo, pip, uv, Poetry, npm, pnpm, Make, CMake, Taskfiles; packaging Python/Rust
 
 Before `1.0.0`, anything may change; tools treat `0.x` minor bumps as breaking.
 
-**Dependency resolution** — find one version of each package that satisfies *every* constraint in the whole graph. It is a constraint-satisfaction problem (NP-hard in general). npm can install duplicate versions side by side; pip, uv, and Cargo (within a major version) must pick one.
+### Dependency resolution
 
-**Make in one idea** — a *target* is rebuilt only if it's missing or older than a *prerequisite*. That turns a full rebuild into an incremental one.
+Find one version of each package that satisfies *every* constraint in the whole graph. It is a constraint-satisfaction problem (NP-hard in general). npm can install duplicate versions side by side; pip, uv, and Cargo (within a major version) must pick one.
+
+### Make in one idea
+
+A *target* is rebuilt only if it's missing or older than a *prerequisite*. That turns a full rebuild into an incremental one.
 
 ---
 
@@ -47,7 +53,7 @@ Before `1.0.0`, anything may change; tools treat `0.x` minor bumps as breaking.
 
 ## Diagram
 
-**Direct vs transitive dependencies and a version conflict**
+### Direct vs transitive dependencies and a version conflict
 
 ```mermaid
 graph TD
@@ -59,7 +65,7 @@ graph TD
     style U fill:#ffe9a8
 ```
 
-**The SemVer axis — what `^1.2.3` and `~1.2.3` accept**
+### The SemVer axis — what `^1.2.3` and `~1.2.3` accept
 
 | Range | 1.2.2 | 1.2.3 | 1.2.9 | 1.3.0 | 1.9.9 | 2.0.0 |
 |---|:-:|:-:|:-:|:-:|:-:|:-:|
@@ -67,7 +73,7 @@ graph TD
 | `~1.2.3` (>=1.2.3 <1.3.0) | ✗ | ✓ | ✓ | ✗ | ✗ | ✗ |
 | change type | | patch | patch | minor | minor | **major: breaking** |
 
-**Make's incremental build graph**
+### Make's incremental build graph
 
 ```mermaid
 flowchart LR
@@ -155,7 +161,7 @@ tasks:
 
 ## Mini project
 
-**A multi-package repo built end-to-end by one Make/Taskfile command.**
+### A multi-package repo built end-to-end by one Make/Taskfile command
 
 ```mermaid
 flowchart TD
@@ -168,7 +174,7 @@ flowchart TD
     CORE --> CLI --> WEB
 ```
 
-**Steps**
+### Steps
 
 1. Layout: `packages/core` (Python library), `packages/cli` (depends on core via a workspace path), `web/` (a Node frontend).
 2. One lockfile per ecosystem (a uv workspace, `pnpm-lock.yaml`).

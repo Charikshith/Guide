@@ -10,9 +10,13 @@ Cohesion vs coupling; YAGNI/DRY/KISS as heuristics, and when they conflict.
 
 **In one sentence:** good design keeps things that change together in the same place (high cohesion) and minimizes how much separate places need to know about each other (low coupling) — while DRY, YAGNI, and KISS are rules of thumb that help, but can pull in opposite directions and must be weighed, not obeyed blindly.
 
-**Mental model — a toolbox with drawers.** A well-organized toolbox has one drawer for screwdrivers, one for wrenches (cohesion: related things together). You can take out the screwdriver drawer without disturbing the wrenches (low coupling). A drawer labeled "misc" is low cohesion. A drawer that only opens if two others are open first is high coupling.
+### Mental model — a toolbox with drawers
 
-**Cohesion** — how strongly the parts of one module belong together.
+A well-organized toolbox has one drawer for screwdrivers, one for wrenches (cohesion: related things together). You can take out the screwdriver drawer without disturbing the wrenches (low coupling). A drawer labeled "misc" is low cohesion. A drawer that only opens if two others are open first is high coupling.
+
+### Cohesion
+
+How strongly the parts of one module belong together.
 
 | Level (worst → best) | Parts are together because… | Example |
 |----------------------|-----------------------------|---------|
@@ -22,7 +26,9 @@ Cohesion vs coupling; YAGNI/DRY/KISS as heuristics, and when they conflict.
 | Communicational | they use the same data | functions all operating on the `orders` table |
 | **Functional** | they all contribute to one well-defined job | `pricing/` computing an order's price, and nothing else |
 
-**Coupling** — how much one module depends on another's details.
+### Coupling
+
+How much one module depends on another's details.
 
 | Level (worst → best) | Means | Example |
 |----------------------|-------|---------|
@@ -33,9 +39,11 @@ Cohesion vs coupling; YAGNI/DRY/KISS as heuristics, and when they conflict.
 | **Data** | passes only the simple data needed | `send_email(to="a@b.c", subject=…)` |
 | **Message / interface** | talks through a small, stable interface or events | `payments.charge(amount)`; an `OrderPlaced` event |
 
-**Measuring coupling** — *fan-out* (how many modules this one imports) and *fan-in* (how many import it); Martin's *instability* `I = fan_out / (fan_in + fan_out)` (0 = stable, relied upon; 1 = unstable, relies on others). Stable modules should be abstract; dependencies should point toward stability. Cycles between modules are the strongest smell.
+### Measuring coupling
 
-**The heuristics**
+*fan-out* (how many modules this one imports) and *fan-in* (how many import it); Martin's *instability* `I = fan_out / (fan_in + fan_out)` (0 = stable, relied upon; 1 = unstable, relies on others). Stable modules should be abstract; dependencies should point toward stability. Cycles between modules are the strongest smell.
+
+### The heuristics
 
 | Heuristic | Says | Protects against | Over-applied, it causes |
 |-----------|------|------------------|------------------------|
@@ -43,7 +51,9 @@ Cohesion vs coupling; YAGNI/DRY/KISS as heuristics, and when they conflict.
 | **YAGNI** — You Aren't Gonna Need It | don't build for imagined futures | speculative generality: plugin systems with one plugin, unused parameters | refusing obvious, cheap design for known needs |
 | **KISS** — Keep It Simple | the simplest thing that works | cleverness, needless layers and indirection | oversimplifying a truly complex domain |
 
-**When DRY hurts** — DRY is about *knowledge*, not *text*. Two snippets that look the same but represent different decisions ("a user's display name" vs "an invoice's legal name") will change for different reasons. Merging them couples two features: a change for one breaks the other, and the shared function grows flags. Rule of three: tolerate duplication until the third occurrence *and* you're sure it's the same concept. "Duplication is far cheaper than the wrong abstraction" (Sandi Metz).
+### When DRY hurts
+
+DRY is about *knowledge*, not *text*. Two snippets that look the same but represent different decisions ("a user's display name" vs "an invoice's legal name") will change for different reasons. Merging them couples two features: a change for one breaks the other, and the shared function grows flags. Rule of three: tolerate duplication until the third occurrence *and* you're sure it's the same concept. "Duplication is far cheaper than the wrong abstraction" (Sandi Metz).
 
 ---
 
@@ -55,13 +65,13 @@ Cohesion vs coupling; YAGNI/DRY/KISS as heuristics, and when they conflict.
 
 ## Diagram
 
-**A cohesion/coupling matrix with the target zone**
+### A cohesion/coupling matrix with the target zone
 
 <div class="fig">
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 780 400" role="img" aria-label="Cohesion against coupling: high cohesion and low coupling is the target; low cohesion and high coupling is a big ball of mud" style="width:100%;max-width:780px;height:auto;font-family:inherit"><defs><marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="context-stroke"/></marker></defs><text x="430" y="24" font-size="13" text-anchor="middle" fill="var(--text-muted)" font-weight="700">COUPLING  →</text><text x="280" y="50" font-size="13" text-anchor="middle" fill="var(--text-muted)" font-weight="600">low</text><text x="580" y="50" font-size="13" text-anchor="middle" fill="var(--text-muted)" font-weight="600">high</text><text x="50" y="200" font-size="13" text-anchor="middle" fill="var(--text-muted)" font-weight="700" transform="rotate(-90 50 200)">COHESION</text><text x="110" y="120" font-size="13" text-anchor="end" fill="var(--text-muted)" font-weight="600">high</text><text x="110" y="290" font-size="13" text-anchor="end" fill="var(--text-muted)" font-weight="600">low</text><rect x="130" y="60" width="300" height="160" rx="10" fill="var(--success)" fill-opacity=".14" stroke="var(--success)" stroke-width="1.6"/><text x="280" y="116" font-size="15" text-anchor="middle" fill="var(--text)" font-weight="700">✅ TARGET</text><text x="280" y="150" font-size="13" text-anchor="middle" fill="var(--text)">focused modules,</text><text x="280" y="167" font-size="13" text-anchor="middle" fill="var(--text)">small interfaces</text><rect x="440" y="60" width="300" height="160" rx="10" fill="var(--accent)" fill-opacity=".14" stroke="var(--accent)" stroke-width="1.6"/><text x="590" y="116" font-size="15" text-anchor="middle" fill="var(--text)" font-weight="700">"distributed monolith"</text><text x="590" y="150" font-size="13" text-anchor="middle" fill="var(--text)">each part is neat but</text><text x="590" y="167" font-size="13" text-anchor="middle" fill="var(--text)">everything calls everything</text><rect x="130" y="230" width="300" height="160" rx="10" fill="var(--accent)" fill-opacity=".14" stroke="var(--accent)" stroke-width="1.6"/><text x="280" y="286" font-size="15" text-anchor="middle" fill="var(--text)" font-weight="700">"junk drawers"</text><text x="280" y="320" font-size="13" text-anchor="middle" fill="var(--text)">utils.py, misc/,</text><text x="280" y="337" font-size="13" text-anchor="middle" fill="var(--text)">isolated but random</text><rect x="440" y="230" width="300" height="160" rx="10" fill="var(--danger)" fill-opacity=".14" stroke="var(--danger)" stroke-width="1.6"/><text x="590" y="286" font-size="15" text-anchor="middle" fill="var(--text)" font-weight="700">❌ BIG BALL OF MUD</text><text x="590" y="320" font-size="13" text-anchor="middle" fill="var(--text)">change anything,</text><text x="590" y="337" font-size="13" text-anchor="middle" fill="var(--text)">break everything</text></svg>
 </div>
 
-**A tangled module graph vs a clean one**
+### A tangled module graph vs a clean one
 
 ```mermaid
 flowchart LR
@@ -82,7 +92,7 @@ flowchart LR
     end
 ```
 
-**DRY that increased coupling**
+### DRY that increased coupling
 
 | before: two similar functions | the "DRY" merge | undone |
 |---|---|---|
@@ -169,7 +179,7 @@ def report(graph):
 
 ## Mini project
 
-**Refactor a tangled module into high-cohesion, low-coupling components.**
+### Refactor a tangled module into high-cohesion, low-coupling components
 
 ```mermaid
 flowchart LR
@@ -180,7 +190,7 @@ flowchart LR
     GUARD --> AFTER["re-measure + before/after graphs"]
 ```
 
-**Steps**
+### Steps
 
 1. Start from a messy package (write one, or take an old project).
 2. Generate the import graph and a table of fan-in, fan-out, and instability; list the cycles.

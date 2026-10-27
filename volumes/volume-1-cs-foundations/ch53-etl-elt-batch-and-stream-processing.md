@@ -10,9 +10,11 @@ Extract/Transform/Load vs ELT, batch vs stream processing, and when to use each.
 
 **In one sentence:** data pipelines move data from where it's produced to where it's analyzed; ETL cleans it on the way, ELT loads it raw and transforms it inside the warehouse; batch processes big chunks on a schedule, and streaming processes each event as it arrives.
 
-**Mental model — laundry.** *Batch* is doing a full load every Sunday: efficient, but your shirt from Monday waits all week. *Streaming* is washing each item the moment it's dirty: always fresh, but more effort per item. *ETL* is sorting and pre-treating stains before the machine; *ELT* is throwing everything into a giant machine (the warehouse) that is powerful enough to sort it inside.
+### Mental model — laundry
 
-**ETL vs ELT**
+*Batch* is doing a full load every Sunday: efficient, but your shirt from Monday waits all week. *Streaming* is washing each item the moment it's dirty: always fresh, but more effort per item. *ETL* is sorting and pre-treating stains before the machine; *ELT* is throwing everything into a giant machine (the warehouse) that is powerful enough to sort it inside.
+
+### ETL vs ELT
 
 | | ETL | ELT |
 |-|-----|-----|
@@ -21,7 +23,7 @@ Extract/Transform/Load vs ELT, batch vs stream processing, and when to use each.
 | Tools | Spark, custom jobs, Informatica | Fivetran/Airbyte (load) + **dbt** (SQL transforms) on Snowflake / BigQuery / Databricks |
 | Good when | strict privacy (strip PII before it lands), limited warehouse compute | cheap, elastic warehouse compute; analysts own SQL; "warehouse-first" |
 
-**Batch vs stream**
+### Batch vs stream
 
 | | Batch | Stream |
 |-|-------|--------|
@@ -33,9 +35,11 @@ Extract/Transform/Load vs ELT, batch vs stream processing, and when to use each.
 | Examples | daily revenue, ML training sets, monthly billing | fraud detection, live dashboards, alerting, recommendations |
 | Engines | Spark, dbt, SQL, Hadoop (legacy) | Flink, Kafka Streams, Spark Structured Streaming, Beam |
 
-**Decision factors:** how fresh must the answer be? What does an hour of delay cost? How complex is the logic? Does the team know stream processing? Many teams use both: streaming for fresh approximate numbers, batch for exact, reconciled ones (the "lambda" pattern), or one streaming engine for both ("kappa").
+### Decision factors
 
-**Streaming concepts**
+How fresh must the answer be? What does an hour of delay cost? How complex is the logic? Does the team know stream processing? Many teams use both: streaming for fresh approximate numbers, batch for exact, reconciled ones (the "lambda" pattern), or one streaming engine for both ("kappa").
+
+### Streaming concepts
 
 | Concept | Meaning |
 |---------|---------|
@@ -56,7 +60,7 @@ Extract/Transform/Load vs ELT, batch vs stream processing, and when to use each.
 
 ## Diagram
 
-**ETL vs ELT flow**
+### ETL vs ELT flow
 
 ```mermaid
 flowchart LR
@@ -68,23 +72,25 @@ flowchart LR
     end
 ```
 
-**A batch window vs a continuous stream**
+### A batch window vs a continuous stream
 
 <div class="fig">
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 300" role="img" aria-label="Batch processes all of yesterday's events in one 02:00 job; streaming emits a count per one-minute window as the watermark passes" style="width:100%;max-width:800px;height:auto;font-family:inherit"><defs><marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="context-stroke"/></marker></defs><text x="20" y="24" font-size="13.5" text-anchor="start" fill="var(--primary)" font-weight="700">BATCH (nightly at 02:00)</text><line x1="30" y1="60" x2="640" y2="60" stroke="var(--text-muted)" stroke-width="1.6" marker-end="url(#ar)"/><circle cx="53" cy="60" r="4.5" fill="var(--primary)" fill-opacity="1" stroke="var(--primary)" stroke-width="1.6"/><circle cx="55" cy="60" r="4.5" fill="var(--primary)" fill-opacity="1" stroke="var(--primary)" stroke-width="1.6"/><circle cx="105" cy="60" r="4.5" fill="var(--primary)" fill-opacity="1" stroke="var(--primary)" stroke-width="1.6"/><circle cx="107" cy="60" r="4.5" fill="var(--primary)" fill-opacity="1" stroke="var(--primary)" stroke-width="1.6"/><circle cx="173" cy="60" r="4.5" fill="var(--primary)" fill-opacity="1" stroke="var(--primary)" stroke-width="1.6"/><circle cx="194" cy="60" r="4.5" fill="var(--primary)" fill-opacity="1" stroke="var(--primary)" stroke-width="1.6"/><circle cx="195" cy="60" r="4.5" fill="var(--primary)" fill-opacity="1" stroke="var(--primary)" stroke-width="1.6"/><circle cx="236" cy="60" r="4.5" fill="var(--primary)" fill-opacity="1" stroke="var(--primary)" stroke-width="1.6"/><circle cx="277" cy="60" r="4.5" fill="var(--primary)" fill-opacity="1" stroke="var(--primary)" stroke-width="1.6"/><circle cx="279" cy="60" r="4.5" fill="var(--primary)" fill-opacity="1" stroke="var(--primary)" stroke-width="1.6"/><circle cx="283" cy="60" r="4.5" fill="var(--primary)" fill-opacity="1" stroke="var(--primary)" stroke-width="1.6"/><circle cx="305" cy="60" r="4.5" fill="var(--primary)" fill-opacity="1" stroke="var(--primary)" stroke-width="1.6"/><circle cx="418" cy="60" r="4.5" fill="var(--primary)" fill-opacity="1" stroke="var(--primary)" stroke-width="1.6"/><circle cx="439" cy="60" r="4.5" fill="var(--primary)" fill-opacity="1" stroke="var(--primary)" stroke-width="1.6"/><circle cx="446" cy="60" r="4.5" fill="var(--primary)" fill-opacity="1" stroke="var(--primary)" stroke-width="1.6"/><circle cx="520" cy="60" r="4.5" fill="var(--primary)" fill-opacity="1" stroke="var(--primary)" stroke-width="1.6"/><circle cx="521" cy="60" r="4.5" fill="var(--primary)" fill-opacity="1" stroke="var(--primary)" stroke-width="1.6"/><circle cx="525" cy="60" r="4.5" fill="var(--primary)" fill-opacity="1" stroke="var(--primary)" stroke-width="1.6"/><circle cx="527" cy="60" r="4.5" fill="var(--primary)" fill-opacity="1" stroke="var(--primary)" stroke-width="1.6"/><circle cx="575" cy="60" r="4.5" fill="var(--primary)" fill-opacity="1" stroke="var(--primary)" stroke-width="1.6"/><circle cx="593" cy="60" r="4.5" fill="var(--primary)" fill-opacity="1" stroke="var(--primary)" stroke-width="1.6"/><circle cx="597" cy="60" r="4.5" fill="var(--primary)" fill-opacity="1" stroke="var(--primary)" stroke-width="1.6"/><text x="30" y="82" font-size="12" text-anchor="start" fill="var(--text-muted)">events (all of yesterday)</text><line x1="640" y1="66" x2="640" y2="112" stroke="var(--accent)" stroke-width="1.6" marker-end="url(#ar)"/><rect x="560" y="112" width="180" height="36" rx="6" fill="var(--accent)" fill-opacity=".25" stroke="var(--accent)" stroke-width="1.6"/><text x="650" y="135" font-size="12" text-anchor="middle" fill="var(--text)" font-weight="600">02:00 job: aggregate everything</text><text x="650" y="166" font-size="12.5" text-anchor="middle" fill="var(--text-muted)">result at 02:40</text><text x="20" y="206" font-size="13.5" text-anchor="start" fill="var(--success)" font-weight="700">STREAM (1-minute tumbling windows on event time)</text><line x1="30" y1="246" x2="770" y2="246" stroke="var(--text-muted)" stroke-width="1.6" marker-end="url(#ar)"/><line x1="30" y1="228" x2="30" y2="262" stroke="var(--danger)" stroke-width="1.6" stroke-dasharray="3 3"/><line x1="250" y1="228" x2="250" y2="262" stroke="var(--danger)" stroke-width="1.6" stroke-dasharray="3 3"/><line x1="470" y1="228" x2="470" y2="262" stroke="var(--danger)" stroke-width="1.6" stroke-dasharray="3 3"/><line x1="690" y1="228" x2="690" y2="262" stroke="var(--danger)" stroke-width="1.6" stroke-dasharray="3 3"/><circle cx="60" cy="246" r="4.5" fill="var(--success)" fill-opacity="1" stroke="var(--success)" stroke-width="1.6"/><circle cx="110" cy="246" r="4.5" fill="var(--success)" fill-opacity="1" stroke="var(--success)" stroke-width="1.6"/><circle cx="150" cy="246" r="4.5" fill="var(--success)" fill-opacity="1" stroke="var(--success)" stroke-width="1.6"/><circle cx="200" cy="246" r="4.5" fill="var(--success)" fill-opacity="1" stroke="var(--success)" stroke-width="1.6"/><circle cx="270" cy="246" r="4.5" fill="var(--success)" fill-opacity="1" stroke="var(--success)" stroke-width="1.6"/><circle cx="320" cy="246" r="4.5" fill="var(--success)" fill-opacity="1" stroke="var(--success)" stroke-width="1.6"/><circle cx="350" cy="246" r="4.5" fill="var(--success)" fill-opacity="1" stroke="var(--success)" stroke-width="1.6"/><circle cx="400" cy="246" r="4.5" fill="var(--success)" fill-opacity="1" stroke="var(--success)" stroke-width="1.6"/><circle cx="500" cy="246" r="4.5" fill="var(--success)" fill-opacity="1" stroke="var(--success)" stroke-width="1.6"/><circle cx="560" cy="246" r="4.5" fill="var(--success)" fill-opacity="1" stroke="var(--success)" stroke-width="1.6"/><circle cx="600" cy="246" r="4.5" fill="var(--success)" fill-opacity="1" stroke="var(--success)" stroke-width="1.6"/><circle cx="650" cy="246" r="4.5" fill="var(--success)" fill-opacity="1" stroke="var(--success)" stroke-width="1.6"/><circle cx="720" cy="246" r="4.5" fill="var(--success)" fill-opacity="1" stroke="var(--success)" stroke-width="1.6"/><text x="140" y="222" font-size="12.5" text-anchor="middle" fill="var(--text)" font-weight="600">[ 10:00 ]</text><text x="360" y="222" font-size="12.5" text-anchor="middle" fill="var(--text)" font-weight="600">[ 10:01 ]</text><text x="580" y="222" font-size="12.5" text-anchor="middle" fill="var(--text)" font-weight="600">[ 10:02 ]</text><text x="400" y="286" font-size="12.5" text-anchor="middle" fill="var(--text-muted)">each window emits a count when its watermark passes</text></svg>
 </div>
 
-**Late data and watermarks**
+### Late data and watermarks
 
 | | 10:00 | 10:01 | 10:02 |
 |---|---|---|---|
 | window | `[──── A ────]` | `[──── B ────]` | `[──── C` |
 
-**Watermark:** at 10:01:05 window A closes and emits `count = 42`.
+### Watermark
+
+At 10:01:05 window A closes and emits `count = 42`.
 
 An event with time 10:00:50 that arrives at 10:01:20 is **late for A**. Options: drop it, send it to a side output, or re-emit A with `count = 43` (allowed lateness).
 
-**Window types**
+### Window types
 
 ```
  tumbling  |■■■■|■■■■|■■■■|             fixed, back to back
@@ -164,7 +170,7 @@ def on_event(e):                     # e = {"id", "ts", "word"}
 
 ## Mini project
 
-**A streaming word-count pipeline with windowing.**
+### A streaming word-count pipeline with windowing
 
 ```mermaid
 flowchart LR
@@ -175,7 +181,7 @@ flowchart LR
     K --> BATCH["batch check: exact counts<br/>from the raw topic"] --> CMP["compare with the stream output"]
 ```
 
-**Steps**
+### Steps
 
 1. A producer that emits sentences with event-time timestamps, some delayed and some duplicated.
 2. A stream job: split into words, dedup by event ID, count per word in 1-minute event-time windows with watermarks.

@@ -10,9 +10,11 @@ Entities, value objects, aggregates, repositories, domain events, ubiquitous lan
 
 **In one sentence:** DDD's tactical patterns are building blocks for modeling business rules in code — objects with identity (entities), objects defined by their values (value objects), consistency boundaries that guard their own rules (aggregates), and named business facts (domain events) — all using the words the business actually uses.
 
-**Mental model — a hotel.** A *guest* is an entity: the same person even if they change rooms or names. A *room rate of €120* is a value object: any €120 equals any other €120. A *reservation* is an aggregate: it owns its nights, guests, and payments, and it alone decides whether a change is allowed ("you can't remove the last guest"). "Reservation confirmed" is a domain event. The hotel's front desk and its accounting department each use the word "booking" slightly differently — those are two bounded contexts.
+### Mental model — a hotel
 
-**The building blocks**
+A *guest* is an entity: the same person even if they change rooms or names. A *room rate of €120* is a value object: any €120 equals any other €120. A *reservation* is an aggregate: it owns its nights, guests, and payments, and it alone decides whether a change is allowed ("you can't remove the last guest"). "Reservation confirmed" is a domain event. The hotel's front desk and its accounting department each use the word "booking" slightly differently — those are two bounded contexts.
+
+### The building blocks
 
 | Block | Defined by | Mutable? | Example | Rule of thumb |
 |-------|-----------|:-:|---------|---------------|
@@ -25,16 +27,20 @@ Entities, value objects, aggregates, repositories, domain events, ubiquitous lan
 | **Domain service** | an operation that doesn't belong to one entity | — | `TransferFunds(from, to, amount)` | stateless, in domain terms |
 | **Factory** | complex creation logic | — | `Order.from_cart(cart)` | keeps constructors simple |
 
-**Ubiquitous language** — one shared vocabulary between developers and domain experts, used *in the code*: if the business says "a policy lapses", the method is `policy.lapse()`, not `policy.set_status(3)`.
+### Ubiquitous language
 
-**Designing aggregates**
+One shared vocabulary between developers and domain experts, used *in the code*: if the business says "a policy lapses", the method is `policy.lapse()`, not `policy.set_status(3)`.
+
+### Designing aggregates
 
 * Keep them **small**: just enough to protect a real invariant.
 * **Invariants** are rules that must always be true after every operation: "an order total ≥ 0", "no more than 10 lines", "can't ship an unpaid order".
 * Cross-aggregate rules are **eventually consistent** through domain events ("when an order is placed, reserve stock").
 * Reference other aggregates by ID (`customer_id`), not by object, so each loads and saves independently.
 
-**Bounded contexts (intro)** — a boundary inside which a model and its language are consistent. "Product" in *Catalog* (descriptions, images) differs from "Product" in *Inventory* (stock levels, warehouse bins) and *Billing* (tax class, price). Each context has its own model and maps to the others through explicit contracts — this is strategic DDD, and it often maps to service or module boundaries.
+### Bounded contexts (intro)
+
+A boundary inside which a model and its language are consistent. "Product" in *Catalog* (descriptions, images) differs from "Product" in *Inventory* (stock levels, warehouse bins) and *Billing* (tax class, price). Each context has its own model and maps to the others through explicit contracts — this is strategic DDD, and it often maps to service or module boundaries.
 
 ---
 
@@ -46,7 +52,7 @@ Entities, value objects, aggregates, repositories, domain events, ubiquitous lan
 
 ## Diagram
 
-**An aggregate with a root, entities, and value objects**
+### An aggregate with a root, entities, and value objects
 
 ```mermaid
 classDiagram
@@ -91,7 +97,7 @@ classDiagram
 
 `Order` holds `customer_id` (an ID), **not** a `Customer` object, so `Customer` is a separate aggregate.
 
-**A bounded-context map**
+### A bounded-context map
 
 ```mermaid
 flowchart LR
@@ -112,7 +118,7 @@ flowchart LR
     I -- "InvoicePaid" --> SH
 ```
 
-**Domain events decouple aggregates**
+### Domain events decouple aggregates
 
 ```mermaid
 sequenceDiagram
@@ -238,7 +244,7 @@ except DomainError as e:
 
 ## Mini project
 
-**An order-management domain with aggregates, value objects, and a repository.**
+### An order-management domain with aggregates, value objects, and a repository
 
 ```mermaid
 flowchart LR
@@ -255,7 +261,7 @@ flowchart LR
     GL["GLOSSARY.md<br/>(ubiquitous language)"] -.-> Domain
 ```
 
-**Steps**
+### Steps
 
 1. Interview a "domain expert" (or write the rules yourself) and produce `GLOSSARY.md` with 10–15 terms.
 2. Implement value objects with validation and value equality.

@@ -32,6 +32,20 @@ After reading this chapter, you'll be able to:
 
 *This section is in [Chapter 21 — Cost & Capacity Economics](ch21-cost-and-capacity-economics.md), next to that chapter's practice material, so it is not repeated here.*
 
+### Picking a compute model
+
+```mermaid
+flowchart TD
+  Q1{"Traffic is spiky or low,<br/>with long idle periods?"} -->|yes| SL["Serverless functions<br/>pay per request, scale to zero"]
+  Q1 -->|no, steady| Q2{"Need special hardware, OS control<br/>or a licence tied to a machine?"}
+  Q2 -->|yes| VM["Virtual machines<br/>reserved or savings plans for steady load"]
+  Q2 -->|no| CT["Containers<br/>managed Kubernetes or a container service"]
+  SL -.- N1["Watch for: cold starts,<br/>time limits, cost past<br/>the break-even point"]
+  CT -.- N2["Watch for: cluster overhead<br/>that small teams pay for"]
+```
+
+The break-even point matters most: at low, bursty volume serverless is cheapest, but once a service is busy most of the day, the same work on always-on containers or VMs usually costs less.
+
 ### Key Takeaways
 
 - Managed services trade money for operational load; use them unless a constraint says otherwise.

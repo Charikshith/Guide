@@ -10,7 +10,9 @@ Big-O (upper bound), Ω (lower bound), Θ (tight); growth classes (1, log n, n, 
 
 **In one sentence:** Big-O ignores constants and small inputs, and asks only *how fast the cost grows* as the input gets large.
 
-**Mental model — travel time.** Walking, cycling, and driving differ by a constant factor. Walking to the next city versus walking around the world differs by the *distance*. Big-O is about distance (growth), not vehicle (constants).
+### Mental model — travel time
+
+Walking, cycling, and driving differ by a constant factor. Walking to the next city versus walking around the world differs by the *distance*. Big-O is about distance (growth), not vehicle (constants).
 
 **Formal definitions** (for positive functions, n ≥ n₀)
 
@@ -23,7 +25,7 @@ Big-O (upper bound), Ω (lower bound), Θ (tight); growth classes (1, log n, n, 
 
 The pair `(c, n₀)` is called a *witness*. To prove a bound, you produce one.
 
-**Growth classes, slowest to fastest**
+### Growth classes, slowest to fastest
 
 | Class | Name | Example | n = 10⁶ (ops) |
 |-------|------|---------|--------------:|
@@ -36,14 +38,16 @@ The pair `(c, n₀)` is called a *witness*. To prove a bound, you produce one.
 | `O(2ⁿ)` | exponential | all subsets | ∞ in practice |
 | `O(n!)` | factorial | all orderings | ∞ in practice |
 
-**Simplification rules**
+### Simplification rules
 
 * Drop constants: `5n → n`.
 * Keep the dominant term: `n² + 100n + 7 → n²`.
 * Log bases don't matter: `log₂ n = log₁₀ n / log₁₀ 2`, a constant factor.
 * Sequential code adds: `O(f) + O(g) = O(max(f, g))`. Nested code multiplies: `O(f · g)`.
 
-**Cases are not bounds.** "Worst case" / "average case" / "best case" pick *which input* you measure. O / Ω / Θ describe *how you bound* that measurement. Quicksort's *worst case* is `Θ(n²)`; its *average case* is `Θ(n log n)`.
+### Cases are not bounds
+
+"Worst case" / "average case" / "best case" pick *which input* you measure. O / Ω / Θ describe *how you bound* that measurement. Quicksort's *worst case* is `Θ(n²)`; its *average case* is `Θ(n log n)`.
 
 ---
 
@@ -55,7 +59,7 @@ The pair `(c, n₀)` is called a *witness*. To prove a bound, you produce one.
 
 ## Diagram
 
-**`f(n)` shaded under `c·g(n)` after `n₀`**
+### `f(n)` shaded under `c·g(n)` after `n₀`
 
 <div class="fig">
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 330" role="img" aria-label="f(n) may be above c times g(n) before n0, but stays below it for every n after n0" style="width:100%;max-width:640px;height:auto;font-family:inherit"><defs><marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="context-stroke"/></marker></defs><line x1="60" y1="270" x2="60" y2="20" stroke="var(--text-muted)" stroke-width="1.6" marker-end="url(#ar)"/><line x1="60" y1="270" x2="600" y2="270" stroke="var(--text-muted)" stroke-width="1.6" marker-end="url(#ar)"/><text x="45" y="28" font-size="13" text-anchor="end" fill="var(--text-muted)">cost</text><text x="600" y="292" font-size="13" text-anchor="end" fill="var(--text-muted)">n</text><line x1="60" y1="270" x2="580" y2="62" stroke="var(--primary)" stroke-width="2.4"/><text x="584" y="56" font-size="13" text-anchor="start" fill="var(--primary)" font-weight="700">c·g(n)</text><line x1="300" y1="40" x2="300" y2="270" stroke="var(--accent)" stroke-width="1.6" stroke-dasharray="5 4"/><text x="300" y="292" font-size="14" text-anchor="middle" fill="var(--accent)" font-weight="700">n₀</text><path d="M90,190 L125,155 L160,195 L200,150 L240,175 L270,130 L300,150 L345,205 L395,190 L440,205 L490,175 L540,185" stroke="var(--success)" stroke-width="1.4" fill="none" stroke-dasharray="3 3"/><circle cx="90" cy="190" r="5" fill="var(--success)" fill-opacity="1" stroke="var(--success)" stroke-width="1.6"/><circle cx="125" cy="155" r="5" fill="var(--success)" fill-opacity="1" stroke="var(--success)" stroke-width="1.6"/><circle cx="160" cy="195" r="5" fill="var(--success)" fill-opacity="1" stroke="var(--success)" stroke-width="1.6"/><circle cx="200" cy="150" r="5" fill="var(--success)" fill-opacity="1" stroke="var(--success)" stroke-width="1.6"/><circle cx="240" cy="175" r="5" fill="var(--success)" fill-opacity="1" stroke="var(--success)" stroke-width="1.6"/><circle cx="270" cy="130" r="5" fill="var(--success)" fill-opacity="1" stroke="var(--success)" stroke-width="1.6"/><circle cx="300" cy="150" r="5" fill="var(--success)" fill-opacity="1" stroke="var(--success)" stroke-width="1.6"/><circle cx="345" cy="205" r="5" fill="var(--success)" fill-opacity="1" stroke="var(--success)" stroke-width="1.6"/><circle cx="395" cy="190" r="5" fill="var(--success)" fill-opacity="1" stroke="var(--success)" stroke-width="1.6"/><circle cx="440" cy="205" r="5" fill="var(--success)" fill-opacity="1" stroke="var(--success)" stroke-width="1.6"/><circle cx="490" cy="175" r="5" fill="var(--success)" fill-opacity="1" stroke="var(--success)" stroke-width="1.6"/><circle cx="540" cy="185" r="5" fill="var(--success)" fill-opacity="1" stroke="var(--success)" stroke-width="1.6"/><circle cx="430" cy="40" r="5" fill="var(--success)" fill-opacity="1" stroke="var(--success)" stroke-width="1.6"/><text x="442" y="45" font-size="13" text-anchor="start" fill="var(--text)">= f(n)</text><rect x="60" y="38" width="238" height="52" rx="6" fill="var(--danger)" fill-opacity=".10" stroke="var(--danger)" stroke-width="1.6"/><text x="70" y="58" font-size="12" text-anchor="start" fill="var(--text)">before n₀, f(n) may sit above c·g(n)</text><text x="70" y="76" font-size="12" text-anchor="start" fill="var(--text-muted)">Big-O does not care</text><text x="425" y="232" font-size="12" text-anchor="middle" fill="var(--success)" font-weight="600">after n₀, every point stays under the line</text></svg>
@@ -121,7 +125,9 @@ def binary_search(xs, target):     # O(log n): halves the range each step
     return lo < len(xs) and xs[lo] == target
 ```
 
-**Counting the nested loop exactly:** the inner body runs `(n−1) + (n−2) + … + 1 = n(n−1)/2` times, which is `Θ(n²)`.
+### Counting the nested loop exactly
+
+The inner body runs `(n−1) + (n−2) + … + 1 = n(n−1)/2` times, which is `Θ(n²)`.
 
 ---
 
@@ -154,7 +160,7 @@ flowchart LR
     T --> FIT["Fit to 1, log n, n, n log n, n²"] --> P["Plot + report best fit"]
 ```
 
-**Steps**
+### Steps
 
 1. Time a function with `timeit` for doubling n; keep the median of 5 runs.
 2. For each candidate class g(n), fit `t ≈ c · g(n)` by least squares.

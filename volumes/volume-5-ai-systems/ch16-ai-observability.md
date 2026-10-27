@@ -10,9 +10,11 @@ Tracing LLM calls, token usage, latency, and quality signals; the three pillars 
 
 **In one sentence:** AI observability records every step of an LLM application — each model call with its prompt, output, tokens, cost, and latency, plus every retrieval and tool call — as linked traces, so you can answer "why did it say that?", "why was it slow?", and "why did the bill double?".
 
-**Mental model — a flight recorder.** A normal service can tell you "request failed, 500". An LLM app often *succeeds* technically but gives a wrong or odd answer. So you need the flight recorder: every instrument reading (inputs, retrieved chunks, tool results, model outputs) for every flight, so that after a bad landing you can replay exactly what happened.
+### Mental model — a flight recorder
 
-**The three pillars, applied to AI**
+A normal service can tell you "request failed, 500". An LLM app often *succeeds* technically but gives a wrong or odd answer. So you need the flight recorder: every instrument reading (inputs, retrieved chunks, tool results, model outputs) for every flight, so that after a bad landing you can replay exactly what happened.
+
+### The three pillars, applied to AI
 
 | Signal | Classic service | LLM application adds |
 |--------|-----------------|----------------------|
@@ -21,7 +23,7 @@ Tracing LLM calls, token usage, latency, and quality signals; the three pillars 
 | **Logs** | events | full prompt/response payloads (sampled, redacted), guardrail decisions |
 | **Quality** (new) | — | user feedback 👍/👎, eval scores on sampled traffic, refusal rate, hallucination/groundedness checks |
 
-**What to trace in an LLM app**
+### What to trace in an LLM app
 
 | Span | Key attributes |
 |------|---------------|
@@ -34,7 +36,7 @@ Tracing LLM calls, token usage, latency, and quality signals; the three pillars 
 
 OpenTelemetry's **GenAI semantic conventions** standardize attribute names such as `gen_ai.request.model`, `gen_ai.usage.input_tokens`, and `gen_ai.usage.output_tokens`, so traces work across tools (Langfuse, Arize Phoenix, LangSmith, Datadog…).
 
-**Metrics that matter for cost**
+### Metrics that matter for cost
 
 | Metric | Why |
 |--------|-----|
@@ -44,9 +46,13 @@ OpenTelemetry's **GenAI semantic conventions** standardize attribute names such 
 | calls per request / steps per agent run | agents multiply cost; a loop bug shows up here first |
 | model mix | how much traffic goes to each model tier |
 
-**Privacy** — prompts contain user data. Redact PII before export, restrict access to payloads, set retention limits, and allow opting out of payload capture per tenant.
+### Privacy
 
-**Alerting on quality regressions** — alert on drops in thumbs-up rate, rising refusal or error rates, groundedness scores from sampled online evals, sudden changes in output length, and cost or step spikes after a deploy. Tag every trace with the **prompt and model version** so you can compare before and after.
+Prompts contain user data. Redact PII before export, restrict access to payloads, set retention limits, and allow opting out of payload capture per tenant.
+
+### Alerting on quality regressions
+
+Alert on drops in thumbs-up rate, rising refusal or error rates, groundedness scores from sampled online evals, sudden changes in output length, and cost or step spikes after a deploy. Tag every trace with the **prompt and model version** so you can compare before and after.
 
 ---
 
@@ -58,13 +64,13 @@ OpenTelemetry's **GenAI semantic conventions** standardize attribute names such 
 
 ## Diagram
 
-**A trace of an agent run**
+### A trace of an agent run
 
 <div class="fig">
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 330" role="img" aria-label="LLM trace for answer_support_question: total 4.8 seconds and 2.1 cents, with retrieval, two model steps, a tool call, a guardrail and a thumbs-down feedback" style="width:100%;max-width:900px;height:auto;font-family:inherit"><defs><marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="context-stroke"/></marker></defs><text x="20" y="22" font-size="13" text-anchor="start" fill="var(--text)" font-weight="700">trace 7f2c… "answer_support_question"</text><text x="880" y="22" font-size="12.5" text-anchor="end" fill="var(--text-muted)">user=u_93af (hashed) · prompt=v14 · total 4.8 s · $0.021</text><text x="20" y="61" font-size="12" text-anchor="start" fill="var(--text)">retrieval  vector_search</text><rect x="330.0" y="48" width="9.75" height="20" rx="3" fill="var(--primary)" fill-opacity=".5" stroke="var(--primary)" stroke-width="1"/><text x="602" y="58" font-size="12" text-anchor="start" fill="var(--text)" font-weight="700">180 ms</text><text x="602" y="74" font-size="11.5" text-anchor="start" fill="var(--text-muted)">k=5, top score 0.83</text><text x="20" y="101" font-size="12" text-anchor="start" fill="var(--text)">llm  claude-sonnet-5-5  step 1</text><rect x="339.75" y="88" width="75.83333333333334" height="20" rx="3" fill="var(--accent)" fill-opacity=".5" stroke="var(--accent)" stroke-width="1"/><text x="602" y="98" font-size="12" text-anchor="start" fill="var(--text)" font-weight="700">1.4 s</text><text x="602" y="114" font-size="11.5" text-anchor="start" fill="var(--text-muted)">in 3,210 · out 142 · TTFT 420 ms · stop_reason=tool_use</text><text x="20" y="141" font-size="12" text-anchor="start" fill="var(--text)">tool  get_order_status(order=8812)</text><rect x="415.5833333333333" y="128" width="33.583333333333336" height="20" rx="3" fill="var(--success)" fill-opacity=".5" stroke="var(--success)" stroke-width="1"/><text x="602" y="138" font-size="12" text-anchor="start" fill="var(--text)" font-weight="700">620 ms</text><text x="602" y="154" font-size="11.5" text-anchor="start" fill="var(--text-muted)">ok</text><text x="20" y="181" font-size="12" text-anchor="start" fill="var(--text)">llm  claude-sonnet-5-5  step 2</text><rect x="449.16666666666663" y="168" width="102.91666666666666" height="20" rx="3" fill="var(--accent)" fill-opacity=".5" stroke="var(--accent)" stroke-width="1"/><text x="602" y="178" font-size="12" text-anchor="start" fill="var(--text)" font-weight="700">1.9 s</text><text x="602" y="194" font-size="11.5" text-anchor="start" fill="var(--text-muted)">in 3,480 · out 311</text><text x="20" y="221" font-size="12" text-anchor="start" fill="var(--text)">guardrail  pii_output_check</text><rect x="552.0833333333333" y="208" width="4" height="20" rx="3" fill="#8b5cf6" fill-opacity=".5" stroke="#8b5cf6" stroke-width="1"/><text x="602" y="218" font-size="12" text-anchor="start" fill="var(--text)" font-weight="700">12 ms</text><text x="602" y="234" font-size="11.5" text-anchor="start" fill="var(--text-muted)">pass</text><text x="20" y="266" font-size="12.5" text-anchor="start" fill="var(--danger)" font-weight="700">feedback  👎  “wrong refund policy”</text><text x="330" y="266" font-size="12.5" text-anchor="start" fill="var(--text-muted)">← link to the prompt + retrieved docs</text></svg>
 </div>
 
-**Instrumentation flow**
+### Instrumentation flow
 
 ```mermaid
 flowchart LR
@@ -152,7 +158,7 @@ def answer(question):
 
 ## Mini project
 
-**Add full observability to an agent pipeline with a trace dashboard.**
+### Add full observability to an agent pipeline with a trace dashboard
 
 ```mermaid
 flowchart LR
@@ -164,7 +170,7 @@ flowchart LR
     D --> A["alerts on regressions"]
 ```
 
-**Steps**
+### Steps
 
 1. Run Langfuse (or Phoenix) locally; instrument your agent with nested spans and GenAI attributes.
 2. Redact emails and phone numbers from payloads before export; sample full payloads at 20%, but always keep metadata.

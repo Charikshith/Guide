@@ -10,9 +10,11 @@ The commit DAG, branches, merge (3-way), rebase (replay), and cherry-pick (apply
 
 **In one sentence:** Git history is a graph of snapshots; a branch is just a movable label on one snapshot; merge joins two lines of history, rebase replays your commits on a new base, and cherry-pick copies one commit somewhere else.
 
-**Mental model — sticky notes on a family tree.** Each commit is a photo that points back to its parent photo(s). A branch is a sticky note stuck on one photo. Committing adds a new photo and moves the sticky note forward. `HEAD` is a note saying "you are here".
+### Mental model — sticky notes on a family tree
 
-**Key terms**
+Each commit is a photo that points back to its parent photo(s). A branch is a sticky note stuck on one photo. Committing adds a new photo and moves the sticky note forward. `HEAD` is a note saying "you are here".
+
+### Key terms
 
 | Term | Meaning |
 |------|---------|
@@ -27,7 +29,7 @@ The commit DAG, branches, merge (3-way), rebase (replay), and cherry-pick (apply
 | Cherry-pick | apply the change from one commit onto the current branch (new ID) |
 | Conflict | both sides changed the same lines differently; you decide |
 
-**Merge vs rebase**
+### Merge vs rebase
 
 | | Merge | Rebase |
 |-|-------|--------|
@@ -37,7 +39,9 @@ The commit DAG, branches, merge (3-way), rebase (replay), and cherry-pick (apply
 | Conflicts | resolved once | may be resolved per replayed commit |
 | Best for | integrating long-lived branches; keeping context | cleaning up *your own* feature branch before review |
 
-**The golden rule:** never rebase commits that others have already pulled. If you must update a pushed branch you own, use `git push --force-with-lease`, never plain `--force`.
+### The golden rule
+
+Never rebase commits that others have already pulled. If you must update a pushed branch you own, use `git push --force-with-lease`, never plain `--force`.
 
 ---
 
@@ -49,7 +53,7 @@ None. (Graph ideas from [Vol 0 Ch 4](../volume-0-math/ch04-graph-theory-foundati
 
 ## Diagram
 
-**A branch and a merge commit**
+### A branch and a merge commit
 
 ```mermaid
 gitGraph
@@ -64,7 +68,9 @@ gitGraph
     merge feature id: "M (2 parents)"
 ```
 
-**The same work, rebased instead** — C and D are replayed on top of E as new commits C′ and D′.
+### The same work, rebased instead
+
+C and D are replayed on top of E as new commits C′ and D′.
 
 ```mermaid
 gitGraph
@@ -79,7 +85,7 @@ gitGraph
 
 No merge commit is needed: `main` can now fast-forward its label from E to D′.
 
-**3-way merge: how Git decides**
+### 3-way merge: how Git decides
 
 | | greeting | timeout | |
 |---|---|---|---|
@@ -90,7 +96,7 @@ No merge commit is needed: `main` can now fast-forward its label from E to D′.
 
 If both sides changed the same line differently, it is a **conflict** and you choose.
 
-**Cherry-pick**
+### Cherry-pick
 
 ```mermaid
 flowchart LR
@@ -178,7 +184,7 @@ flowchart LR
     B & M2 --> R["git rebase main<br/>resolve 1 conflict"] --> SQ["git rebase -i: squash to 1–2 commits"] --> PR["push --force-with-lease"] --> MG["squash-merge into main"] --> CP["cherry-pick the fix onto release/1.0"]
 ```
 
-**Steps**
+### Steps
 
 1. Script the setup so it's repeatable (`setup.sh`).
 2. Produce a real conflict and resolve it during the rebase.

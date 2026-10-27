@@ -10,9 +10,11 @@ Naming, small functions/classes, readability, and safe refactoring (red/green/re
 
 **In one sentence:** code is read far more often than it is written, so clean code optimizes for the next reader, and refactoring is changing the structure of code without changing what it does — always under the protection of tests.
 
-**Mental model — a tidy workshop.** Every tool has a labeled place (good names). Each drawer holds one kind of thing (single responsibility). You tidy a little every day rather than once a year (continuous refactoring). And you never rearrange the shop while a customer's order is half-built, unless you can check the order still works afterward (tests).
+### Mental model — a tidy workshop
 
-**Naming**
+Every tool has a labeled place (good names). Each drawer holds one kind of thing (single responsibility). You tidy a little every day rather than once a year (continuous refactoring). And you never rearrange the shop while a customer's order is half-built, unless you can check the order still works afterward (tests).
+
+### Naming
 
 | Instead of | Write | Why |
 |------------|-------|-----|
@@ -22,7 +24,7 @@ Naming, small functions/classes, readability, and safe refactoring (red/green/re
 | `UserManagerHelperUtil` | `UserRepository`, `PasswordHasher` | a noun for one clear role |
 | `getData()` returning a total | `total_revenue()` | no surprises |
 
-**Smells and their refactorings**
+### Smells and their refactorings
 
 | Smell | Refactoring |
 |-------|-------------|
@@ -35,9 +37,11 @@ Naming, small functions/classes, readability, and safe refactoring (red/green/re
 | A comment explaining a block | extract the block into a function named after the comment |
 | Flag argument (`render(x, True)`) | split into two functions |
 
-**One level of abstraction per function** — a function should read like a table of contents: either all high-level steps (`validate`, `price`, `save`) or all low-level detail (string slicing, arithmetic), not a mix.
+### One level of abstraction per function
 
-**Red → green → refactor**
+A function should read like a table of contents: either all high-level steps (`validate`, `price`, `save`) or all low-level detail (string slicing, arithmetic), not a mix.
+
+### Red → green → refactor
 
 1. **Red** — write a failing test for the behavior.
 2. **Green** — make it pass in the simplest way.
@@ -55,13 +59,13 @@ To refactor untested legacy code, first write *characterization tests* that reco
 
 ## Diagram
 
-**Before and after: one long function becomes named steps**
+### Before and after: one long function becomes named steps
 
 <div class="fig">
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 270" role="img" aria-label="Refactoring a 60-line handler into a small function that calls named, testable steps" style="width:100%;max-width:800px;height:auto;font-family:inherit"><defs><marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="context-stroke"/></marker></defs><text x="190" y="24" font-size="13.5" text-anchor="middle" fill="var(--text)" font-weight="700">BEFORE: handle(r) — 60 lines</text><text x="610" y="24" font-size="13.5" text-anchor="middle" fill="var(--text)" font-weight="700">AFTER: handle_order(request)</text><rect x="20" y="38" width="340" height="170" rx="8" fill="var(--danger)" fill-opacity=".10" stroke="var(--danger)" stroke-width="1.6"/><text x="36" y="66" font-size="13" text-anchor="start" fill="var(--text)">parse JSON, check 6 fields</text><text x="36" y="96" font-size="13" text-anchor="start" fill="var(--text)">if/else for discount rules …</text><text x="36" y="126" font-size="13" text-anchor="start" fill="var(--text)">loop to compute tax …</text><text x="36" y="156" font-size="13" text-anchor="start" fill="var(--text)">build SQL string, execute …</text><text x="36" y="186" font-size="13" text-anchor="start" fill="var(--text)">format email, send …</text><line x1="372" y1="123" x2="428" y2="123" stroke="var(--text-muted)" stroke-width="1.6" marker-end="url(#ar)"/><rect x="440" y="38" width="340" height="170" rx="8" fill="var(--success)" fill-opacity=".10" stroke="var(--success)" stroke-width="1.6"/><text x="456" y="66" font-size="13" font-family="ui-monospace,Menlo,Consolas,monospace" fill="var(--text)">order = parse_order(request)</text><text x="456" y="96" font-size="13" font-family="ui-monospace,Menlo,Consolas,monospace" fill="var(--text)">validate(order)</text><text x="456" y="126" font-size="13" font-family="ui-monospace,Menlo,Consolas,monospace" fill="var(--text)">total = price(order)</text><text x="456" y="156" font-size="13" font-family="ui-monospace,Menlo,Consolas,monospace" fill="var(--text)">save(order, total)</text><text x="456" y="186" font-size="13" font-family="ui-monospace,Menlo,Consolas,monospace" fill="var(--text)">notify_customer(order)</text><text x="610" y="236" font-size="13" text-anchor="middle" fill="var(--success)" font-weight="600">each step: small, named, testable</text></svg>
 </div>
 
-**The refactoring loop**
+### The refactoring loop
 
 ```mermaid
 flowchart LR
@@ -71,9 +75,9 @@ flowchart LR
     C -- no --> U["undo the last step"] --> F
 ```
 
-**Guard clauses flatten nesting**
+### Guard clauses flatten nesting
 
-**Nested**
+### Nested
 
 ```python
 if user:
@@ -84,7 +88,7 @@ if user:
     …
 ```
 
-**Guard clauses**
+### Guard clauses
 
 ```python
 if not user: return deny()
@@ -149,14 +153,14 @@ def test_revenue_matches_legacy():
 
 ## Mini project
 
-**Take a 200-line script and refactor it into small, tested functions.**
+### Take a 200-line script and refactor it into small, tested functions
 
 ```mermaid
 flowchart LR
     S["script.py<br/>200 lines, globals,<br/>no tests"] --> CT["1 characterization test<br/>(golden output file)"] --> EX["extract pure functions<br/>parse / transform / format"] --> UT["unit tests per function"] --> IO["isolate I/O at the edges<br/>(main reads & writes)"] --> DONE["package with<br/>typed functions + tests"]
 ```
 
-**Steps**
+### Steps
 
 1. Pick a real messy script (or write one: read a CSV, compute stats, print a report).
 2. Save its output for a fixed input as a golden file; a test compares output to it.
