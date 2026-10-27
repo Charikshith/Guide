@@ -174,7 +174,7 @@ Look for: `Seq Scan` on big tables with selective filters; big gaps between *est
 ### Add indexes to a slow schema and measure the query-speed change
 
 ```mermaid
-flowchart LR
+flowchart TD
     SEED["generate 5M orders,<br/>500k users (skewed)"] --> Q["5 slow queries"] --> B["baseline:<br/>EXPLAIN (ANALYZE, BUFFERS)<br/>p50 over 20 runs"]
     B --> IDX["design indexes<br/>(composite, partial, covering)"] --> A["after: same measurements"]
     A --> W["write cost:<br/>insert throughput before/after"]

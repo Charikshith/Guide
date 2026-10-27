@@ -101,7 +101,7 @@ flowchart LR
 ### A fine-tuning workflow
 
 ```mermaid
-flowchart LR
+flowchart TD
     RAW["raw logs / expert-written pairs"] --> CLEAN["clean, dedupe, redact PII"] --> FMT["chat template<br/>+ mask prompt tokens"]
     FMT --> SPLIT["train / val / test"]
     SPLIT --> TRAIN["LoRA / QLoRA training<br/>(watch val loss)"]

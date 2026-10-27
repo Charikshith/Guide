@@ -221,7 +221,7 @@ flowchart LR
 ### An AI Chatbot — a chat endpoint with history, streaming, and sampling controls
 
 ```mermaid
-flowchart LR
+flowchart TD
     UI["web UI<br/>(chat box + sliders:<br/>temperature, top_p, max_tokens,<br/>model)"] -->|"POST /chat (SSE)"| API["chat API"]
     API --> CONV[("conversations DB<br/>id, messages[], settings")]
     API --> CTX["context builder:<br/>system prompt + history,<br/>trimmed to the token budget"]

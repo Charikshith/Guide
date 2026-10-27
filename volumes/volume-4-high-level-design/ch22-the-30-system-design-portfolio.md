@@ -93,7 +93,7 @@ flowchart LR
 **Which pattern does a system need?**
 
 ```mermaid
-flowchart TD
+flowchart LR
     S["new system"] --> R{"read:write ratio"}
     R -- "reads ≫ writes" --> CA["cache + CDN + read replicas"]
     R -- "writes ≫ reads" --> SH["sharding + log-structured storage + queues"]

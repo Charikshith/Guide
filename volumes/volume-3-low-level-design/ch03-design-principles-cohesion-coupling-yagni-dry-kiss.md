@@ -182,7 +182,7 @@ def report(graph):
 ### Refactor a tangled module into high-cohesion, low-coupling components
 
 ```mermaid
-flowchart LR
+flowchart TD
     MUD["shop/ with utils.py, helpers.py,<br/>cycles between orders ↔ billing ↔ users,<br/>global CONFIG dict"] --> MEAS["measure: import graph,<br/>cycles, fan-in/out, instability"]
     MEAS --> PLAN["target structure:<br/>orders/ billing/ users/ + shared_kernel/"]
     PLAN --> STEPS["move functions to where they belong,<br/>break cycles with events or interfaces,<br/>replace globals with injected config"]

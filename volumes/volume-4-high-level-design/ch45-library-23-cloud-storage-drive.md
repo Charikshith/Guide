@@ -583,29 +583,30 @@ sequenceDiagram
 A more detailed flow with dedup, versioning, and sync:
 
 ```mermaid
+%%{init: {"sequence": {"actorMargin": 20}}}%%
 sequenceDiagram
     participant C as Client
     participant AG as API Gateway
-    participant U as Upload Service
-    participant S as Storage Service
+    participant U as Upload
+    participant S as Storage
     participant D as Deduplication
-    participant M as Metadata Service
-    participant V as Versioning Service
-    participant SY as Sync Service
-    participant OS as Object Storage
+    participant M as Metadata
+    participant V as Versioning
+    participant SY as Sync
+    participant OS as Object<br/>Storage
 
-    C->>AG: POST /upload/initiate
+    C->>AG: POST<br/>/upload/initiate
     AG->>U: Start upload session
     U-->>AG: Upload ID
     AG-->>C: Upload ID
     loop For each chunk
-        C->>U: PUT /upload/{id}/chunk
+        C->>U: PUT<br/>/upload/{id}/chunk
         U->>D: Check duplicate
         D->>U: Result
         U->>S: Store chunk
         S->>OS: Save chunk
     end
-    C->>U: POST /upload/{id}/complete
+    C->>U: POST<br/>/upload/{id}/complete
     U->>M: Update metadata
     U->>V: Update versioning
     U->>SY: Notify sync

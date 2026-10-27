@@ -252,18 +252,18 @@ flowchart TD
       CO["coding assistant (Build #3)"]
     end
     Clients --> API["AI OS API<br/>(identity, tenants, quotas)"]
-    API --> RT["agent runtime + multi-agent framework (Build #6)"]
-    RT --> WF["workflow engine (Build #4)"]
-    RT --> TOOLS["MCP hub: registered tool servers,<br/>per-tenant permissions"]
-    RT --> PEERS["A2A: external / internal agents"]
+    API --> RT["agent runtime +<br/>multi-agent framework<br/>(Build #6)"]
+    RT --> WF["workflow engine<br/>(Build #4)"]
+    RT --> TOOLS["MCP hub: tool servers,<br/>per-tenant permissions"]
+    RT --> PEERS["A2A: external /<br/>internal agents"]
     RT --> MEM["memory + RAG service<br/>(Builds #2, Ch 12)"]
-    RT --> ROUTE["model router + cache (Ch 18)"]
-    ROUTE --> GPU["vLLM GPU pool (this chapter)"]
+    RT --> ROUTE["model router +<br/>cache (Ch 18)"]
+    ROUTE --> GPU["vLLM GPU pool<br/>(this chapter)"]
     ROUTE --> HOST["hosted models"]
-    SEC["security layer: guardrails, approvals,<br/>sandboxed execution, output DLP"] -.-> RT & TOOLS
-    OBS["tracing, token/cost metering,<br/>per-tenant dashboards"] -.-> API & RT & ROUTE & GPU
-    EVAL["eval service: golden sets per app,<br/>release gates, online sampling"] -.-> RT & ROUTE
-    ADMIN["admin console: agents, tools,<br/>models, budgets, audit log"] --> API
+    SEC["security layer:<br/>guardrails, approvals,<br/>sandboxing, output DLP"] -.-> RT & TOOLS
+    OBS["tracing, cost metering,<br/>per-tenant dashboards"] -.-> API & RT & ROUTE & GPU
+    EVAL["eval service:<br/>golden sets, release gates,<br/>online sampling"] -.-> RT & ROUTE
+    ADMIN["admin console:<br/>agents, tools, models,<br/>budgets, audit log"] --> API
 ```
 
 ### Steps

@@ -138,7 +138,7 @@ flowchart TB
 #### Mermaid View
 
 ```mermaid
-flowchart TD
+flowchart LR
   subgraph ClientSide [Client Side]
     A1[Rider App]
     A2[Driver App]
@@ -239,23 +239,24 @@ paths:
 #### Sequence Diagram
 
 ```mermaid
+%%{init: {"sequence": {"actorMargin": 20}}}%%
 sequenceDiagram
     participant Rider as Rider App
     participant API as API Gateway
-    participant Match as Ride Matching Service
+    participant Match as Ride<br/>Matching
     participant Driver as Driver App
-    participant Location as Location Service
-    participant Trip as Trip Service
-    participant Payment as Payment Service
-    participant Notification as Notification Service
+    participant Location as Location
+    participant Trip as Trip
+    participant Payment as Payment
+    participant Notification as Notification
 
     Rider->>API: POST /ride-request
     API->>Match: Find nearby driver
     Match->>Driver: Send ride request
     Driver->>Match: Accept
     Match->>Trip: Start trip
-    Trip->>Location: Track rider/driver locations
-    Trip->>Payment: Process payment (on completion)
+    Trip->>Location: Track rider/driver<br/>locations
+    Trip->>Payment: Process payment<br/>(on completion)
     Trip->>Notification: Send trip updates
     Notification->>Rider: Push notification
 ```
@@ -263,6 +264,7 @@ sequenceDiagram
 #### More Detailed Sequence
 
 ```mermaid
+%%{init: {"sequence": {"actorMargin": 20}}}%%
 sequenceDiagram
     participant RiderApp
     participant APIGateway
@@ -276,11 +278,11 @@ sequenceDiagram
     RiderApp->>APIGateway: Request Ride (REST)
     APIGateway->>RideMatching: Forward request
     RideMatching->>LocationService: Get nearby drivers
-    RideMatching->>DriverApp: Notify available driver (WebSocket)
+    RideMatching->>DriverApp: Notify available<br/>driver (WebSocket)
     DriverApp->>RideMatching: Accept/Reject
     RideMatching->>TripService: Start Trip
-    LocationService-->>RiderApp: Live driver location (WebSocket)
-    TripService->>PaymentService: Complete, calculate fare
+    LocationService-->>RiderApp: Live driver location<br/>(WebSocket)
+    TripService->>PaymentService: Complete,<br/>calculate fare
     PaymentService->>NotificationService: Payment success
     NotificationService->>RiderApp: Trip/Payment update
     NotificationService->>DriverApp: Trip/Payment update

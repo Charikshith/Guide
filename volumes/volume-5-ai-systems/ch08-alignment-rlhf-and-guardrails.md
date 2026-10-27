@@ -86,7 +86,7 @@ flowchart LR
 ### A guarded LLM endpoint
 
 ```mermaid
-flowchart LR
+flowchart TD
     U["user input"] --> IG{"input guard<br/>size · PII · injection / jailbreak classifier"}
     IG -- block --> R1["safe refusal + log"]
     IG -- pass --> CTX["build the prompt:<br/>system rules + delimited, untrusted input"]
@@ -205,7 +205,7 @@ Regex alone is easy to evade (paraphrase, other languages, encodings) — it's a
 ### A guarded endpoint with prompt-injection detection and output filtering
 
 ```mermaid
-flowchart LR
+flowchart TD
     REQ["POST /ask"] --> L1["L1: limits + PII redaction (Presidio)"]
     L1 --> L2["L2: injection classifier<br/>(Prompt Guard / a small LLM judge)"]
     L2 --> LLM["LLM with a strict system prompt,<br/>docs wrapped as untrusted"]

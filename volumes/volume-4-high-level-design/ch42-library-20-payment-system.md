@@ -167,7 +167,7 @@ sequenceDiagram
 ### High-Level Architecture
 
 ```mermaid
-flowchart LR
+flowchart TD
     M["Merchant or app"] --> GW["API gateway"]
     GW --> PS["Payment service"]
     PS --> PDB[("Payment database")]

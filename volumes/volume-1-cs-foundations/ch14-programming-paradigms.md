@@ -53,7 +53,7 @@ The heart of functional style.
 ### A map of paradigms
 
 ```mermaid
-flowchart TD
+flowchart LR
     P((Paradigms)) --> IMP[Imperative]
     P --> DEC[Declarative]
     P --> EVT[Event-driven]

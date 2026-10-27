@@ -178,7 +178,7 @@ weights = load_file("model.safetensors")      # no arbitrary code execution, unl
 ### A red-team exercise on an agent + hardened guardrails
 
 ```mermaid
-flowchart LR
+flowchart TD
     TGT["target: your RAG + tools agent<br/>(email, http_get, DB read)"] --> RT["red-team suite:<br/>50 attacks — direct, indirect (docs, web),<br/>exfil via links, tool abuse, jailbreaks,<br/>cost DoS"]
     RT --> R0["baseline: attack success rate"]
     R0 --> H["harden: least privilege, trifecta split,<br/>approval gates, arg validation,<br/>output DLP, URL allow-list,<br/>ACL-filtered retrieval, rate/cost limits"]

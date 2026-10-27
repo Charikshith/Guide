@@ -110,7 +110,7 @@ flowchart TD
 A more detailed view:
 
 ```mermaid
-flowchart LR
+flowchart TD
     Client["Client (Web/Mobile App)"]
     APIGW(API Gateway)
     Upload("Upload & Ingestion Service")
@@ -271,46 +271,48 @@ A **hybrid model** ensures both responsiveness and scalability.
 #### Sequence Diagram
 
 ```mermaid
+%%{init: {"sequence": {"actorMargin": 20}}}%%
 sequenceDiagram
     participant User
     participant Frontend
     participant API_GW as API Gateway
-    participant Upload as Upload Service
+    participant Upload as Upload
     participant Queue as Kafka/SQS
-    participant Encode as Encoding Service
-    participant Storage as Object Storage
+    participant Encode as Encoding
+    participant Storage as Object<br/>Storage
     participant CDN
 
-    User->>Frontend: Selects video to upload
+    User->>Frontend: Selects video<br/>to upload
     Frontend->>API_GW: POST /upload (video)
     API_GW->>Upload: Forward request
     Upload->>Storage: Store raw video
     Upload->>Queue: Publish encoding job
     Queue->>Encode: Consume job
-    Encode->>Storage: Upload encoded variants
+    Encode->>Storage: Upload encoded<br/>variants
     Storage->>CDN: CDN pickup
-    Frontend->>User: Notify upload complete
+    Frontend->>User: Notify upload<br/>complete
 ```
 
 A simpler version focusing on the metadata-update path:
 
 ```mermaid
+%%{init: {"sequence": {"actorMargin": 20}}}%%
 sequenceDiagram
     participant Client
     participant APIGW as API Gateway
     participant Upload as Upload/Ingestion
-    participant Queue as Encoding Queue
-    participant Encode as Encoding Service
-    participant Store as Object Storage
+    participant Queue as Encoding<br/>Queue
+    participant Encode as Encoding
+    participant Store as Object<br/>Storage
     participant CDN
-    participant Meta as Metadata Service
+    participant Meta as Metadata
 
     Client->>APIGW: POST /upload
     APIGW->>Upload: Forward request
     Upload->>Queue: Enqueue encoding job
     Queue->>Encode: Notify
-    Encode->>Store: Upload transcoded files
-    Encode->>Meta: Update video status, metadata
+    Encode->>Store: Upload<br/>transcoded files
+    Encode->>Meta: Update video<br/>status, metadata
     Store->>CDN: Trigger CDN cache
     Client->>APIGW: GET /videos/{id}
     APIGW->>CDN: Serve video stream

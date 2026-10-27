@@ -74,7 +74,7 @@ Releases are one of the biggest sources of outages, so the pipeline — not a pe
 6. **Act on a bad signal:** roll back automatically, or page the on-call engineer to choose: retry the step (the trouble was something else), roll back, or **roll forward** with a hotfix. Rolling back is safer than rolling forward, so every change must be backward compatible enough to be rolled back.
 
 ```mermaid
-flowchart LR
+flowchart TD
     M["merge"] --> B["build artifact"] --> P["pre-prod:<br/>e2e tests, prod-like alerts"]
     P --> W1["wave 1:<br/>1 instance / canary"]
     W1 -->|"bake ✓"| W2["wave 2:<br/>1 low-traffic region"]

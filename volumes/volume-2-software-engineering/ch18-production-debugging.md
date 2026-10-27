@@ -193,7 +193,7 @@ COMMIT;   -- or ROLLBACK if the numbers don't match the review
 **Inject a failure into a running service, debug it read-only, fix, and write up the forensic trail.**
 
 ```mermaid
-flowchart LR
+flowchart TD
     SVC["a service with OTel +<br/>dashboards (Ch 14)"] --> INJ["a teammate secretly injects one fault:<br/>memory leak · slow query ·<br/>lock contention · dependency timeout"]
     INJ --> YOU["you: observe → hypothesize →<br/>read-only evidence (py-spy, logs, traces)"]
     YOU --> MIT["mitigate<br/>(flag / breaker / rollback)"]

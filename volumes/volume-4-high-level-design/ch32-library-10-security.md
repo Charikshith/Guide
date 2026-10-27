@@ -371,7 +371,7 @@ Allows or blocks traffic based on the **source IP address.** First layer of defe
 | **IP Filtering**  | Allow/block based on IPs                | Drops or denies        | Simple, low-cost security      | Hard to manage dynamic IPs  |
 
 ```mermaid
-flowchart LR
+flowchart TD
     Client["Client Application"]
     Gateway["API Gateway"]
     IPFilter["IP Filtering (Allow/Deny based on IP)"]

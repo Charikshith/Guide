@@ -190,7 +190,7 @@ print(np.allclose(ref[0, 0].numpy(), out))                  # True
 ### A from-scratch transformer block on small inputs, verified against a reference
 
 ```mermaid
-flowchart LR
+flowchart TD
     X["x [n × d]"] --> N1["RMSNorm (yours)"] --> MHA["multi-head causal attention<br/>(yours, NumPy or PyTorch ops)"] --> R1(("+ x"))
     R1 --> N2["RMSNorm"] --> FF["SwiGLU FFN (yours)"] --> R2(("+"))
     R2 --> Y["y"]

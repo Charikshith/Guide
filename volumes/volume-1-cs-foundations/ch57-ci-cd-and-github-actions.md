@@ -193,7 +193,7 @@ jobs:
 ### A full CI/CD pipeline for a service, deployed on every merge
 
 ```mermaid
-flowchart LR
+flowchart TD
     PR["pull request"] --> CI["lint · types · tests · coverage ·<br/>dependency and secret scan"]
     CI --> REQ["required checks + 1 review"] --> MERGE["merge to main"]
     MERGE --> IMG["build + sign image (digest)"] --> STG["auto-deploy staging (kind / Fly / Render)"]

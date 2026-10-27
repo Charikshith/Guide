@@ -422,7 +422,7 @@ flowchart LR
 Requirements: 2,000 orders/s at peak (sales events); checkout must respond in < 300 ms; payment, inventory, fraud, email, loyalty points, and analytics all react; no order may be lost or double-charged.
 
 ```mermaid
-flowchart LR
+flowchart TD
     U[users] --> API["Checkout API"]
     API -->|"sync: validate cart,<br/>reserve stock (fast path)"| INV["Inventory"]
     API -->|"INSERT order + outbox"| ODB[("orders DB")]

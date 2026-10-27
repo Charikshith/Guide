@@ -117,7 +117,7 @@ Read it top to bottom: a request enters at the clients, crosses the edge, is han
 ### L8 · Deployment and infrastructure
 
 ```mermaid
-flowchart LR
+flowchart TD
     a["Source (Git)<br/>trunk / PR flow"] --> b["CI<br/>build · test · scan<br/>(SAST, SBOM)"] --> c["Image + Registry<br/>Docker · ECR / GCR"] --> d["IaC<br/>Terraform · GitOps (Argo)"] --> e["Orchestration<br/>Kubernetes"] --> f["Release strategy<br/>rolling · blue/green · canary · rollback"] --> g["Environments<br/>dev · staging · prod"] --> h["Auto-scaling<br/>HPA / ASG"] --> i["Multi-AZ / Multi-Region<br/>active-active / passive<br/>DR drill, RPO / RTO"]
 ```
 

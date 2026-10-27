@@ -478,7 +478,7 @@ graph TD
 #### Detailed Architecture (with DBs per service)
 
 ```mermaid
-graph TD
+graph LR
     Client["User (Web/App)"]
     APIGateway[API Gateway]
     UserService[User Service]
@@ -489,8 +489,8 @@ graph TD
     NotificationService[Notification Service]
     AdminService[Admin Service]
     RedisCache[Redis Cache]
-    MessageQueue["Message Queue (Kafka/SQS)"]
-    PaymentGateway["Payment Gateway (Stripe, Razorpay)"]
+    MessageQueue["Message Queue<br/>(Kafka/SQS)"]
+    PaymentGateway["Payment Gateway<br/>(Stripe, Razorpay)"]
     UserDB[("User DB - PostgreSQL")]
     ProductDB[("Product DB - PostgreSQL")]
     SearchDB[("Search DB - Elasticsearch")]

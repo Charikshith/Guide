@@ -197,7 +197,7 @@ Branch protection for main (repository settings):
 ### Script a release: bump version → changelog → tag → signed push
 
 ```mermaid
-flowchart LR
+flowchart TD
     RUN["./release.sh"] --> CHK["checks: on main, clean,<br/>up to date, CI green"]
     CHK --> BUMP["compute the next version from<br/>conventional commits since the last tag<br/>(feat → minor, fix → patch, ! → major)"]
     BUMP --> CL["prepend CHANGELOG.md<br/>grouped: Features / Fixes / Breaking"]

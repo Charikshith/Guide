@@ -71,7 +71,7 @@ Caching, parallel jobs, test sharding, affected-only builds ([Ch 3](ch03-monorep
 ### A pipeline: commit → build → test → lint → stage → deploy → verify
 
 ```mermaid
-flowchart LR
+flowchart TD
     C["commit / PR"] --> B["build<br/>(reproducible, cached)"]
     B --> T["test<br/>unit · integration"]
     B --> L["lint · types ·<br/>security scans"]

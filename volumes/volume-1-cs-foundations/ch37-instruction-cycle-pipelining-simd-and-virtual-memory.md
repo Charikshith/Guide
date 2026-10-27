@@ -84,7 +84,7 @@ I2 needs `r1`, so there is **one bubble** (a stall; forwarding from EX/MEM remov
 ### Virtual → physical address translation
 
 ```mermaid
-flowchart LR
+flowchart TD
     VA["virtual address<br/>0x7f3a_1c2d_5abc"] --> SPLIT["page number | offset (low 12 bits = 0xabc)"]
     SPLIT --> TLB{TLB hit?}
     TLB -- yes --> PA["physical frame + offset"]

@@ -67,7 +67,7 @@ The answer isn't in the index (ingestion gaps); retrieval misses (vocabulary mis
 ### A RAG pipeline: chunk → embed → index → retrieve → rerank → prompt → generate
 
 ```mermaid
-flowchart LR
+flowchart TD
     subgraph Offline["Offline: ingestion"]
       D["docs: PDF, HTML, Markdown,<br/>tickets, wiki"] --> P["parse + clean<br/>keep headings, tables, metadata"] --> C["chunk<br/>~500 tokens, 15% overlap"] --> E["embed (bi-encoder)"] --> IDX[("vector index<br/>+ BM25 index<br/>+ metadata / ACL")]
     end

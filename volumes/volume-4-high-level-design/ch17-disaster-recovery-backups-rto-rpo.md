@@ -483,7 +483,7 @@ resource "aws_s3_bucket_object_lock_configuration" "backups" {
 **A backup + restore script with verification and a measured RTO/RPO.**
 
 ```mermaid
-flowchart LR
+flowchart TD
     PG[("Postgres in Docker<br/>+ a writer inserting 10 rows/s")] --> BK["backup.sh:<br/>base backup + WAL archive → MinIO<br/>(versioned, object lock)"]
     CHAOS["disaster: DROP TABLE orders<br/>at a random moment"] --> PG
     BK --> RS["restore.sh --to 'just before the drop'<br/>→ a fresh container"]

@@ -223,7 +223,7 @@ class OrderService:
 ### Refactor a small codebase until all five principles hold and explain each fix
 
 ```mermaid
-flowchart LR
+flowchart TD
     START["a ~300-line 'NotificationManager'<br/>email + SMS + push via if/elif,<br/>direct SMTP/Twilio calls,<br/>templating, retries, logging"] --> T["characterization tests first"]
     T --> S1["S: split templating / sending /<br/>retry policy / audit"]
     S1 --> O1["O: Channel interface +<br/>EmailChannel, SmsChannel, PushChannel"]

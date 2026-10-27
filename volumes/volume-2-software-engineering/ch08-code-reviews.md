@@ -59,7 +59,7 @@ Take it to a call after two rounds of back-and-forth; decide by the team's writt
 ### A review checklist flow
 
 ```mermaid
-flowchart LR
+flowchart TD
     D["read the PR description<br/>(what / why / risk)"] --> C["correctness<br/>edge cases, errors"]
     C --> DE["design<br/>right place? simpler?"]
     DE --> S["security<br/>input, authz, secrets"]

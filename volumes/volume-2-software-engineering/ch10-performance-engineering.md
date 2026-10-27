@@ -159,7 +159,7 @@ criterion_main!(benches);
 **Take a naive implementation, profile it, optimize it, and document the speedup with benchmarks.**
 
 ```mermaid
-flowchart LR
+flowchart TD
     N["naive log analyzer:<br/>read 1 GB, parse with regex per line,<br/>list lookups, string concat,<br/>json.loads everything"] --> BASE["baseline: time + memory<br/>+ flame graph"]
     BASE --> O1["fix 1 (from the graph)"] --> M1["re-measure"]
     M1 --> O2["fix 2"] --> M2["re-measure"]

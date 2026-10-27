@@ -104,7 +104,7 @@ if (typeof Prism !== 'undefined') Prism.highlightAll();
 // keeps wide diagrams at a readable size (they scroll instead of shrinking), and opens a
 // zoom / pan viewer on click. Mermaid flowcharts also highlight a node's connections on hover.
 window.SDDiagrams = (function () {
-  const MIN_SCALE = 0.85;          // never draw diagram text smaller than 85% of its natural size
+  const MIN_SCALE = 0.75;          // never draw diagram text smaller than 75% of its natural size
   const esc = s => s.replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
   const reEsc = s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
@@ -144,8 +144,15 @@ window.SDDiagrams = (function () {
     const vb = svg.viewBox && svg.viewBox.baseVal && svg.viewBox.baseVal.width;
     if (!vb) return;
     const cs = getComputedStyle(m);
-    const avail = m.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
     const fig = m.closest('.sd-diagram');
+    if (fig) fig.style.marginRight = '';
+    let avail = m.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+    // too wide for the text column: on wide screens, grow into the empty space to its right first
+    if (fig && vb * MIN_SCALE > avail && window.innerWidth > 1024) {
+      const room = Math.max(0, window.innerWidth - fig.getBoundingClientRect().right - 24);
+      const grow = Math.min(room, Math.ceil(vb * MIN_SCALE - avail));
+      fig.style.marginRight = -grow + 'px'; avail += grow;
+    }
     svg.removeAttribute('height');
     svg.style.maxWidth = 'none';
     if (vb * MIN_SCALE > avail) {                       // too wide: keep text readable, let it scroll

@@ -103,7 +103,7 @@ flowchart LR
 ### An attack tree: "take over a user account"
 
 ```mermaid
-flowchart TD
+flowchart LR
     G["Take over account"] --> P["Get the password"]
     G --> R["Abuse password reset"]
     G --> S["Steal a session"]
@@ -182,7 +182,7 @@ syft . -o spdx-json > sbom.json && cosign sign-blob sbom.json
 ### A security review of a small app: threat model + fix the top 3 findings
 
 ```mermaid
-flowchart LR
+flowchart TD
     APP["a small app (yours, or OWASP Juice Shop / DVWA locally)"] --> DFD["DFD + trust boundaries"]
     DFD --> STR["STRIDE per element/flow → threat list"]
     STR --> RANK["rank: likelihood × impact"]

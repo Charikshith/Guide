@@ -178,7 +178,7 @@ git push --force-with-lease          # refuses if someone else pushed meanwhile
 **Reproduce a real PR flow (branch → commits → rebase → squash-merge) on a toy repo.**
 
 ```mermaid
-flowchart LR
+flowchart TD
     I["git init + 3 commits on main"] --> B["branch feature/x<br/>4 small commits"]
     I --> M2["meanwhile: 2 commits on main<br/>(one touches the same file)"]
     B & M2 --> R["git rebase main<br/>resolve 1 conflict"] --> SQ["git rebase -i: squash to 1–2 commits"] --> PR["push --force-with-lease"] --> MG["squash-merge into main"] --> CP["cherry-pick the fix onto release/1.0"]

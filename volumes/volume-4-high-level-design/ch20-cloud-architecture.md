@@ -276,7 +276,7 @@ flowchart LR
 Requirements: users upload images (up to 25 MB); generate 4 sizes plus WebP; detect NSFW content; 1M uploads/day with peaks of 200/s; results available within 10 s p95; pay close to zero when idle.
 
 ```mermaid
-flowchart LR
+flowchart TD
     C["client"] -->|"1. POST /uploads"| API["API Gateway + Lambda:<br/>auth, create a presigned PUT URL"]
     C -->|"2. PUT the file directly"| RAW[("S3 raw bucket")]
     RAW -->|"3. ObjectCreated event"| Q[("SQS queue<br/>(buffers the peaks)")]
