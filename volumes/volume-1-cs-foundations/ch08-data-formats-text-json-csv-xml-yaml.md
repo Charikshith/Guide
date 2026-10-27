@@ -35,6 +35,42 @@ JSON is a hard-shell suitcase: strict shape, travels anywhere. CSV is a flat tra
 | CSV | commas, quotes, and newlines inside fields; no standard encoding; Excel reformats `00123` and dates |
 | XML | entity expansion attacks ("billion laughs"), external entities (XXE) — use a hardened parser |
 
+### XML in practice
+
+**What it is.** XML (eXtensible Markup Language) is a tree of *elements*. Each element has a start tag and an end tag (`<born>1815</born>`), may carry *attributes* inside the start tag (`<person active="false">`), and may contain text, child elements, or both. Exactly one root element wraps the whole document. Unlike JSON, XML has no built-in types: `1815` is just the text "1815" until a schema or your code says it is a number.
+
+**Pieces you will meet.**
+
+| Piece | What it does | Example |
+|-------|--------------|---------|
+| Element vs attribute | elements hold content and can repeat; attributes hold single, flat metadata about an element | `<language>French</language>` vs `lang="fr"` |
+| Namespace | a URI prefix that keeps two vocabularies' tag names from colliding | `<svg xmlns="http://www.w3.org/2000/svg">` |
+| Schema (XSD) | a separate file that declares which elements are allowed, in what order, with what types; a *validating* parser rejects documents that break it | `<xs:element name="born" type="xs:integer"/>` |
+| Mixed content | text and tags interleaved, which JSON cannot express naturally | `<p>Use <b>bold</b> sparingly</p>` |
+| XPath | a query language for picking nodes out of the tree | `./languages/language` |
+
+**Where it still lives.** SOAP web services and many banking, government and healthcare interfaces; Office files (`.docx` and `.xlsx` are ZIP archives full of XML); RSS and Atom feeds; SVG images; Android layouts; Maven `pom.xml`; and sitemaps. Mixed content is XML's real strength: it is a *document* format first, which is why HTML looks like it.
+
+**Reading it in Python.** The standard library's `xml.etree.ElementTree` covers most needs. For data from anyone you don't trust, parse with `defusedxml`, which blocks the two attacks in the footguns table: *billion laughs* (nested entity definitions that expand a tiny file into gigabytes of memory) and *XXE*, or XML External Entity (an entity that points at `file:///etc/passwd` or an internal URL, so the parser reads it for the attacker).
+
+```python
+from defusedxml.ElementTree import fromstring   # pip install defusedxml
+
+root = fromstring('<person active="false"><name>Ada</name>'
+                  '<languages><language>English</language><language>French</language></languages></person>')
+print(root.get("active"))                                    # 'false'  ← a string, not a bool
+print(root.findtext("name"))                                 # 'Ada'
+print([e.text for e in root.findall("./languages/language")])  # ['English', 'French']
+```
+
+**Pick XML when** a partner, standard or tool requires it, when you need mixed text-and-markup documents, or when strict validation against a published schema is part of the contract. **Pick JSON** for everything else: it is smaller, maps directly onto dicts and lists, and every language parses it the same way.
+
+**Pitfalls**
+- Treating attribute and element values as typed; every value arrives as a string.
+- Forgetting namespaces: `root.find("svg:rect", {"svg": "http://www.w3.org/2000/svg"})` finds the element, while `root.find("rect")` silently returns `None`.
+- Parsing untrusted input with a default parser; use `defusedxml`, or `lxml` with entity resolution switched off.
+- Building XML by string concatenation; a `<` or `&` in the data breaks the document. Build it with ElementTree and let it escape for you.
+
 ---
 
 ## Prereqs
@@ -182,6 +218,7 @@ flowchart LR
 - [ ] pick the right format for config vs data
 - [ ] handle escaping correctly
 - [ ] avoid YAML footguns (e.g., `on` = true)
+- [ ] parse untrusted XML with a hardened parser (`defusedxml`) and handle namespaces
 
 ---
 

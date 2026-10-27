@@ -48,12 +48,76 @@ How much one module depends on another's details.
 | Heuristic | Says | Protects against | Over-applied, it causes |
 |-----------|------|------------------|------------------------|
 | **DRY** — Don't Repeat Yourself | every piece of *knowledge* has one authoritative place | inconsistent copies of a rule (tax rate in 4 places) | "shared" helpers that couple unrelated features; flag-laden functions |
-| **YAGNI** — You Aren't Gonna Need It | don't build for imagined futures | speculative generality: plugin systems with one plugin, unused parameters | refusing obvious, cheap design for known needs |
-| **KISS** — Keep It Simple | the simplest thing that works | cleverness, needless layers and indirection | oversimplifying a truly complex domain |
+| **YAGNI** — You Aren't Gonna Need It (see below) | don't build for imagined futures | speculative generality: plugin systems with one plugin, unused parameters | refusing obvious, cheap design for known needs |
+| **KISS** — Keep It Simple (see below) | the simplest thing that works | cleverness, needless layers and indirection | oversimplifying a truly complex domain |
 
 ### When DRY hurts
 
 DRY is about *knowledge*, not *text*. Two snippets that look the same but represent different decisions ("a user's display name" vs "an invoice's legal name") will change for different reasons. Merging them couples two features: a change for one breaks the other, and the shared function grows flags. Rule of three: tolerate duplication until the third occurrence *and* you're sure it's the same concept. "Duplication is far cheaper than the wrong abstraction" (Sandi Metz).
+
+### YAGNI: You Aren't Gonna Need It
+
+**What it says.** Build what today's requirement needs, and no more. Not the plugin system "in case we add more payment providers", not the `currency` parameter "for when we go international", not the abstract base class with one subclass. The phrase comes from Extreme Programming, where it was paired with refactoring: you can afford to wait because you keep the code easy to change.
+
+**Why speculative code is expensive.** A feature built before it is needed is paid for three times. First you build it. Then you carry it: every reader has to understand it, every test run exercises it, and every refactor has to keep it working, even though nothing uses it. Finally, when the real need does arrive, it rarely has the shape you guessed, so the "ready" code gets reworked or worked around anyway.
+
+<div class="fig">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 300" role="img" aria-label="Building a speculative plugin system in month 1 costs the build, then a little every month to read, test and keep working, and when the real need arrives in month 6 it has a different shape and must be reworked; waiting costs nothing until month 6 and then builds exactly what is needed" style="width:100%;max-width:760px;height:auto;font-family:inherit"><defs><marker id="v3c03x1-ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="context-stroke"/></marker></defs><text x="243.0" y="26" font-size="11" text-anchor="middle" fill="var(--text-muted)" font-weight="600">month 1</text><text x="309.0" y="26" font-size="11" text-anchor="middle" fill="var(--text-muted)" font-weight="600">month 2</text><text x="375.0" y="26" font-size="11" text-anchor="middle" fill="var(--text-muted)" font-weight="600">month 3</text><text x="441.0" y="26" font-size="11" text-anchor="middle" fill="var(--text-muted)" font-weight="600">month 4</text><text x="507.0" y="26" font-size="11" text-anchor="middle" fill="var(--text-muted)" font-weight="600">month 5</text><text x="573.0" y="26" font-size="11" text-anchor="middle" fill="var(--text-muted)" font-weight="600">month 6</text><text x="639.0" y="26" font-size="11" text-anchor="middle" fill="var(--text-muted)" font-weight="600">month 7</text><text x="705.0" y="26" font-size="11" text-anchor="middle" fill="var(--text-muted)" font-weight="600">month 8</text><line x1="540" y1="34" x2="540" y2="236" stroke="var(--accent)" stroke-width="1.6" stroke-dasharray="5 4"/><text x="534" y="252" font-size="11.5" text-anchor="end" fill="var(--accent)" font-weight="700">the real need arrives, and it looks different →</text><text x="20" y="62" font-size="12" text-anchor="start" fill="var(--danger)" font-weight="800">BUILD IT NOW</text><text x="20" y="78" font-size="11.5" text-anchor="start" fill="var(--text-muted)" font-weight="400" font-style="italic">&quot;we&#x27;ll need plugins&quot;</text><rect x="212" y="50" width="101.60000000000001" height="30" rx="6" fill="var(--warning)" fill-opacity=".22" stroke="var(--warning)" stroke-width="1.3"/><text x="262.8" y="70" font-size="11.5" text-anchor="middle" fill="var(--text)" font-weight="700">build</text><rect x="317.6" y="50" width="62.0" height="30" rx="6" fill="var(--text-faint)" fill-opacity=".12" stroke="var(--text-faint)" stroke-width="1.3"/><text x="348.6" y="70" font-size="11.5" text-anchor="middle" fill="var(--text)" font-weight="700">carry</text><rect x="383.6" y="50" width="62.0" height="30" rx="6" fill="var(--text-faint)" fill-opacity=".12" stroke="var(--text-faint)" stroke-width="1.3"/><text x="414.6" y="70" font-size="11.5" text-anchor="middle" fill="var(--text)" font-weight="700">carry</text><rect x="449.6" y="50" width="61.99999999999997" height="30" rx="6" fill="var(--text-faint)" fill-opacity=".12" stroke="var(--text-faint)" stroke-width="1.3"/><text x="480.59999999999997" y="70" font-size="11.5" text-anchor="middle" fill="var(--text)" font-weight="700">carry</text><rect x="542" y="50" width="101.59999999999998" height="30" rx="6" fill="var(--danger)" fill-opacity=".22" stroke="var(--danger)" stroke-width="1.3"/><text x="592.8" y="70" font-size="11.5" text-anchor="middle" fill="var(--text)" font-weight="700">rework</text><text x="548" y="98" font-size="11" text-anchor="start" fill="var(--text-muted)" font-weight="400" font-style="italic">+ the unused code is still there</text><rect x="20" y="104" width="270.0" height="21" rx="10.5" fill="var(--danger-faint)" stroke="var(--danger)" stroke-width="1.2"/><text x="155.0" y="119" font-size="12" text-anchor="middle" fill="var(--danger)" font-weight="700">paid 3 times, built the wrong shape</text><text x="20" y="172" font-size="12" text-anchor="start" fill="var(--success)" font-weight="800">WAIT (YAGNI)</text><text x="20" y="188" font-size="11.5" text-anchor="start" fill="var(--text-muted)" font-weight="400" font-style="italic">keep the code easy to change</text><line x1="210" y1="175" x2="534" y2="175" stroke="var(--border)" stroke-width="1.4" stroke-dasharray="2 5"/><text x="375.0" y="168" font-size="11.5" text-anchor="middle" fill="var(--text-muted)" font-weight="400" font-style="italic">nothing to read, test or carry</text><rect x="542" y="160" width="75.20000000000002" height="30" rx="6" fill="var(--success)" fill-opacity=".22" stroke="var(--success)" stroke-width="1.3"/><text x="579.5999999999999" y="180" font-size="11.5" text-anchor="middle" fill="var(--text)" font-weight="700">build</text><rect x="20" y="214" width="234.0" height="21" rx="10.5" fill="var(--success-faint)" stroke="var(--success)" stroke-width="1.2"/><text x="137.0" y="229" font-size="12" text-anchor="middle" fill="var(--success)" font-weight="700">paid once, for the right shape</text><text x="380" y="288" font-size="12" text-anchor="middle" fill="var(--text-muted)" font-weight="400" font-style="italic">YAGNI is not &quot;don&#x27;t design&quot;: it is &quot;don&#x27;t build features before you know their shape&quot;.</text></svg>
+</div>
+
+```python
+# Speculative: a strategy registry for exactly one exporter
+class Exporter(ABC):
+    @abstractmethod
+    def export(self, rows): ...
+
+class CsvExporter(Exporter):
+    def export(self, rows): ...
+
+EXPORTERS: dict[str, type[Exporter]] = {"csv": CsvExporter}
+def export(rows, fmt="csv", **options):        # options: reserved for future formats
+    return EXPORTERS[fmt]().export(rows)
+
+# YAGNI: the one thing that is actually needed
+def export_csv(rows, path):
+    with open(path, "w", newline="") as f:
+        csv.writer(f).writerows(rows)
+# When a second format really arrives, extracting an interface from two concrete cases takes minutes,
+# and it will fit those two cases instead of a guess.
+```
+
+**What YAGNI does *not* mean.** It is not permission to skip design or to write code that is hard to change. It applies to *features and flexibility*, not to quality: tests, clear names, sensible module boundaries, input validation and security are needed today. It also doesn't forbid cheap decisions that are expensive to reverse later, such as a schema's primary keys, a public API's versioning, or storing timestamps in UTC. Ask: *if we wait and turn out to be wrong, how much does it cost to add this later?* If the answer is "a day of refactoring", wait. If it is "migrating a billion rows" or "breaking every client", decide now.
+
+**Smells:** parameters that every caller passes the same value to; an interface with one implementation and no test double; config options nobody sets; "framework" code in an application; comments such as "for future use".
+
+### KISS: Keep It Simple
+
+**What it says.** Choose the simplest design that fully solves the problem, so the next reader, who is often you in six months at 3 a.m., can understand it quickly and change it safely. "Simple" means *few moving parts and few concepts to hold in your head*, not "fewest characters".
+
+**Essential vs accidental complexity.** Some complexity belongs to the problem: tax law really does have exceptions, and a distributed system really can lose messages. That is *essential* complexity. You can organize it, but you can't delete it. *Accidental* complexity is what we add on top: layers that only forward calls, a message queue between two functions in the same process, generic machinery for one case, or a clever one-liner that needs a comment to explain it. KISS targets the accidental kind.
+
+```python
+# Clever: correct, dense, and slow to verify
+def is_leap(y): return bool((not y % 4) ^ (not y % 100) ^ (not y % 400))
+
+# Simple: reads like the rule it implements
+def is_leap(year):
+    if year % 400 == 0:
+        return True
+    if year % 100 == 0:
+        return False
+    return year % 4 == 0
+```
+
+| Instead of… | Usually simpler |
+|-------------|-----------------|
+| a microservice for one table | a module with a clear interface inside the existing service |
+| a custom cache class | `functools.lru_cache`, or the database's own cache |
+| a hand-built state machine framework | an `Enum` plus a dict of allowed transitions |
+| inheritance three levels deep | a function, or composition |
+| a regex no one can read | two or three plain string operations |
+
+**When the heuristics collide.** YAGNI and KISS both push *against* abstraction; DRY pushes *toward* it. Extracting a shared helper after the second copy is DRY, but if the two copies are different concepts, the helper is the speculative, complex thing YAGNI and KISS warn about (see *When DRY hurts* above). The usual resolution is the **rule of three**: keep the duplicate until a third case shows what really varies, then abstract from real examples. The opposite failure exists too: refusing any structure in a genuinely complex domain spreads the essential complexity across every caller. KISS means as simple as the problem allows, and no simpler.
 
 ---
 
@@ -218,6 +282,9 @@ flowchart TD
 2. **"What's cohesion?"**
    <details><summary>Answer</summary>The degree to which the elements of a module belong together — ideally they all serve one clearly defined purpose (functional cohesion), so a change to that purpose is local and the module is easy to name, understand, and test. Low cohesion shows up as "utils" or "manager" modules, "and" in the description, and unrelated changes landing in the same file. High cohesion inside modules plus low coupling between them is the core goal of modular design.</details>
 
+3. **"YAGNI says don't build it yet. When should you design for the future anyway?"**
+   <details><summary>Answer</summary>When the decision is cheap now and expensive to reverse later: database keys and schemas holding lots of data, public API contracts and versioning, data formats other teams consume, time zones and money types, security boundaries. YAGNI targets speculative <i>features and flexibility</i>; it never excuses code that is hard to change, untested, or insecure. The test is: if we wait and are wrong, what does it cost to add later?</details>
+
 ---
 
 ## Checklist
@@ -225,6 +292,8 @@ flowchart TD
 - [ ] keep related things together
 - [ ] reduce cross-module fan-in/fan-out
 - [ ] say no to speculative generality
+- [ ] before building for the future, ask what adding it later would really cost
+- [ ] remove accidental complexity: layers, indirection and cleverness the problem doesn't need
 
 ---
 

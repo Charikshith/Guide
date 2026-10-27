@@ -66,6 +66,45 @@ Cloud costs can spiral if autoscaling is not managed carefully. Best practices:
 
 *(From AI Library chapter 6.)*
 
+### Capacity Planning
+
+**What it is.** Capacity planning answers *"how much of each resource will we need, and when, to meet the SLO at the busiest moment?"* Cost work asks how cheaply you can run; capacity work asks how little you can run without breaking. They meet at the same number. Too little capacity costs outages and lost sales. Too much costs money every hour. The goal is enough for the forecast peak plus a deliberate margin. The back-of-envelope estimation method (daily users → requests/s → servers, storage, bandwidth) is in [Ch 2](ch02-capacity-planning.md); this section is the ongoing planning loop that ties those numbers to cost.
+
+**The loop**
+
+1. **Measure today:** peak load (requests/s, messages/s, concurrent users) per component, and what limits it: CPU, memory, connections, disk IOPS, or a downstream quota.
+2. **Find the ceiling per unit:** load-test one instance (or one shard or database) until the p99 latency breaks the SLO or errors appear. That rate, not the CPU graph, is the unit's real capacity, and the resource that ran out first is the bottleneck.
+3. **Forecast demand:** take the trend (growth per month) and multiply by seasonality (Black Friday, end of month, the start of term), then add known events: launches, marketing pushes, a big customer onboarding. Plan for the *peak*, not the average.
+4. **Size with headroom:** divide the forecast peak by the per-unit capacity *at the target utilisation*, not at 100%, then add redundancy for failures.
+5. **Provision, then re-measure:** order or reserve the capacity in good time (quotas, hardware lead times), and repeat every quarter, or whenever forecast and actual drift apart.
+
+**Why not run at 100%?** A server that is busy 90% of the time is idle only 10% of the time, so new requests mostly arrive while it is busy and have to queue. Queueing theory puts numbers on this. In the simplest model, the average time a request spends in the system is the service time divided by (1 − utilisation). The curve stays almost flat to about 60%, then climbs steeply. On top of that, the "average" hides bursts within each second, and a failed node pushes its load onto the survivors. Hence the usual target of **60–70% at peak** for latency-sensitive services. Batch workers that only care about throughput can run much hotter.
+
+<div class="fig">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 350" role="img" aria-label="Average wait in a simple queue grows as one over one minus utilisation: about 2 times the service time at 50 percent busy, 3.3 times at 70 percent, 5 times at 80 percent and 10 times at 90 percent, so capacity plans target roughly 60 to 70 percent at peak to leave room for bursts and failures" style="width:100%;max-width:760px;height:auto;font-family:inherit"><defs><marker id="v4c21x1-ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="context-stroke"/></marker></defs><rect x="456.0" y="40" width="61.0" height="230" fill="var(--success)" fill-opacity=".14"/><text x="486.5" y="56" font-size="11.5" text-anchor="middle" fill="var(--success)" font-weight="700">target</text><text x="486.5" y="70" font-size="11.5" text-anchor="middle" fill="var(--success)" font-weight="700">at peak</text><rect x="608.5" y="40" width="91.5" height="230" fill="var(--danger)" fill-opacity=".08"/><text x="694" y="56" font-size="11.5" text-anchor="end" fill="var(--danger)" font-weight="700">danger</text><line x1="90" y1="270" x2="714" y2="270" stroke="var(--text-muted)" stroke-width="1.6" marker-end="url(#v4c21x1-ar)"/><line x1="90" y1="270" x2="90" y2="26" stroke="var(--text-muted)" stroke-width="1.6" marker-end="url(#v4c21x1-ar)"/><text x="90" y="288" font-size="11" text-anchor="middle" fill="var(--text-muted)" font-weight="400">0%</text><text x="212.0" y="288" font-size="11" text-anchor="middle" fill="var(--text-muted)" font-weight="400">20%</text><text x="334.0" y="288" font-size="11" text-anchor="middle" fill="var(--text-muted)" font-weight="400">40%</text><text x="456.0" y="288" font-size="11" text-anchor="middle" fill="var(--text-muted)" font-weight="400">60%</text><text x="578.0" y="288" font-size="11" text-anchor="middle" fill="var(--text-muted)" font-weight="400">80%</text><text x="700.0" y="288" font-size="11" text-anchor="middle" fill="var(--text-muted)" font-weight="400">100%</text><text x="82" y="254.83333333333334" font-size="11" text-anchor="end" fill="var(--text-muted)" font-weight="400">1×</text><text x="82" y="197.33333333333331" font-size="11" text-anchor="end" fill="var(--text-muted)" font-weight="400">4×</text><text x="82" y="120.66666666666666" font-size="11" text-anchor="end" fill="var(--text-muted)" font-weight="400">8×</text><text x="82" y="44.0" font-size="11" text-anchor="end" fill="var(--text-muted)" font-weight="400">12×</text><text x="395.0" y="310" font-size="12" text-anchor="middle" fill="var(--text)" font-weight="600">utilisation (how busy each server is)</text><text x="100" y="30" font-size="12" text-anchor="start" fill="var(--text)" font-weight="600">time in system ÷ service time</text><polyline points="90.0,250.8 96.1,250.6 102.2,250.4 108.3,250.2 114.4,250.0 120.5,249.8 126.6,249.6 132.7,249.4 138.8,249.2 144.9,248.9 151.0,248.7 157.1,248.5 163.2,248.2 169.3,248.0 175.4,247.7 181.5,247.5 187.6,247.2 193.7,246.9 199.8,246.6 205.9,246.3 212.0,246.0 218.1,245.7 224.2,245.4 230.3,245.1 236.4,244.8 242.5,244.4 248.6,244.1 254.7,243.7 260.8,243.4 266.9,243.0 273.0,242.6 279.1,242.2 285.2,241.8 291.3,241.4 297.4,241.0 303.5,240.5 309.6,240.1 315.7,239.6 321.8,239.1 327.9,238.6 334.0,238.1 340.1,237.5 346.2,237.0 352.3,236.4 358.4,235.8 364.5,235.2 370.6,234.5 376.7,233.8 382.8,233.1 388.9,232.4 395.0,231.7 401.1,230.9 407.2,230.1 413.3,229.2 419.4,228.3 425.5,227.4 431.6,226.4 437.7,225.4 443.8,224.4 449.9,223.3 456.0,222.1 462.1,220.9 468.2,219.6 474.3,218.2 480.4,216.8 486.5,215.2 492.6,213.6 498.7,211.9 504.8,210.1 510.9,208.2 517.0,206.1 523.1,203.9 529.2,201.5 535.3,199.0 541.4,196.3 547.5,193.3 553.6,190.1 559.7,186.7 565.8,182.9 571.9,178.7 578.0,174.2 584.1,169.1 590.2,163.5 596.3,157.3 602.4,150.2 608.5,142.2 614.6,133.1 620.7,122.6 626.8,110.3 632.9,95.8 639.0,78.3 645.1,57.0" fill="none" stroke="var(--primary)" stroke-width="2.4"/><circle cx="395.0" cy="231.7" r="4" fill="var(--primary)"/><text x="387.0" y="223.66666666666666" font-size="12" text-anchor="end" fill="var(--text)" font-weight="700" font-family="ui-monospace,Consolas,monospace">2×</text><circle cx="517.0" cy="206.1" r="4" fill="var(--primary)"/><text x="509.0" y="198.11111111111111" font-size="12" text-anchor="end" fill="var(--text)" font-weight="700" font-family="ui-monospace,Consolas,monospace">3.3×</text><circle cx="578.0" cy="174.2" r="4" fill="var(--primary)"/><text x="570.0" y="166.16666666666663" font-size="12" text-anchor="end" fill="var(--text)" font-weight="700" font-family="ui-monospace,Consolas,monospace">5×</text><circle cx="639.0" cy="78.3" r="4" fill="var(--primary)"/><text x="647.0" y="84.33333333333329" font-size="12" text-anchor="start" fill="var(--text)" font-weight="700" font-family="ui-monospace,Consolas,monospace">10×</text><text x="700" y="338" font-size="11.5" text-anchor="end" fill="var(--text-muted)" font-weight="400" font-style="italic">Simple queue model (M/M/1): W = S ÷ (1 − ρ). Real systems differ in detail, never in shape.</text></svg>
+</div>
+
+**Worked example.** Today's peak is 6,000 requests/s and traffic grows 60% a year, so next year's peak is 9,600. A launch is expected to add another 25%: **forecast peak = 12,000 req/s**. A load test shows one instance meets the p99 SLO up to 400 req/s.
+
+| Step | Calculation | Result |
+|------|-------------|--------|
+| usable per instance at 65% | 400 × 0.65 | 260 req/s |
+| instances for the peak | 12,000 ÷ 260 | 47 |
+| survive losing 1 of 3 zones | the 2 remaining zones must carry 12,000 req/s at ≤ 85% (an emergency limit): 12,000 ÷ (400 × 0.85) = 36 instances in 2 zones → 18 per zone | **54 instances (18 × 3)** |
+| check normal running | 12,000 ÷ 54 | 222 req/s each ≈ 56% busy ✓ |
+
+Planning for the failure case (*N+1*: keep running with one zone, or one node, gone) is what turned 47 into 54. Skipping that step is the most common capacity mistake.
+
+**Autoscaling doesn't remove the need to plan.** It reacts in minutes, but a spike arrives in seconds, and new instances need time to boot and warm their caches. It is bounded by account quotas and by your maximum instance count. And it only scales *stateless* tiers. A sensible split is a reserved or committed baseline sized to the normal daily peak (cheap; see the cost strategies above), autoscaling between the baseline and the forecast peak, and pre-scaling *before* a known event rather than waiting for the alarms.
+
+**The parts that don't autoscale**
+- **Databases:** connections, write throughput and storage grow with the data, not the traffic. Track growth per month and plan read replicas, sharding or a bigger instance months ahead ([Ch 11](ch11-database-scaling.md)).
+- **Storage:** forecast GB per month × retention. Disks that fill up fail hard and all at once.
+- **Downstream limits:** third-party API quotas, payment-provider rate limits, IP address ranges, licence counts.
+- **Queues and caches:** consumer counts and cache memory must grow with the traffic, or lag and miss rates climb quietly.
+
+**Pitfalls:** sizing from CPU graphs instead of a load test; planning for the average instead of the peak; forgetting the failure case (N+1); load-testing with an unrealistic mix (all cache hits, or one endpoint only); and leaving a forecast unchecked for a year.
+
 The diagram, worked example, exercises, mini-project, design prompt, open-source reading, interview questions and checklist below are this chapter's practice layer.
 
 ---
@@ -242,12 +281,16 @@ gantt
 2. **"What's unit economics for infra?"**
    <details><summary>Answer</summary>Measuring infrastructure cost per unit of business value — per request, customer, tenant, order, or GB — instead of as a total. It shows whether cost grows proportionally with the business, which features or customers are expensive to serve, and whether a design scales economically. It links engineering to margins: infra as a share of revenue (COGS), and marginal cost per new customer.</details>
 
+3. **"How many servers do you need for next year's peak?"**
+   <details><summary>Answer</summary>Load-test one server to find the rate at which it still meets the p99 SLO. Forecast the peak (trend × seasonality + known launches). Divide the peak by the per-server rate at a 60–70% target utilisation, then size so that losing one zone or node (N+1) still keeps the survivors below an emergency limit of about 85%. Autoscale above a reserved baseline, and plan the parts that don't autoscale (database, storage, quotas) separately.</details>
+
 ---
 
 ## Checklist
 
 - [ ] track cost per unit of value
 - [ ] right-size continuously
+- [ ] plan capacity from a load-tested per-unit ceiling, the forecast peak, 60–70% target utilisation and N+1
 - [ ] treat cost as a first-class requirement
 
 ---

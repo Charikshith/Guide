@@ -44,6 +44,82 @@ Threads vs processes; shared memory vs message passing; async/await, futures/pro
 * **Event loop** — the scheduler that runs ready coroutines and parks waiting ones until their I/O completes.
 * **GIL** — CPython's Global Interpreter Lock: only one thread runs Python bytecode at a time. It is released during I/O, and it is optional in free-threaded builds from 3.13.
 
+### Processes in practice
+
+**What it is.** A process is a running program with its own private memory: its own heap, its own copy of every module, and in Python its own interpreter and its own GIL. Two processes cannot see each other's variables. That isolation is the whole point: a crash or a memory-corrupting bug in one cannot damage the other, and because each process has its own GIL, CPU-bound Python code in several processes really does run on several cores at once.
+
+<div class="fig">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 300" role="img" aria-label="Threads live inside one process and share one heap, so they can race on the same objects; processes each have their own memory and interpreter, so data must be pickled and sent across a pipe, but each can run on its own core" style="width:100%;max-width:760px;height:auto;font-family:inherit"><defs><marker id="v1c13x1-ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="context-stroke"/></marker></defs><text x="20" y="26" font-size="13" text-anchor="start" fill="var(--primary)" font-weight="800">THREADS: one process, one heap</text><rect x="20" y="40" width="340" height="200" rx="12" fill="var(--primary)" fill-opacity=".05" stroke="var(--primary)" stroke-width="1.6"/><text x="36" y="62" font-size="12" text-anchor="start" fill="var(--text-muted)" font-weight="600" font-family="ui-monospace,Consolas,monospace">process  ·  PID 4100</text><rect x="40" y="76" width="300" height="54" rx="9" fill="var(--primary)" fill-opacity=".12" stroke="var(--primary)" stroke-width="1.6"/><text x="190.0" y="101.0" font-size="13" text-anchor="middle" fill="var(--text)" font-weight="700">shared heap</text><text x="190.0" y="117.0" font-size="11" text-anchor="middle" fill="var(--text-muted)" font-weight="400">orders = [...]  cache = {...}</text><rect x="50" y="166" width="82" height="40" rx="9" fill="var(--text-muted)" fill-opacity=".12" stroke="var(--text-muted)" stroke-width="1.6"/><text x="91.0" y="191.0" font-size="13" text-anchor="middle" fill="var(--text)" font-weight="700">thread 1</text><line x1="91" y1="164" x2="91" y2="134" stroke="var(--text-muted)" stroke-width="1.6" marker-end="url(#v1c13x1-ar)"/><rect x="150" y="166" width="82" height="40" rx="9" fill="var(--text-muted)" fill-opacity=".12" stroke="var(--text-muted)" stroke-width="1.6"/><text x="191.0" y="191.0" font-size="13" text-anchor="middle" fill="var(--text)" font-weight="700">thread 2</text><line x1="191" y1="164" x2="191" y2="134" stroke="var(--text-muted)" stroke-width="1.6" marker-end="url(#v1c13x1-ar)"/><rect x="250" y="166" width="82" height="40" rx="9" fill="var(--text-muted)" fill-opacity=".12" stroke="var(--text-muted)" stroke-width="1.6"/><text x="291.0" y="191.0" font-size="13" text-anchor="middle" fill="var(--text)" font-weight="700">thread 3</text><line x1="291" y1="164" x2="291" y2="134" stroke="var(--text-muted)" stroke-width="1.6" marker-end="url(#v1c13x1-ar)"/><rect x="91.0" y="214" width="198.0" height="21" rx="10.5" fill="var(--warning-faint)" stroke="var(--warning)" stroke-width="1.2"/><text x="190.0" y="229" font-size="12" text-anchor="middle" fill="var(--warning)" font-weight="700">one GIL → one Python core</text><line x1="380" y1="16" x2="380" y2="250" stroke="var(--border-strong)" stroke-width="1" stroke-dasharray="3 4"/><text x="400" y="26" font-size="13" text-anchor="start" fill="var(--success)" font-weight="800">PROCESSES: separate memory</text><rect x="400" y="40" width="150" height="150" rx="12" fill="var(--success)" fill-opacity=".05" stroke="var(--success)" stroke-width="1.6"/><text x="412" y="62" font-size="12" text-anchor="start" fill="var(--text-muted)" font-weight="600" font-family="ui-monospace,Consolas,monospace">PID 4200</text><rect x="412" y="74" width="126" height="46" rx="9" fill="var(--success)" fill-opacity=".12" stroke="var(--success)" stroke-width="1.6"/><text x="475.0" y="95.0" font-size="13" text-anchor="middle" fill="var(--text)" font-weight="700">own heap</text><text x="475.0" y="111.0" font-size="11" text-anchor="middle" fill="var(--text-muted)" font-weight="400">own GIL</text><rect x="422" y="136" width="106" height="36" rx="9" fill="var(--text-muted)" fill-opacity=".12" stroke="var(--text-muted)" stroke-width="1.6"/><text x="475.0" y="159.0" font-size="13" text-anchor="middle" fill="var(--text)" font-weight="700">main thread</text><rect x="590" y="40" width="150" height="150" rx="12" fill="var(--success)" fill-opacity=".05" stroke="var(--success)" stroke-width="1.6"/><text x="602" y="62" font-size="12" text-anchor="start" fill="var(--text-muted)" font-weight="600" font-family="ui-monospace,Consolas,monospace">PID 4201</text><rect x="602" y="74" width="126" height="46" rx="9" fill="var(--success)" fill-opacity=".12" stroke="var(--success)" stroke-width="1.6"/><text x="665.0" y="95.0" font-size="13" text-anchor="middle" fill="var(--text)" font-weight="700">own heap</text><text x="665.0" y="111.0" font-size="11" text-anchor="middle" fill="var(--text-muted)" font-weight="400">own GIL</text><rect x="612" y="136" width="106" height="36" rx="9" fill="var(--text-muted)" fill-opacity=".12" stroke="var(--text-muted)" stroke-width="1.6"/><text x="665.0" y="159.0" font-size="13" text-anchor="middle" fill="var(--text)" font-weight="700">main thread</text><line x1="552" y1="150" x2="586" y2="150" stroke="var(--accent)" stroke-width="1.6" marker-end="url(#v1c13x1-ar)"/><line x1="588" y1="166" x2="554" y2="166" stroke="var(--accent)" stroke-width="1.6" marker-end="url(#v1c13x1-ar)"/><text x="570" y="214" font-size="11.5" text-anchor="middle" fill="var(--text-muted)" font-weight="400" font-family="ui-monospace,Consolas,monospace">pickle → pipe → unpickle</text><rect x="463.8" y="226" width="212.4" height="21" rx="10.5" fill="var(--success-faint)" stroke="var(--success)" stroke-width="1.2"/><text x="570.0" y="241" font-size="12" text-anchor="middle" fill="var(--success)" font-weight="700">true parallelism, copy cost</text><text x="380" y="282" font-size="12" text-anchor="middle" fill="var(--text-muted)" font-weight="400" font-style="italic">Threads share by default and must lock; processes share nothing by default and must send messages.</text></svg>
+</div>
+
+**The price of isolation.** Anything you hand to another process must be *pickled* (serialized to bytes), sent through a pipe, and unpickled on the other side, and the result travels back the same way. Starting a process also costs milliseconds and tens of megabytes. So processes pay off when each task does a lot of computing relative to the data it carries: resizing an image, parsing a large file, running a simulation. They lose when the job is a million tiny calls, or when every call ships a big object across the boundary.
+
+```python
+from concurrent.futures import ProcessPoolExecutor
+
+def cpu_heavy(n):                       # must be a top-level function: workers import it by name
+    return sum(i * i for i in range(n))
+
+if __name__ == "__main__":              # required where workers are started with "spawn"
+    with ProcessPoolExecutor() as pool:            # one worker per CPU core by default
+        results = list(pool.map(cpu_heavy, [10_000_000] * 8, chunksize=2))
+    print(results[0])
+```
+
+**Fork vs spawn.** There are two ways to start a worker. *Fork* (the Linux default before Python 3.14) clones the parent process instantly, memory and all; from 3.14 Linux defaults to *forkserver*, which forks from a clean helper process instead. That is fast, but it copies whatever locks and threads the parent held at that moment, which can deadlock the child. *Spawn* (the default on Windows and macOS) starts a fresh interpreter that re-imports your main module. That is why the `if __name__ == "__main__":` guard is mandatory there: without it, every worker re-runs the code that creates workers.
+
+| Share data between processes by... | Use when |
+|---|---|
+| passing arguments and return values (pickled) | the default; small inputs and outputs |
+| `multiprocessing.Queue` / `Pipe` | a stream of messages between long-lived workers |
+| `multiprocessing.shared_memory`, or memory-mapped files | large arrays that must not be copied (NumPy buffers) |
+| a database, Redis, or files | many processes, or processes on different machines |
+
+**Pitfalls**
+- Lambdas, nested functions and open sockets can't be pickled, so they can't be sent to a worker.
+- Creating a new process per small task; reuse a pool.
+- Expecting a worker's change to a global to be visible in the parent. It changed its own copy.
+- Forgetting the `__main__` guard, which on Windows starts workers recursively until they fail.
+
+### Futures in practice
+
+**What it is.** A future is an object that stands for a result that isn't ready yet. You get it back at once when you hand work to an executor or the event loop, and you collect the answer later. It lets one piece of code start several jobs, carry on with other work, and wait only at the moment it actually needs the values.
+
+<div class="fig">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 230" role="img" aria-label="A future starts pending, becomes running when a worker picks it up, and ends in exactly one final state: done with a result, failed with an exception that result() re-raises, or cancelled, which is only possible while it is still pending" style="width:100%;max-width:760px;height:auto;font-family:inherit"><defs><marker id="v1c13x2-ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="context-stroke"/></marker></defs><rect x="20" y="46" width="68.4" height="21" rx="10.5" fill="var(--primary-faint)" stroke="var(--primary)" stroke-width="1.2"/><text x="54.2" y="61" font-size="12" text-anchor="middle" fill="var(--primary)" font-weight="700">PENDING</text><text x="20" y="22" font-size="11.5" text-anchor="start" fill="var(--text-muted)" font-weight="400">submit() returned,</text><text x="20" y="37" font-size="11.5" text-anchor="start" fill="var(--text-muted)" font-weight="400">the job is queued</text><line x1="108" y1="56" x2="186" y2="56" stroke="var(--text-muted)" stroke-width="1.6" marker-end="url(#v1c13x2-ar)"/><rect x="192" y="46" width="68.4" height="21" rx="10.5" fill="var(--warning-faint)" stroke="var(--warning)" stroke-width="1.2"/><text x="226.2" y="61" font-size="12" text-anchor="middle" fill="var(--warning)" font-weight="700">RUNNING</text><text x="192" y="37" font-size="11.5" text-anchor="start" fill="var(--text-muted)" font-weight="400">a worker picked it up</text><rect x="420" y="20" width="46.8" height="21" rx="10.5" fill="var(--success-faint)" stroke="var(--success)" stroke-width="1.2"/><text x="443.4" y="35" font-size="12" text-anchor="middle" fill="var(--success)" font-weight="700">DONE</text><text x="478.8" y="34" font-size="12" text-anchor="start" fill="var(--text)" font-weight="400">result() → the value</text><rect x="420" y="80" width="61.2" height="21" rx="10.5" fill="var(--danger-faint)" stroke="var(--danger)" stroke-width="1.2"/><text x="450.6" y="95" font-size="12" text-anchor="middle" fill="var(--danger)" font-weight="700">FAILED</text><text x="493.2" y="94" font-size="12" text-anchor="start" fill="var(--text)" font-weight="400">result() re-raises the exception</text><rect x="420" y="140" width="82.8" height="21" rx="10.5" fill="var(--danger-faint)" stroke="var(--danger)" stroke-width="1.2"/><text x="461.4" y="155" font-size="12" text-anchor="middle" fill="var(--danger)" font-weight="700">CANCELLED</text><text x="514.8" y="154" font-size="12" text-anchor="start" fill="var(--text)" font-weight="400">result() raises CancelledError</text><line x1="280" y1="56" x2="412" y2="32" stroke="var(--success)" stroke-width="1.6" marker-end="url(#v1c13x2-ar)"/><line x1="280" y1="56" x2="412" y2="90" stroke="var(--danger)" stroke-width="1.6" marker-end="url(#v1c13x2-ar)"/><path d="M60 66 C 60 170, 300 160, 412 152" fill="none" stroke="var(--danger)" stroke-width="1.6" stroke-dasharray="6 5" marker-end="url(#v1c13x2-ar)"/><text x="170" y="184" font-size="11.5" text-anchor="start" fill="var(--danger)" font-weight="400" font-style="italic">cancel() succeeds only while pending</text><text x="380" y="214" font-size="12" text-anchor="middle" fill="var(--text-muted)" font-weight="400" font-style="italic">A future is a box that will hold one answer. Once it reaches a final state it never changes.</text></svg>
+</div>
+
+**The executor API.** `submit(fn, *args)` returns a `concurrent.futures.Future` straight away. `future.result(timeout=...)` blocks until the job finishes and then either returns the value or **re-raises the exception the job hit**, so errors are never silently lost as long as someone calls `result()`. `as_completed(futures)` yields futures in the order they *finish*, not the order they were submitted, which is what you want for showing progress or acting on the fastest answer first.
+
+```python
+from concurrent.futures import ThreadPoolExecutor, as_completed
+import urllib.request
+
+def size(url):
+    with urllib.request.urlopen(url, timeout=5) as r:
+        return len(r.read())
+
+urls = ["https://example.com", "https://python.org", "https://bad.invalid"]
+with ThreadPoolExecutor(max_workers=8) as pool:
+    futures = {pool.submit(size, u): u for u in urls}   # all three start now
+    for fut in as_completed(futures):                   # first finished, first served
+        url = futures[fut]
+        try:
+            print(url, fut.result())
+        except Exception as e:                          # the worker's exception, re-raised here
+            print(url, "failed:", e)
+```
+
+**Two kinds of future in Python.** `concurrent.futures.Future` is thread-safe and is filled in by a thread or process pool; waiting on it blocks the calling thread. `asyncio.Future`, and its subclass `asyncio.Task`, which wraps a running coroutine, belongs to one event loop and is waited on with `await`, which pauses only that coroutine. To bridge the two, `await loop.run_in_executor(pool, fn, arg)` (or `asyncio.to_thread(fn, arg)`) runs blocking code in a pool and hands you an awaitable. JavaScript's `Promise` and Rust's `Future` are the same idea; the Rust one is lazy and does nothing until it is polled.
+
+**Cancellation and timeouts.** `future.cancel()` only succeeds while the job is still queued; a running thread can't be stopped from outside, so long jobs should check a flag or an `Event` themselves. An asyncio task *can* be cancelled while it is running: `CancelledError` is raised at its current `await`. `asyncio.wait_for(coro, timeout)` and `asyncio.timeout(seconds)` turn that into a deadline.
+
+**Pitfalls**
+- Submitting work and never calling `result()`, so an exception vanishes without a trace.
+- Calling `result()` straight after each `submit()`, which runs the jobs one after another and throws away the concurrency.
+- Calling a blocking `result()` inside a coroutine, which freezes the whole event loop; `await` it instead.
+- Assuming `cancel()` stops work that has already started.
+
 ---
 
 ## Prereqs
@@ -196,6 +272,9 @@ flowchart LR
 2. **"What is a future/promise?"**
    <details><summary>Answer</summary>An object representing a result that will be available later. You can attach callbacks or <code>await</code> it. It resolves with a value or fails with an error, which lets code start work now and use the result when ready without blocking a thread.</details>
 
+3. **"When would a process pool make code slower than a single loop?"**
+   <details><summary>Answer</summary>When each task is tiny or carries a lot of data. Every argument and result is pickled and sent through a pipe, and starting workers costs milliseconds, so for a million small calls or large objects per call the overhead outweighs the parallel speed-up. Batch the work (<code>chunksize</code>), send less data, or use threads when the work is mostly I/O.</details>
+
 ---
 
 ## Checklist
@@ -203,6 +282,8 @@ flowchart LR
 - [ ] choose thread vs async per workload
 - [ ] detect a data race
 - [ ] use a semaphore to bound concurrency
+- [ ] run CPU-bound work in a process pool, with a `__main__` guard and small pickled payloads
+- [ ] collect every future's `result()` so worker exceptions surface
 
 ---
 
