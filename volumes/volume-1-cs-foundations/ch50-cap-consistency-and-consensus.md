@@ -82,6 +82,21 @@ Use them when you must react quickly to a peer vanishing (leader liveness, clust
 
 Dynamo-style stores use vector-style versions to spot concurrent writes to the same key and return both siblings or merge them; CockroachDB and MongoDB use HLCs.
 
+### Version vectors and dotted version vectors
+
+A replicated key-value store needs, for each value it holds, a record of which writes that value already includes, so that it can tell a real conflict from a stale copy. A full vector clock with one slot per *client* does this, but a busy key collects thousands of slots. **Version vectors** keep one slot per *replica* instead, which stays small. That shortcut breaks when two clients write the same key through the same replica without having seen each other's write:
+
+- If the replica just bumps its own slot, the second write gets `{R:2}`, which looks newer than the first write's `{R:1}`. The first write is silently lost, although the two were concurrent.
+- If the replica keeps both values to be safe, a single vector for the whole key can't say which write each value came from. Old values can never be safely discarded, and siblings pile up until a client merges them. Riak called this *sibling explosion*.
+
+A **dotted version vector** fixes this by tagging every stored value with a **dot**: the `(replica, counter)` pair of the one write that created it. Every write from a client also carries a **context**: the version vector of what that client read. On each write, the replica applies one rule:
+
+1. Discard every stored value whose dot is inside the write's context. The client saw it, so the new write replaces it.
+2. Keep every value whose dot is *not* inside the context. The client never saw it, so it is a genuine concurrent sibling.
+3. Store the new value with a fresh dot.
+
+The result: one counter per replica, no lost writes, and siblings only when writes really were concurrent. Riak 2.0 made dotted version vectors its default. The same idea, tagging each value with the exact event that produced it, also underlies the "dot stores" of several CRDT implementations.
+
 ### Broadcast: from best-effort to total order
 
 Delivering one message to a whole group must be built from point-to-point links:
@@ -185,6 +200,29 @@ flowchart LR
     C --> D
     D --> E["neither ≤ the other →<br/>concurrent: keep both siblings or merge"]
 ```
+
+### Dotted version vectors: keep real conflicts, drop stale values
+
+```mermaid
+sequenceDiagram
+    participant A as Client A
+    participant R as Replica R
+    participant B as Client B
+    A->>R: read cart
+    R-->>A: empty, context {}
+    B->>R: read cart
+    R-->>B: empty, context {}
+    A->>R: write [milk], context {}
+    Note over R: store [milk] with dot (R,1)
+    B->>R: write [eggs], context {}
+    Note over R: dot (R,1) is not in context {}, B never saw it.<br/>Keep both: [milk] (R,1) and [eggs] (R,2)
+    A->>R: read cart
+    R-->>A: siblings [milk] and [eggs], context {R:2}
+    A->>R: write merged [milk, eggs], context {R:2}
+    Note over R: dots (R,1) and (R,2) are inside {R:2}.<br/>Drop both, store [milk, eggs] with dot (R,3)
+```
+
+With a plain per-replica version vector, B's write would have been stamped `{R:2}` and would have silently replaced A's `[milk]`.
 
 ### Broadcast guarantees, weakest to strongest
 

@@ -1087,6 +1087,36 @@ A microservices anti-checklist. Stay with a monolith if:
 > **The truth:** every team that adopts microservices too early ends up with a *distributed monolith* — slower than a monolith, harder to debug, and more expensive to operate.
 
 
+#### Start with a monolith, split when the team forces it
+
+**Why start with a monolith.** Service boundaries are cheap to draw on a whiteboard and expensive to move. Inside one codebase, moving a responsibility from one module to another is a refactor. Across services it means a new API, a data migration, a versioning period and a coordinated deploy. A new product does not yet know where its real seams are, so early boundaries are usually wrong. The usual advice is to build a well-modularised monolith, watch where the code and the team actually pull apart, and extract services along those lines (with the Strangler Fig pattern above).
+
+**Why teams eventually split it.** People in a team of *n* have `n(n−1)/2` possible pairs who may need to talk:
+
+| People on one codebase | Possible communication paths |
+|---|---|
+| 5 | 10 |
+| 10 | 45 |
+| 20 | 190 |
+| 50 | 1,225 |
+
+Paths grow with the square of team size, so past roughly 8–10 people, coordination (meetings, merge conflicts, waiting on reviews, release trains) starts to eat the time that extra people add. Splitting into small teams that each own a service with a clear API turns most of those paths into one contract per team. This is **Conway's law** used deliberately: systems end up shaped like the communication structure of the organisation that builds them, so you choose the team structure you want and let the architecture follow.
+
+```mermaid
+flowchart LR
+    subgraph ONE["One team of 10: 45 paths"]
+      direction TB
+      X["everyone may need everyone:<br/>shared codebase, shared release,<br/>merge conflicts, long meetings"]
+    end
+    subgraph TWO["Two teams of 5: 10 + 10 paths, plus one contract"]
+      direction TB
+      A["Team A<br/>owns the orders service"] <-->|"versioned API<br/>the only shared surface"| B["Team B<br/>owns the payments service"]
+    end
+    ONE -->|"split along a boundary<br/>the code already shows"| TWO
+```
+
+**Signals that it is time to split:** teams regularly block each other's releases, one part needs to scale or deploy on a very different schedule, or a module's boundary has held steady for months. If none of these apply, the monolith is still the cheaper system to run.
+
 ### Practical Trade-offs
 
 | Pattern         | Pros                  | Cons                              | Use Cases                  |

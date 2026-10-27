@@ -73,6 +73,22 @@ A router rewrites private source addresses and ports to its public address and k
 
 ---
 
+### How networks reach each other: BGP
+
+The internet is not one network but tens of thousands of independently run networks called **autonomous systems** (ASes): ISPs, clouds, universities, large companies. Each has a number: Google is AS15169, Cloudflare is AS13335. **BGP** (Border Gateway Protocol) is how they tell each other which addresses they can deliver to:
+
+1. An AS **announces** the address blocks it owns, for example "I originate `203.0.113.0/24`".
+2. Each neighbour passes the announcement on, adding its own AS number to the **AS path**. A router therefore learns several paths to the same block, such as `64497 64496` and `64499 64498 64496`.
+3. Each router **picks one path by policy**, not by speed. First comes business preference (routes through paying customers beat free peers, which beat paid providers), then the shortest AS path, then tie-breakers. That is why the chosen internet path is often not the fastest one.
+4. When a link fails, ASes **withdraw** the routes that used it and the internet **converges** on new paths, which takes seconds to minutes.
+
+Two properties explain most BGP incidents:
+
+- **The most specific prefix wins.** A router prefers a `/24` over a `/22` that covers it. In 2008 Pakistan Telecom announced a more specific block of YouTube's addresses and briefly pulled YouTube's worldwide traffic into its network. **RPKI** route-origin validation, now widely deployed, lets networks reject announcements from an AS not authorised to originate that block.
+- **No announcement means no route.** In October 2021 a faulty maintenance command cut Facebook's backbone, and its DNS servers, unable to reach the data centres, withdrew their own BGP announcements. Facebook, Instagram and WhatsApp were unreachable for about six hours, and the outage also locked out the tools engineers needed to fix it.
+
+The same mechanism powers **Anycast**: many sites announce the same address block, and BGP delivers each user to the "nearest" one by AS path. CDNs and public DNS resolvers use it ([Volume 4, Chapter 14](../volume-4-high-level-design/ch14-cdn-edge-and-geo-distribution.md)).
+
 ## Prereqs
 
 None.
@@ -213,6 +229,20 @@ flowchart LR
 | `192.168.1.23:51000` | `203.0.113.7:40002` | `142.250.1.1:443` |
 
 ---
+
+### BGP: an announcement spreads and each AS picks a path
+
+```mermaid
+flowchart LR
+    O["AS64496<br/>originates 203.0.113.0/24"] -->|"path: 64496"| A["AS64497"]
+    O -->|"path: 64496"| C["AS64498"]
+    C -->|"path: 64498 64496"| D["AS64499"]
+    A -->|"path: 64497 64496"| U["AS64500<br/>(a user's ISP)"]
+    D -->|"path: 64499 64498 64496"| U
+    U -.- P["Picks 64497 64496:<br/>shorter AS path, unless a business<br/>preference says otherwise"]
+```
+
+If AS64497 withdraws its route, AS64500 falls back to the longer path through AS64499 after the routes converge.
 
 ## Example
 

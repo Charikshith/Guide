@@ -31,6 +31,25 @@ Document, wide-column, and key-value/Dynamo-style stores; consistency models; wh
 
 List your access patterns *first*, then design one table (or item layout) per pattern. Denormalize and duplicate freely; joins don't exist.
 
+### Single-table design in DynamoDB
+
+DynamoDB has no joins, and every request costs a network round trip. **Single-table design** puts several entity types (customers, orders, order items) into *one* table, with keys chosen so that each screen or API call is answered by **one** `Query`:
+
+1. **List the access patterns first**, for example: "a customer's profile and latest orders", "the items in an order", "all pending orders, oldest first".
+2. **Use generic key names** (`PK`, `SK`) and *overload* them with typed values: `USER#42`, `ORDER#2024-05-01#7`, `ITEM#p3`.
+3. **Group what is read together under one partition key.** Items sharing a `PK` form an *item collection*, stored together and sorted by `SK`, so `PK = USER#42` returns the profile and every order in one call, and `begins_with(SK, "ORDER#")` narrows it to orders, sorted by date.
+4. **Add a global secondary index (GSI) for each extra pattern.** Give pending orders `GSI1PK = STATUS#PENDING` and `GSI1SK = <date>`. Only items that have the attribute appear in the index (a *sparse index*), so it lists exactly the pending orders. A single status value can become a hot partition, so busy systems add a shard suffix (`STATUS#PENDING#3`) and query the shards in parallel.
+5. **Model many-to-many with an inverted index**: a GSI that swaps `PK` and `SK` answers the relationship in the other direction.
+
+The trade-offs:
+
+- **Fast and predictable at any size.** Each pattern is one indexed query, so latency doesn't grow with the data.
+- **Rigid.** A new access pattern often needs a new GSI and a backfill of existing items, sometimes a key redesign.
+- **Hard to read and to analyse.** The table is unreadable without its access-pattern list, and ad-hoc reporting needs an export to S3 and Athena or a warehouse.
+- **Limits still apply**: 400 KB per item, and per-partition throughput limits (about 3,000 read and 1,000 write units a second), which is why the partition key must spread load.
+
+Use it when the access patterns are known and stable and scale or latency really matter. Prefer one table per entity, or Postgres, while the product is still changing or when queries are flexible, such as a GraphQL API or analyst-facing search.
+
 ### Partition key design — the most important decision
 
 | Good partition key | Bad partition key |
@@ -95,6 +114,28 @@ Partition key `user_id`; `posted_at` is the clustering key, sorted DESC. One par
 | `USER#42` | `ORDER#2024-05-03#9` | total=12, status=pending |
 
 Query `PK = USER#42 AND SK begins_with "ORDER#"` → the user's orders, sorted by date.
+
+### One table, three access patterns
+
+```mermaid
+flowchart LR
+    Q1(["1. Profile and latest orders<br/>Query PK = USER#42"])
+    Q2(["2. Items in order 7<br/>Query PK = ORDER#7"])
+    Q3(["3. Pending orders, oldest first<br/>Query GSI1: GSI1PK = STATUS#PENDING"])
+    subgraph T["table app (PK, SK)"]
+      U["USER#42 | PROFILE<br/>name, email"]
+      O1["USER#42 | ORDER#2024-05-01#7<br/>status shipped"]
+      O2["USER#42 | ORDER#2024-05-03#9<br/>status pending, GSI1PK set"]
+      I1["ORDER#7 | ITEM#p3<br/>qty, price"]
+      I2["ORDER#7 | ITEM#p8<br/>qty, price"]
+    end
+    Q1 --> U
+    Q1 --> O1
+    Q1 --> O2
+    Q2 --> I1
+    Q2 --> I2
+    Q3 -->|"sparse index: only items with GSI1PK"| O2
+```
 
 ### Cassandra's ring: partitions and replicas (RF = 3)
 

@@ -79,6 +79,19 @@ A WAL makes a transaction atomic inside *one* database. Once a transfer touches 
 
 The weak spot is the gap between the phases: if the coordinator crashes after participants voted yes, they are **blocked** — holding locks, unable to commit or abort — until it comes back. 2PC also costs two round trips plus forced log writes, and every participant must speak the protocol (the X/Open **XA** standard in relational databases; most queues, search engines and SaaS APIs don't). Making it fault-tolerant means replicating the coordinator's and participants' state with consensus (Paxos/Raft) so a replica can take over a stuck transaction. Agreeing on commit is actually a harder problem than ordinary consensus (*uniform* consensus): even a participant that later fails must not have decided differently.
 
+### XA: two-phase commit across different products
+
+**XA** is the X/Open standard (1991) that lets one **transaction manager** run 2PC across **resource managers** made by different vendors: say, a PostgreSQL debit and a message sent to an IBM MQ queue, committed as one unit. Each resource manager implements a small set of calls (`xa_start`, `xa_end`, `xa_prepare`, `xa_commit`, `xa_rollback`, `xa_recover`), and the transaction manager drives them. In Java this is JTA, with managers such as Narayana or Atomikos. Databases expose it too: PostgreSQL through `PREPARE TRANSACTION` / `COMMIT PREPARED`, MySQL through `XA START … XA COMMIT`.
+
+Why it is rare in modern systems:
+
+- **In-doubt transactions.** If the transaction manager dies after the prepare phase, each database keeps the prepared transaction and its locks until someone resolves it. In PostgreSQL these show up in `pg_prepared_xacts`, survive restarts, and block vacuum and other writers until committed or rolled back by hand.
+- **Off by default.** PostgreSQL ships with `max_prepared_transactions = 0`, so XA must be switched on deliberately.
+- **Little support outside relational databases.** Kafka, most cloud queues, search engines and SaaS APIs don't speak XA. Kafka's own transactions cover only Kafka.
+- **Cost.** Two extra round trips and forced log writes on every participant for every transaction.
+
+So when one action must change a database *and* tell another system, the usual design avoids XA: write the change and an outbox row in one local transaction, and let a relay publish the message afterwards (see "When 2PC is not an option" below, and [Chapter 12 of Volume 4](../volume-4-high-level-design/ch12-event-driven-systems.md)).
+
 ### Spanner: 2PC that doesn't block, and global time
 
 Spanner splits data into partitions; each partition is a Paxos group whose leader also runs 2PL for that partition. A cross-partition transaction runs 2PC between the group leaders, but since each leader's log is replicated by Paxos, a failed coordinator or participant is replaced by another replica of its group instead of blocking everyone. Read-only transactions use MVCC snapshots and take no locks. To give every transaction a globally meaningful timestamp, **TrueTime** returns an *interval* `[earliest, latest]` that is guaranteed to contain the real time (GPS and atomic clocks keep it to a few ms). On commit, Spanner waits until `earliest` has passed its chosen timestamp — **commit wait** — before releasing locks, so timestamp order matches real-time order: strict serializability. CockroachDB and YugabyteDB, lacking atomic clocks, use **hybrid logical clocks** (physical time + a logical counter) and restart reads that fall into the clock-uncertainty window.
